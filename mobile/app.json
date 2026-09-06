@@ -8,9 +8,11 @@
     "scheme": "fitsync",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon"
+      "icon": "./assets/expo.icon",
+      "bundleIdentifier": "com.sahilsahu.fitsync"
     },
     "android": {
+      "package": "com.sahilsahu.fitsync",
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
         "foregroundImage": "./assets/images/android-icon-foreground.png",

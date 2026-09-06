@@ -28,22 +28,20 @@ class Settings(BaseSettings):
     jwt_audience: str = "fitsync-mobile"
 
     access_token_expire_minutes: int = 15
-
     refresh_token_expire_days: int = 30
-
     session_absolute_expire_days: int = 90
 
     otp_hmac_secret: SecretStr
 
     otp_expire_minutes: int = 10
-
     otp_max_attempts: int = 5
-
     otp_resend_seconds: int = 60
 
     resend_api_key: SecretStr
 
-    auth_email_from: str = "FitSync <onboarding@resend.dev>"
+    auth_email_from: str = "FitSync <login@auth.sahillsahu.com>"
+
+    google_web_client_id: str
 
     model_config = SettingsConfigDict(
         env_file=".env",

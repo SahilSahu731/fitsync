@@ -1,6 +1,13 @@
-import { create } from "zustand";
+import {
+  create,
+} from "zustand";
 
-import { getMe, logoutRequest, verifyEmailCode } from "./api";
+import {
+  authenticateGoogleToken,
+  getCurrentUser,
+  logoutRequest,
+  verifyEmailCode,
+} from "./api";
 
 import {
   clearTokens,
@@ -9,11 +16,16 @@ import {
   saveTokens,
 } from "./token-storage";
 
-import { queryClient } from "@/lib/query/query-client";
+import {
+  queryClient,
+} from "@/lib/query/query-client";
 
-import type { AuthStatus, User } from "./types";
+import type {
+  AuthStatus,
+  User,
+} from "./types";
 
-interface VerifyInput {
+interface EmailVerificationInput {
   challengeId: string;
 
   code: string;
@@ -26,58 +38,34 @@ interface AuthState {
 
   bootstrap: () => Promise<void>;
 
-  authenticateWithEmail: (input: VerifyInput) => Promise<void>;
+  authenticateWithEmail: (
+    input: EmailVerificationInput,
+  ) => Promise<void>;
+
+  authenticateWithGoogle: (
+    idToken: string,
+  ) => Promise<void>;
 
   logout: () => Promise<void>;
 
   invalidateSession: () => void;
 }
 
-let bootstrapPromise: Promise<void> | null = null;
+let bootstrapPromise:
+  | Promise<void>
+  | null = null;
 
-export const useAuthStore = create<AuthState>((set) => {
-  async function runBootstrap() {
-    set({
-      status: "booting",
-    });
-
-    const tokens = await hydrateTokens();
-
-    if (!tokens) {
+export const useAuthStore =
+  create<AuthState>((set) => {
+    async function runBootstrap(): Promise<void> {
       set({
-        status: "unauthenticated",
-
-        user: null,
+        status: "booting",
       });
 
-      return;
-    }
+      const tokens =
+        await hydrateTokens();
 
-    try {
-      /*
-       * If access JWT expired,
-       * apiClient automatically:
-       *
-       * refreshes
-       * rotates tokens
-       * retries /auth/me
-       */
-
-      const user = await getMe();
-
-      set({
-        status: "authenticated",
-
-        user,
-      });
-    } catch {
-      /*
-       * If the server explicitly
-       * rejected refresh tokens,
-       * the interceptor cleared them.
-       */
-
-      if (!getMemoryTokens()) {
+      if (!tokens) {
         set({
           status: "unauthenticated",
 
@@ -87,84 +75,179 @@ export const useAuthStore = create<AuthState>((set) => {
         return;
       }
 
-      /*
-       * Tokens remain:
-       *
-       * likely network outage
-       * or temporary server error.
-       */
-
-      set({
-        status: "offline",
-
-        user: null,
-      });
-    }
-  }
-
-  return {
-    status: "booting",
-
-    user: null,
-
-    bootstrap: async () => {
-      if (!bootstrapPromise) {
-        bootstrapPromise = runBootstrap().finally(() => {
-          bootstrapPromise = null;
-        });
-      }
-
-      return bootstrapPromise;
-    },
-
-    authenticateWithEmail: async (input) => {
-      const response = await verifyEmailCode(input);
-
-      /*
-       * Credentials MUST persist
-       * before auth state flips.
-       */
-
-      await saveTokens(response.tokens);
-
-      queryClient.clear();
-
-      set({
-        status: "authenticated",
-
-        user: response.user,
-      });
-    },
-
-    logout: async () => {
       try {
-        await logoutRequest();
-      } catch {
         /*
-         * Local logout must
-         * still work offline.
+         * If the access token has expired,
+         * apiClient automatically:
+         *
+         * 1. receives 401
+         * 2. refreshes the FitSync session
+         * 3. rotates the refresh token
+         * 4. stores the new pair
+         * 5. retries /auth/me
          */
-      } finally {
-        await clearTokens();
-
-        queryClient.clear();
+        const user =
+          await getCurrentUser();
 
         set({
-          status: "unauthenticated",
+          status: "authenticated",
+
+          user,
+        });
+      } catch {
+        /*
+         * If refresh credentials were
+         * explicitly rejected, the Axios
+         * interceptor clears SecureStore.
+         */
+        if (!getMemoryTokens()) {
+          set({
+            status: "unauthenticated",
+
+            user: null,
+          });
+
+          return;
+        }
+
+        /*
+         * Credentials still exist.
+         *
+         * This is probably a temporary
+         * network/backend outage rather
+         * than an invalid session.
+         */
+        set({
+          status: "offline",
 
           user: null,
         });
       }
-    },
+    }
 
-    invalidateSession: () => {
-      queryClient.clear();
+    return {
+      status: "booting",
 
-      set({
-        status: "unauthenticated",
+      user: null,
 
-        user: null,
-      });
-    },
-  };
-});
+      bootstrap: async () => {
+        /*
+         * Prevent multiple bootstraps from
+         * running at the same time.
+         */
+        if (!bootstrapPromise) {
+          bootstrapPromise =
+            runBootstrap().finally(() => {
+              bootstrapPromise = null;
+            });
+        }
+
+        return bootstrapPromise;
+      },
+
+      authenticateWithEmail:
+        async (input) => {
+          const response =
+            await verifyEmailCode(
+              input,
+            );
+
+          /*
+           * Persist credentials BEFORE
+           * changing the navigation state.
+           */
+          await saveTokens(
+            response.tokens,
+          );
+
+          /*
+           * Prevent cached data from a
+           * previous account surviving
+           * an account switch.
+           */
+          queryClient.clear();
+
+          set({
+            status:
+              "authenticated",
+
+            user:
+              response.user,
+          });
+        },
+
+      authenticateWithGoogle:
+        async (
+          idToken,
+        ) => {
+          const response =
+            await authenticateGoogleToken(
+              idToken,
+            );
+
+          /*
+           * Google proves identity,
+           * but from this point onward
+           * these are normal FitSync
+           * session credentials.
+           */
+          await saveTokens(
+            response.tokens,
+          );
+
+          queryClient.clear();
+
+          set({
+            status:
+              "authenticated",
+
+            user:
+              response.user,
+          });
+        },
+
+      logout: async () => {
+        try {
+          /*
+           * Revoke the current FitSync
+           * backend session when online.
+           */
+          await logoutRequest();
+        } catch {
+          /*
+           * Local logout must still work
+           * when offline.
+           */
+        } finally {
+          await clearTokens();
+
+          queryClient.clear();
+
+          set({
+            status:
+              "unauthenticated",
+
+            user:
+              null,
+          });
+        }
+      },
+
+      invalidateSession: () => {
+        /*
+         * Called by the Axios auth
+         * invalidation event when the
+         * refresh credential is rejected.
+         */
+        queryClient.clear();
+
+        set({
+          status:
+            "unauthenticated",
+
+          user:
+            null,
+        });
+      },
+    };
+  });

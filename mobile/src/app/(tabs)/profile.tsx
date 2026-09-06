@@ -1,21 +1,50 @@
-import { Ionicons } from "@expo/vector-icons";
+import {
+  Ionicons,
+} from "@expo/vector-icons";
 
-import * as Haptics from "expo-haptics";
+import * as Haptics
+  from "expo-haptics";
 
-import { useState } from "react";
+import {
+  useState,
+} from "react";
 
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  Text,
+  View,
+} from "react-native";
 
-import { SafeAreaView } from "react-native-safe-area-context";
+import {
+  SafeAreaView,
+} from "react-native-safe-area-context";
 
-import { useAuthStore } from "@/features/auth/store";
+import {
+  signOutGoogleProvider,
+} from "@/features/auth/google";
+
+import {
+  useAuthStore,
+} from "@/features/auth/store";
 
 export default function ProfileScreen() {
-  const user = useAuthStore((state) => state.user);
+  const user =
+    useAuthStore(
+      (state) =>
+        state.user,
+    );
 
-  const logout = useAuthStore((state) => state.logout);
+  const logout =
+    useAuthStore(
+      (state) =>
+        state.logout,
+    );
 
-  const [loading, setLoading] = useState(false);
+  const [
+    loading,
+    setLoading,
+  ] = useState(false);
 
   async function handleLogout() {
     if (loading) {
@@ -25,13 +54,49 @@ export default function ProfileScreen() {
     setLoading(true);
 
     try {
-      await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+      await Haptics
+        .impactAsync(
+          Haptics
+            .ImpactFeedbackStyle
+            .Light,
+        );
 
+      /*
+       * First revoke/clear the actual
+       * FitSync session.
+       *
+       * This is the important logout.
+       */
       await logout();
+
+      /*
+       * Then clear Google's provider-side
+       * local state.
+       *
+       * This prevents the next Google
+       * sign-in from silently reusing the
+       * previous account where possible.
+       *
+       * signOutGoogleProvider() already
+       * swallows provider cleanup failures,
+       * so FitSync logout isn't dependent
+       * on Google succeeding.
+       */
+      await signOutGoogleProvider();
     } finally {
       setLoading(false);
     }
   }
+
+  const initial =
+    user?.display_name
+      ?.trim()
+      .charAt(0)
+      .toUpperCase() ??
+    user?.email
+      ?.charAt(0)
+      .toUpperCase() ??
+    "F";
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -40,20 +105,82 @@ export default function ProfileScreen() {
           You
         </Text>
 
+        <Text className="mt-2 text-[14px] text-white/40">
+          Your FitSync account.
+        </Text>
+
         <View className="mt-8 rounded-[28px] border border-white/10 bg-white/[0.04] p-6">
-          <View className="h-14 w-14 items-center justify-center rounded-full bg-white/10">
-            <Ionicons name="person" size={24} color="#FFFFFF" />
+          <View className="h-16 w-16 items-center justify-center rounded-full bg-white/10">
+            <Text className="text-[24px] font-extrabold text-white">
+              {initial}
+            </Text>
           </View>
 
-          <Text className="mt-5 text-lg font-bold text-white">
-            {user?.email}
-          </Text>
+          {user?.display_name ? (
+            <Text className="mt-5 text-[20px] font-extrabold tracking-[-0.5px] text-white">
+              {user.display_name}
+            </Text>
+          ) : (
+            <Text className="mt-5 text-[18px] font-bold text-white">
+              FitSync member
+            </Text>
+          )}
 
-          <View className="mt-3 flex-row items-center gap-2">
-            <Ionicons name="checkmark-circle" size={17} color="#22C55E" />
+          {user?.username ? (
+            <Text className="mt-1 text-[14px] text-white/40">
+              @{user.username}
+            </Text>
+          ) : null}
 
-            <Text className="text-sm text-white/45">Email verified</Text>
+          <View className="my-6 h-px bg-white/10" />
+
+          <View className="flex-row items-center gap-3">
+            <Ionicons
+              name="mail-outline"
+              size={19}
+              color="rgba(255,255,255,0.55)"
+            />
+
+            <Text
+              numberOfLines={1}
+              className="flex-1 text-[14px] text-white/70"
+            >
+              {user?.email}
+            </Text>
           </View>
+
+          <View className="mt-4 flex-row items-center gap-3">
+            <Ionicons
+              name={
+                user?.email_verified
+                  ? "checkmark-circle"
+                  : "alert-circle-outline"
+              }
+              size={19}
+              color={
+                user?.email_verified
+                  ? "#22C55E"
+                  : "#F59E0B"
+              }
+            />
+
+            <Text className="text-[14px] text-white/60">
+              {user?.email_verified
+                ? "Email verified"
+                : "Email verification pending"}
+            </Text>
+          </View>
+
+          {!user?.onboarding_complete ? (
+            <View className="mt-5 rounded-2xl bg-white/[0.05] px-4 py-3">
+              <Text className="text-[13px] leading-5 text-white/45">
+                Your FitSync profile
+                setup isn't complete
+                yet. We'll build that
+                in the next phase.
+              </Text>
+            </View>
+          ) : null}
         </View>
 
         <Pressable
@@ -63,17 +190,42 @@ export default function ProfileScreen() {
             void handleLogout();
           }}
           className="mt-5 min-h-[56px] flex-row items-center justify-center gap-2 rounded-2xl border border-red-400/20 bg-red-400/[0.06]"
-          style={{
-            opacity: loading ? 0.6 : 1,
-          }}
+          style={({
+            pressed,
+          }) => ({
+            opacity:
+              loading
+                ? 0.6
+                : pressed
+                  ? 0.8
+                  : 1,
+
+            transform: [
+              {
+                scale:
+                  !loading &&
+                  pressed
+                    ? 0.985
+                    : 1,
+              },
+            ],
+          })}
         >
           {loading ? (
-            <ActivityIndicator color="#F87171" />
+            <ActivityIndicator
+              color="#F87171"
+            />
           ) : (
             <>
-              <Ionicons name="log-out-outline" size={20} color="#F87171" />
+              <Ionicons
+                name="log-out-outline"
+                size={20}
+                color="#F87171"
+              />
 
-              <Text className="font-bold text-red-300">Log out</Text>
+              <Text className="font-bold text-red-300">
+                Log out
+              </Text>
             </>
           )}
         </Pressable>

@@ -72,3 +72,18 @@ class RefreshRequest(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class GoogleAuthRequest(ClientInfo):
+    id_token: str = Field(
+        min_length=100,
+        max_length=10_000,
+    )
+
+
+class GoogleAuthResponse(BaseModel):
+    user: UserResponse
+
+    tokens: TokenPair
+
+    is_new_user: bool

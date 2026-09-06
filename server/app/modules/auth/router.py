@@ -1,6 +1,8 @@
 from fastapi import (
     APIRouter,
+    HTTPException,
     Request,
+    status,
 )
 
 from app.db.mongo import DatabaseDep
@@ -12,11 +14,16 @@ from app.modules.auth.dependencies import (
     CurrentAuthDep,
     CurrentUserDep,
 )
+from app.modules.auth.google import (
+    verify_google_token,
+)
 from app.modules.auth.schemas import (
     EmailAuthResponse,
     EmailStartRequest,
     EmailStartResponse,
     EmailVerifyRequest,
+    GoogleAuthRequest,
+    GoogleAuthResponse,
     MessageResponse,
     RefreshRequest,
     TokenPair,
@@ -121,6 +128,43 @@ async def logout(
     )
 
     return MessageResponse(message=("Logged out successfully"))
+
+
+@router.post(
+    "/google",
+    response_model=GoogleAuthResponse,
+)
+async def google_auth(
+    payload: GoogleAuthRequest,
+    request: Request,
+    database: DatabaseDep,
+) -> GoogleAuthResponse:
+    try:
+        google_identity = await verify_google_token(payload.id_token)
+
+    except ValueError as error:
+        raise HTTPException(
+            status_code=(status.HTTP_401_UNAUTHORIZED),
+            detail=("Invalid Google credential"),
+        ) from error
+
+    (
+        user,
+        tokens,
+        is_new_user,
+    ) = await service.authenticate_with_google(
+        database,
+        google=google_identity,
+        device_name=(payload.device_name),
+        platform=(payload.platform),
+        user_agent=(request.headers.get("user-agent")),
+    )
+
+    return GoogleAuthResponse(
+        user=(UserResponse.from_document(user)),
+        tokens=tokens,
+        is_new_user=is_new_user,
+    )
 
 
 @router.get(

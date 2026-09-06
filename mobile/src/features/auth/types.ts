@@ -44,3 +44,11 @@ export interface EmailAuthResponse {
 
 export type AuthStatus =
   "booting" | "authenticated" | "unauthenticated" | "offline";
+
+export interface GoogleAuthResponse {
+  user: User;
+
+  tokens: TokenPair;
+
+  is_new_user: boolean;
+}

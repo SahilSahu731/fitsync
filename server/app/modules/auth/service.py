@@ -13,6 +13,9 @@ from app.modules.auth import (
 from app.modules.auth.email import (
     send_auth_code,
 )
+from app.modules.auth.google import (
+    GoogleIdentity,
+)
 from app.modules.auth.models import (
     AuthChallengeDocument,
     AuthIdentityDocument,
@@ -535,4 +538,212 @@ async def refresh_session(
         access_token=access_token,
         refresh_token=new_raw_token,
         expires_in=(settings.access_token_expire_minutes * 60),
+    )
+
+
+async def authenticate_with_google(
+    database: Database,
+    *,
+    google: GoogleIdentity,
+    device_name: str | None,
+    platform: str,
+    user_agent: str | None,
+) -> tuple[
+    UserDocument,
+    TokenPair,
+    bool,
+]:
+    now = utc_now()
+
+    identity = await auth_repository.get_identity(
+        database,
+        provider="google",
+        provider_subject=(google.subject),
+    )
+
+    if identity is not None:
+        user = await user_repository.get_user_by_id(
+            database,
+            identity["user_id"],
+        )
+
+        if user is None:
+            raise RuntimeError("Google identity references a missing FitSync user")
+        display_name = google.display_name if user["display_name"] is None else None
+
+        avatar_url = google.avatar_url if user["avatar_url"] is None else None
+
+        await user_repository.update_user_profile(
+            database,
+            user["_id"],
+            display_name=display_name,
+            avatar_url=avatar_url,
+            mark_email_verified=(google.email_authoritative),
+            timestamp=now,
+        )
+
+        if display_name is not None:
+            user["display_name"] = display_name
+
+        if avatar_url is not None:
+            user["avatar_url"] = avatar_url
+
+        if google.email_authoritative:
+            user["email_verified"] = True
+
+        user["last_seen_at"] = now
+
+        tokens = await create_auth_session(
+            database,
+            user=user,
+            device_name=device_name,
+            platform=platform,
+            user_agent=user_agent,
+        )
+
+        return (
+            user,
+            tokens,
+            False,
+        )
+
+    existing_user = await user_repository.get_user_by_email(
+        database,
+        google.email,
+    )
+
+    if existing_user is not None:
+        if not google.email_authoritative:
+            raise HTTPException(
+                status_code=(status.HTTP_409_CONFLICT),
+                detail={
+                    "code": ("GOOGLE_LINK_REQUIRES_EMAIL_VERIFICATION"),
+                    "message": (
+                        "Verify your email with FitSync before linking this Google account."
+                    ),
+                },
+            )
+
+        user = existing_user
+
+        display_name = google.display_name if user["display_name"] is None else None
+
+        avatar_url = google.avatar_url if user["avatar_url"] is None else None
+
+        await user_repository.update_user_profile(
+            database,
+            user["_id"],
+            display_name=display_name,
+            avatar_url=avatar_url,
+            mark_email_verified=True,
+            timestamp=now,
+        )
+
+        if display_name is not None:
+            user["display_name"] = display_name
+
+        if avatar_url is not None:
+            user["avatar_url"] = avatar_url
+
+        user["email_verified"] = True
+
+        user["last_seen_at"] = now
+
+        is_new_user = False
+
+    else:
+        user = {
+            "_id": ObjectId(),
+            "email": google.email,
+            "display_name": (google.display_name),
+            "username": None,
+            "avatar_url": (google.avatar_url),
+            "email_verified": (google.email_authoritative),
+            "onboarding_complete": False,
+            "created_at": now,
+            "updated_at": now,
+            "last_seen_at": now,
+        }
+
+        try:
+            await user_repository.insert_user(
+                database,
+                user,
+            )
+
+        except DuplicateKeyError:
+            existing_user = await user_repository.get_user_by_email(
+                database,
+                google.email,
+            )
+
+            if existing_user is None:
+                raise
+
+            if not google.email_authoritative:
+                raise HTTPException(
+                    status_code=(status.HTTP_409_CONFLICT),
+                    detail={
+                        "code": ("GOOGLE_LINK_REQUIRES_EMAIL_VERIFICATION"),
+                        "message": (
+                            "Verify your email with FitSync before linking this Google account."
+                        ),
+                    },
+                ) from None
+
+            user = existing_user
+
+            is_new_user = False
+
+        else:
+            is_new_user = True
+
+    google_identity: AuthIdentityDocument = {
+        "_id": ObjectId(),
+        "user_id": user["_id"],
+        "provider": "google",
+        "provider_subject": (google.subject),
+        "created_at": now,
+    }
+
+    try:
+        await auth_repository.insert_identity(
+            database,
+            google_identity,
+        )
+
+    except DuplicateKeyError as err:
+        linked_identity = await auth_repository.get_identity(
+            database,
+            provider="google",
+            provider_subject=(google.subject),
+        )
+
+        if linked_identity is None:
+            raise
+
+        linked_user = await user_repository.get_user_by_id(
+            database,
+            linked_identity["user_id"],
+        )
+
+        if linked_user is None:
+            raise RuntimeError("Google identity references a missing FitSync user") from err
+
+        user = linked_user
+
+        is_new_user = False
+
+    tokens = await create_auth_session(
+        database,
+        user=user,
+        device_name=device_name,
+        platform=platform,
+        user_agent=user_agent,
+    )
+
+    return (
+        user,
+        tokens,
+        is_new_user,
     )
