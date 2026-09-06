@@ -1,0 +1,49 @@
+# Dependencies and caches
+node_modules/
+.pnpm-store/
+.expo/
+.cache/
+.turbo/
+
+# Build output, coverage, and generated native projects
+dist/
+build/
+web-build/
+coverage/
+android/
+ios/
+.kotlin/
+
+# Generated declarations and bundled files
+expo-env.d.ts
+nativewind-env.d.ts
+*.tsbuildinfo
+*.generated.*
+*.min.js
+*.min.css
+*.map
+
+# Package-manager lockfiles
+pnpm-lock.yaml
+package-lock.json
+yarn.lock
+bun.lock
+bun.lockb
+
+# Local configuration, credentials, and logs
+.env
+.env.*
+*.pem
+*.key
+*.jks
+*.p8
+*.p12
+*.mobileprovision
+*.log
+
+# Binary assets and editor/agent metadata
+assets/
+.vscode/
+.idea/
+.claude/
+.codex/

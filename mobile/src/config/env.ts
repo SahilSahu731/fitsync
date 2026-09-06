@@ -1,5 +1,4 @@
-const rawApiUrl =
-  process.env.EXPO_PUBLIC_API_URL?.trim();
+const rawApiUrl = process.env.EXPO_PUBLIC_API_URL?.trim();
 
 if (!rawApiUrl) {
   throw new Error(

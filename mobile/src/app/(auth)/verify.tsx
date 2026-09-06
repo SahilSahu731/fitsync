@@ -1,3 +1,5 @@
+import { Ionicons } from "@expo/vector-icons";
+
 import * as Haptics from "expo-haptics";
 
 import { LinearGradient } from "expo-linear-gradient";
@@ -7,6 +9,7 @@ import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo, useState } from "react";
 
 import {
+  ActivityIndicator,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
@@ -21,20 +24,59 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
+import { startEmailAuth } from "@/features/auth/api";
+
 import { AuthBackButton } from "@/features/auth/components/auth-back-button";
 
 import { OtpInput } from "@/features/auth/components/otp-input";
 
+import { useAuthStore } from "@/features/auth/store";
+
+import { parseApiError } from "@/lib/api/errors";
+
 const backgroundImage = require("../../../assets/images/auth-background.jpg");
 
-const INITIAL_RESEND_SECONDS = 60;
+function parsePositiveNumber(
+  value: string | undefined,
+  fallback: number,
+): number {
+  if (!value) {
+    return fallback;
+  }
 
-function formatSeconds(seconds: number): string {
-  return seconds.toString().padStart(2, "0");
+  const parsed = Number(value);
+
+  if (!Number.isFinite(parsed) || parsed < 0) {
+    return fallback;
+  }
+
+  return Math.floor(parsed);
+}
+
+function formatDuration(totalSeconds: number): string {
+  const minutes = Math.floor(totalSeconds / 60);
+
+  const seconds = totalSeconds % 60;
+
+  return `${minutes.toString().padStart(2, "0")}:${seconds
+    .toString()
+    .padStart(2, "0")}`;
 }
 
 export default function VerifyEmailScreen() {
-  const params = useLocalSearchParams<{ email?: string }>();
+  const params = useLocalSearchParams<{
+    email?: string;
+
+    challengeId?: string;
+
+    resendAfter?: string;
+
+    expiresIn?: string;
+  }>();
+
+  const authenticateWithEmail = useAuthStore(
+    (state) => state.authenticateWithEmail,
+  );
 
   const email = useMemo(() => {
     if (typeof params.email !== "string") {
@@ -44,77 +86,177 @@ export default function VerifyEmailScreen() {
     return params.email.trim().toLowerCase();
   }, [params.email]);
 
+  const initialChallengeId =
+    typeof params.challengeId === "string" ? params.challengeId : "";
+
+  const initialResendSeconds = parsePositiveNumber(params.resendAfter, 60);
+
+  const initialExpiresSeconds = parsePositiveNumber(params.expiresIn, 600);
+
+  const [challengeId, setChallengeId] = useState(initialChallengeId);
+
   const [code, setCode] = useState("");
 
-  const [resendSeconds, setResendSeconds] = useState(INITIAL_RESEND_SECONDS);
+  const [verifying, setVerifying] = useState(false);
 
+  const [resendLoading, setResendLoading] = useState(false);
+
+  const [error, setError] = useState<string | null>(null);
+
+  const [resendSeconds, setResendSeconds] = useState(initialResendSeconds);
+
+  const [expiresSeconds, setExpiresSeconds] = useState(initialExpiresSeconds);
+
+  /*
+   * Protect against someone manually
+   * opening /verify without a challenge.
+   */
   useEffect(() => {
-    if (!email) {
+    if (!email || !challengeId) {
       router.replace("/email");
     }
-  }, [email]);
+  }, [email, challengeId]);
 
+  /*
+   * Resend countdown.
+   */
   useEffect(() => {
     if (resendSeconds <= 0) {
       return;
     }
 
-    const timeout = setTimeout(() => {
+    const timer = setTimeout(() => {
       setResendSeconds((current) => Math.max(current - 1, 0));
     }, 1_000);
 
     return () => {
-      clearTimeout(timeout);
+      clearTimeout(timer);
     };
   }, [resendSeconds]);
 
-  async function handleCodeComplete() {
-    await Haptics.selectionAsync();
-  }
-
-  async function handleVerify() {
-    if (code.length !== 6) {
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
-
+  /*
+   * Challenge expiry countdown.
+   *
+   * UX only.
+   *
+   * Backend remains the real source
+   * of truth for expiration.
+   */
+  useEffect(() => {
+    if (expiresSeconds <= 0) {
       return;
     }
 
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
+    const timer = setTimeout(() => {
+      setExpiresSeconds((current) => Math.max(current - 1, 0));
+    }, 1_000);
 
-    /*
-     * Auth 3 connects this to:
-     *
-     * POST /auth/email/verify
-     *
-     * Do NOT navigate anywhere yet.
-     */
-    console.log("OTP ready for backend verification:", code);
+    return () => {
+      clearTimeout(timer);
+    };
+  }, [expiresSeconds]);
+
+  async function verifyCode(verificationCode: string) {
+    if (verifying || expiresSeconds <= 0 || verificationCode.length !== 6) {
+      return;
+    }
+
+    setVerifying(true);
+
+    setError(null);
+
+    try {
+      /*
+       * REAL AUTHENTICATION.
+       *
+       * Backend:
+       * - verifies code
+       * - creates/fetches user
+       * - creates session
+       * - returns JWT + refresh token
+       *
+       * Store:
+       * - saves tokens
+       * - sets authenticated user
+       */
+      await authenticateWithEmail({
+        challengeId,
+
+        code: verificationCode,
+      });
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      /*
+       * DO NOT router.replace().
+       *
+       * Root Stack.Protected sees
+       * authenticated=true and
+       * automatically replaces the
+       * available navigation tree.
+       */
+    } catch (requestError) {
+      const parsed = parseApiError(requestError, "Unable to verify this code.");
+
+      setError(parsed.message);
+
+      setCode("");
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setVerifying(false);
+    }
   }
 
   async function handleResend() {
-    if (resendSeconds > 0) {
+    if (resendSeconds > 0 || resendLoading) {
       return;
     }
 
-    setCode("");
+    setResendLoading(true);
 
-    setResendSeconds(INITIAL_RESEND_SECONDS);
+    setError(null);
 
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    try {
+      const response = await startEmailAuth(email);
 
-    /*
-     * Auth 3 will call:
-     *
-     * POST /auth/email/start
-     */
-    console.log("Resend OTP for:", email);
+      /*
+       * New code means NEW challenge.
+       * Old challenge is now invalid.
+       */
+      setChallengeId(response.challenge_id);
+
+      setCode("");
+
+      setResendSeconds(response.resend_after);
+
+      setExpiresSeconds(response.expires_in);
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    } catch (requestError) {
+      const parsed = parseApiError(requestError, "Unable to resend the code.");
+
+      setError(parsed.message);
+
+      /*
+       * Backend may return an exact
+       * cooldown duration.
+       */
+      if (parsed.retryAfter !== undefined && parsed.retryAfter > 0) {
+        setResendSeconds(parsed.retryAfter);
+      }
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setResendLoading(false);
+    }
   }
 
-  if (!email) {
+  if (!email || !challengeId) {
     return null;
   }
 
-  const codeReady = code.length === 6;
+  const codeReady = code.length === 6 && expiresSeconds > 0 && !verifying;
 
   return (
     <View className="flex-1 bg-black">
@@ -142,11 +284,7 @@ export default function VerifyEmailScreen() {
         <SafeAreaView className="flex-1">
           <ScrollView
             className="flex-1"
-            contentContainerStyle={{
-              flexGrow: 1,
-              paddingHorizontal: 24,
-              paddingBottom: 24,
-            }}
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
             keyboardShouldPersistTaps="handled"
             keyboardDismissMode="on-drag"
             showsVerticalScrollIndicator={false}
@@ -155,15 +293,24 @@ export default function VerifyEmailScreen() {
               <AuthBackButton onPress={router.back} />
             </Animated.View>
 
+            <View className="h-6" />
+
             <Animated.View
               entering={FadeInDown.duration(520).springify().damping(19)}
-              className="mt-6"
             >
-              <Text className="text-[32px] font-extrabold leading-[38px] tracking-[-1px] text-white">
+              <View className="mb-5 h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
+                <Ionicons
+                  name="mail-unread-outline"
+                  size={22}
+                  color="#FFFFFF"
+                />
+              </View>
+
+              <Text className="max-w-[350px] text-[40px] font-extrabold leading-[44px] tracking-[-1.7px] text-white">
                 Check your inbox.
               </Text>
 
-              <Text className="mt-3 text-[15px] leading-6 text-white/65">
+              <Text className="mt-4 text-[15px] leading-6 text-white/65">
                 We sent a 6-digit code to
               </Text>
 
@@ -180,15 +327,44 @@ export default function VerifyEmailScreen() {
                 .delay(110)
                 .springify()
                 .damping(19)}
-              className="mt-6"
+              className="mt-8"
             >
               <OtpInput
                 value={code}
-                onChange={setCode}
-                onComplete={() => {
-                  void handleCodeComplete();
+                disabled={verifying || expiresSeconds <= 0}
+                error={Boolean(error)}
+                onChange={(value) => {
+                  setCode(value);
+
+                  if (error) {
+                    setError(null);
+                  }
+                }}
+                onComplete={(value) => {
+                  /*
+                   * Digit 6 immediately
+                   * submits the real code.
+                   */
+                  void verifyCode(value);
                 }}
               />
+
+              {error ? (
+                <View className="mt-3 flex-row items-start gap-2">
+                  <Ionicons
+                    name="alert-circle-outline"
+                    size={15}
+                    color="#F87171"
+                    style={{
+                      marginTop: 2,
+                    }}
+                  />
+
+                  <Text className="flex-1 text-[13px] leading-5 text-red-300">
+                    {error}
+                  </Text>
+                </View>
+              ) : null}
             </Animated.View>
 
             <Animated.View
@@ -197,26 +373,27 @@ export default function VerifyEmailScreen() {
             >
               <Pressable
                 accessibilityRole="button"
-                accessibilityState={{ disabled: !codeReady }}
                 disabled={!codeReady}
+                accessibilityState={{ disabled: !codeReady, busy: verifying }}
                 onPress={() => {
-                  void handleVerify();
+                  void verifyCode(code);
                 }}
-                cssInterop={false}
+                /*
+                 * IMPORTANT:
+                 *
+                 * className remains STATIC.
+                 *
+                 * Runtime state uses style
+                 * because of the NativeWind v4
+                 * bug you previously hit.
+                 */
+                className="min-h-[58px] items-center justify-center rounded-2xl px-5"
                 style={({ pressed }) => ({
-                  minHeight: 58,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  borderRadius: 16,
-                  paddingHorizontal: 20,
                   backgroundColor: codeReady
                     ? pressed
-                      ? "#1673D1"
-                      : "#208AEF"
-                    : "rgba(32, 138, 209, 0.7)",
-                  boxShadow: codeReady
-                    ? "0 0 18px rgba(32, 138, 239, 0.55)"
-                    : "none",
+                      ? "#1D4ED8"
+                      : "#2563EB"
+                    : "#1E3A8A",
 
                   transform: [
                     {
@@ -225,31 +402,60 @@ export default function VerifyEmailScreen() {
                   ],
                 })}
               >
-                <Text
-                  className="text-[18px] font-bold tracking-[-0.2px]"
-                  style={{
-                    color: codeReady ? "#FFFFFF" : "rgba(255, 255, 255, 0.6)",
-                  }}
-                >
-                  Verify code
-                </Text>
+                {verifying ? (
+                  <ActivityIndicator color="#FFFFFF" />
+                ) : (
+                  <Text
+                    className="text-[16px] font-bold tracking-[-0.2px]"
+                    style={{
+                      color: "#FFFFFF",
+                    }}
+                  >
+                    Verify code
+                  </Text>
+                )}
               </Pressable>
             </Animated.View>
 
             <Animated.View
               entering={FadeIn.duration(450).delay(280)}
-              className="mt-5 items-center"
+              className="mt-7 items-center"
             >
-              {resendSeconds > 0 ? (
+              {expiresSeconds <= 0 ? (
+                <Text className="mb-4 text-[13px] font-semibold text-red-300">
+                  This code has expired.
+                </Text>
+              ) : (
+                <Text className="mb-4 text-[12px] text-white/35">
+                  Code expires in{" "}
+                  <Text className="font-semibold text-white/55">
+                    {formatDuration(expiresSeconds)}
+                  </Text>
+                </Text>
+              )}
+
+              {resendLoading ? (
+                <View className="flex-row items-center gap-2">
+                  <ActivityIndicator
+                    size="small"
+                    color="rgba(255,255,255,0.65)"
+                  />
+
+                  <Text className="text-[13px] text-white/50">
+                    Sending new code...
+                  </Text>
+                </View>
+              ) : resendSeconds > 0 ? (
                 <Text className="text-[13px] text-white/45">
-                  Didn't get it? Resend in{" "}
+                  Didn't get it?{" "}
+                  <Text className="text-blue-400">Resend in </Text>
                   <Text className="font-bold text-white/70">
-                    00:
-                    {formatSeconds(resendSeconds)}
+                    {formatDuration(resendSeconds)}
                   </Text>
                 </Text>
               ) : (
                 <Pressable
+                  accessibilityRole="button"
                   hitSlop={10}
                   onPress={() => {
                     void handleResend();
@@ -262,6 +468,7 @@ export default function VerifyEmailScreen() {
               )}
 
               <Pressable
+                accessibilityRole="button"
                 hitSlop={10}
                 onPress={() => {
                   router.back();

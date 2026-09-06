@@ -26,7 +26,7 @@ async def ensure_indexes(
     await users.create_index(
         "username",
         unique=True,
-        name="uq_users_username",
+        name="uq_users_username_string_migration",
         partialFilterExpression={
             "username": {
                 "$type": "string",
@@ -91,16 +91,16 @@ async def ensure_indexes(
     await sessions.create_index(
         "expires_at",
         expireAfterSeconds=0,
-        name="ttl_sessions_expiry",
+        name="ttl_sessions_expires_at",
     )
 
     await refresh_tokens.create_index(
         "session_id",
-        name="idx_refresh_session",
+        name="idx_refresh_tokens_session",
     )
 
     await refresh_tokens.create_index(
         "expires_at",
         expireAfterSeconds=0,
-        name="ttl_refresh_expiry",
+        name="ttl_refresh_tokens_expires_at",
     )

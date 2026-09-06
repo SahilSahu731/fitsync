@@ -9,10 +9,12 @@ import { router } from "expo-router";
 import { useState } from "react";
 
 import {
+  ActivityIndicator,
   ImageBackground,
   KeyboardAvoidingView,
   Platform,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TextInput,
@@ -23,7 +25,11 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import Animated, { FadeIn, FadeInDown } from "react-native-reanimated";
 
+import { startEmailAuth } from "@/features/auth/api";
+
 import { AuthBackButton } from "@/features/auth/components/auth-back-button";
+
+import { parseApiError } from "@/lib/api/errors";
 
 const backgroundImage = require("../../../assets/images/auth-background.jpg");
 
@@ -34,6 +40,8 @@ export default function EmailAuthScreen() {
 
   const [error, setError] = useState<string | null>(null);
 
+  const [loading, setLoading] = useState(false);
+
   function handleEmailChange(value: string) {
     setEmail(value);
 
@@ -43,6 +51,10 @@ export default function EmailAuthScreen() {
   }
 
   async function handleContinue() {
+    if (loading) {
+      return;
+    }
+
     const normalizedEmail = email.trim().toLowerCase();
 
     if (!EMAIL_PATTERN.test(normalizedEmail)) {
@@ -53,15 +65,47 @@ export default function EmailAuthScreen() {
       return;
     }
 
-    await Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+    setLoading(true);
 
-    router.push({
-      pathname: "/verify",
+    setError(null);
 
-      params: {
-        email: normalizedEmail,
-      },
-    });
+    try {
+      /*
+       * REAL BACKEND REQUEST.
+       *
+       * This creates the Mongo
+       * auth challenge and sends
+       * the Resend email.
+       */
+      const response = await startEmailAuth(normalizedEmail);
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      router.push({
+        pathname: "/verify",
+
+        params: {
+          email: normalizedEmail,
+
+          challengeId: response.challenge_id,
+
+          resendAfter: String(response.resend_after),
+
+          expiresIn: String(response.expires_in),
+        },
+      });
+    } catch (requestError) {
+      const parsed = parseApiError(
+        requestError,
+        "Unable to send your verification code.",
+      );
+
+      setError(parsed.message);
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
@@ -84,16 +128,22 @@ export default function EmailAuthScreen() {
       />
 
       <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1"
       >
-        <SafeAreaView className="flex-1 mb-80">
-          <View className="flex-1 px-6 pb-5">
+        <SafeAreaView className="flex-1">
+          <ScrollView
+            className="flex-1"
+            contentContainerStyle={{ paddingHorizontal: 24, paddingBottom: 24 }}
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+          >
             <Animated.View entering={FadeIn.duration(350)} className="pt-3">
               <AuthBackButton onPress={router.back} />
             </Animated.View>
 
-            <View className="flex-1" />
+            <View className="h-6" />
 
             <Animated.View
               entering={FadeInDown.duration(520).springify().damping(19)}
@@ -107,8 +157,7 @@ export default function EmailAuthScreen() {
               </Text>
 
               <Text className="mt-4 max-w-[350px] text-[15px] leading-6 text-white/65">
-                No password needed. We'll send you a 6-digit code to verify your
-                email.
+                No password needed. We'll send you a 6-digit verification code.
               </Text>
             </Animated.View>
 
@@ -120,16 +169,12 @@ export default function EmailAuthScreen() {
               className="mt-8 gap-3"
             >
               <View
-                className={[
-                  "min-h-[60px]",
-                  "flex-row",
-                  "items-center",
-                  "rounded-2xl",
-                  "border",
-                  "bg-black/35",
-                  "px-4",
-                  error ? "border-red-400/70" : "border-white/20",
-                ].join(" ")}
+                className="min-h-[60px] flex-row items-center rounded-2xl border bg-black/35 px-4"
+                style={{
+                  borderColor: error
+                    ? "rgba(248,113,113,0.70)"
+                    : "rgba(255,255,255,0.20)",
+                }}
               >
                 <Ionicons
                   name="mail-outline"
@@ -139,6 +184,7 @@ export default function EmailAuthScreen() {
 
                 <TextInput
                   value={email}
+                  editable={!loading}
                   onChangeText={handleEmailChange}
                   placeholder="you@example.com"
                   placeholderTextColor="rgba(255,255,255,0.35)"
@@ -157,14 +203,19 @@ export default function EmailAuthScreen() {
               </View>
 
               {error ? (
-                <View className="flex-row items-center gap-2 px-1">
+                <View className="flex-row items-start gap-2 px-1">
                   <Ionicons
                     name="alert-circle-outline"
                     size={15}
                     color="#F87171"
+                    style={{
+                      marginTop: 2,
+                    }}
                   />
 
-                  <Text className="text-[13px] text-red-300">{error}</Text>
+                  <Text className="flex-1 text-[13px] leading-5 text-red-300">
+                    {error}
+                  </Text>
                 </View>
               ) : null}
             </Animated.View>
@@ -175,14 +226,22 @@ export default function EmailAuthScreen() {
             >
               <Pressable
                 accessibilityRole="button"
+                disabled={loading}
                 onPress={() => {
                   void handleContinue();
                 }}
-                className="min-h-[58px] items-center justify-center rounded-2xl bg-white px-5 active:scale-[0.985] active:bg-neutral-200"
+                className="min-h-[58px] items-center justify-center rounded-2xl bg-white px-5"
+                style={{
+                  opacity: loading ? 0.65 : 1,
+                }}
               >
-                <Text className="text-[16px] font-bold tracking-[-0.2px] text-neutral-950">
-                  Continue
-                </Text>
+                {loading ? (
+                  <ActivityIndicator color="#000000" />
+                ) : (
+                  <Text className="text-[16px] font-bold tracking-[-0.2px] text-neutral-950">
+                    Continue
+                  </Text>
+                )}
               </Pressable>
             </Animated.View>
 
@@ -195,7 +254,7 @@ export default function EmailAuthScreen() {
                 account messages.
               </Text>
             </Animated.View>
-          </View>
+          </ScrollView>
         </SafeAreaView>
       </KeyboardAvoidingView>
     </View>
