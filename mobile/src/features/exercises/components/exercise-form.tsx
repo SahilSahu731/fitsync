@@ -226,9 +226,7 @@ export function ExerciseForm({
     string | null
   >(null);
 
-  const existingMedia =
-    initial?.media ??
-    [];
+  const existingMedia = useMemo(() => initial?.media ?? [], [initial?.media]);
 
   const videoCount =
     useMemo(

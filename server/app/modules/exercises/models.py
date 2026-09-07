@@ -3,7 +3,6 @@ from typing import Literal, TypedDict
 
 from bson import ObjectId
 
-
 ExerciseSource = Literal[
     "SYSTEM",
     "CUSTOM",
@@ -112,17 +111,11 @@ class ExerciseDocument(
 
     description: str | None
 
-    primary_muscles: list[
-        MuscleGroup
-    ]
+    primary_muscles: list[MuscleGroup]
 
-    secondary_muscles: list[
-        MuscleGroup
-    ]
+    secondary_muscles: list[MuscleGroup]
 
-    equipment: list[
-        Equipment
-    ]
+    equipment: list[Equipment]
 
     mechanic: ExerciseMechanic
 
@@ -132,9 +125,7 @@ class ExerciseDocument(
 
     tips: list[str]
 
-    media: list[
-        ExerciseMediaDocument
-    ]
+    media: list[ExerciseMediaDocument]
 
     is_archived: bool
 

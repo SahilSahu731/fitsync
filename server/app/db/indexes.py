@@ -3,68 +3,84 @@ from typing import Any
 from pymongo import (
     ASCENDING,
     DESCENDING,
+    IndexModel,
 )
+from pymongo.asynchronous.collection import AsyncCollection
 from pymongo.asynchronous.database import (
     AsyncDatabase,
 )
+from pymongo.errors import OperationFailure
+
+
+async def ensure_index(
+    collection: AsyncCollection[dict[str, Any]],
+    keys: str | list[tuple[str, int]],
+    **options: Any,
+) -> None:
+    """Reuse equivalent indexes with legacy names without weakening constraints."""
+    try:
+        await collection.create_index(keys, **options)
+    except OperationFailure as error:
+        if error.code != 85:
+            raise
+
+        expected = dict(IndexModel(keys, **options).document)
+        indexes = await collection.index_information()
+
+        def definition(index: dict[str, Any]) -> dict[str, Any]:
+            result = dict(index)
+            key = result.pop("key")
+            result["key"] = list(key.items()) if isinstance(key, dict) else list(key)
+            # Server metadata and build options do not change index semantics.
+            for field in ("name", "v", "ns", "background"):
+                result.pop(field, None)
+            for field in ("unique", "sparse", "hidden"):
+                if result.get(field) is False:
+                    result.pop(field)
+            return result
+
+        if not any(definition(index) == definition(expected) for index in indexes.values()):
+            raise
 
 
 async def ensure_indexes(
-    database: AsyncDatabase[
-        dict[str, Any]
-    ],
+    database: AsyncDatabase[dict[str, Any]],
 ) -> None:
-    users = database[
-        "users"
-    ]
+    users = database["users"]
 
-    identities = database[
-        "auth_identities"
-    ]
+    identities = database["auth_identities"]
 
-    challenges = database[
-        "auth_challenges"
-    ]
+    challenges = database["auth_challenges"]
 
-    sessions = database[
-        "sessions"
-    ]
+    sessions = database["sessions"]
 
-    refresh_tokens = database[
-        "refresh_tokens"
-    ]
+    refresh_tokens = database["refresh_tokens"]
 
-    exercises = database[
-        "exercises"
-    ]
+    exercises = database["exercises"]
 
-    templates = database[
-        "workout_templates"
-    ]
+    templates = database["workout_templates"]
 
     # USERS
 
-    await users.create_index(
+    await ensure_index(
+        users,
         "email",
         unique=True,
         name="uq_users_email",
     )
 
-    await users.create_index(
+    await ensure_index(
+        users,
         "username",
         unique=True,
         name="uq_users_username",
-        partialFilterExpression={
-            "username": {
-                "$type":
-                    "string",
-            }
-        },
+        partialFilterExpression={"username": {"$type": "string"}},
     )
 
     # AUTH IDENTITIES
 
-    await identities.create_index(
+    await ensure_index(
+        identities,
         [
             (
                 "provider",
@@ -76,28 +92,26 @@ async def ensure_indexes(
             ),
         ],
         unique=True,
-        name=(
-            "uq_auth_identity_"
-            "provider_subject"
-        ),
+        name=("uq_auth_identity_provider_subject"),
     )
 
-    await identities.create_index(
+    await ensure_index(
+        identities,
         "user_id",
         name="idx_auth_identity_user",
     )
 
     # AUTH CHALLENGES
 
-    await challenges.create_index(
+    await ensure_index(
+        challenges,
         "expires_at",
         expireAfterSeconds=0,
-        name=(
-            "ttl_auth_challenge_expiry"
-        ),
+        name=("ttl_auth_challenge_expiry"),
     )
 
-    await challenges.create_index(
+    await ensure_index(
+        challenges,
         [
             (
                 "email",
@@ -108,15 +122,13 @@ async def ensure_indexes(
                 DESCENDING,
             ),
         ],
-        name=(
-            "idx_auth_challenge_"
-            "email_created"
-        ),
+        name=("idx_auth_challenge_email_created"),
     )
 
     # SESSIONS
 
-    await sessions.create_index(
+    await ensure_index(
+        sessions,
         [
             (
                 "user_id",
@@ -127,12 +139,11 @@ async def ensure_indexes(
                 ASCENDING,
             ),
         ],
-        name=(
-            "idx_sessions_user_revoked"
-        ),
+        name=("idx_sessions_user_revoked"),
     )
 
-    await sessions.create_index(
+    await ensure_index(
+        sessions,
         "expires_at",
         expireAfterSeconds=0,
         name="ttl_sessions_expiry",
@@ -140,12 +151,14 @@ async def ensure_indexes(
 
     # REFRESH TOKENS
 
-    await refresh_tokens.create_index(
+    await ensure_index(
+        refresh_tokens,
         "session_id",
         name="idx_refresh_session",
     )
 
-    await refresh_tokens.create_index(
+    await ensure_index(
+        refresh_tokens,
         "expires_at",
         expireAfterSeconds=0,
         name="ttl_refresh_expiry",
@@ -153,7 +166,8 @@ async def ensure_indexes(
 
     # EXERCISES
 
-    await exercises.create_index(
+    await ensure_index(
+        exercises,
         [
             (
                 "normalized_name",
@@ -164,12 +178,11 @@ async def ensure_indexes(
                 ASCENDING,
             ),
         ],
-        name=(
-            "idx_exercises_name_cursor"
-        ),
+        name=("idx_exercises_name_cursor"),
     )
 
-    await exercises.create_index(
+    await ensure_index(
+        exercises,
         [
             (
                 "source",
@@ -184,26 +197,23 @@ async def ensure_indexes(
                 ASCENDING,
             ),
         ],
-        name=(
-            "idx_exercises_visibility"
-        ),
+        name=("idx_exercises_visibility"),
     )
 
-    await exercises.create_index(
+    await ensure_index(
+        exercises,
         "primary_muscles",
-        name=(
-            "idx_exercises_primary_muscles"
-        ),
+        name=("idx_exercises_primary_muscles"),
     )
 
-    await exercises.create_index(
+    await ensure_index(
+        exercises,
         "equipment",
-        name=(
-            "idx_exercises_equipment"
-        ),
+        name=("idx_exercises_equipment"),
     )
 
-    await exercises.create_index(
+    await ensure_index(
+        exercises,
         [
             (
                 "owner_user_id",
@@ -216,20 +226,47 @@ async def ensure_indexes(
         ],
         unique=True,
         partialFilterExpression={
-            "source":
-                "CUSTOM",
-
-            "is_archived":
-                False,
+            "source": "CUSTOM",
+            "is_archived": False,
         },
-        name=(
-            "uq_custom_exercise_name"
-        ),
+        name=("uq_custom_exercise_name"),
     )
 
     # WORKOUT TEMPLATES
 
-    await templates.create_index(
+    workout_sessions = database["workout_sessions"]
+
+    await ensure_index(
+        workout_sessions,
+        [
+            (
+                "user_id",
+                ASCENDING,
+            ),
+            (
+                "status",
+                ASCENDING,
+            ),
+        ],
+        name="idx_workout_session_active",
+    )
+
+    await ensure_index(
+        workout_sessions,
+        [
+            (
+                "user_id",
+                ASCENDING,
+            ),
+            (
+                "completed_at",
+                DESCENDING,
+            ),
+        ],
+        name="idx_workout_history",
+    )
+    await ensure_index(
+        templates,
         [
             (
                 "user_id",
@@ -244,7 +281,5 @@ async def ensure_indexes(
                 DESCENDING,
             ),
         ],
-        name=(
-            "idx_templates_user_active"
-        ),
+        name=("idx_templates_user_active"),
     )

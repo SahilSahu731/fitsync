@@ -2,10 +2,7 @@ from typing import Literal
 
 from pydantic import BaseModel
 
-
-MediaPurpose = Literal[
-    "EXERCISE_MEDIA",
-]
+MediaPurpose = Literal["EXERCISE_MEDIA",]
 
 MediaResourceType = Literal[
     "image",

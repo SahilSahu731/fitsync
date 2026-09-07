@@ -42,7 +42,7 @@ class Settings(BaseSettings):
     auth_email_from: str = "FitSync <login@auth.sahillsahu.com>"
 
     google_web_client_id: str
-    
+
     cloudinary_cloud_name: str
 
     cloudinary_api_key: str

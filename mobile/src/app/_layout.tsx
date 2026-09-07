@@ -1,51 +1,117 @@
 import "../../global.css";
 
-import { Stack } from "expo-router";
+import {
+  Stack,
+} from "expo-router";
 
-import * as SplashScreen from "expo-splash-screen";
+import * as SplashScreen
+  from "expo-splash-screen";
 
-import { StatusBar } from "expo-status-bar";
+import {
+  StatusBar,
+} from "expo-status-bar";
 
-import { useEffect } from "react";
+import {
+  useEffect,
+} from "react";
 
-import { subscribeToAuthInvalidation } from "@/features/auth/auth-events";
+import {
+  subscribeToAuthInvalidation,
+} from "@/features/auth/auth-events";
 
-import { BootstrapError } from "@/features/auth/components/bootstrap-error";
+import {
+  BootstrapError,
+} from "@/features/auth/components/bootstrap-error";
 
-import { useAuthStore } from "@/features/auth/store";
+import {
+  useAuthStore,
+} from "@/features/auth/store";
 
-import { AppProvider } from "@/providers/app-provider";
+import {
+  AppProvider,
+} from "@/providers/app-provider";
 
-void SplashScreen.preventAutoHideAsync();
+
+void SplashScreen
+  .preventAutoHideAsync();
+
 
 function RootNavigator() {
-  const status = useAuthStore((state) => state.status);
+  const status =
+    useAuthStore(
+      (
+        state,
+      ) =>
+        state.status,
+    );
 
-  const user = useAuthStore((state) => state.user);
+  const user =
+    useAuthStore(
+      (
+        state,
+      ) =>
+        state.user,
+    );
 
-  const bootstrap = useAuthStore((state) => state.bootstrap);
+  const bootstrap =
+    useAuthStore(
+      (
+        state,
+      ) =>
+        state.bootstrap,
+    );
 
-  const invalidateSession = useAuthStore((state) => state.invalidateSession);
+  const invalidateSession =
+    useAuthStore(
+      (
+        state,
+      ) =>
+        state
+          .invalidateSession,
+    );
 
-  useEffect(() => {
-    const unsubscribe = subscribeToAuthInvalidation(invalidateSession);
+  useEffect(
+    () => {
+      const unsubscribe =
+        subscribeToAuthInvalidation(
+          invalidateSession,
+        );
 
-    void bootstrap();
+      void bootstrap();
 
-    return unsubscribe;
-  }, [bootstrap, invalidateSession]);
+      return unsubscribe;
+    },
+    [
+      bootstrap,
+      invalidateSession,
+    ],
+  );
 
-  useEffect(() => {
-    if (status !== "booting") {
-      SplashScreen.hide();
-    }
-  }, [status]);
+  useEffect(
+    () => {
+      if (
+        status !==
+        "booting"
+      ) {
+        SplashScreen.hide();
+      }
+    },
+    [
+      status,
+    ],
+  );
 
-  if (status === "booting") {
+  if (
+    status ===
+    "booting"
+  ) {
     return null;
   }
 
-  if (status === "offline") {
+  if (
+    status ===
+    "offline"
+  ) {
     return (
       <BootstrapError
         onRetry={() => {
@@ -55,40 +121,89 @@ function RootNavigator() {
     );
   }
 
-  const authenticated = status === "authenticated";
+  const authenticated =
+    status ===
+    "authenticated";
 
-  const needsOnboarding = authenticated && user?.onboarding_complete === false;
+  const needsOnboarding =
+    authenticated &&
+    user
+      ?.onboarding_complete ===
+      false;
 
-  const appReady = authenticated && user?.onboarding_complete === true;
+  const appReady =
+    authenticated &&
+    user
+      ?.onboarding_complete ===
+      true;
 
   return (
     <>
-      <StatusBar style="light" />
+      <StatusBar
+        style="light"
+      />
 
       <Stack
         screenOptions={{
-          headerShown: false,
+          headerShown:
+            false,
 
           contentStyle: {
-            backgroundColor: "#080808",
+            backgroundColor:
+              "#080808",
           },
         }}
       >
-        <Stack.Protected guard={!authenticated}>
-          <Stack.Screen name="(auth)" />
+        <Stack.Protected
+          guard={
+            !authenticated
+          }
+        >
+          <Stack.Screen
+            name="(auth)"
+          />
         </Stack.Protected>
 
-        <Stack.Protected guard={needsOnboarding}>
-          <Stack.Screen name="(onboarding)" />
+        <Stack.Protected
+          guard={
+            needsOnboarding
+          }
+        >
+          <Stack.Screen
+            name="(onboarding)"
+          />
         </Stack.Protected>
 
-        <Stack.Protected guard={appReady}>
-          <Stack.Screen name="(tabs)" />
+        <Stack.Protected
+          guard={
+            appReady
+          }
+        >
+          <Stack.Screen
+            name="(tabs)"
+          />
+
+          <Stack.Screen
+            name="exercises"
+          />
+
+          <Stack.Screen
+            name="workout-templates"
+          />
+
+          <Stack.Screen
+            name="workouts"
+          />
+
+          <Stack.Screen
+            name="workout-history"
+          />
         </Stack.Protected>
       </Stack>
     </>
   );
 }
+
 
 export default function RootLayout() {
   return (

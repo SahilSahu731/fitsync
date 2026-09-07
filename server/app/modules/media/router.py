@@ -11,7 +11,6 @@ from app.modules.media.service import (
     create_upload_signature,
 )
 
-
 router = APIRouter(
     prefix="/media",
     tags=[
@@ -29,14 +28,8 @@ async def create_signature(
     user: CurrentUserDep,
 ) -> UploadSignatureResponse:
     result = create_upload_signature(
-        user_id=str(
-            user["_id"]
-        ),
-        resource_type=(
-            payload.resource_type
-        ),
+        user_id=str(user["_id"]),
+        resource_type=(payload.resource_type),
     )
 
-    return UploadSignatureResponse(
-        **result
-    )
+    return UploadSignatureResponse(**result)

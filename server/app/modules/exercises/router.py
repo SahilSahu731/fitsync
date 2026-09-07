@@ -1,5 +1,3 @@
-from typing import Literal
-
 from fastapi import (
     APIRouter,
     Query,
@@ -26,7 +24,6 @@ from app.modules.exercises.schemas import (
     ExerciseResponse,
     ExerciseUpdateRequest,
 )
-
 
 router = APIRouter(
     prefix="/exercises",
@@ -73,12 +70,9 @@ async def list_exercises(
 
     return ExerciseListResponse(
         items=[
-            ExerciseResponse
-            .from_document(
+            ExerciseResponse.from_document(
                 exercise,
-                current_user_id=(
-                    user["_id"]
-                ),
+                current_user_id=(user["_id"]),
             )
             for exercise in exercises
         ],
@@ -95,12 +89,10 @@ async def get_exercise(
     database: DatabaseDep,
     user: CurrentUserDep,
 ) -> ExerciseResponse:
-    exercise = (
-        await service.get_exercise(
-            database,
-            exercise_id=exercise_id,
-            user_id=user["_id"],
-        )
+    exercise = await service.get_exercise(
+        database,
+        exercise_id=exercise_id,
+        user_id=user["_id"],
     )
 
     return ExerciseResponse.from_document(
@@ -119,13 +111,10 @@ async def create_exercise(
     database: DatabaseDep,
     user: CurrentUserDep,
 ) -> ExerciseResponse:
-    exercise = (
-        await service
-        .create_custom_exercise(
-            database,
-            user_id=user["_id"],
-            payload=payload,
-        )
+    exercise = await service.create_custom_exercise(
+        database,
+        user_id=user["_id"],
+        payload=payload,
     )
 
     return ExerciseResponse.from_document(
@@ -144,14 +133,11 @@ async def update_exercise(
     database: DatabaseDep,
     user: CurrentUserDep,
 ) -> ExerciseResponse:
-    exercise = (
-        await service
-        .update_custom_exercise(
-            database,
-            exercise_id=exercise_id,
-            user_id=user["_id"],
-            payload=payload,
-        )
+    exercise = await service.update_custom_exercise(
+        database,
+        exercise_id=exercise_id,
+        user_id=user["_id"],
+        payload=payload,
     )
 
     return ExerciseResponse.from_document(
@@ -175,6 +161,4 @@ async def archive_exercise(
         user_id=user["_id"],
     )
 
-    return ExerciseArchiveResponse(
-        message="Exercise archived."
-    )
+    return ExerciseArchiveResponse(message="Exercise archived.")

@@ -63,7 +63,8 @@
     "web": "expo start --web",
     "lint": "expo lint",
     "format": "prettier --write .",
-    "format:check": "prettier --check ."
+    "format:check": "prettier --check .",
+    "postinstall": "node scripts/patch-expo-router.cjs"
   },
   "private": true,
   "expo": {
