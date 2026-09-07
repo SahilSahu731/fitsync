@@ -387,7 +387,7 @@ export default function VerifyEmailScreen() {
                  * because of the NativeWind v4
                  * bug you previously hit.
                  */
-                className="min-h-[58px] items-center bg-blue-500 justify-center rounded-2xl px-5"
+                className="min-h-[58px] items-center justify-center rounded-2xl bg-blue-500 px-5"
                 style={({ pressed }) => ({
                   transform: [
                     {

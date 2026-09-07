@@ -1,33 +1,16 @@
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-import {
-  router,
-} from "expo-router";
+import { router } from "expo-router";
 
-import {
-  Image,
-  Text,
-  View,
-} from "react-native";
+import { Image, Text, View } from "react-native";
 
-import {
-  SafeAreaView,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  SettingsRow,
-} from "@/features/profile/components/settings-row";
+import { SettingsRow } from "@/features/profile/components/settings-row";
 
-import {
-  useAuthStore,
-} from "@/features/auth/store";
+import { useAuthStore } from "@/features/auth/store";
 
-
-function prettyGoal(
-  value: string | null | undefined,
-): string {
+function prettyGoal(value: string | null | undefined): string {
   if (!value) {
     return "Not set";
   }
@@ -35,31 +18,17 @@ function prettyGoal(
   return value
     .toLowerCase()
     .split("_")
-    .map(
-      (part) =>
-        part.charAt(0).toUpperCase() +
-        part.slice(1),
-    )
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }
 
-
 export default function ProfileScreen() {
-  const user =
-    useAuthStore(
-      (state) =>
-        state.user,
-    );
+  const user = useAuthStore((state) => state.user);
 
   const initial =
-    user?.display_name
-      ?.charAt(0)
-      .toUpperCase() ??
-    user?.email
-      ?.charAt(0)
-      .toUpperCase() ??
+    user?.display_name?.charAt(0).toUpperCase() ??
+    user?.email?.charAt(0).toUpperCase() ??
     "F";
-
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -72,8 +41,7 @@ export default function ProfileScreen() {
           {user?.avatar_url ? (
             <Image
               source={{
-                uri:
-                  user.avatar_url,
+                uri: user.avatar_url,
               }}
               className="h-[72px] w-[72px] rounded-full bg-white/10"
             />
@@ -87,8 +55,7 @@ export default function ProfileScreen() {
 
           <View className="ml-4 flex-1">
             <Text className="text-[22px] font-extrabold tracking-[-0.5px] text-white">
-              {user?.display_name ??
-                "FitSync member"}
+              {user?.display_name ?? "FitSync member"}
             </Text>
 
             {user?.username ? (
@@ -106,9 +73,7 @@ export default function ProfileScreen() {
             </Text>
 
             <Text className="mt-2 text-[14px] font-bold text-white">
-              {prettyGoal(
-                user?.fitness_goal
-              )}
+              {prettyGoal(user?.fitness_goal)}
             </Text>
           </View>
 
@@ -118,9 +83,7 @@ export default function ProfileScreen() {
             </Text>
 
             <Text className="mt-2 text-[14px] font-bold text-white">
-              {user?.weekly_workout_target ??
-                3}{" "}
-              workouts
+              {user?.weekly_workout_target ?? 3} workouts
             </Text>
           </View>
         </View>
@@ -131,9 +94,7 @@ export default function ProfileScreen() {
             title="Edit profile"
             subtitle="Name and username"
             onPress={() => {
-              router.push(
-                "/profile/edit"
-              );
+              router.push("/profile/edit");
             }}
           />
 
@@ -155,20 +116,14 @@ export default function ProfileScreen() {
             title="Account"
             subtitle="Email, security and account controls"
             onPress={() => {
-              router.push(
-                "/profile/account"
-              );
+              router.push("/profile/account");
             }}
           />
         </View>
 
         <View className="mt-auto pb-6 pt-8">
           <View className="flex-row items-center justify-center gap-2">
-            <Ionicons
-              name="checkmark-circle"
-              size={14}
-              color="#22C55E"
-            />
+            <Ionicons name="checkmark-circle" size={14} color="#22C55E" />
 
             <Text className="text-[11px] text-white/25">
               FitSync account active

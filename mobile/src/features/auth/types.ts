@@ -6,14 +6,9 @@ export type FitnessGoal =
   | "IMPROVE_ENDURANCE"
   | "OTHER";
 
-export type ExperienceLevel =
-  | "BEGINNER"
-  | "INTERMEDIATE"
-  | "ADVANCED";
+export type ExperienceLevel = "BEGINNER" | "INTERMEDIATE" | "ADVANCED";
 
-export type WeightUnit =
-  | "KG"
-  | "LB";
+export type WeightUnit = "KG" | "LB";
 
 export interface User {
   id: string;
@@ -32,8 +27,7 @@ export interface User {
 
   fitness_goal: FitnessGoal | null;
 
-  experience_level:
-    ExperienceLevel | null;
+  experience_level: ExperienceLevel | null;
 
   weight_unit: WeightUnit;
 
@@ -77,7 +71,4 @@ export interface GoogleAuthResponse {
 }
 
 export type AuthStatus =
-  | "booting"
-  | "authenticated"
-  | "unauthenticated"
-  | "offline";
+  "booting" | "authenticated" | "unauthenticated" | "offline";

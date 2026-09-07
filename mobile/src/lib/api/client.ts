@@ -1,4 +1,9 @@
-import { create, isAxiosError, type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import {
+  create,
+  isAxiosError,
+  type AxiosError,
+  type InternalAxiosRequestConfig,
+} from "axios";
 
 import { env } from "@/config/env";
 

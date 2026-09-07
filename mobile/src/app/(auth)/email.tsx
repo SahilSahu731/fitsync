@@ -157,7 +157,8 @@ export default function EmailAuthScreen() {
               </Text>
 
               <Text className="mt-4 max-w-[350px] text-[15px] leading-6 text-white/65">
-                No password needed. We&apos;ll send you a 6-digit verification code.
+                No password needed. We&apos;ll send you a 6-digit verification
+                code.
               </Text>
             </Animated.View>
 
@@ -250,8 +251,8 @@ export default function EmailAuthScreen() {
               className="mt-5"
             >
               <Text className="text-center text-[12px] leading-5 text-white/40">
-                We&apos;ll only use your email for your FitSync account and important
-                account messages.
+                We&apos;ll only use your email for your FitSync account and
+                important account messages.
               </Text>
             </Animated.View>
           </ScrollView>

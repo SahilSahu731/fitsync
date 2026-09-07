@@ -1,8 +1,4 @@
-import {
-  Text,
-  View,
-} from "react-native";
-
+import { Text, View } from "react-native";
 
 interface Props {
   step: number;
@@ -10,11 +6,7 @@ interface Props {
   total: number;
 }
 
-
-export function OnboardingProgress({
-  step,
-  total,
-}: Props) {
+export function OnboardingProgress({ step, total }: Props) {
   return (
     <View>
       <View className="flex-row items-center justify-between">
@@ -31,8 +23,7 @@ export function OnboardingProgress({
         <View
           className="h-full rounded-full bg-brand"
           style={{
-            width:
-              `${(step / total) * 100}%`,
+            width: `${(step / total) * 100}%`,
           }}
         />
       </View>

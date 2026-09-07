@@ -11,10 +11,7 @@ async function getGoogleProvider(): Promise<GoogleProvider> {
 
   // Loading the native package during route discovery crashes Expo Go and
   // development builds that do not yet include NitroModules.
-  if (
-    Platform.OS === "web" ||
-    !TurboModuleRegistry.get("NitroModules")
-  ) {
+  if (Platform.OS === "web" || !TurboModuleRegistry.get("NitroModules")) {
     throw new Error(
       "Google Sign-In requires a FitSync development build with native Google Sign-In support. Use email sign-in in this app, or install a rebuilt development app.",
     );
@@ -40,8 +37,7 @@ export type GoogleSignInResult =
       type: "cancelled";
     };
 
-export async function startGoogleSignIn():
-  Promise<GoogleSignInResult> {
+export async function startGoogleSignIn(): Promise<GoogleSignInResult> {
   const {
     GoogleOneTapSignIn,
     isCancelledResponse,
@@ -59,110 +55,67 @@ export async function startGoogleSignIn():
      * iOS:
      * harmless no-op.
      */
-    await GoogleOneTapSignIn
-      .checkPlayServices();
+    await GoogleOneTapSignIn.checkPlayServices();
 
     /*
      * 1. Try saved / previous credential.
      */
-    let response =
-      await GoogleOneTapSignIn
-        .signIn();
+    let response = await GoogleOneTapSignIn.signIn();
 
     /*
      * 2. If nothing is saved,
      * show account/create flow.
      */
-    if (
-      isNoSavedCredentialFoundResponse(
-        response,
-      )
-    ) {
-      response =
-        await GoogleOneTapSignIn
-          .createAccount();
+    if (isNoSavedCredentialFoundResponse(response)) {
+      response = await GoogleOneTapSignIn.createAccount();
     }
 
     /*
      * 3. Final explicit Google
      * sign-in UI fallback.
      */
-    if (
-      isNoSavedCredentialFoundResponse(
-        response,
-      )
-    ) {
-      response =
-        await GoogleOneTapSignIn
-          .presentExplicitSignIn();
+    if (isNoSavedCredentialFoundResponse(response)) {
+      response = await GoogleOneTapSignIn.presentExplicitSignIn();
     }
 
-    if (
-      isCancelledResponse(
-        response,
-      )
-    ) {
+    if (isCancelledResponse(response)) {
       return {
-        type:
-          "cancelled",
+        type: "cancelled",
       };
     }
 
-    if (
-      !isSuccessResponse(
-        response,
-      )
-    ) {
-      throw new Error(
-        "Google Sign-In did not return a credential.",
-      );
+    if (!isSuccessResponse(response)) {
+      throw new Error("Google Sign-In did not return a credential.");
     }
 
-    const idToken =
-      response.data.idToken;
+    const idToken = response.data.idToken;
 
     if (!idToken) {
-      throw new Error(
-        "Google did not return an ID token.",
-      );
+      throw new Error("Google did not return an ID token.");
     }
 
     return {
-      type:
-        "success",
+      type: "success",
 
       idToken,
     };
   } catch (error) {
-    if (
-      isErrorWithCode(
-        error,
-      )
-    ) {
-      switch (
-        error.code
-      ) {
-        case statusCodes
-          .SIGN_IN_CANCELLED:
+    if (isErrorWithCode(error)) {
+      switch (error.code) {
+        case statusCodes.SIGN_IN_CANCELLED:
           return {
-            type:
-              "cancelled",
+            type: "cancelled",
           };
 
-        case statusCodes
-          .PLAY_SERVICES_NOT_AVAILABLE:
+        case statusCodes.PLAY_SERVICES_NOT_AVAILABLE:
           throw new Error(
             "Google Play Services is unavailable on this device.",
           );
 
-        case statusCodes
-          .IN_PROGRESS:
-          throw new Error(
-            "Google Sign-In is already in progress.",
-          );
+        case statusCodes.IN_PROGRESS:
+          throw new Error("Google Sign-In is already in progress.");
 
-        case statusCodes
-          .DEVELOPER_ERROR:
+        case statusCodes.DEVELOPER_ERROR:
           throw new Error(
             "Google Sign-In is not configured correctly for this build.",
           );
@@ -173,8 +126,7 @@ export async function startGoogleSignIn():
   }
 }
 
-export async function signOutGoogleProvider():
-  Promise<void> {
+export async function signOutGoogleProvider(): Promise<void> {
   try {
     if (!googleProvider) return;
     await googleProvider.GoogleOneTapSignIn.signOut();

@@ -1,4 +1,10 @@
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from "react-native";
+import {
+  ActivityIndicator,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+} from "react-native";
 
 interface ActionButtonProps {
   title: string;

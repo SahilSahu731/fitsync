@@ -19,8 +19,8 @@ export default function HomeScreen() {
         </Text>
 
         <Text className="mt-4 max-w-[340px] text-[15px] leading-6 text-white/55">
-          Your FitSync account is ready. We&apos;ll build your training experience
-          from here.
+          Your FitSync account is ready. We&apos;ll build your training
+          experience from here.
         </Text>
 
         <View className="mt-10 rounded-[28px] border border-white/10 bg-white/[0.04] p-5">

@@ -17,6 +17,7 @@
     "expo-glass-effect": "~57.0.1",
     "expo-haptics": "~57.0.2",
     "expo-image": "~57.0.4",
+    "expo-image-picker": "~57.0.16",
     "expo-linear-gradient": "~57.0.1",
     "expo-linking": "~57.0.9",
     "expo-router": "~57.0.19",
@@ -25,6 +26,7 @@
     "expo-status-bar": "~57.0.1",
     "expo-symbols": "~57.0.2",
     "expo-system-ui": "~57.0.3",
+    "expo-video": "~57.0.3",
     "expo-web-browser": "~57.0.2",
     "nativewind": "4.2.6",
     "react": "19.2.3",
@@ -67,7 +69,9 @@
   "expo": {
     "doctor": {
       "reactNativeDirectoryCheck": {
-        "exclude": ["react-native-nitro-google-signin"]
+        "exclude": [
+          "react-native-nitro-google-signin"
+        ]
       }
     }
   }

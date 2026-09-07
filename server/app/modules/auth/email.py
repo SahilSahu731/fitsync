@@ -10,91 +10,102 @@ async def send_auth_code(
 ) -> None:
     resend.api_key = settings.resend_api_key.get_secret_value()
 
-    params: resend.Emails.SendParams = {
-        "from": (settings.auth_email_from),
-        "to": [
-            email,
-        ],
-        "subject": (f"{code} is your FitSync verification code"),
-        "html": f"""
+    text_body = (
+        f"Your FitSync verification code is: {code}\n\n"
+        f"This code expires in {settings.otp_expire_minutes} minutes. "
+        f"If you didn't request this code, you can safely ignore this email.\n\n"
+        f"— The FitSync Team"
+    )
+
+    html_body = f"""\
 <!doctype html>
 <html>
   <body style="
     margin:0;
     padding:0;
-    background:#080808;
-    font-family:
-      -apple-system,
-      BlinkMacSystemFont,
-      'Segoe UI',
-      sans-serif;
+    background:#f4f4f5;
+    font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;
   ">
-    <div style="
-      max-width:520px;
-      margin:0 auto;
-      padding:48px 24px;
-    ">
+    <div style="max-width:480px;margin:0 auto;padding:40px 24px;">
+
       <div style="
-        color:#ffffff;
-        font-size:24px;
-        font-weight:800;
-        margin-bottom:36px;
+        color:#18181b;
+        font-size:18px;
+        font-weight:600;
+        margin-bottom:24px;
       ">
         FitSync
       </div>
 
       <div style="
-        background:#111111;
-        border:1px solid #262626;
-        border-radius:20px;
+        background:#ffffff;
+        border:1px solid #e4e4e7;
+        border-radius:8px;
         padding:32px;
       ">
-        <div style="
-          color:#ffffff;
-          font-size:26px;
-          font-weight:800;
-          line-height:1.2;
+        <p style="
+          color:#18181b;
+          font-size:16px;
+          font-weight:600;
+          margin:0 0 8px 0;
         ">
-          Your verification code
-        </div>
+          Verify your email
+        </p>
 
-        <div style="
-          margin-top:12px;
-          color:#a3a3a3;
-          font-size:15px;
+        <p style="
+          color:#52525b;
+          font-size:14px;
           line-height:1.6;
+          margin:0 0 24px 0;
         ">
-          Enter this code in FitSync
-          to continue.
-        </div>
+          Enter the code below in FitSync to continue signing in.
+        </p>
 
         <div style="
-          margin-top:30px;
-          color:#ffffff;
-          font-size:42px;
-          font-weight:800;
-          letter-spacing:10px;
+          background:#f4f4f5;
+          border-radius:6px;
+          padding:16px;
+          text-align:center;
+          color:#18181b;
+          font-size:28px;
+          font-weight:600;
+          letter-spacing:4px;
+          margin-bottom:24px;
         ">
           {code}
         </div>
 
-        <div style="
-          margin-top:28px;
-          color:#737373;
+        <p style="
+          color:#71717a;
           font-size:13px;
           line-height:1.6;
+          margin:0;
         ">
-          This code expires in
-          {settings.otp_expire_minutes}
-          minutes. If you didn't request
-          this code, you can safely ignore
-          this email.
-        </div>
+          This code expires in {settings.otp_expire_minutes} minutes.
+          If you didn't request this code, you can safely ignore this email.
+        </p>
       </div>
+
+      <p style="
+        color:#a1a1aa;
+        font-size:12px;
+        margin-top:24px;
+      ">
+        FitSync · This is an automated message, please do not reply.
+      </p>
+
     </div>
   </body>
 </html>
-""",
+"""
+
+    params: resend.Emails.SendParams = {
+        "from": "FitSync <login@auth.sahillsahu.com>",
+        "to": [email],
+        "subject": f"{code} is your FitSync verification code",
+        "html": html_body,
+        "text": text_body,
+        "reply_to": "support@sahillsahu.com",
     }
 
     await resend.Emails.send_async(params)

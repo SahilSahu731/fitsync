@@ -1,18 +1,9 @@
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-import {
-  Pressable,
-  Text,
-  View,
-} from "react-native";
-
+import { Pressable, Text, View } from "react-native";
 
 interface Props {
-  icon: React.ComponentProps<
-    typeof Ionicons
-  >["name"];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
 
   title: string;
 
@@ -22,7 +13,6 @@ interface Props {
 
   danger?: boolean;
 }
-
 
 export function SettingsRow({
   icon,
@@ -36,32 +26,22 @@ export function SettingsRow({
       accessibilityRole="button"
       onPress={onPress}
       className="flex-row items-center px-4 py-4"
-      style={({
-        pressed,
-      }) => ({
-        backgroundColor:
-          pressed
-            ? "rgba(56,189,248,.10)"
-            : "transparent",
+      style={({ pressed }) => ({
+        backgroundColor: pressed ? "rgba(56,189,248,.10)" : "transparent",
       })}
     >
       <View
         className="h-10 w-10 items-center justify-center rounded-xl"
         style={{
-          backgroundColor:
-            danger
-              ? "rgba(248,113,113,.10)"
-              : "rgba(56,189,248,.12)",
+          backgroundColor: danger
+            ? "rgba(248,113,113,.10)"
+            : "rgba(56,189,248,.12)",
         }}
       >
         <Ionicons
           name={icon}
           size={19}
-          color={
-            danger
-              ? "#F87171"
-              : "#38BDF8"
-          }
+          color={danger ? "#F87171" : "#38BDF8"}
         />
       </View>
 
@@ -69,19 +49,14 @@ export function SettingsRow({
         <Text
           className="text-[15px] font-semibold"
           style={{
-            color:
-              danger
-                ? "#FCA5A5"
-                : "#FFFFFF",
+            color: danger ? "#FCA5A5" : "#FFFFFF",
           }}
         >
           {title}
         </Text>
 
         {subtitle ? (
-          <Text className="mt-1 text-[12px] text-white/35">
-            {subtitle}
-          </Text>
+          <Text className="mt-1 text-[12px] text-white/35">{subtitle}</Text>
         ) : null}
       </View>
 

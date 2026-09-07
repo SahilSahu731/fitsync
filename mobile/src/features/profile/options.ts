@@ -1,8 +1,4 @@
-import type {
-  ExperienceLevel,
-  FitnessGoal,
-} from "@/features/auth/types";
-
+import type { ExperienceLevel, FitnessGoal } from "@/features/auth/types";
 
 export const FITNESS_GOALS: {
   value: FitnessGoal;
@@ -12,72 +8,53 @@ export const FITNESS_GOALS: {
   description: string;
 }[] = [
   {
-    value:
-      "BUILD_MUSCLE",
+    value: "BUILD_MUSCLE",
 
-    title:
-      "Build muscle",
+    title: "Build muscle",
 
-    description:
-      "Hypertrophy and progressive overload.",
+    description: "Hypertrophy and progressive overload.",
   },
 
   {
-    value:
-      "GET_STRONGER",
+    value: "GET_STRONGER",
 
-    title:
-      "Get stronger",
+    title: "Get stronger",
 
-    description:
-      "Increase strength on your major lifts.",
+    description: "Increase strength on your major lifts.",
   },
 
   {
-    value:
-      "LOSE_FAT",
+    value: "LOSE_FAT",
 
-    title:
-      "Lose fat",
+    title: "Lose fat",
 
-    description:
-      "Improve body composition while training consistently.",
+    description: "Improve body composition while training consistently.",
   },
 
   {
-    value:
-      "IMPROVE_ENDURANCE",
+    value: "IMPROVE_ENDURANCE",
 
-    title:
-      "Improve endurance",
+    title: "Improve endurance",
 
-    description:
-      "Increase conditioning and work capacity.",
+    description: "Increase conditioning and work capacity.",
   },
 
   {
-    value:
-      "STAY_ACTIVE",
+    value: "STAY_ACTIVE",
 
-    title:
-      "Stay active",
+    title: "Stay active",
 
-    description:
-      "Build a sustainable training habit.",
+    description: "Build a sustainable training habit.",
   },
 
   {
-    value:
-      "OTHER",
+    value: "OTHER",
 
-    title:
-      "Something else",
+    title: "Something else",
 
-    description:
-      "Use FitSync without a specific goal.",
+    description: "Use FitSync without a specific goal.",
   },
 ];
-
 
 export const EXPERIENCE_LEVELS: {
   value: ExperienceLevel;
@@ -87,35 +64,26 @@ export const EXPERIENCE_LEVELS: {
   description: string;
 }[] = [
   {
-    value:
-      "BEGINNER",
+    value: "BEGINNER",
 
-    title:
-      "Beginner",
+    title: "Beginner",
 
-    description:
-      "Still learning the fundamentals.",
+    description: "Still learning the fundamentals.",
   },
 
   {
-    value:
-      "INTERMEDIATE",
+    value: "INTERMEDIATE",
 
-    title:
-      "Intermediate",
+    title: "Intermediate",
 
-    description:
-      "Training consistently with solid fundamentals.",
+    description: "Training consistently with solid fundamentals.",
   },
 
   {
-    value:
-      "ADVANCED",
+    value: "ADVANCED",
 
-    title:
-      "Advanced",
+    title: "Advanced",
 
-    description:
-      "Years of structured training experience.",
+    description: "Years of structured training experience.",
   },
 ];
