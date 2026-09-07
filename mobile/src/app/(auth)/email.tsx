@@ -153,11 +153,11 @@ export default function EmailAuthScreen() {
               </Text>
 
               <Text className="mt-3 max-w-[350px] text-[40px] font-extrabold leading-[44px] tracking-[-1.7px] text-white">
-                What's your email?
+                What&apos;s your email?
               </Text>
 
               <Text className="mt-4 max-w-[350px] text-[15px] leading-6 text-white/65">
-                No password needed. We'll send you a 6-digit verification code.
+                No password needed. We&apos;ll send you a 6-digit verification code.
               </Text>
             </Animated.View>
 
@@ -194,7 +194,7 @@ export default function EmailAuthScreen() {
                   autoComplete="email"
                   autoFocus
                   returnKeyType="done"
-                  selectionColor="#D9FF43"
+                  selectionColor="#38BDF8"
                   onSubmitEditing={() => {
                     void handleContinue();
                   }}
@@ -250,7 +250,7 @@ export default function EmailAuthScreen() {
               className="mt-5"
             >
               <Text className="text-center text-[12px] leading-5 text-white/40">
-                We'll only use your email for your FitSync account and important
+                We&apos;ll only use your email for your FitSync account and important
                 account messages.
               </Text>
             </Animated.View>

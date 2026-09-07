@@ -15,11 +15,11 @@ export default function HomeScreen() {
         </Text>
 
         <Text className="mt-4 text-[38px] font-extrabold leading-[42px] tracking-[-1.5px] text-white">
-          You're in.
+          You&apos;re in.
         </Text>
 
         <Text className="mt-4 max-w-[340px] text-[15px] leading-6 text-white/55">
-          Your FitSync account is ready. We'll build your training experience
+          Your FitSync account is ready. We&apos;ll build your training experience
           from here.
         </Text>
 

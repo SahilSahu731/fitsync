@@ -1,3 +1,20 @@
+export type FitnessGoal =
+  | "BUILD_MUSCLE"
+  | "GET_STRONGER"
+  | "LOSE_FAT"
+  | "STAY_ACTIVE"
+  | "IMPROVE_ENDURANCE"
+  | "OTHER";
+
+export type ExperienceLevel =
+  | "BEGINNER"
+  | "INTERMEDIATE"
+  | "ADVANCED";
+
+export type WeightUnit =
+  | "KG"
+  | "LB";
+
 export interface User {
   id: string;
 
@@ -12,6 +29,15 @@ export interface User {
   email_verified: boolean;
 
   onboarding_complete: boolean;
+
+  fitness_goal: FitnessGoal | null;
+
+  experience_level:
+    ExperienceLevel | null;
+
+  weight_unit: WeightUnit;
+
+  weekly_workout_target: number;
 
   created_at: string;
 }
@@ -42,9 +68,6 @@ export interface EmailAuthResponse {
   is_new_user: boolean;
 }
 
-export type AuthStatus =
-  "booting" | "authenticated" | "unauthenticated" | "offline";
-
 export interface GoogleAuthResponse {
   user: User;
 
@@ -52,3 +75,9 @@ export interface GoogleAuthResponse {
 
   is_new_user: boolean;
 }
+
+export type AuthStatus =
+  | "booting"
+  | "authenticated"
+  | "unauthenticated"
+  | "offline";

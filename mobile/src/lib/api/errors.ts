@@ -1,4 +1,4 @@
-import axios from "axios";
+import { isAxiosError } from "axios";
 
 interface ValidationIssue {
   msg?: string;
@@ -30,7 +30,7 @@ export function parseApiError(
   error: unknown,
   fallback = "Something went wrong.",
 ): ParsedApiError {
-  if (!axios.isAxiosError<ApiErrorBody>(error)) {
+  if (!isAxiosError<ApiErrorBody>(error)) {
     return {
       message: fallback,
     };

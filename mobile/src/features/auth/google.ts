@@ -1,32 +1,34 @@
-import {
-  GoogleOneTapSignIn,
-  isCancelledResponse,
-  isErrorWithCode,
-  isNoSavedCredentialFoundResponse,
-  isSuccessResponse,
-  statusCodes,
-} from "react-native-nitro-google-signin";
+import { Platform, TurboModuleRegistry } from "react-native";
 
-import {
-  env,
-} from "@/config/env";
+import { env } from "@/config/env";
 
-GoogleOneTapSignIn.configure({
-  webClientId:
-    env.googleWebClientId,
+type GoogleProvider = typeof import("react-native-nitro-google-signin");
 
-  /*
-   * We only need identity.
-   *
-   * We do NOT need Google Calendar,
-   * Drive, contacts, etc.
-   */
-  offlineAccess:
-    false,
+let googleProvider: GoogleProvider | undefined;
 
-  autoSelectOnSignIn:
-    false,
-});
+async function getGoogleProvider(): Promise<GoogleProvider> {
+  if (googleProvider) return googleProvider;
+
+  // Loading the native package during route discovery crashes Expo Go and
+  // development builds that do not yet include NitroModules.
+  if (
+    Platform.OS === "web" ||
+    !TurboModuleRegistry.get("NitroModules")
+  ) {
+    throw new Error(
+      "Google Sign-In requires a FitSync development build with native Google Sign-In support. Use email sign-in in this app, or install a rebuilt development app.",
+    );
+  }
+
+  const provider = await import("react-native-nitro-google-signin");
+  provider.GoogleOneTapSignIn.configure({
+    webClientId: env.googleWebClientId,
+    offlineAccess: false,
+    autoSelectOnSignIn: false,
+  });
+  googleProvider = provider;
+  return provider;
+}
 
 export type GoogleSignInResult =
   | {
@@ -40,6 +42,15 @@ export type GoogleSignInResult =
 
 export async function startGoogleSignIn():
   Promise<GoogleSignInResult> {
+  const {
+    GoogleOneTapSignIn,
+    isCancelledResponse,
+    isErrorWithCode,
+    isNoSavedCredentialFoundResponse,
+    isSuccessResponse,
+    statusCodes,
+  } = await getGoogleProvider();
+
   try {
     /*
      * Android:
@@ -165,8 +176,8 @@ export async function startGoogleSignIn():
 export async function signOutGoogleProvider():
   Promise<void> {
   try {
-    await GoogleOneTapSignIn
-      .signOut();
+    if (!googleProvider) return;
+    await googleProvider.GoogleOneTapSignIn.signOut();
   } catch {
     /*
      * FitSync logout should still

@@ -1,4 +1,4 @@
-import axios, { type AxiosError, type InternalAxiosRequestConfig } from "axios";
+import { create, isAxiosError, type AxiosError, type InternalAxiosRequestConfig } from "axios";
 
 import { env } from "@/config/env";
 
@@ -23,9 +23,9 @@ const configuration = {
   },
 };
 
-export const publicApiClient = axios.create(configuration);
+export const publicApiClient = create(configuration);
 
-export const apiClient = axios.create(configuration);
+export const apiClient = create(configuration);
 
 interface RetryableRequest extends InternalAxiosRequestConfig {
   _retry?: boolean;
@@ -47,7 +47,7 @@ async function invalidateSession(): Promise<void> {
 }
 
 function isRefreshRejected(error: unknown): boolean {
-  if (!axios.isAxiosError(error)) {
+  if (!isAxiosError(error)) {
     return false;
   }
 

@@ -9,6 +9,141 @@ from app.modules.users.models import (
 )
 
 
+async def get_user_by_id(
+    database: Database,
+    user_id: ObjectId,
+) -> UserDocument | None:
+    document = await database["users"].find_one(
+        {
+            "_id": user_id,
+        }
+    )
+
+    return cast(
+        UserDocument | None,
+        document,
+    )
+
+
+async def get_user_by_email(
+    database: Database,
+    email: str,
+) -> UserDocument | None:
+    document = await database["users"].find_one(
+        {
+            "email": email,
+        }
+    )
+
+    return cast(
+        UserDocument | None,
+        document,
+    )
+
+
+async def get_user_by_username(
+    database: Database,
+    username: str,
+) -> UserDocument | None:
+    document = await database["users"].find_one(
+        {
+            "username": username,
+        }
+    )
+
+    return cast(
+        UserDocument | None,
+        document,
+    )
+
+
+async def insert_user(
+    database: Database,
+    user: UserDocument,
+) -> None:
+    await database["users"].insert_one(user)
+
+
+async def complete_onboarding(
+    database: Database,
+    user_id: ObjectId,
+    *,
+    display_name: str,
+    username: str,
+    fitness_goal: str,
+    experience_level: str,
+    weight_unit: str,
+    weekly_workout_target: int,
+    timestamp: datetime,
+) -> None:
+    await database["users"].update_one(
+        {
+            "_id": user_id,
+        },
+        {
+            "$set": {
+                "display_name": display_name,
+                "username": username,
+                "fitness_goal": fitness_goal,
+                "experience_level": experience_level,
+                "weight_unit": weight_unit,
+                "weekly_workout_target": weekly_workout_target,
+                "onboarding_complete": True,
+                "updated_at": timestamp,
+                "last_seen_at": timestamp,
+            }
+        },
+    )
+
+
+async def update_profile(
+    database: Database,
+    user_id: ObjectId,
+    *,
+    display_name: str,
+    username: str,
+    timestamp: datetime,
+) -> None:
+    await database["users"].update_one(
+        {
+            "_id": user_id,
+        },
+        {
+            "$set": {
+                "display_name": display_name,
+                "username": username,
+                "updated_at": timestamp,
+            }
+        },
+    )
+
+
+async def update_preferences(
+    database: Database,
+    user_id: ObjectId,
+    *,
+    fitness_goal: str,
+    experience_level: str,
+    weight_unit: str,
+    weekly_workout_target: int,
+    timestamp: datetime,
+) -> None:
+    await database["users"].update_one(
+        {
+            "_id": user_id,
+        },
+        {
+            "$set": {
+                "fitness_goal": fitness_goal,
+                "experience_level": experience_level,
+                "weight_unit": weight_unit,
+                "weekly_workout_target": weekly_workout_target,
+                "updated_at": timestamp,
+            }
+        },
+    )
+
+
 async def update_user_profile(
     database: Database,
     user_id: ObjectId,
@@ -42,50 +177,11 @@ async def update_user_profile(
     )
 
 
-async def get_user_by_id(
-    database: Database,
-    user_id: ObjectId,
-) -> UserDocument | None:
-    document = await database["users"].find_one(
-        {
-            "_id": user_id,
-        }
-    )
-
-    return cast(
-        UserDocument | None,
-        document,
-    )
-
-
-async def get_user_by_email(
-    database: Database,
-    email: str,
-) -> UserDocument | None:
-    document = await database["users"].find_one(
-        {
-            "email": email,
-        }
-    )
-
-    return cast(
-        UserDocument | None,
-        document,
-    )
-
-
-async def insert_user(
-    database: Database,
-    user: UserDocument,
-) -> None:
-    await database["users"].insert_one(user)
-
-
 async def mark_email_verified(
     database: Database,
     user_id: ObjectId,
     *,
-    updated_at,
+    updated_at: datetime,
 ) -> None:
     await database["users"].update_one(
         {
@@ -105,7 +201,7 @@ async def update_last_seen(
     database: Database,
     user_id: ObjectId,
     *,
-    timestamp,
+    timestamp: datetime,
 ) -> None:
     await database["users"].update_one(
         {
@@ -116,4 +212,41 @@ async def update_last_seen(
                 "last_seen_at": timestamp,
             }
         },
+    )
+
+
+async def delete_user_data(
+    database: Database,
+    *,
+    user_id: ObjectId,
+    email: str,
+) -> None:
+    await database["refresh_tokens"].delete_many(
+        {
+            "user_id": user_id,
+        }
+    )
+
+    await database["sessions"].delete_many(
+        {
+            "user_id": user_id,
+        }
+    )
+
+    await database["auth_identities"].delete_many(
+        {
+            "user_id": user_id,
+        }
+    )
+
+    await database["auth_challenges"].delete_many(
+        {
+            "email": email,
+        }
+    )
+
+    await database["users"].delete_one(
+        {
+            "_id": user_id,
+        }
     )

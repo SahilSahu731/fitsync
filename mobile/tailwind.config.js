@@ -17,8 +17,8 @@ module.exports = {
 
         border: "rgba(255,255,255,0.14)",
 
-        brand: "#D9FF43",
-        "brand-muted": "#BBD92E",
+        brand: "#38BDF8",
+        "brand-muted": "#0284C7",
 
         danger: "#EF4444",
         success: "#22C55E",

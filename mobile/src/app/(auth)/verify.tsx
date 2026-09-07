@@ -387,14 +387,8 @@ export default function VerifyEmailScreen() {
                  * because of the NativeWind v4
                  * bug you previously hit.
                  */
-                className="min-h-[58px] items-center justify-center rounded-2xl px-5"
+                className="min-h-[58px] items-center bg-blue-500 justify-center rounded-2xl px-5"
                 style={({ pressed }) => ({
-                  backgroundColor: codeReady
-                    ? pressed
-                      ? "#1D4ED8"
-                      : "#2563EB"
-                    : "#1E3A8A",
-
                   transform: [
                     {
                       scale: codeReady && pressed ? 0.985 : 1,
@@ -447,7 +441,7 @@ export default function VerifyEmailScreen() {
                 </View>
               ) : resendSeconds > 0 ? (
                 <Text className="text-[13px] text-white/45">
-                  Didn't get it?{" "}
+                  Didn&apos;t get it?{" "}
                   <Text className="text-blue-400">Resend in </Text>
                   <Text className="font-bold text-white/70">
                     {formatDuration(resendSeconds)}
@@ -462,7 +456,7 @@ export default function VerifyEmailScreen() {
                   }}
                 >
                   <Text className="text-[13px] font-bold text-white">
-                    Didn't get it? Resend code
+                    Didn&apos;t get it? Resend code
                   </Text>
                 </Pressable>
               )}

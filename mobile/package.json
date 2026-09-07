@@ -63,5 +63,12 @@
     "format": "prettier --write .",
     "format:check": "prettier --check ."
   },
-  "private": true
+  "private": true,
+  "expo": {
+    "doctor": {
+      "reactNativeDirectoryCheck": {
+        "exclude": ["react-native-nitro-google-signin"]
+      }
+    }
+  }
 }

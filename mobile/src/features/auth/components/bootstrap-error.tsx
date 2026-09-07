@@ -18,7 +18,7 @@ export function BootstrapError({ onRetry }: BootstrapErrorProps) {
           </View>
 
           <Text className="mt-6 text-[28px] font-extrabold tracking-[-1px] text-white">
-            Can't reach FitSync.
+            Can&apos;t reach FitSync.
           </Text>
 
           <Text className="mt-3 text-[15px] leading-6 text-white/55">
