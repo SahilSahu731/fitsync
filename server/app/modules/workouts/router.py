@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import (
     APIRouter,
     Query,
@@ -8,6 +10,9 @@ from app.db.mongo import (
 )
 from app.modules.auth.dependencies import (
     CurrentUserDep,
+)
+from app.modules.progress import (
+    service as progress_service,
 )
 from app.modules.workouts import (
     service,
@@ -27,6 +32,8 @@ from app.modules.workouts.schemas import (
     WorkoutTemplateResponse,
     WorkoutTemplateUpdateRequest,
 )
+
+logger = logging.getLogger(__name__)
 
 router = APIRouter(
     tags=[
@@ -288,11 +295,26 @@ async def complete_workout(
     database: DatabaseDep,
     user: CurrentUserDep,
 ) -> WorkoutSessionResponse:
-    return await service.finish_workout(
+    workout = await service.finish_workout(
         database,
         user_id=user["_id"],
         session_id=session_id,
     )
+
+    try:
+        await progress_service.detect_personal_records_for_workout(
+            database,
+            user_id=user["_id"],
+            session_id=session_id,
+        )
+
+    except Exception:
+        logger.exception(
+            "Failed to calculate personal records for workout %s",
+            session_id,
+        )
+
+    return workout
 
 
 @router.post(

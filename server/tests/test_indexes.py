@@ -66,6 +66,13 @@ async def test_all_startup_indexes_accept_equivalent_legacy_names():
         "idx_workout_previous_exercise",
         "idx_workout_session_active",
         "idx_workout_history",
+        "idx_progress_completed",
+        "idx_progress_exercise",
+    }
+    assert collections["personal_records"].requested_names == {
+        "uq_personal_record_event",
+        "idx_records_user_recent",
+        "idx_records_exercise_best",
     }
     assert all(collection.checked > 0 for collection in collections.values())
 

@@ -12,6 +12,9 @@ from app.modules.health.router import (
 from app.modules.media.router import (
     router as media_router,
 )
+from app.modules.progress.router import (
+    router as progress_router,
+)
 from app.modules.users.router import (
     router as users_router,
 )
@@ -32,3 +35,5 @@ api_router.include_router(media_router)
 api_router.include_router(exercises_router)
 
 api_router.include_router(workouts_router)
+
+api_router.include_router(progress_router)
