@@ -60,6 +60,8 @@ async def ensure_indexes(
 
     templates = database["workout_templates"]
 
+    workout_sessions = database["workout_sessions"]
+
     # USERS
 
     await ensure_index(
@@ -232,9 +234,30 @@ async def ensure_indexes(
         name=("uq_custom_exercise_name"),
     )
 
-    # WORKOUT TEMPLATES
+    # WORKOUT SESSIONS
 
-    workout_sessions = database["workout_sessions"]
+    await ensure_index(
+        workout_sessions,
+        [
+            (
+                "user_id",
+                ASCENDING,
+            ),
+            (
+                "status",
+                ASCENDING,
+            ),
+            (
+                "exercises.exercise_id",
+                ASCENDING,
+            ),
+            (
+                "completed_at",
+                DESCENDING,
+            ),
+        ],
+        name=("idx_workout_previous_exercise"),
+    )
 
     await ensure_index(
         workout_sessions,
@@ -265,6 +288,8 @@ async def ensure_indexes(
         ],
         name="idx_workout_history",
     )
+    # WORKOUT TEMPLATES
+
     await ensure_index(
         templates,
         [

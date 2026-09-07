@@ -277,3 +277,36 @@ async def list_completed_sessions(
         list[WorkoutSessionDocument],
         documents,
     )
+
+
+async def recent_sessions_for_exercises(
+    database: Database,
+    *,
+    user_id: ObjectId,
+    exercise_ids: list[ObjectId],
+    limit: int = 50,
+) -> list[WorkoutSessionDocument]:
+    cursor = (
+        database["workout_sessions"]
+        .find(
+            {
+                "user_id": user_id,
+                "status": "COMPLETED",
+                "exercises.exercise_id": {
+                    "$in": exercise_ids,
+                },
+            }
+        )
+        .sort(
+            "completed_at",
+            DESCENDING,
+        )
+        .limit(limit)
+    )
+
+    documents = await cursor.to_list(length=limit)
+
+    return cast(
+        list[WorkoutSessionDocument],
+        documents,
+    )

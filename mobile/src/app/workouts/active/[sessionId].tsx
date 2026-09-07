@@ -39,12 +39,16 @@ import type {
 } from "@/features/exercises/types";
 
 import {
-  ExercisePickerModal,
-} from "@/features/workouts/components/exercise-picker-modal";
-
-import {
   ActiveExerciseCard,
 } from "@/features/workouts/components/active-exercise-card";
+
+import {
+  ExerciseOptionsModal,
+} from "@/features/workouts/components/exercise-options-modal";
+
+import {
+  ExercisePickerModal,
+} from "@/features/workouts/components/exercise-picker-modal";
 
 import {
   RestTimer,
@@ -54,7 +58,6 @@ import {
   addWorkoutExercises,
   cancelWorkout,
   completeWorkout,
-  updateWorkoutSession,
 } from "@/features/workouts/api";
 
 import {
@@ -62,14 +65,19 @@ import {
 } from "@/features/workouts/keys";
 
 import {
+  usePreviousPerformance,
   useWorkoutSession,
 } from "@/features/workouts/queries";
 
 import {
-  formatDuration,
+  formatVolume,
   reorderExercises,
-  sessionToUpdateInput,
+  workoutVolume,
 } from "@/features/workouts/utils";
+
+import {
+  useWorkoutAutosave,
+} from "@/features/workouts/use-workout-autosave";
 
 import type {
   WorkoutExercise,
@@ -77,8 +85,19 @@ import type {
 } from "@/features/workouts/types";
 
 import {
+  useAuthStore,
+} from "@/features/auth/store";
+
+import {
   parseApiError,
 } from "@/lib/api/errors";
+
+
+interface RestState {
+  seconds: number;
+
+  exerciseName: string;
+}
 
 
 export default function ActiveWorkoutScreen() {
@@ -96,7 +115,15 @@ export default function ActiveWorkoutScreen() {
   const queryClient =
     useQueryClient();
 
-  const query =
+  const user =
+    useAuthStore(
+      (
+        state,
+      ) =>
+        state.user,
+    );
+
+  const workoutQuery =
     useWorkoutSession(
       sessionId
     );
@@ -109,15 +136,29 @@ export default function ActiveWorkoutScreen() {
   >(null);
 
   const [
+    selectedExpandedId,
+    setExpandedId,
+  ] = useState<
+    string | null | undefined
+  >(undefined);
+
+  const [
     pickerOpen,
     setPickerOpen,
   ] = useState(false);
 
   const [
-    restSeconds,
-    setRestSeconds,
+    optionsIndex,
+    setOptionsIndex,
   ] = useState<
     number | null
+  >(null);
+
+  const [
+    rest,
+    setRest,
+  ] = useState<
+    RestState | null
   >(null);
 
   const [
@@ -126,8 +167,8 @@ export default function ActiveWorkoutScreen() {
   ] = useState(0);
 
   const [
-    saving,
-    setSaving,
+    actionLoading,
+    setActionLoading,
   ] = useState(false);
 
   const [
@@ -138,8 +179,13 @@ export default function ActiveWorkoutScreen() {
   >(null);
 
 
-  // Server data supplies the initial draft; edits stay local until persisted.
-  const draft = localDraft?.id === sessionId ? localDraft : query.data ?? null;
+  // Use fetched data until the first edit; refetches must not overwrite a draft.
+  const draft = localDraft?.id === sessionId ? localDraft : workoutQuery.data ?? null;
+  const initialExpandedId = workoutQuery.data?.exercises.find((exercise) =>
+    exercise.sets.some((workoutSet) => !workoutSet.completed),
+  )?.id ?? workoutQuery.data?.exercises[0]?.id ?? null;
+  // undefined means untouched; null means the user explicitly collapsed the card.
+  const expandedId = selectedExpandedId === undefined ? initialExpandedId : selectedExpandedId;
   const startedAt = draft?.started_at;
 
   useEffect(() => {
@@ -150,6 +196,90 @@ export default function ActiveWorkoutScreen() {
     }, 1000);
     return () => clearInterval(interval);
   }, [startedAt]);
+
+  const exerciseIds =
+    useMemo(
+      () =>
+        draft?.exercises.map(
+          (
+            exercise,
+          ) =>
+            exercise.exercise_id,
+        ) ??
+        [],
+      [
+        draft?.exercises,
+      ],
+    );
+
+
+  const previousQuery =
+    usePreviousPerformance(
+      exerciseIds
+    );
+
+
+  const previousMap =
+    useMemo(
+      () =>
+        new Map(
+          (
+            previousQuery
+              .data
+              ?.items ??
+            []
+          ).map(
+            (
+              item,
+            ) => [
+              item.exercise_id,
+              item,
+            ],
+          ),
+        ),
+      [
+        previousQuery.data,
+      ],
+    );
+
+
+  const autosave =
+    useWorkoutAutosave({
+      workout:
+        draft,
+
+      enabled:
+        Boolean(
+          draft &&
+          draft.status ===
+            "IN_PROGRESS"
+        ),
+
+      onSaved:
+        (
+          saved,
+        ) => {
+          queryClient
+            .setQueryData(
+              workoutSessionKeys
+                .detail(
+                  saved.id
+                ),
+              saved,
+            );
+
+          queryClient
+            .setQueryData(
+              workoutSessionKeys
+                .active(),
+              {
+                workout:
+                  saved,
+              },
+            );
+        },
+    });
+
 
   const completedSets =
     useMemo(
@@ -175,80 +305,62 @@ export default function ActiveWorkoutScreen() {
     );
 
 
-  async function persist(
-    next:
-      WorkoutSession,
+  const volume =
+    useMemo(
+      () =>
+        draft
+          ? workoutVolume(
+              draft,
+              user
+                ?.weight_unit ??
+                "KG",
+            )
+          : 0,
+      [
+        draft,
+        user?.weight_unit,
+      ],
+    );
+
+
+  function updateExercise(
+    updated:
+      WorkoutExercise,
   ) {
-    setDraft(
-      next
-    );
-
-    setSaving(
-      true
-    );
-
-    try {
-      const updated =
-        await updateWorkoutSession(
-          next.id,
-          sessionToUpdateInput(
-            next
-          ),
-        );
-
-      setDraft(
-        updated
-      );
-
-      queryClient.setQueryData(
-        workoutSessionKeys.detail(
-          next.id
-        ),
-        updated,
-      );
-
-      queryClient.setQueryData(
-        workoutSessionKeys.active(),
-        {
-          workout:
-            updated,
-        },
-      );
-
-      setError(
-        null
-      );
-
-    } catch (
-      requestError
-    ) {
-      setError(
-        parseApiError(
-          requestError,
-          "Unable to save workout.",
-        ).message,
-      );
-
-    } finally {
-      setSaving(
-        false
-      );
+    if (!draft) {
+      return;
     }
+
+    setDraft({
+      ...draft,
+
+      exercises:
+        draft.exercises.map(
+          (
+            exercise,
+          ) =>
+            exercise.id ===
+            updated.id
+              ? updated
+              : exercise,
+        ),
+    });
   }
 
 
   async function addExercises(
-    exercises: Exercise[],
+    exercises:
+      Exercise[],
   ) {
     if (
       !draft ||
       exercises.length ===
-      0
+        0
     ) {
       return;
     }
 
-    setSaving(
+    setActionLoading(
       true
     );
 
@@ -256,6 +368,7 @@ export default function ActiveWorkoutScreen() {
       const updated =
         await addWorkoutExercises(
           draft.id,
+
           exercises.map(
             (
               exercise,
@@ -267,6 +380,26 @@ export default function ActiveWorkoutScreen() {
       setDraft(
         updated
       );
+
+      const newlyAdded =
+        updated.exercises.find(
+          (
+            exercise,
+          ) =>
+            exercises.some(
+              (
+                selected,
+              ) =>
+                selected.id ===
+                exercise.exercise_id,
+            ),
+        );
+
+      if (newlyAdded) {
+        setExpandedId(
+          newlyAdded.id
+        );
+      }
 
       await queryClient
         .invalidateQueries({
@@ -286,80 +419,250 @@ export default function ActiveWorkoutScreen() {
       );
 
     } finally {
-      setSaving(
+      setActionLoading(
         false
       );
     }
   }
 
 
-  function updateExercise(
-    exercise:
-      WorkoutExercise,
+  function moveExercise(
+    index: number,
+    direction:
+      | -1
+      | 1,
   ) {
     if (!draft) {
       return;
     }
 
-    const next = {
+    const target =
+      index +
+      direction;
+
+    if (
+      target < 0 ||
+      target >=
+        draft.exercises
+          .length
+    ) {
+      return;
+    }
+
+    const copy = [
+      ...draft.exercises,
+    ];
+
+    const [
+      moved,
+    ] = copy.splice(
+      index,
+      1,
+    );
+
+    copy.splice(
+      target,
+      0,
+      moved,
+    );
+
+    setDraft({
+      ...draft,
+
+      exercises:
+        reorderExercises(
+          copy
+        ),
+    });
+  }
+
+
+  function removeExercise(
+    index: number,
+  ) {
+    if (!draft) {
+      return;
+    }
+
+    const removing =
+      draft.exercises[
+        index
+      ];
+
+    const next =
+      reorderExercises(
+        draft.exercises.filter(
+          (
+            _,
+            current,
+          ) =>
+            current !==
+            index,
+        ),
+      );
+
+    if (
+      expandedId ===
+      removing.id
+    ) {
+      setExpandedId(
+        next[index]
+          ?.id ??
+          next[
+            index - 1
+          ]?.id ??
+          null,
+      );
+    }
+
+    setDraft({
+      ...draft,
+
+      exercises:
+        next,
+    });
+  }
+
+
+  function createSuperset(
+    index: number,
+  ) {
+    if (
+      !draft ||
+      index >=
+        draft.exercises
+          .length -
+          1
+    ) {
+      return;
+    }
+
+    const groupId =
+      `superset-${Date.now()}`;
+
+    setDraft({
       ...draft,
 
       exercises:
         draft.exercises.map(
           (
-            item,
+            exercise,
+            currentIndex,
           ) =>
-            item.id ===
-            exercise.id
-              ? exercise
-              : item,
-        ),
-    };
+            currentIndex ===
+              index ||
+            currentIndex ===
+              index + 1
+              ? {
+                  ...exercise,
 
-    /*
-     * Local first.
-     *
-     * We persist when the user completes
-     * a set or performs structural actions.
-     */
-    setDraft(
-      next
-    );
+                  superset_group_id:
+                    groupId,
+                }
+              : exercise,
+        ),
+    });
   }
 
 
-  async function removeExercise(
-    exerciseId: string,
+  function removeSuperset(
+    groupId: string,
   ) {
     if (!draft) {
       return;
     }
 
-    const next = {
+    setDraft({
       ...draft,
 
       exercises:
-        reorderExercises(
-          draft.exercises.filter(
-            (
-              exercise,
-            ) =>
-              exercise.id !==
-              exerciseId,
-          ),
-        ),
-    };
+        draft.exercises.map(
+          (
+            exercise,
+          ) =>
+            exercise
+              .superset_group_id ===
+            groupId
+              ? {
+                  ...exercise,
 
-    await persist(
-      next
-    );
+                  superset_group_id:
+                    null,
+                }
+              : exercise,
+        ),
+    });
   }
 
 
-  function confirmCancel() {
+  async function finishWorkout() {
+    if (!draft) {
+      return;
+    }
+
+    setActionLoading(
+      true
+    );
+
+    try {
+      await autosave
+        .saveNow();
+
+      const completed =
+        await completeWorkout(
+          draft.id
+        );
+
+      queryClient
+        .setQueryData(
+          workoutSessionKeys
+            .detail(
+              completed.id
+            ),
+          completed,
+        );
+
+      await queryClient
+        .invalidateQueries({
+          queryKey:
+            workoutSessionKeys
+              .all,
+        });
+
+      await Haptics
+        .notificationAsync(
+          Haptics
+            .NotificationFeedbackType
+            .Success,
+        );
+
+      router.replace({
+        pathname: "/workout-history/[sessionId]",
+        params: { sessionId: completed.id },
+      });
+
+    } catch (
+      requestError
+    ) {
+      setError(
+        parseApiError(
+          requestError,
+          "Unable to finish workout.",
+        ).message,
+      );
+
+    } finally {
+      setActionLoading(
+        false
+      );
+    }
+  }
+
+
+  function confirmFinish() {
     Alert.alert(
-      "Cancel workout?",
-      "Your current workout will be marked as cancelled.",
+      "Finish workout?",
+      `${completedSets} completed sets will be saved.`,
       [
         {
           text:
@@ -371,7 +674,34 @@ export default function ActiveWorkoutScreen() {
 
         {
           text:
-            "Cancel workout",
+            "Finish",
+
+          onPress:
+            () => {
+              void finishWorkout();
+            },
+        },
+      ],
+    );
+  }
+
+
+  function confirmCancel() {
+    Alert.alert(
+      "Discard workout?",
+      "This workout will be marked as cancelled.",
+      [
+        {
+          text:
+            "Keep training",
+
+          style:
+            "cancel",
+        },
+
+        {
+          text:
+            "Discard",
 
           style:
             "destructive",
@@ -391,136 +721,25 @@ export default function ActiveWorkoutScreen() {
       return;
     }
 
-    setSaving(
-      true
+    await cancelWorkout(
+      draft.id
     );
 
-    try {
-      await cancelWorkout(
-        draft.id
-      );
+    await queryClient
+      .invalidateQueries({
+        queryKey:
+          workoutSessionKeys
+            .all,
+      });
 
-      await queryClient
-        .invalidateQueries({
-          queryKey:
-            workoutSessionKeys
-              .all,
-        });
-
-      router.replace(
-        "/train"
-      );
-
-    } finally {
-      setSaving(
-        false
-      );
-    }
-  }
-
-
-  function confirmFinish() {
-    if (!draft) {
-      return;
-    }
-
-    Alert.alert(
-      "Finish workout?",
-      `${completedSets} completed sets will be saved to your history.`,
-      [
-        {
-          text:
-            "Keep training",
-
-          style:
-            "cancel",
-        },
-
-        {
-          text:
-            "Finish",
-
-          onPress:
-            () => {
-              void handleFinish();
-            },
-        },
-      ],
+    router.replace(
+      "/train"
     );
-  }
-
-
-  async function handleFinish() {
-    if (!draft) {
-      return;
-    }
-
-    setSaving(
-      true
-    );
-
-    try {
-      /*
-       * Save latest inputs first.
-       */
-      const updated =
-        await updateWorkoutSession(
-          draft.id,
-          sessionToUpdateInput(
-            draft
-          ),
-        );
-
-      const completed =
-        await completeWorkout(
-          updated.id
-        );
-
-      queryClient.setQueryData(
-        workoutSessionKeys.detail(
-          completed.id
-        ),
-        completed,
-      );
-
-      await queryClient
-        .invalidateQueries({
-          queryKey:
-            workoutSessionKeys
-              .all,
-        });
-
-      await Haptics
-        .notificationAsync(
-          Haptics
-            .NotificationFeedbackType
-            .Success,
-        );
-
-      router.replace(
-        `/workout-history/${completed.id}`
-      );
-
-    } catch (
-      requestError
-    ) {
-      setError(
-        parseApiError(
-          requestError,
-          "Unable to finish workout.",
-        ).message,
-      );
-
-    } finally {
-      setSaving(
-        false
-      );
-    }
   }
 
 
   if (
-    query.isLoading ||
+    workoutQuery.isLoading ||
     !draft
   ) {
     return (
@@ -533,172 +752,260 @@ export default function ActiveWorkoutScreen() {
   }
 
 
+  const activeOptionsExercise =
+    optionsIndex !==
+    null
+      ? draft.exercises[
+          optionsIndex
+        ]
+      : null;
+
+
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-row items-center px-5 pt-3">
-        <Pressable
-          onPress={() => {
-            router.replace(
-              "/train"
-            );
-          }}
-          className="h-11 w-11 items-center justify-center rounded-full bg-white/[0.05]"
-        >
-          <Ionicons
-            name="chevron-down"
-            size={21}
-            color="#FFFFFF"
-          />
-        </Pressable>
+      {/* HEADER */}
 
-        <View className="ml-4 flex-1">
-          <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-brand-bright">
-            Workout in progress
-          </Text>
-
-          <Text className="mt-1 text-[20px] font-extrabold text-white">
-            {formatDuration(
-              elapsed
-            )}
-          </Text>
-        </View>
-
-        <Pressable
-          onPress={
-            confirmCancel
-          }
-          className="mr-2 h-11 w-11 items-center justify-center rounded-xl bg-white/[0.05]"
-        >
-          <Ionicons
-            name="ellipsis-horizontal"
-            size={20}
-            color="#FFFFFF"
-          />
-        </Pressable>
-
-        <Pressable
-          onPress={
-            confirmFinish
-          }
-          className="rounded-xl bg-brand px-4 py-3"
-        >
-          {saving ? (
-            <ActivityIndicator
-              size="small"
+      <View className="border-b border-white/[0.07]">
+        <View className="flex-row items-center px-4 py-2">
+          <Pressable
+            onPress={() => {
+              router.replace(
+                "/train"
+              );
+            }}
+            className="h-10 w-10 items-center justify-center"
+          >
+            <Ionicons
+              name="chevron-down"
+              size={22}
               color="#FFFFFF"
             />
-          ) : (
-            <Text className="text-[13px] font-extrabold text-white">
-              Finish
-            </Text>
-          )}
-        </Pressable>
+          </Pressable>
+
+          <Text className="ml-1 flex-1 text-[16px] font-extrabold text-white">
+            Log Workout
+          </Text>
+
+          <Pressable
+            onPress={
+              confirmCancel
+            }
+            className="mr-2 h-9 w-9 items-center justify-center"
+          >
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={20}
+              color="rgba(255,255,255,.55)"
+            />
+          </Pressable>
+
+          <Pressable
+            disabled={
+              actionLoading
+            }
+            onPress={
+              confirmFinish
+            }
+            className="min-h-[38px] min-w-[70px] items-center justify-center rounded-xl bg-brand px-4"
+          >
+            {actionLoading ? (
+              <ActivityIndicator
+                size="small"
+                color="#FFFFFF"
+              />
+            ) : (
+              <Text className="text-[13px] font-extrabold text-white">
+                Finish
+              </Text>
+            )}
+          </Pressable>
+        </View>
+
+        <View className="flex-row px-5 pb-3 pt-1">
+          <Metric
+            title="Duration"
+            value={
+              formatClock(
+                elapsed
+              )
+            }
+          />
+
+          <Metric
+            title="Volume"
+            value={`${formatVolume(
+              volume
+            )} ${
+              user
+                ?.weight_unit ??
+              "KG"
+            }`}
+          />
+
+          <Metric
+            title="Sets"
+            value={
+              String(
+                completedSets
+              )
+            }
+          />
+        </View>
       </View>
 
       <ScrollView
+        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={
           false
         }
-        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
-          padding:
-            20,
-
           paddingBottom:
-            restSeconds !==
-            null
+            rest
               ? 150
-              : 80,
+              : 100,
         }}
       >
-        <TextInput
-          value={
-            draft.name
-          }
-          onChangeText={(
-            value,
-          ) => {
-            setDraft({
-              ...draft,
+        <View className="px-4 py-4">
+          <TextInput
+            value={
+              draft.name
+            }
+            onChangeText={(
+              name,
+            ) => {
+              setDraft({
+                ...draft,
+                name,
+              });
+            }}
+            selectionColor="#3B82F6"
+            className="text-[23px] font-extrabold tracking-[-0.7px] text-white"
+          />
 
-              name:
-                value,
-            });
-          }}
-          selectionColor="#3B82F6"
-          className="text-[30px] font-extrabold tracking-[-1.2px] text-white"
-        />
+          <View className="mt-1 flex-row items-center">
+            <SaveIndicator
+              status={
+                autosave.status
+              }
+            />
+          </View>
 
-        <View className="mt-3 flex-row items-center">
-          <Text className="text-[12px] text-white/35">
-            {draft.exercises.length} exercises
-          </Text>
-
-          <View className="mx-2 h-1 w-1 rounded-full bg-white/20" />
-
-          <Text className="text-[12px] text-white/35">
-            {completedSets} sets complete
-          </Text>
-
-          {saving ? (
-            <>
-              <View className="mx-2 h-1 w-1 rounded-full bg-white/20" />
-
-              <Text className="text-[11px] text-brand-bright">
-                Saving…
-              </Text>
-            </>
+          {error ? (
+            <Text className="mt-3 text-[12px] text-red-300">
+              {error}
+            </Text>
           ) : null}
         </View>
 
-        {error ? (
-          <View className="mt-5 rounded-2xl border border-red-400/15 bg-red-400/[0.05] p-4">
-            <Text className="text-[13px] leading-5 text-red-300">
-              {error}
+        {draft.exercises.length ===
+        0 ? (
+          <View className="items-center px-8 py-16">
+            <View className="h-16 w-16 items-center justify-center rounded-3xl bg-brand-muted">
+              <Ionicons
+                name="barbell-outline"
+                size={28}
+                color="#60A5FA"
+              />
+            </View>
+
+            <Text className="mt-5 text-[18px] font-extrabold text-white">
+              Add your first exercise
+            </Text>
+
+            <Text className="mt-2 text-center text-[13px] leading-5 text-white/35">
+              Build this workout as you train.
             </Text>
           </View>
-        ) : null}
-
-        <View className="mt-7 gap-4">
-          {draft.exercises.map(
+        ) : (
+          draft.exercises.map(
             (
               exercise,
+              index,
             ) => (
-              <ActiveExerciseCard
+              <View
                 key={
                   exercise.id
                 }
-                exercise={
-                  exercise
-                }
-                onChange={
-                  updateExercise
-                }
-                onRemove={() => {
-                  void removeExercise(
-                    exercise.id
-                  );
-                }}
-                onCompletedSet={(rest, updatedExercise) => {
-                  if (!draft) {
-                    return;
-                  }
+                className="flex-row"
+              >
+                {exercise.superset_group_id ? (
+                  <View className="w-[3px] bg-brand-bright" />
+                ) : null}
 
-                  const next = {
-                    ...draft,
-                    exercises: draft.exercises.map((item) =>
-                      item.id === updatedExercise.id ? updatedExercise : item,
-                    ),
-                  };
+                <View className="flex-1">
+                  <ActiveExerciseCard
+                    exercise={
+                      exercise
+                    }
+                    previous={
+                      previousMap.get(
+                        exercise
+                          .exercise_id
+                      )
+                    }
+                    expanded={
+                      expandedId ===
+                      exercise.id
+                    }
+                    onToggleExpanded={() => {
+                      setExpandedId(
+                        (
+                          current,
+                        ) =>
+                          current ===
+                          exercise.id
+                            ? null
+                            : exercise.id,
+                      );
+                    }}
+                    onChange={
+                      updateExercise
+                    }
+                    onCompletedSet={(
+                      seconds,
+                      exerciseName,
+                      updatedExercise,
+                    ) => {
+                      updateExercise(
+                        updatedExercise
+                      );
 
-                  setDraft(next);
-                  setRestSeconds(rest);
-                  void persist(next);
-                }}
-              />
+                      const completedIndex = updatedExercise.sets.findIndex(
+                        (workoutSet) =>
+                          workoutSet.completed &&
+                          !exercise.sets.find(
+                            (oldSet) =>
+                              oldSet.id === workoutSet.id && oldSet.completed,
+                          ),
+                      );
+
+                      const nextSet = updatedExercise.sets[completedIndex + 1];
+
+                      if (nextSet?.type !== "DROP") {
+                        setRest({
+                          seconds,
+                          exerciseName,
+                        });
+                      }
+
+                      void Haptics
+                        .impactAsync(
+                          Haptics
+                            .ImpactFeedbackStyle
+                            .Medium,
+                        );
+                    }}
+                    onMenu={() => {
+                      setOptionsIndex(
+                        index
+                      );
+                    }}
+                  />
+                </View>
+              </View>
             ),
-          )}
-        </View>
+          )
+        )}
 
         <Pressable
           onPress={() => {
@@ -706,16 +1013,10 @@ export default function ActiveWorkoutScreen() {
               true
             );
           }}
-          className="mt-5 min-h-[56px] flex-row items-center justify-center gap-2 rounded-2xl border border-brand-bright/25 bg-brand-muted"
+          className="mx-4 mt-5 min-h-[48px] items-center justify-center rounded-xl bg-brand"
         >
-          <Ionicons
-            name="add"
-            size={19}
-            color="#60A5FA"
-          />
-
-          <Text className="text-[14px] font-bold text-brand-bright">
-            Add exercise
+          <Text className="text-[14px] font-extrabold text-white">
+            + Add Exercise
           </Text>
         </Pressable>
 
@@ -736,33 +1037,23 @@ export default function ActiveWorkoutScreen() {
             });
           }}
           multiline
-          placeholder="Workout notes"
+          placeholder="Workout notes..."
           placeholderTextColor="rgba(255,255,255,.2)"
-          className="mt-6 min-h-[90px] rounded-2xl border border-white/10 bg-white/[0.03] px-4 py-4 text-[13px] leading-5 text-white"
+          className="mx-4 mt-4 min-h-[65px] rounded-xl bg-white/[0.025] px-4 py-3 text-[12px] leading-5 text-white"
         />
-
-        <Pressable
-          onPress={() => {
-            void persist(
-              draft
-            );
-          }}
-          className="mt-4 min-h-[52px] items-center justify-center rounded-2xl bg-white/[0.05]"
-        >
-          <Text className="text-[13px] font-bold text-white/70">
-            Save workout
-          </Text>
-        </Pressable>
       </ScrollView>
 
-      {restSeconds !==
-      null ? (
+      {rest ? (
         <RestTimer
+          key={`${rest.exerciseName}-${rest.seconds}`}
           seconds={
-            restSeconds
+            rest.seconds
+          }
+          exerciseName={
+            rest.exerciseName
           }
           onClose={() => {
-            setRestSeconds(
+            setRest(
               null
             );
           }}
@@ -786,6 +1077,199 @@ export default function ActiveWorkoutScreen() {
           );
         }}
       />
+
+      {activeOptionsExercise ? (
+        <ExerciseOptionsModal
+          visible={
+            optionsIndex !==
+            null
+          }
+          canMoveUp={
+            optionsIndex !==
+            null &&
+            optionsIndex >
+              0
+          }
+          canMoveDown={
+            optionsIndex !==
+            null &&
+            optionsIndex <
+              draft
+                .exercises
+                .length -
+                1
+          }
+          inSuperset={
+            Boolean(
+              activeOptionsExercise
+                .superset_group_id
+            )
+          }
+          canSupersetNext={
+            optionsIndex !==
+            null &&
+            optionsIndex <
+              draft
+                .exercises
+                .length -
+                1
+          }
+          onMoveUp={() => {
+            if (
+              optionsIndex !==
+              null
+            ) {
+              moveExercise(
+                optionsIndex,
+                -1,
+              );
+            }
+          }}
+          onMoveDown={() => {
+            if (
+              optionsIndex !==
+              null
+            ) {
+              moveExercise(
+                optionsIndex,
+                1,
+              );
+            }
+          }}
+          onSupersetNext={() => {
+            if (
+              optionsIndex !==
+              null
+            ) {
+              createSuperset(
+                optionsIndex
+              );
+            }
+          }}
+          onRemoveSuperset={() => {
+            const group =
+              activeOptionsExercise
+                .superset_group_id;
+
+            if (group) {
+              removeSuperset(
+                group
+              );
+            }
+          }}
+          onRemoveExercise={() => {
+            if (
+              optionsIndex !==
+              null
+            ) {
+              removeExercise(
+                optionsIndex
+              );
+            }
+          }}
+          onClose={() => {
+            setOptionsIndex(
+              null
+            );
+          }}
+        />
+      ) : null}
     </SafeAreaView>
   );
+}
+
+
+function Metric({
+  title,
+  value,
+}: {
+  title: string;
+
+  value: string;
+}) {
+  return (
+    <View className="flex-1">
+      <Text className="text-[10px] font-medium text-white/25">
+        {title}
+      </Text>
+
+      <Text className="mt-1 text-[13px] font-bold text-white/70">
+        {value}
+      </Text>
+    </View>
+  );
+}
+
+
+function SaveIndicator({
+  status,
+}: {
+  status:
+    | "saved"
+    | "saving"
+    | "unsaved"
+    | "error";
+}) {
+  if (
+    status ===
+    "saving"
+  ) {
+    return (
+      <Text className="text-[10px] text-white/25">
+        Saving…
+      </Text>
+    );
+  }
+
+  if (
+    status ===
+    "error"
+  ) {
+    return (
+      <Text className="text-[10px] text-red-300/70">
+        Not saved · check connection
+      </Text>
+    );
+  }
+
+  if (
+    status ===
+    "unsaved"
+  ) {
+    return (
+      <Text className="text-[10px] text-white/25">
+        Unsaved changes
+      </Text>
+    );
+  }
+
+  return (
+    <Text className="text-[10px] text-white/20">
+      Saved
+    </Text>
+  );
+}
+
+
+function formatClock(
+  seconds: number,
+): string {
+  const hours =
+    Math.floor(
+      seconds / 3600
+    );
+
+  const minutes =
+    Math.floor(
+      (
+        seconds %
+        3600
+      ) / 60
+    );
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
 }

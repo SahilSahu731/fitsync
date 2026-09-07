@@ -2,6 +2,9 @@ import {
   Ionicons,
 } from "@expo/vector-icons";
 
+import * as Haptics
+  from "expo-haptics";
+
 import {
   Image,
   Pressable,
@@ -19,6 +22,7 @@ import {
 } from "../utils";
 
 import type {
+  PreviousExercisePerformance,
   WorkoutExercise,
   WorkoutSet,
 } from "../types";
@@ -27,30 +31,54 @@ import type {
 interface Props {
   exercise: WorkoutExercise;
 
-  onChange:
-    (
-      exercise:
-        WorkoutExercise,
-    ) => void;
+  previous:
+    | PreviousExercisePerformance
+    | undefined;
 
-  onRemove:
+  expanded: boolean;
+
+  onToggleExpanded:
     () => void;
 
-  onCompletedSet:
-    (
-      restSeconds:
-        number,
-      updatedExercise: WorkoutExercise,
-    ) => void;
+  onChange: (
+    exercise:
+      WorkoutExercise,
+  ) => void;
+
+  onCompletedSet: (
+    restSeconds:
+      number,
+
+    exerciseName:
+      string,
+
+    updatedExercise:
+      WorkoutExercise,
+  ) => void;
+
+  onMenu:
+    () => void;
 }
 
 
 export function ActiveExerciseCard({
   exercise,
+  previous,
+  expanded,
+  onToggleExpanded,
   onChange,
-  onRemove,
   onCompletedSet,
+  onMenu,
 }: Props) {
+  const completed =
+    exercise.sets.filter(
+      (
+        workoutSet,
+      ) =>
+        workoutSet.completed,
+    ).length;
+
+
   function updateSet(
     setId: string,
     patch:
@@ -116,13 +144,14 @@ export function ActiveExerciseCard({
 
 
   function addSet() {
-    const previous =
+    const previousSet =
       exercise.sets[
         exercise.sets.length -
           1
       ];
 
-    const next: WorkoutSet = {
+    const newSet:
+      WorkoutSet = {
       id:
         randomLocalId(),
 
@@ -133,27 +162,27 @@ export function ActiveExerciseCard({
         "NORMAL",
 
       target_reps_min:
-        previous
+        previousSet
           ?.target_reps_min ??
         null,
 
       target_reps_max:
-        previous
+        previousSet
           ?.target_reps_max ??
         null,
 
       target_weight:
-        previous
+        previousSet
           ?.target_weight ??
         null,
 
       target_rpe:
-        previous
+        previousSet
           ?.target_rpe ??
         null,
 
       target_rir:
-        previous
+        previousSet
           ?.target_rir ??
         null,
 
@@ -164,7 +193,7 @@ export function ActiveExerciseCard({
         null,
 
       weight_unit:
-        previous
+        previousSet
           ?.weight_unit ??
         "KG",
 
@@ -186,169 +215,327 @@ export function ActiveExerciseCard({
 
       sets: [
         ...exercise.sets,
-        next,
+        newSet,
       ],
     });
+
+    void Haptics
+      .selectionAsync();
   }
 
 
   return (
-    <View className="rounded-[26px] border border-white/10 bg-white/[0.025] p-4">
-      <View className="flex-row items-center">
+    <View
+      className="overflow-hidden border-b border-white/[0.07]"
+      style={{
+        backgroundColor:
+          expanded
+            ? "#0B0B0B"
+            : "#080808",
+      }}
+    >
+      <Pressable
+        onPress={
+          onToggleExpanded
+        }
+        className="flex-row items-center px-4 py-4"
+      >
         {exercise.thumbnail_url ? (
           <Image
             source={{
               uri:
                 exercise.thumbnail_url,
             }}
-            className="h-12 w-12 rounded-xl bg-elevated"
+            className="h-10 w-10 rounded-full bg-elevated"
           />
         ) : (
-          <View className="h-12 w-12 items-center justify-center rounded-xl bg-brand-muted">
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-white/[0.05]">
             <Ionicons
               name="barbell-outline"
-              size={21}
-              color="#60A5FA"
+              size={18}
+              color="#737373"
             />
           </View>
         )}
 
         <View className="ml-3 flex-1">
-          <Text className="text-[16px] font-extrabold text-white">
+          <Text
+            numberOfLines={
+              1
+            }
+            className="text-[15px] font-extrabold text-brand-bright"
+          >
             {exercise.exercise_name}
           </Text>
 
-          <Text className="mt-1 text-[11px] text-white/30">
-            Rest{" "}
-            {exercise.rest_seconds}s
-          </Text>
+          <View className="mt-1 flex-row items-center">
+            <Text className="text-[11px] text-white/32">
+              {completed} /{" "}
+              {exercise.sets.length} sets
+            </Text>
+
+            <View className="mx-2 h-1 w-1 rounded-full bg-white/15" />
+
+            <Ionicons
+              name="timer-outline"
+              size={12}
+              color="rgba(255,255,255,.28)"
+            />
+
+            <Text className="ml-1 text-[11px] text-white/32">
+              {exercise.rest_seconds >=
+              60
+                ? `${exercise.rest_seconds / 60}m`
+                : `${exercise.rest_seconds}s`}
+            </Text>
+          </View>
         </View>
 
         <Pressable
-          onPress={
-            onRemove
-          }
-          className="h-9 w-9 items-center justify-center rounded-xl bg-red-400/[0.06]"
+          onPress={(
+            event,
+          ) => {
+            event
+              .stopPropagation();
+
+            onMenu();
+          }}
+          hitSlop={8}
+          className="h-9 w-9 items-center justify-center"
         >
           <Ionicons
-            name="trash-outline"
-            size={16}
-            color="#F87171"
+            name="ellipsis-vertical"
+            size={17}
+            color="rgba(255,255,255,.45)"
           />
         </Pressable>
-      </View>
 
-      <View className="mt-5 flex-row items-center px-2">
-        <Text className="w-9 text-center text-[9px] font-bold uppercase tracking-[1px] text-white/25">
-          Set
-        </Text>
-
-        <Text className="mx-1 flex-1 text-center text-[9px] font-bold uppercase tracking-[1px] text-white/25">
-          {exercise.sets[0]
-            ?.weight_unit ??
-            "KG"}
-        </Text>
-
-        <Text className="mx-1 flex-1 text-center text-[9px] font-bold uppercase tracking-[1px] text-white/25">
-          Reps
-        </Text>
-
-        <Text className="mx-1 flex-1 text-center text-[9px] font-bold uppercase tracking-[1px] text-white/25">
-          RPE
-        </Text>
-
-        <View className="w-[51px]" />
-      </View>
-
-      <View className="mt-2 gap-1">
-        {exercise.sets.map(
-          (
-            workoutSet,
-            index,
-          ) => (
-            <WorkoutSetRow
-              key={
-                workoutSet.id
-              }
-              workoutSet={
-                workoutSet
-              }
-              index={
-                index
-              }
-              onChange={(
-                patch,
-              ) => {
-                updateSet(
-                  workoutSet.id,
-                  patch,
-                );
-              }}
-              onToggleComplete={() => {
-                const completing = !workoutSet.completed;
-                const updatedExercise = {
-                  ...exercise,
-                  sets: exercise.sets.map((current) =>
-                    current.id === workoutSet.id
-                      ? { ...current, completed: completing }
-                      : current,
-                  ),
-                };
-
-                onChange(updatedExercise);
-
-                if (completing) {
-                  onCompletedSet(exercise.rest_seconds, updatedExercise);
-                }
-              }}
-              onRemove={() => {
-                removeSet(
-                  workoutSet.id
-                );
-              }}
-            />
-          ),
-        )}
-      </View>
-
-      <Pressable
-        onPress={
-          addSet
-        }
-        className="mt-3 flex-row items-center justify-center gap-2 rounded-xl bg-white/[0.035] py-3"
-      >
         <Ionicons
-          name="add"
-          size={16}
-          color="#60A5FA"
+          name={
+            expanded
+              ? "chevron-up"
+              : "chevron-down"
+          }
+          size={17}
+          color="rgba(255,255,255,.3)"
         />
-
-        <Text className="text-[12px] font-bold text-brand-bright">
-          Add set
-        </Text>
       </Pressable>
 
-      <TextInput
-        value={
-          exercise.notes ??
-          ""
-        }
-        onChangeText={(
-          value,
-        ) => {
-          onChange({
-            ...exercise,
+      {!expanded ? (
+        <Pressable
+          onPress={
+            onToggleExpanded
+          }
+          className="px-[67px] pb-4"
+        >
+          {completed >
+          0 ? (
+            <View className="flex-row gap-1">
+              {exercise.sets.map(
+                (
+                  workoutSet,
+                ) => (
+                  <View
+                    key={
+                      workoutSet.id
+                    }
+                    className="h-1 flex-1 rounded-full"
+                    style={{
+                      backgroundColor:
+                        workoutSet.completed
+                          ? "#3B82F6"
+                          : "rgba(255,255,255,.08)",
+                    }}
+                  />
+                ),
+              )}
+            </View>
+          ) : (
+            <Text className="text-[11px] text-white/20">
+              Tap to log sets
+            </Text>
+          )}
+        </Pressable>
+      ) : null}
 
-            notes:
-              value ||
-              null,
-          });
-        }}
-        placeholder="Exercise notes"
-        placeholderTextColor="rgba(255,255,255,.2)"
-        multiline
-        className="mt-3 min-h-[58px] rounded-xl bg-white/[0.03] px-3 py-3 text-[12px] leading-5 text-white"
-      />
+      {expanded ? (
+        <View className="pb-4">
+          <View className="px-4">
+            {exercise.notes ? (
+              <TextInput
+                value={
+                  exercise.notes
+                }
+                onChangeText={(
+                  value,
+                ) => {
+                  onChange({
+                    ...exercise,
+
+                    notes:
+                      value ||
+                      null,
+                  });
+                }}
+                multiline
+                placeholder="Add notes..."
+                placeholderTextColor="rgba(255,255,255,.22)"
+                className="mb-2 text-[12px] leading-5 text-white/45"
+              />
+            ) : (
+              <TextInput
+                value=""
+                onChangeText={(
+                  value,
+                ) => {
+                  onChange({
+                    ...exercise,
+
+                    notes:
+                      value ||
+                      null,
+                  });
+                }}
+                placeholder="Add notes..."
+                placeholderTextColor="rgba(255,255,255,.20)"
+                className="mb-2 py-1 text-[12px] text-white"
+              />
+            )}
+
+            <View className="mb-3 flex-row items-center">
+              <Ionicons
+                name="timer-outline"
+                size={14}
+                color="#60A5FA"
+              />
+
+              <Text className="ml-1.5 text-[11px] font-semibold text-brand-bright">
+                Rest Timer:{" "}
+                {exercise.rest_seconds >=
+                60
+                  ? `${exercise.rest_seconds / 60} min`
+                  : `${exercise.rest_seconds} sec`}
+              </Text>
+            </View>
+          </View>
+
+          <View className="flex-row items-center px-4 pb-1">
+            <Text className="w-[34px] text-center text-[9px] font-bold uppercase text-white/22">
+              Set
+            </Text>
+
+            <Text className="w-[76px] text-center text-[9px] font-bold uppercase text-white/22">
+              Previous
+            </Text>
+
+            <Text className="mx-1 flex-1 text-center text-[9px] font-bold uppercase text-white/22">
+              {exercise.sets[0]
+                ?.weight_unit ??
+                "KG"}
+            </Text>
+
+            <Text className="mx-1 flex-1 text-center text-[9px] font-bold uppercase text-white/22">
+              Reps
+            </Text>
+
+            <Text className="mx-1 w-[43px] text-center text-[9px] font-bold uppercase text-white/22">
+              RPE
+            </Text>
+
+            <View className="w-10" />
+          </View>
+
+          <View className="px-3">
+            {exercise.sets.map(
+              (
+                workoutSet,
+                index,
+              ) => (
+                <WorkoutSetRow
+                  key={
+                    workoutSet.id
+                  }
+                  workoutSet={
+                    workoutSet
+                  }
+                  previous={
+                    previous
+                      ?.sets[
+                      index
+                    ]
+                  }
+                  index={
+                    index
+                  }
+                  onChange={(
+                    patch,
+                  ) => {
+                    updateSet(
+                      workoutSet.id,
+                      patch,
+                    );
+                  }}
+                  onToggleComplete={() => {
+                    const updated = {
+                      ...exercise,
+
+                      sets:
+                        exercise.sets.map(
+                          (
+                            item,
+                          ) =>
+                            item.id ===
+                            workoutSet.id
+                              ? {
+                                  ...item,
+
+                                  completed:
+                                    !item.completed,
+                                }
+                              : item,
+                        ),
+                    };
+
+                    onChange(
+                      updated
+                    );
+
+                    if (
+                      !workoutSet.completed
+                    ) {
+                      onCompletedSet(
+                        exercise
+                          .rest_seconds,
+
+                        exercise
+                          .exercise_name,
+
+                        updated,
+                      );
+                    }
+                  }}
+                  onRemove={() => {
+                    removeSet(
+                      workoutSet.id
+                    );
+                  }}
+                />
+              ),
+            )}
+          </View>
+
+          <Pressable
+            onPress={
+              addSet
+            }
+            className="mx-4 mt-2 min-h-[41px] items-center justify-center rounded-xl bg-white/[0.04]"
+          >
+            <Text className="text-[12px] font-bold text-white/50">
+              + Add Set
+            </Text>
+          </Pressable>
+        </View>
+      ) : null}
     </View>
   );
 }

@@ -16,6 +16,8 @@ from app.modules.workouts.schemas import (
     ActiveWorkoutResponse,
     AddWorkoutExercisesRequest,
     MessageResponse,
+    PreviousPerformanceRequest,
+    PreviousPerformanceResponse,
     StartWorkoutRequest,
     WorkoutHistoryResponse,
     WorkoutSessionResponse,
@@ -205,6 +207,24 @@ async def history(
         items=items,
         next_cursor=next_cursor,
     )
+
+
+@router.post(
+    "/workout-sessions/previous-performance",
+    response_model=PreviousPerformanceResponse,
+)
+async def get_previous_performance(
+    payload: PreviousPerformanceRequest,
+    database: DatabaseDep,
+    user: CurrentUserDep,
+) -> PreviousPerformanceResponse:
+    items = await service.previous_performance(
+        database,
+        user_id=user["_id"],
+        exercise_ids=(payload.exercise_ids),
+    )
+
+    return PreviousPerformanceResponse(items=items)
 
 
 @router.get(

@@ -44,8 +44,10 @@ async def test_all_startup_indexes_accept_equivalent_legacy_names():
         def __init__(self):
             self.index = None
             self.checked = 0
+            self.requested_names = set()
 
         async def create_index(self, keys, **options):
+            self.requested_names.add(options["name"])
             self.index = dict(IndexModel(keys, **options).document)
             self.index["name"] = "legacy_name"
             self.index["v"] = 2
@@ -60,7 +62,11 @@ async def test_all_startup_indexes_accept_equivalent_legacy_names():
     database.__getitem__.side_effect = lambda name: collections.setdefault(name, LegacyCollection())
     await ensure_indexes(database)
     assert "workout_sessions" in collections
-    assert collections["workout_sessions"].checked == 2
+    assert collections["workout_sessions"].requested_names == {
+        "idx_workout_previous_exercise",
+        "idx_workout_session_active",
+        "idx_workout_history",
+    }
     assert all(collection.checked > 0 for collection in collections.values())
 
 

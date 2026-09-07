@@ -1,130 +1,80 @@
-import {
-  useInfiniteQuery,
-  useQuery,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
 import {
   getActiveWorkout,
+  getPreviousPerformance,
   getWorkoutHistory,
   getWorkoutSession,
   getWorkoutTemplate,
   getWorkoutTemplates,
 } from "./api";
 
-import {
-  workoutSessionKeys,
-  workoutTemplateKeys,
-} from "./keys";
-
+import { workoutSessionKeys, workoutTemplateKeys } from "./keys";
 
 export function useWorkoutTemplates() {
   return useQuery({
-    queryKey:
-      workoutTemplateKeys
-        .list(),
+    queryKey: workoutTemplateKeys.list(),
 
-    queryFn:
-      getWorkoutTemplates,
+    queryFn: getWorkoutTemplates,
 
-    staleTime:
-      60_000,
+    staleTime: 60_000,
   });
 }
 
-
-export function useWorkoutTemplate(
-  templateId: string,
-) {
+export function useWorkoutTemplate(templateId: string) {
   return useQuery({
-    queryKey:
-      workoutTemplateKeys
-        .detail(
-          templateId
-        ),
+    queryKey: workoutTemplateKeys.detail(templateId),
 
-    queryFn:
-      () =>
-        getWorkoutTemplate(
-          templateId
-        ),
+    queryFn: () => getWorkoutTemplate(templateId),
 
-    enabled:
-      Boolean(
-        templateId
-      ),
+    enabled: Boolean(templateId),
   });
 }
-
 
 export function useActiveWorkout() {
   return useQuery({
-    queryKey:
-      workoutSessionKeys
-        .active(),
+    queryKey: workoutSessionKeys.active(),
 
-    queryFn:
-      getActiveWorkout,
+    queryFn: getActiveWorkout,
 
-    staleTime:
-      5_000,
+    staleTime: 5_000,
   });
 }
 
-
-export function useWorkoutSession(
-  sessionId: string,
-) {
+export function useWorkoutSession(sessionId: string) {
   return useQuery({
-    queryKey:
-      workoutSessionKeys
-        .detail(
-          sessionId
-        ),
+    queryKey: workoutSessionKeys.detail(sessionId),
 
-    queryFn:
-      () =>
-        getWorkoutSession(
-          sessionId
-        ),
+    queryFn: () => getWorkoutSession(sessionId),
 
-    enabled:
-      Boolean(
-        sessionId
-      ),
+    enabled: Boolean(sessionId),
 
-    staleTime:
-      5_000,
+    staleTime: 5_000,
   });
 }
-
 
 export function useWorkoutHistory() {
   return useInfiniteQuery({
-    queryKey:
-      workoutSessionKeys
-        .history(),
+    queryKey: workoutSessionKeys.history(),
 
-    queryFn:
-      ({
-        pageParam,
-      }) =>
-        getWorkoutHistory(
-          pageParam
-        ),
+    queryFn: ({ pageParam }) => getWorkoutHistory(pageParam),
 
-    initialPageParam:
-      null as
-        | string
-        | null,
+    initialPageParam: null as string | null,
 
-    getNextPageParam:
-      (
-        lastPage,
-      ) =>
-        lastPage
-          .next_cursor,
+    getNextPageParam: (lastPage) => lastPage.next_cursor,
 
-    staleTime:
-      30_000,
+    staleTime: 30_000,
+  });
+}
+
+export function usePreviousPerformance(exerciseIds: string[]) {
+  return useQuery({
+    queryKey: workoutSessionKeys.previous(exerciseIds),
+
+    queryFn: () => getPreviousPerformance(exerciseIds),
+
+    enabled: exerciseIds.length > 0,
+
+    staleTime: 60_000,
   });
 }

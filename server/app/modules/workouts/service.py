@@ -31,6 +31,8 @@ from app.modules.workouts.models import (
 )
 from app.modules.workouts.schemas import (
     AddWorkoutExercisesRequest,
+    PreviousExercisePerformance,
+    PreviousSetResponse,
     StartWorkoutRequest,
     TemplateExerciseResponse,
     TemplateSetResponse,
@@ -1181,3 +1183,66 @@ async def workout_history(
         response,
         next_cursor,
     )
+
+
+async def previous_performance(
+    database: Database,
+    *,
+    user_id: ObjectId,
+    exercise_ids: list[str],
+):
+    if not all(ObjectId.is_valid(exercise_id) for exercise_id in exercise_ids):
+        raise invalid_exercise()
+
+    requested = {exercise_id for exercise_id in exercise_ids}
+
+    object_ids = [ObjectId(exercise_id) for exercise_id in requested]
+
+    sessions = await repository.recent_sessions_for_exercises(
+        database,
+        user_id=user_id,
+        exercise_ids=object_ids,
+    )
+
+    found: dict[str, PreviousExercisePerformance] = {}
+
+    for session in sessions:
+        completed_at = session["completed_at"]
+
+        if completed_at is None:
+            continue
+
+        for exercise in session["exercises"]:
+            exercise_id = str(exercise["exercise_id"])
+
+            if exercise_id not in requested or exercise_id in found:
+                continue
+
+            completed_sets = [
+                workout_set
+                for workout_set in sorted(
+                    exercise["sets"],
+                    key=lambda item: item["position"],
+                )
+                if workout_set["completed"]
+            ]
+
+            if not completed_sets:
+                continue
+
+            found[exercise_id] = PreviousExercisePerformance(
+                exercise_id=(exercise_id),
+                completed_at=(completed_at.isoformat()),
+                sets=[
+                    PreviousSetResponse(
+                        type=workout_set["type"],
+                        weight=workout_set["weight"],
+                        weight_unit=(workout_set["weight_unit"]),
+                        reps=workout_set["reps"],
+                        rpe=workout_set["rpe"],
+                    )
+                    for workout_set in completed_sets
+                ],
+            )
+
+    return list(found.values())

@@ -450,3 +450,34 @@ class ActiveWorkoutResponse(BaseModel):
 
 class MessageResponse(BaseModel):
     message: str
+
+
+class PreviousPerformanceRequest(BaseModel):
+    exercise_ids: list[str] = Field(
+        min_length=1,
+        max_length=40,
+    )
+
+
+class PreviousSetResponse(BaseModel):
+    type: WorkoutSetType
+
+    weight: float | None
+
+    weight_unit: WeightUnit
+
+    reps: int | None
+
+    rpe: float | None
+
+
+class PreviousExercisePerformance(BaseModel):
+    exercise_id: str
+
+    completed_at: str
+
+    sets: list[PreviousSetResponse]
+
+
+class PreviousPerformanceResponse(BaseModel):
+    items: list[PreviousExercisePerformance]

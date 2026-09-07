@@ -84,43 +84,47 @@ export default function TrainScreen() {
         ) : activeWorkout ? (
           <Pressable
             onPress={() => {
-              router.push(
-                `/workouts/active/${activeWorkout.id}`
-              );
+              router.push(`/workouts/active/${activeWorkout.id}`);
             }}
-            className="mt-8 rounded-[26px] border border-brand-bright/30 bg-[#101A2E] p-5"
+            className="mt-7 overflow-hidden rounded-[24px] border border-brand-bright/20 bg-[#101725]"
           >
-            <View className="flex-row items-center">
-              <View className="h-12 w-12 items-center justify-center rounded-2xl bg-brand/20">
-                <Ionicons
-                  name="play"
-                  size={21}
-                  color="#60A5FA"
-                />
+            <View className="h-[3px] bg-brand" />
+
+            <View className="p-5">
+              <View className="flex-row items-center">
+                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-brand/15">
+                  <Ionicons name="barbell" size={19} color="#60A5FA" />
+                </View>
+
+                <View className="ml-3 flex-1">
+                  <Text className="text-[10px] font-bold uppercase tracking-[1.4px] text-brand-bright">
+                    Workout in progress
+                  </Text>
+                  <Text className="mt-1 text-[17px] font-extrabold text-white">
+                    {activeWorkout.name}
+                  </Text>
+                </View>
+
+                <View className="h-9 w-9 items-center justify-center rounded-full bg-brand">
+                  <Ionicons name="play" size={16} color="#FFFFFF" />
+                </View>
               </View>
 
-              <View className="ml-4 flex-1">
-                <Text className="text-[11px] font-bold uppercase tracking-[1.5px] text-brand-bright">
-                  Workout in progress
-                </Text>
+              <View className="mt-5 flex-row">
+                <View className="flex-1">
+                  <Text className="text-[10px] text-white/25">Exercises</Text>
+                  <Text className="mt-1 text-[13px] font-bold text-white/65">
+                    {activeWorkout.exercises.length}
+                  </Text>
+                </View>
 
-                <Text className="mt-1 text-[19px] font-extrabold text-white">
-                  {activeWorkout.name}
-                </Text>
-
-                <Text className="mt-1 text-[11px] text-white/35">
-                  {activeWorkout.exercises.length}{" "}
-                  exercises ·{" "}
-                  {activeWorkout.completed_set_count}{" "}
-                  sets done
-                </Text>
+                <View className="flex-1">
+                  <Text className="text-[10px] text-white/25">Sets</Text>
+                  <Text className="mt-1 text-[13px] font-bold text-white/65">
+                    {activeWorkout.completed_set_count}
+                  </Text>
+                </View>
               </View>
-
-              <Ionicons
-                name="chevron-forward"
-                size={20}
-                color="#60A5FA"
-              />
             </View>
           </Pressable>
         ) : (

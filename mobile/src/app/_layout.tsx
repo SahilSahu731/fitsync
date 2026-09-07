@@ -198,6 +198,10 @@ function RootNavigator() {
           <Stack.Screen
             name="workout-history"
           />
+
+          <Stack.Screen
+            name="workout-summary"
+          />
         </Stack.Protected>
       </Stack>
     </>

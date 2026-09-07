@@ -429,3 +429,38 @@ export interface WorkoutHistoryResponse {
     | string
     | null;
 }
+
+export interface PreviousSet {
+  type: WorkoutSetType;
+
+  weight:
+    | number
+    | null;
+
+  weight_unit:
+    WeightUnit;
+
+  reps:
+    | number
+    | null;
+
+  rpe:
+    | number
+    | null;
+}
+
+
+export interface PreviousExercisePerformance {
+  exercise_id: string;
+
+  completed_at: string;
+
+  sets:
+    PreviousSet[];
+}
+
+
+export interface PreviousPerformanceResponse {
+  items:
+    PreviousExercisePerformance[];
+}

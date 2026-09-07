@@ -1,4 +1,5 @@
 import type {
+  WeightUnit,
   WorkoutExercise,
   WorkoutSession,
   WorkoutUpdateInput,
@@ -9,9 +10,9 @@ export function randomLocalId():
   string {
   return (
     `${Date.now()}-` +
-    `${Math.random()
+    Math.random()
       .toString(36)
-      .slice(2)}`
+      .slice(2)
   );
 }
 
@@ -27,12 +28,14 @@ export function formatDuration(
   const minutes =
     Math.floor(
       (
-        seconds % 3600
+        seconds %
+        3600
       ) / 60
     );
 
   const remaining =
-    seconds % 60;
+    seconds %
+    60;
 
   if (hours > 0) {
     return (
@@ -41,13 +44,13 @@ export function formatDuration(
         .toString()
         .padStart(
           2,
-          "0"
+          "0",
         )}:` +
       `${remaining
         .toString()
         .padStart(
           2,
-          "0"
+          "0",
         )}`
     );
   }
@@ -58,9 +61,126 @@ export function formatDuration(
       .toString()
       .padStart(
         2,
-        "0"
+        "0",
       )}`
   );
+}
+
+
+export function formatCompactDuration(
+  seconds: number,
+): string {
+  const hours =
+    Math.floor(
+      seconds / 3600
+    );
+
+  const minutes =
+    Math.floor(
+      (
+        seconds %
+        3600
+      ) / 60
+    );
+
+  if (hours > 0) {
+    return `${hours}h ${minutes}m`;
+  }
+
+  return `${minutes}m`;
+}
+
+
+export function convertWeight(
+  weight: number,
+  from: WeightUnit,
+  to: WeightUnit,
+): number {
+  if (from === to) {
+    return weight;
+  }
+
+  if (
+    from === "LB" &&
+    to === "KG"
+  ) {
+    return (
+      weight *
+      0.45359237
+    );
+  }
+
+  return (
+    weight /
+    0.45359237
+  );
+}
+
+
+export function workoutVolume(
+  session: WorkoutSession,
+  displayUnit: WeightUnit,
+): number {
+  return session.exercises.reduce(
+    (
+      total,
+      exercise,
+    ) =>
+      total +
+      exercise.sets.reduce(
+        (
+          setTotal,
+          workoutSet,
+        ) => {
+          if (
+            !workoutSet.completed ||
+            workoutSet.weight ===
+              null ||
+            workoutSet.reps ===
+              null
+          ) {
+            return setTotal;
+          }
+
+          return (
+            setTotal +
+            convertWeight(
+              workoutSet.weight,
+              workoutSet
+                .weight_unit,
+              displayUnit,
+            ) *
+              workoutSet.reps
+          );
+        },
+        0,
+      ),
+    0,
+  );
+}
+
+
+export function formatVolume(
+  value: number,
+): string {
+  if (value >= 1000) {
+    const thousands =
+      value / 1000;
+
+    return (
+      `${thousands
+        .toFixed(
+          thousands >=
+            10
+            ? 0
+            : 1,
+        )}k`
+    );
+  }
+
+  return Math.round(
+    value
+  ).toLocaleString();
 }
 
 

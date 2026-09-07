@@ -4,6 +4,7 @@ import {
 
 import type {
   ActiveWorkoutResponse,
+  PreviousPerformanceResponse,
   StartWorkoutInput,
   WorkoutHistoryResponse,
   WorkoutSession,
@@ -201,6 +202,21 @@ export async function getWorkoutHistory(
           limit:
             20,
         },
+      },
+    );
+
+  return response.data;
+}
+
+export async function getPreviousPerformance(
+  exerciseIds: string[],
+): Promise<PreviousPerformanceResponse> {
+  const response =
+    await apiClient.post<PreviousPerformanceResponse>(
+      "/workout-sessions/previous-performance",
+      {
+        exercise_ids:
+          exerciseIds,
       },
     );
 
