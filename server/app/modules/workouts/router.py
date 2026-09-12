@@ -25,6 +25,7 @@ from app.modules.workouts.schemas import (
     PreviousPerformanceResponse,
     StartWorkoutRequest,
     WorkoutHistoryResponse,
+    WorkoutRevisionRequest,
     WorkoutSessionResponse,
     WorkoutSessionUpdateRequest,
     WorkoutTemplateCreateRequest,
@@ -49,7 +50,7 @@ router = APIRouter(
 
 @router.get(
     "/workout-templates",
-    response_model=(WorkoutTemplateListResponse),
+    response_model=WorkoutTemplateListResponse,
 )
 async def list_templates(
     database: DatabaseDep,
@@ -145,7 +146,7 @@ async def archive_template(
         template_id=template_id,
     )
 
-    return MessageResponse(message=("Workout template archived."))
+    return MessageResponse(message="Workout template archived.")
 
 
 # =========================================================
@@ -228,7 +229,7 @@ async def get_previous_performance(
     items = await service.previous_performance(
         database,
         user_id=user["_id"],
-        exercise_ids=(payload.exercise_ids),
+        exercise_ids=payload.exercise_ids,
     )
 
     return PreviousPerformanceResponse(items=items)
@@ -292,6 +293,7 @@ async def update_workout(
 )
 async def complete_workout(
     session_id: str,
+    payload: WorkoutRevisionRequest,
     database: DatabaseDep,
     user: CurrentUserDep,
 ) -> WorkoutSessionResponse:
@@ -299,6 +301,7 @@ async def complete_workout(
         database,
         user_id=user["_id"],
         session_id=session_id,
+        expected_revision=payload.revision,
     )
 
     try:

@@ -167,6 +167,7 @@ async def replace_active_session_fields(
     *,
     session_id: ObjectId,
     user_id: ObjectId,
+    expected_revision: int,
     fields: dict,
 ) -> bool:
     result = await database["workout_sessions"].update_one(
@@ -174,6 +175,7 @@ async def replace_active_session_fields(
             "_id": session_id,
             "user_id": user_id,
             "status": "IN_PROGRESS",
+            "revision": expected_revision,
         },
         {
             "$set": fields,
@@ -191,6 +193,7 @@ async def complete_session(
     *,
     session_id: ObjectId,
     user_id: ObjectId,
+    expected_revision: int,
     completed_at,
     duration_seconds: int,
 ) -> bool:
@@ -199,6 +202,7 @@ async def complete_session(
             "_id": session_id,
             "user_id": user_id,
             "status": "IN_PROGRESS",
+            "revision": expected_revision,
         },
         {
             "$set": {

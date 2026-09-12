@@ -5,32 +5,83 @@ import type {
   WorkoutUpdateInput,
 } from "./types";
 
-export function randomLocalId(): string {
-  return `${Date.now()}-` + Math.random().toString(36).slice(2);
+
+export function randomLocalId():
+  string {
+  return (
+    `${Date.now()}-` +
+    Math.random()
+      .toString(36)
+      .slice(2)
+  );
 }
 
-export function formatDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
 
-  const minutes = Math.floor((seconds % 3600) / 60);
+export function formatDuration(
+  seconds: number,
+): string {
+  const hours =
+    Math.floor(
+      seconds / 3600
+    );
 
-  const remaining = seconds % 60;
+  const minutes =
+    Math.floor(
+      (
+        seconds %
+        3600
+      ) / 60
+    );
+
+  const remaining =
+    seconds %
+    60;
 
   if (hours > 0) {
     return (
       `${hours}:` +
-      `${minutes.toString().padStart(2, "0")}:` +
-      `${remaining.toString().padStart(2, "0")}`
+      `${minutes
+        .toString()
+        .padStart(
+          2,
+          "0",
+        )}:` +
+      `${remaining
+        .toString()
+        .padStart(
+          2,
+          "0",
+        )}`
     );
   }
 
-  return `${minutes}:` + `${remaining.toString().padStart(2, "0")}`;
+  return (
+    `${minutes}:` +
+    `${remaining
+      .toString()
+      .padStart(
+        2,
+        "0",
+      )}`
+  );
 }
 
-export function formatCompactDuration(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
 
-  const minutes = Math.floor((seconds % 3600) / 60);
+export function formatCompactDuration(
+  seconds: number,
+): string {
+  const hours =
+    Math.floor(
+      seconds / 3600
+    );
+
+  const minutes =
+    Math.floor(
+      (
+        seconds %
+        3600
+      ) / 60
+    );
 
   if (hours > 0) {
     return `${hours}h ${minutes}m`;
@@ -38,6 +89,7 @@ export function formatCompactDuration(seconds: number): string {
 
   return `${minutes}m`;
 }
+
 
 export function convertWeight(
   weight: number,
@@ -48,115 +100,208 @@ export function convertWeight(
     return weight;
   }
 
-  if (from === "LB" && to === "KG") {
-    return weight * 0.45359237;
+  if (
+    from === "LB" &&
+    to === "KG"
+  ) {
+    return (
+      weight *
+      0.45359237
+    );
   }
 
-  return weight / 0.45359237;
+  return (
+    weight /
+    0.45359237
+  );
 }
+
 
 export function workoutVolume(
   session: WorkoutSession,
   displayUnit: WeightUnit,
 ): number {
   return session.exercises.reduce(
-    (total, exercise) =>
+    (
+      total,
+      exercise,
+    ) =>
       total +
-      exercise.sets.reduce((setTotal, workoutSet) => {
-        if (
-          !workoutSet.completed ||
-          workoutSet.weight === null ||
-          workoutSet.reps === null
-        ) {
-          return setTotal;
-        }
+      exercise.sets.reduce(
+        (
+          setTotal,
+          workoutSet,
+        ) => {
+          if (
+            !workoutSet.completed ||
+            workoutSet.weight ===
+              null ||
+            workoutSet.reps ===
+              null
+          ) {
+            return setTotal;
+          }
 
-        return (
-          setTotal +
-          convertWeight(
-            workoutSet.weight,
-            workoutSet.weight_unit,
-            displayUnit,
-          ) *
-            workoutSet.reps
-        );
-      }, 0),
+          return (
+            setTotal +
+            convertWeight(
+              workoutSet.weight,
+              workoutSet
+                .weight_unit,
+              displayUnit,
+            ) *
+              workoutSet.reps
+          );
+        },
+        0,
+      ),
     0,
   );
 }
 
-export function formatVolume(value: number): string {
-  if (value >= 1000) {
-    const thousands = value / 1000;
 
-    return `${thousands.toFixed(thousands >= 10 ? 0 : 1)}k`;
+export function formatVolume(
+  value: number,
+): string {
+  if (value >= 1000) {
+    const thousands =
+      value / 1000;
+
+    return (
+      `${thousands
+        .toFixed(
+          thousands >=
+            10
+            ? 0
+            : 1,
+        )}k`
+    );
   }
 
-  return Math.round(value).toLocaleString();
+  return Math.round(
+    value
+  ).toLocaleString();
 }
+
 
 export function sessionToUpdateInput(
   session: WorkoutSession,
+  expectedRevision =
+    session.revision,
 ): WorkoutUpdateInput {
   return {
-    name: session.name,
+    revision:
+      expectedRevision,
 
-    notes: session.notes,
+    name:
+      session.name,
 
-    exercises: session.exercises.map((exercise) => ({
-      id: exercise.id,
+    notes:
+      session.notes,
 
-      exercise_id: exercise.exercise_id,
+    exercises:
+      session.exercises.map(
+        (
+          exercise,
+        ) => ({
+          id:
+            exercise.id,
 
-      rest_seconds: exercise.rest_seconds,
+          exercise_id:
+            exercise.exercise_id,
 
-      notes: exercise.notes,
+          rest_seconds:
+            exercise.rest_seconds,
 
-      superset_group_id: exercise.superset_group_id,
+          notes:
+            exercise.notes,
 
-      sets: exercise.sets.map((workoutSet) => ({
-        id: workoutSet.id,
+          superset_group_id:
+            exercise
+              .superset_group_id,
 
-        type: workoutSet.type,
+          sets:
+            exercise.sets.map(
+              (
+                workoutSet,
+              ) => ({
+                id:
+                  workoutSet.id,
 
-        target_reps_min: workoutSet.target_reps_min,
+                type:
+                  workoutSet.type,
 
-        target_reps_max: workoutSet.target_reps_max,
+                target_reps_min:
+                  workoutSet
+                    .target_reps_min,
 
-        target_weight: workoutSet.target_weight,
+                target_reps_max:
+                  workoutSet
+                    .target_reps_max,
 
-        target_rpe: workoutSet.target_rpe,
+                target_weight:
+                  workoutSet
+                    .target_weight,
 
-        target_rir: workoutSet.target_rir,
+                target_rpe:
+                  workoutSet
+                    .target_rpe,
 
-        reps: workoutSet.reps,
+                target_rir:
+                  workoutSet
+                    .target_rir,
 
-        weight: workoutSet.weight,
+                reps:
+                  workoutSet.reps,
 
-        weight_unit: workoutSet.weight_unit,
+                weight:
+                  workoutSet.weight,
 
-        rpe: workoutSet.rpe,
+                weight_unit:
+                  workoutSet
+                    .weight_unit,
 
-        rir: workoutSet.rir,
+                rpe:
+                  workoutSet.rpe,
 
-        completed: workoutSet.completed,
-      })),
-    })),
+                rir:
+                  workoutSet.rir,
+
+                completed:
+                  workoutSet.completed,
+              }),
+            ),
+        }),
+      ),
   };
 }
+
 
 export function reorderExercises(
   exercises: WorkoutExercise[],
 ): WorkoutExercise[] {
-  return exercises.map((exercise, index) => ({
-    ...exercise,
+  return exercises.map(
+    (
+      exercise,
+      index,
+    ) => ({
+      ...exercise,
 
-    position: index,
+      position:
+        index,
 
-    sets: exercise.sets.map((workoutSet, setIndex) => ({
-      ...workoutSet,
+      sets:
+        exercise.sets.map(
+          (
+            workoutSet,
+            setIndex,
+          ) => ({
+            ...workoutSet,
 
-      position: setIndex,
-    })),
-  }));
+            position:
+              setIndex,
+          }),
+        ),
+    }),
+  );
 }

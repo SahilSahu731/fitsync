@@ -29,7 +29,10 @@ def create_upload_signature(
     *,
     user_id: str,
     resource_type: str,
-) -> dict[str, Any]:
+) -> dict[
+    str,
+    Any,
+]:
     timestamp = int(time.time())
 
     folder = exercise_media_folder(user_id)
@@ -62,7 +65,10 @@ def create_upload_signature(
 def _get_cloudinary_resource(
     public_id: str,
     resource_type: str,
-) -> dict[str, Any]:
+) -> dict[
+    str,
+    Any,
+]:
     configure_cloudinary()
 
     result = cloudinary.api.resource(
@@ -78,7 +84,10 @@ async def verify_owned_asset(
     user_id: str,
     public_id: str,
     resource_type: str,
-) -> dict[str, Any]:
+) -> dict[
+    str,
+    Any,
+]:
     expected_prefix = exercise_media_folder(user_id) + "/"
 
     if not public_id.startswith(expected_prefix):
@@ -147,7 +156,8 @@ def video_delivery_url(
         f"{settings.cloudinary_cloud_name}/"
         "video/upload/"
         "q_auto/"
-        f"{encoded}.{format_name}"
+        f"{encoded}."
+        f"{format_name}"
     )
 
 
@@ -167,3 +177,86 @@ def video_thumbnail_url(
         "c_fill,g_auto,q_auto/"
         f"{encoded}.jpg"
     )
+
+
+# =========================================================
+# DELETION
+# =========================================================
+
+
+def _delete_resources(
+    public_ids: list[str],
+    resource_type: str,
+) -> None:
+    configure_cloudinary()
+
+    cloudinary.api.delete_resources(
+        public_ids,
+        resource_type=resource_type,
+        type="upload",
+        invalidate=True,
+    )
+
+
+def _chunks(
+    values: list[str],
+    size: int = 100,
+):
+    for index in range(
+        0,
+        len(values),
+        size,
+    ):
+        yield values[index : index + size]
+
+
+async def delete_owned_assets(
+    *,
+    user_id: str,
+    assets: list[
+        tuple[
+            str,
+            str,
+        ]
+    ],
+) -> None:
+    """
+    Delete only Cloudinary assets living under the
+    authenticated user's FitSync exercise-media folder.
+
+    Ownership is checked again here because this is
+    destructive.
+    """
+
+    expected_prefix = exercise_media_folder(user_id) + "/"
+
+    images: list[str] = []
+
+    videos: list[str] = []
+
+    for (
+        public_id,
+        media_type,
+    ) in assets:
+        if not public_id.startswith(expected_prefix):
+            continue
+
+        if media_type == "VIDEO":
+            videos.append(public_id)
+
+        elif media_type == "IMAGE":
+            images.append(public_id)
+
+    for batch in _chunks(images):
+        await to_thread.run_sync(
+            _delete_resources,
+            batch,
+            "image",
+        )
+
+    for batch in _chunks(videos):
+        await to_thread.run_sync(
+            _delete_resources,
+            batch,
+            "video",
+        )

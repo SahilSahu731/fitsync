@@ -251,6 +251,8 @@ export interface WorkoutExerciseMutationInput {
 }
 
 export interface WorkoutUpdateInput {
+  revision: number;
+
   name: string;
 
   notes: string | null;

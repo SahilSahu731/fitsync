@@ -192,12 +192,35 @@ export default function ActiveWorkoutScreen() {
 
     setActionLoading(true);
 
+    setError(null);
+
     try {
+      /**
+       * Critical:
+       *
+       * Make sure every pending set/reps/weight edit
+       * has reached MongoDB before performing another
+       * revision-changing server mutation.
+       */
+      const savedBeforeAdd = await autosave.saveNow();
+
+      const revision = savedBeforeAdd?.revision ?? draft.revision;
+
       const updated = await addWorkoutExercises(
         draft.id,
 
         exercises.map((exercise) => exercise.id),
+
+        revision,
       );
+
+      /**
+       * Add Exercise increments server revision too.
+       *
+       * Tell autosave that this entire returned snapshot
+       * is now the confirmed server baseline.
+       */
+      autosave.adoptServerSnapshot(updated);
 
       setDraft(updated);
 
@@ -213,7 +236,14 @@ export default function ActiveWorkoutScreen() {
         queryKey: workoutSessionKeys.all,
       });
     } catch (requestError) {
-      setError(parseApiError(requestError, "Unable to add exercises.").message);
+      const parsed = parseApiError(requestError, "Unable to add exercises.");
+
+      setError(
+        parsed.code === "WORKOUT_REVISION_CONFLICT"
+          ? "This workout changed somewhere else. " +
+              "Leave and reopen it before continuing."
+          : parsed.message,
+      );
     } finally {
       setActionLoading(false);
     }
@@ -314,33 +344,54 @@ export default function ActiveWorkoutScreen() {
 
     setActionLoading(true);
 
-    try {
-      await autosave.saveNow();
+    setError(null);
 
-      const completed = await completeWorkout(draft.id);
+    try {
+      /**
+       * Do not complete the workout until ALL local
+       * edits have been persisted.
+       */
+      const saved = await autosave.saveNow();
+
+      const revision = saved?.revision ?? draft.revision;
+
+      const completed = await completeWorkout(draft.id, revision);
 
       queryClient.setQueryData(
         workoutSessionKeys.detail(completed.id),
         completed,
       );
 
+      queryClient.setQueryData(workoutSessionKeys.active(), {
+        workout: null,
+      });
+
       await queryClient.invalidateQueries({
         queryKey: workoutSessionKeys.all,
       });
 
-      await queryClient.invalidateQueries({
-        queryKey: progressKeys.all,
-      });
-
       await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
+      /**
+       * You already have a proper summary screen.
+       *
+       * Use it.
+       */
       router.replace({
-        pathname: "/workout-history/[sessionId]",
-        params: { sessionId: completed.id },
+        pathname: "/workout-summary/[sessionId]",
+
+        params: {
+          sessionId: completed.id,
+        },
       });
     } catch (requestError) {
+      const parsed = parseApiError(requestError, "Unable to finish workout.");
+
       setError(
-        parseApiError(requestError, "Unable to finish workout.").message,
+        parsed.code === "WORKOUT_REVISION_CONFLICT"
+          ? "This workout changed somewhere else. " +
+              "Leave and reopen it before finishing."
+          : parsed.message,
       );
     } finally {
       setActionLoading(false);
@@ -476,6 +527,7 @@ export default function ActiveWorkoutScreen() {
       </View>
 
       <ScrollView
+        pointerEvents={actionLoading ? "none" : "auto"}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{

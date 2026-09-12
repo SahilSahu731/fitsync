@@ -247,6 +247,16 @@ async def ensure_indexes(
 
     await ensure_index(
         workout_sessions,
+        "user_id",
+        unique=True,
+        partialFilterExpression={
+            "status": "IN_PROGRESS",
+        },
+        name="uq_workout_one_active_per_user",
+    )
+
+    await ensure_index(
+        workout_sessions,
         [
             (
                 "user_id",

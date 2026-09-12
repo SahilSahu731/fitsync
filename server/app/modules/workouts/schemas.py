@@ -307,6 +307,10 @@ class WorkoutExerciseMutationInput(BaseModel):
 
 
 class WorkoutSessionUpdateRequest(BaseModel):
+    revision: int = Field(
+        ge=1,
+    )
+
     name: str = Field(
         min_length=1,
         max_length=80,
@@ -324,9 +328,19 @@ class WorkoutSessionUpdateRequest(BaseModel):
 
 
 class AddWorkoutExercisesRequest(BaseModel):
+    revision: int = Field(
+        ge=1,
+    )
+
     exercise_ids: list[str] = Field(
         min_length=1,
         max_length=20,
+    )
+
+
+class WorkoutRevisionRequest(BaseModel):
+    revision: int = Field(
+        ge=1,
     )
 
 

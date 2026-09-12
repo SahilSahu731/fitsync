@@ -4,6 +4,7 @@ from uuid import uuid4
 
 from bson import ObjectId
 from fastapi import HTTPException
+from pymongo.errors import DuplicateKeyError
 
 from app.db.mongo import Database
 from app.modules.auth.security import (
@@ -93,6 +94,40 @@ def workout_not_in_progress():
             "message": "This workout is no longer in progress.",
         },
     )
+
+
+def workout_revision_conflict(
+    current_revision: int,
+):
+    return HTTPException(
+        status_code=409,
+        detail={
+            "code": "WORKOUT_REVISION_CONFLICT",
+            "message": ("This workout changed on the server. Refresh it before saving again."),
+            "current_revision": current_revision,
+        },
+    )
+
+
+async def raise_workout_write_error(
+    database: Database,
+    *,
+    session_id: ObjectId,
+    user_id: ObjectId,
+):
+    current = await repository.get_session(
+        database,
+        session_id=session_id,
+        user_id=user_id,
+    )
+
+    if current is None:
+        raise workout_not_found()
+
+    if current["status"] != "IN_PROGRESS":
+        raise workout_not_in_progress()
+
+    raise workout_revision_conflict(current["revision"])
 
 
 def invalid_exercise():
@@ -738,11 +773,21 @@ async def start_workout(
         "revision": 1,
     }
 
-    await repository.insert_session(
-        database,
-        session,
-    )
+    try:
+        await repository.insert_session(
+            database,
+            session,
+        )
 
+    except DuplicateKeyError as error:
+        active = await repository.get_active_session(
+            database,
+            user_id=user["_id"],
+        )
+
+        if active is not None:
+            raise active_workout_exists(str(active["_id"])) from error
+        raise
     return session_response(session)
 
 
@@ -833,15 +878,15 @@ async def add_exercises_to_workout(
 
         sets = [
             build_session_set(
-                weight_unit=(default_weight_unit(user)),
+                weight_unit=default_weight_unit(user),
                 position=0,
             ),
             build_session_set(
-                weight_unit=(default_weight_unit(user)),
+                weight_unit=default_weight_unit(user),
                 position=1,
             ),
             build_session_set(
-                weight_unit=(default_weight_unit(user)),
+                weight_unit=default_weight_unit(user),
                 position=2,
             ),
         ]
@@ -860,15 +905,23 @@ async def add_exercises_to_workout(
             }
         )
 
-    await repository.replace_active_session_fields(
+    updated_ok = await repository.replace_active_session_fields(
         database,
         session_id=session["_id"],
         user_id=user["_id"],
+        expected_revision=payload.revision,
         fields={
             "exercises": exercises,
             "updated_at": utc_now(),
         },
     )
+
+    if not updated_ok:
+        await raise_workout_write_error(
+            database,
+            session_id=session["_id"],
+            user_id=user["_id"],
+        )
 
     updated = await repository.get_session(
         database,
@@ -947,7 +1000,7 @@ async def update_workout(
 
             completed_at = (
                 old_completed_at
-                if input_set.completed and old_completed_at
+                if (input_set.completed and old_completed_at)
                 else (now if input_set.completed else None)
             )
 
@@ -989,6 +1042,7 @@ async def update_workout(
         database,
         session_id=session["_id"],
         user_id=user["_id"],
+        expected_revision=payload.revision,
         fields={
             "name": payload.name.strip(),
             "notes": (payload.notes.strip() if payload.notes else None),
@@ -998,7 +1052,11 @@ async def update_workout(
     )
 
     if not updated:
-        raise workout_not_in_progress()
+        await raise_workout_write_error(
+            database,
+            session_id=session["_id"],
+            user_id=user["_id"],
+        )
 
     result = await repository.get_session(
         database,
@@ -1022,6 +1080,7 @@ async def finish_workout(
     *,
     user_id: ObjectId,
     session_id: str,
+    expected_revision: int,
 ):
     if not ObjectId.is_valid(session_id):
         raise workout_not_found()
@@ -1051,12 +1110,17 @@ async def finish_workout(
         database,
         session_id=object_id,
         user_id=user_id,
+        expected_revision=expected_revision,
         completed_at=now,
-        duration_seconds=(duration_seconds),
+        duration_seconds=duration_seconds,
     )
 
     if not completed:
-        raise workout_not_in_progress()
+        await raise_workout_write_error(
+            database,
+            session_id=object_id,
+            user_id=user_id,
+        )
 
     result = await repository.get_session(
         database,

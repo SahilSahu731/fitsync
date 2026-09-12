@@ -153,7 +153,10 @@ async def update_user_profile(
     mark_email_verified: bool = False,
     timestamp: datetime,
 ) -> None:
-    fields: dict[str, Any] = {
+    fields: dict[
+        str,
+        Any,
+    ] = {
         "last_seen_at": timestamp,
         "updated_at": timestamp,
     }
@@ -215,12 +218,111 @@ async def update_last_seen(
     )
 
 
+# =========================================================
+# ACCOUNT DELETION
+# =========================================================
+
+
+async def list_owned_exercise_media(
+    database: Database,
+    *,
+    user_id: ObjectId,
+) -> list[
+    tuple[
+        str,
+        str,
+    ]
+]:
+    """
+    Capture Cloudinary assets before deleting the
+    custom exercise documents that reference them.
+    """
+
+    cursor = database["exercises"].find(
+        {
+            "source": "CUSTOM",
+            "owner_user_id": user_id,
+        },
+        {
+            "media.public_id": 1,
+            "media.type": 1,
+        },
+    )
+
+    documents = await cursor.to_list(length=None)
+
+    assets: list[
+        tuple[
+            str,
+            str,
+        ]
+    ] = []
+
+    for document in documents:
+        for media in document.get(
+            "media",
+            [],
+        ):
+            public_id = media.get("public_id")
+
+            media_type = media.get("type")
+
+            if isinstance(
+                public_id,
+                str,
+            ) and media_type in {
+                "IMAGE",
+                "VIDEO",
+            }:
+                assets.append(
+                    (
+                        public_id,
+                        media_type,
+                    )
+                )
+
+    return assets
+
+
 async def delete_user_data(
     database: Database,
     *,
     user_id: ObjectId,
     email: str,
 ) -> None:
+    """
+    Remove every persisted FitSync record currently
+    owned by the user.
+
+    Keep the users collection deletion last so a
+    partially failed operation can still be retried.
+    """
+
+    await database["personal_records"].delete_many(
+        {
+            "user_id": user_id,
+        }
+    )
+
+    await database["workout_sessions"].delete_many(
+        {
+            "user_id": user_id,
+        }
+    )
+
+    await database["workout_templates"].delete_many(
+        {
+            "user_id": user_id,
+        }
+    )
+
+    await database["exercises"].delete_many(
+        {
+            "source": "CUSTOM",
+            "owner_user_id": user_id,
+        }
+    )
+
     await database["refresh_tokens"].delete_many(
         {
             "user_id": user_id,

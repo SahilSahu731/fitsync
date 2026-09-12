@@ -1,8 +1,12 @@
-import { isAxiosError } from "axios";
+import {
+  isAxiosError,
+} from "axios";
+
 
 interface ValidationIssue {
   msg?: string;
 }
+
 
 interface StructuredDetail {
   code?: string;
@@ -10,11 +14,20 @@ interface StructuredDetail {
   message?: string;
 
   retry_after?: number;
+
+  current_revision?: number;
+
+  workout_id?: string;
 }
 
+
 interface ApiErrorBody {
-  detail?: string | StructuredDetail | ValidationIssue[];
+  detail?:
+    | string
+    | StructuredDetail
+    | ValidationIssue[];
 }
+
 
 export interface ParsedApiError {
   message: string;
@@ -23,55 +36,101 @@ export interface ParsedApiError {
 
   retryAfter?: number;
 
+  currentRevision?: number;
+
+  workoutId?: string;
+
   status?: number;
 }
 
+
 export function parseApiError(
   error: unknown,
-  fallback = "Something went wrong.",
+  fallback =
+    "Something went wrong.",
 ): ParsedApiError {
-  if (!isAxiosError<ApiErrorBody>(error)) {
+  if (
+    !isAxiosError<ApiErrorBody>(
+      error
+    )
+  ) {
     return {
-      message: fallback,
+      message:
+        fallback,
     };
   }
 
   if (!error.response) {
     return {
-      message: "Unable to reach FitSync. Check your connection.",
+      message:
+        "Unable to reach FitSync. Check your connection.",
     };
   }
 
-  const status = error.response.status;
+  const status =
+    error.response.status;
 
-  const detail = error.response.data?.detail;
+  const detail =
+    error.response.data
+      ?.detail;
 
-  if (typeof detail === "string") {
+  if (
+    typeof detail ===
+    "string"
+  ) {
     return {
-      message: detail,
+      message:
+        detail,
 
       status,
     };
   }
 
-  if (detail && !Array.isArray(detail) && typeof detail === "object") {
+  if (
+    detail &&
+    !Array.isArray(
+      detail
+    ) &&
+    typeof detail ===
+      "object"
+  ) {
     return {
-      message: detail.message ?? fallback,
+      message:
+        detail.message ??
+        fallback,
 
-      code: detail.code,
+      code:
+        detail.code,
 
-      retryAfter: detail.retry_after,
+      retryAfter:
+        detail.retry_after,
+
+      currentRevision:
+        detail.current_revision,
+
+      workoutId:
+        detail.workout_id,
 
       status,
     };
   }
 
-  if (Array.isArray(detail)) {
-    const first = detail[0];
+  if (
+    Array.isArray(
+      detail
+    )
+  ) {
+    const first =
+      detail[0];
 
-    if (first && typeof first.msg === "string") {
+    if (
+      first &&
+      typeof first.msg ===
+        "string"
+    ) {
       return {
-        message: first.msg,
+        message:
+          first.msg,
 
         status,
       };
@@ -79,7 +138,8 @@ export function parseApiError(
   }
 
   return {
-    message: fallback,
+    message:
+      fallback,
 
     status,
   };

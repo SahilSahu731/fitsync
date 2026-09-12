@@ -9,7 +9,6 @@ from app.modules.auth.dependencies import (
     CurrentUserDep,
 )
 from app.modules.users import (
-    repository,
     service,
 )
 from app.modules.users.schemas import (
@@ -116,10 +115,9 @@ async def delete_account(
     database: DatabaseDep,
     user: CurrentUserDep,
 ) -> MessageResponse:
-    await repository.delete_user_data(
+    await service.delete_user_account(
         database,
-        user_id=user["_id"],
-        email=user["email"],
+        user=user,
     )
 
-    return MessageResponse(message=("Account deleted successfully"))
+    return MessageResponse(message="Account deleted successfully")

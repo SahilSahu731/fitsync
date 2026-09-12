@@ -1,3 +1,5 @@
+import logging
+
 from fastapi import (
     HTTPException,
     status,
@@ -9,6 +11,9 @@ from pymongo.errors import (
 from app.db.mongo import Database
 from app.modules.auth.security import (
     utc_now,
+)
+from app.modules.media import (
+    service as media_service,
 )
 from app.modules.users import (
     repository,
@@ -24,6 +29,8 @@ from app.modules.users.schemas import (
     PreferencesUpdateRequest,
     ProfileUpdateRequest,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def username_unavailable_error():
@@ -69,12 +76,12 @@ async def complete_user_onboarding(
 ) -> UserDocument:
     available = await username_is_available(
         database,
-        username=(payload.username),
-        current_user_id=(user["_id"]),
+        username=payload.username,
+        current_user_id=user["_id"],
     )
 
     if not available:
-        raise username_unavailable_error()
+        raise (username_unavailable_error())
 
     now = utc_now()
 
@@ -82,17 +89,17 @@ async def complete_user_onboarding(
         await repository.complete_onboarding(
             database,
             user["_id"],
-            display_name=(payload.display_name),
-            username=(payload.username),
-            fitness_goal=(payload.fitness_goal),
-            experience_level=(payload.experience_level),
-            weight_unit=(payload.weight_unit),
-            weekly_workout_target=(payload.weekly_workout_target),
+            display_name=payload.display_name,
+            username=payload.username,
+            fitness_goal=payload.fitness_goal,
+            experience_level=payload.experience_level,
+            weight_unit=payload.weight_unit,
+            weekly_workout_target=payload.weekly_workout_target,
             timestamp=now,
         )
 
     except DuplicateKeyError as error:
-        raise username_unavailable_error() from error
+        raise (username_unavailable_error()) from error
 
     updated = await repository.get_user_by_id(
         database,
@@ -113,12 +120,12 @@ async def update_user_profile_details(
 ) -> UserDocument:
     available = await username_is_available(
         database,
-        username=(payload.username),
-        current_user_id=(user["_id"]),
+        username=payload.username,
+        current_user_id=user["_id"],
     )
 
     if not available:
-        raise username_unavailable_error()
+        raise (username_unavailable_error())
 
     now = utc_now()
 
@@ -126,13 +133,13 @@ async def update_user_profile_details(
         await repository.update_profile(
             database,
             user["_id"],
-            display_name=(payload.display_name),
-            username=(payload.username),
+            display_name=payload.display_name,
+            username=payload.username,
             timestamp=now,
         )
 
     except DuplicateKeyError as error:
-        raise username_unavailable_error() from error
+        raise (username_unavailable_error()) from error
 
     updated = await repository.get_user_by_id(
         database,
@@ -154,10 +161,10 @@ async def update_user_preferences(
     await repository.update_preferences(
         database,
         user["_id"],
-        fitness_goal=(payload.fitness_goal),
-        experience_level=(payload.experience_level),
-        weight_unit=(payload.weight_unit),
-        weekly_workout_target=(payload.weekly_workout_target),
+        fitness_goal=payload.fitness_goal,
+        experience_level=payload.experience_level,
+        weight_unit=payload.weight_unit,
+        weekly_workout_target=payload.weekly_workout_target,
         timestamp=utc_now(),
     )
 
@@ -170,3 +177,35 @@ async def update_user_preferences(
         raise RuntimeError("User disappeared during preferences update")
 
     return updated
+
+
+async def delete_user_account(
+    database: Database,
+    *,
+    user: UserDocument,
+) -> None:
+    assets = await repository.list_owned_exercise_media(
+        database,
+        user_id=user["_id"],
+    )
+
+    await repository.delete_user_data(
+        database,
+        user_id=user["_id"],
+        email=user["email"],
+    )
+
+    if not assets:
+        return
+
+    try:
+        await media_service.delete_owned_assets(
+            user_id=str(user["_id"]),
+            assets=assets,
+        )
+
+    except Exception:
+        logger.exception(
+            "Account %s was deleted, but Cloudinary cleanup failed.",
+            user["_id"],
+        )

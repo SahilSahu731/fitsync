@@ -65,6 +65,7 @@ async def test_all_startup_indexes_accept_equivalent_legacy_names():
     assert collections["workout_sessions"].requested_names == {
         "idx_workout_previous_exercise",
         "idx_workout_session_active",
+        "uq_workout_one_active_per_user",
         "idx_workout_history",
         "idx_progress_completed",
         "idx_progress_exercise",
