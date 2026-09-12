@@ -1,45 +1,22 @@
-import {
-  useCallback,
-  useEffect,
-  useRef,
-  useState,
-} from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
-import {
-  updateWorkoutSession,
-} from "./api";
+import { updateWorkoutSession } from "./api";
 
-import type {
-  WorkoutSession,
-} from "./types";
+import type { WorkoutSession } from "./types";
 
-import {
-  sessionToUpdateInput,
-} from "./utils";
+import { sessionToUpdateInput } from "./utils";
 
-
-export type SaveState =
-  | "saved"
-  | "saving"
-  | "unsaved"
-  | "error";
-
+export type SaveState = "saved" | "saving" | "unsaved" | "error";
 
 interface Props {
-  workout:
-    | WorkoutSession
-    | null;
+  workout: WorkoutSession | null;
 
   enabled?: boolean;
 
   delay?: number;
 
-  onSaved?: (
-    workout:
-      WorkoutSession,
-  ) => void;
+  onSaved?: (workout: WorkoutSession) => void;
 }
-
 
 /**
  * Serialize only editable workout data.
@@ -47,26 +24,13 @@ interface Props {
  * Revision is deliberately excluded because it
  * is concurrency metadata, not a user edit.
  */
-function serializeWorkout(
-  workout: WorkoutSession,
-): string {
-  const input =
-    sessionToUpdateInput(
-      workout,
-      workout.revision,
-    );
+function serializeWorkout(workout: WorkoutSession): string {
+  const input = sessionToUpdateInput(workout, workout.revision);
 
-  const {
-    revision:
-      _revision,
-    ...editable
-  } = input;
+  const { revision: _revision, ...editable } = input;
 
-  return JSON.stringify(
-    editable
-  );
+  return JSON.stringify(editable);
 }
-
 
 export function useWorkoutAutosave({
   workout,
@@ -74,67 +38,33 @@ export function useWorkoutAutosave({
   delay = 900,
   onSaved,
 }: Props) {
-  const [
-    status,
-    setStatus,
-  ] = useState<SaveState>(
-    "saved"
-  );
-
+  const [status, setStatus] = useState<SaveState>("saved");
 
   /**
    * Newest draft received from React.
    *
    * It can change while an HTTP request is running.
    */
-  const latestWorkout =
-    useRef<
-      WorkoutSession | null
-    >(
-      workout
-    );
-
+  const latestWorkout = useRef<WorkoutSession | null>(workout);
 
   /**
    * Which workout these refs currently belong to.
    */
-  const currentSessionId =
-    useRef<
-      string | null
-    >(
-      workout?.id ??
-        null
-    );
-
+  const currentSessionId = useRef<string | null>(workout?.id ?? null);
 
   /**
    * Content that the server has definitely accepted.
    */
-  const lastSavedSerialized =
-    useRef<
-      string | null
-    >(
-      workout
-        ? serializeWorkout(
-            workout
-          )
-        : null
-    );
-
+  const lastSavedSerialized = useRef<string | null>(
+    workout ? serializeWorkout(workout) : null,
+  );
 
   /**
    * Latest revision returned by the server.
    *
    * This is deliberately separate from React draft state.
    */
-  const serverRevision =
-    useRef<
-      number | null
-    >(
-      workout?.revision ??
-        null
-    );
-
+  const serverRevision = useRef<number | null>(workout?.revision ?? null);
 
   /**
    * Latest complete server response.
@@ -142,13 +72,7 @@ export function useWorkoutAutosave({
    * Finish Workout and Add Exercise need the current
    * confirmed server revision.
    */
-  const lastServerSnapshot =
-    useRef<
-      WorkoutSession | null
-    >(
-      workout
-    );
-
+  const lastServerSnapshot = useRef<WorkoutSession | null>(workout);
 
   /**
    * The currently running flush operation.
@@ -156,42 +80,15 @@ export function useWorkoutAutosave({
    * There must never be two concurrent PATCH requests
    * for one workout from this screen.
    */
-  const runningPromise =
-    useRef<
-      Promise<
-        WorkoutSession | null
-      > | null
-    >(
-      null
-    );
+  const runningPromise = useRef<Promise<WorkoutSession | null> | null>(null);
 
+  const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const timer =
-    useRef<
-      ReturnType<
-        typeof setTimeout
-      > | null
-    >(
-      null
-    );
+  const onSavedRef = useRef(onSaved);
 
-
-  const onSavedRef =
-    useRef(
-      onSaved
-    );
-
-
-  useEffect(
-    () => {
-      onSavedRef.current =
-        onSaved;
-    },
-    [
-      onSaved,
-    ],
-  );
-
+  useEffect(() => {
+    onSavedRef.current = onSaved;
+  }, [onSaved]);
 
   /**
    * Use after another server mutation such as
@@ -201,36 +98,19 @@ export function useWorkoutAutosave({
    *
    * "The server definitely contains exactly this state."
    */
-  const adoptServerSnapshot =
-    useCallback(
-      (
-        snapshot:
-          WorkoutSession,
-      ) => {
-        currentSessionId.current =
-          snapshot.id;
+  const adoptServerSnapshot = useCallback((snapshot: WorkoutSession) => {
+    currentSessionId.current = snapshot.id;
 
-        serverRevision.current =
-          snapshot.revision;
+    serverRevision.current = snapshot.revision;
 
-        lastServerSnapshot.current =
-          snapshot;
+    lastServerSnapshot.current = snapshot;
 
-        lastSavedSerialized.current =
-          serializeWorkout(
-            snapshot
-          );
+    lastSavedSerialized.current = serializeWorkout(snapshot);
 
-        latestWorkout.current =
-          snapshot;
+    latestWorkout.current = snapshot;
 
-        setStatus(
-          "saved"
-        );
-      },
-      [],
-    );
-
+    setStatus("saved");
+  }, []);
 
   /**
    * Keep PATCHing until the newest local draft has
@@ -238,270 +118,151 @@ export function useWorkoutAutosave({
    *
    * This is the fix for the old dropped-save bug.
    */
-  const performFlush =
-    useCallback(
-      async (): Promise<
-        WorkoutSession | null
-      > => {
-        let mostRecent =
-          lastServerSnapshot.current;
+  const performFlush = useCallback(async (): Promise<WorkoutSession | null> => {
+    let mostRecent = lastServerSnapshot.current;
 
+    while (true) {
+      const current = latestWorkout.current;
 
-        while (true) {
-          const current =
-            latestWorkout.current;
+      if (!current || !enabled) {
+        return mostRecent;
+      }
 
+      const serialized = serializeWorkout(current);
 
-          if (
-            !current ||
-            !enabled
-          ) {
-            return mostRecent;
-          }
+      /**
+       * Establish initial baseline if necessary.
+       */
+      if (lastSavedSerialized.current === null) {
+        lastSavedSerialized.current = serialized;
 
+        serverRevision.current = current.revision;
 
-          const serialized =
-            serializeWorkout(
-              current
-            );
+        lastServerSnapshot.current = current;
 
+        setStatus("saved");
 
-          /**
-           * Establish initial baseline if necessary.
-           */
-          if (
-            lastSavedSerialized.current ===
-            null
-          ) {
-            lastSavedSerialized.current =
-              serialized;
+        return current;
+      }
 
-            serverRevision.current =
-              current.revision;
+      /**
+       * Nothing new to save.
+       */
+      if (serialized === lastSavedSerialized.current) {
+        setStatus("saved");
 
-            lastServerSnapshot.current =
-              current;
+        return lastServerSnapshot.current ?? current;
+      }
 
-            setStatus(
-              "saved"
-            );
+      const expectedRevision = serverRevision.current ?? current.revision;
 
-            return current;
-          }
+      setStatus("saving");
 
+      try {
+        /**
+         * Capture the exact draft being sent.
+         *
+         * latestWorkout may change while awaiting
+         * this request.
+         */
+        const saved = await updateWorkoutSession(
+          current.id,
+          sessionToUpdateInput(current, expectedRevision),
+        );
 
-          /**
-           * Nothing new to save.
-           */
-          if (
-            serialized ===
-            lastSavedSerialized.current
-          ) {
-            setStatus(
-              "saved"
-            );
+        serverRevision.current = saved.revision;
 
-            return (
-              lastServerSnapshot.current ??
-              current
-            );
-          }
+        lastServerSnapshot.current = saved;
 
+        /**
+         * Mark ONLY the payload we actually sent
+         * as successfully persisted.
+         *
+         * Do not serialize latestWorkout here,
+         * because the user may have edited it
+         * while this request was in flight.
+         */
+        lastSavedSerialized.current = serialized;
 
-          const expectedRevision =
-            serverRevision.current ??
-            current.revision;
+        mostRecent = saved;
 
+        onSavedRef.current?.(saved);
+      } catch (error) {
+        setStatus("error");
 
-          setStatus(
-            "saving"
-          );
+        throw error;
+      }
 
+      const latest = latestWorkout.current;
 
-          try {
-            /**
-             * Capture the exact draft being sent.
-             *
-             * latestWorkout may change while awaiting
-             * this request.
-             */
-            const saved =
-              await updateWorkoutSession(
-                current.id,
-                sessionToUpdateInput(
-                  current,
-                  expectedRevision,
-                ),
-              );
+      if (!latest) {
+        setStatus("saved");
 
+        return mostRecent;
+      }
 
-            serverRevision.current =
-              saved.revision;
+      const latestSerialized = serializeWorkout(latest);
 
-            lastServerSnapshot.current =
-              saved;
+      /**
+       * No edit occurred while the request was running.
+       */
+      if (latestSerialized === lastSavedSerialized.current) {
+        setStatus("saved");
 
+        return mostRecent;
+      }
 
-            /**
-             * Mark ONLY the payload we actually sent
-             * as successfully persisted.
-             *
-             * Do not serialize latestWorkout here,
-             * because the user may have edited it
-             * while this request was in flight.
-             */
-            lastSavedSerialized.current =
-              serialized;
-
-
-            mostRecent =
-              saved;
-
-
-            onSavedRef.current?.(
-              saved
-            );
-
-          } catch (
-            error
-          ) {
-            setStatus(
-              "error"
-            );
-
-            throw error;
-          }
-
-
-          const latest =
-            latestWorkout.current;
-
-
-          if (!latest) {
-            setStatus(
-              "saved"
-            );
-
-            return mostRecent;
-          }
-
-
-          const latestSerialized =
-            serializeWorkout(
-              latest
-            );
-
-
-          /**
-           * No edit occurred while the request was running.
-           */
-          if (
-            latestSerialized ===
-            lastSavedSerialized.current
-          ) {
-            setStatus(
-              "saved"
-            );
-
-            return mostRecent;
-          }
-
-
-          /**
-           * Something changed while saving.
-           *
-           * Do NOT clear a queue flag and return.
-           *
-           * Loop immediately and PATCH the newest draft
-           * using the revision returned by the previous
-           * successful request.
-           */
-          setStatus(
-            "unsaved"
-          );
-        }
-      },
-      [
-        enabled,
-      ],
-    );
-
+      /**
+       * Something changed while saving.
+       *
+       * Do NOT clear a queue flag and return.
+       *
+       * Loop immediately and PATCH the newest draft
+       * using the revision returned by the previous
+       * successful request.
+       */
+      setStatus("unsaved");
+    }
+  }, [enabled]);
 
   /**
    * Public forced flush.
    *
    * Finish Workout and Add Exercise use this.
    */
-  const flush =
-    useCallback(
-      async (): Promise<
-        WorkoutSession | null
-      > => {
-        if (timer.current) {
-          clearTimeout(
-            timer.current
-          );
+  const flush = useCallback(async (): Promise<WorkoutSession | null> => {
+    if (timer.current) {
+      clearTimeout(timer.current);
 
-          timer.current =
-            null;
-        }
+      timer.current = null;
+    }
 
+    /**
+     * If another flush is already happening,
+     * wait for it instead of returning early.
+     */
+    if (runningPromise.current) {
+      await runningPromise.current;
 
-        /**
-         * If another flush is already happening,
-         * wait for it instead of returning early.
-         */
-        if (
-          runningPromise.current
-        ) {
-          await runningPromise.current;
+      const latest = latestWorkout.current;
 
+      if (!latest || serializeWorkout(latest) === lastSavedSerialized.current) {
+        return lastServerSnapshot.current ?? latest;
+      }
+    }
 
-          const latest =
-            latestWorkout.current;
+    const promise = performFlush();
 
+    runningPromise.current = promise;
 
-          if (
-            !latest ||
-            serializeWorkout(
-              latest
-            ) ===
-              lastSavedSerialized.current
-          ) {
-            return (
-              lastServerSnapshot.current ??
-              latest
-            );
-          }
-        }
-
-
-        const promise =
-          performFlush();
-
-
-        runningPromise.current =
-          promise;
-
-
-        try {
-          return await promise;
-
-        } finally {
-          if (
-            runningPromise.current ===
-            promise
-          ) {
-            runningPromise.current =
-              null;
-          }
-        }
-      },
-      [
-        performFlush,
-      ],
-    );
-
+    try {
+      return await promise;
+    } finally {
+      if (runningPromise.current === promise) {
+        runningPromise.current = null;
+      }
+    }
+  }, [performFlush]);
 
   /**
    * Watch React draft changes and schedule autosave.
@@ -512,170 +273,101 @@ export function useWorkoutAutosave({
       // The synchronous update is intentional; deferring it would briefly expose a
       // stale save state during workout switches.
       /* eslint-disable react-hooks/set-state-in-effect */
-      latestWorkout.current =
-        workout;
-
+      latestWorkout.current = workout;
 
       if (!workout) {
-        currentSessionId.current =
-          null;
+        currentSessionId.current = null;
 
-        serverRevision.current =
-          null;
+        serverRevision.current = null;
 
-        lastServerSnapshot.current =
-          null;
+        lastServerSnapshot.current = null;
 
-        lastSavedSerialized.current =
-          null;
+        lastSavedSerialized.current = null;
 
-        setStatus(
-          "saved"
-        );
+        setStatus("saved");
 
         return;
       }
-
 
       /**
        * We navigated to a completely different workout.
        */
-      if (
-        currentSessionId.current !==
-        workout.id
-      ) {
-        currentSessionId.current =
-          workout.id;
+      if (currentSessionId.current !== workout.id) {
+        currentSessionId.current = workout.id;
 
-        serverRevision.current =
-          workout.revision;
+        serverRevision.current = workout.revision;
 
-        lastServerSnapshot.current =
-          workout;
+        lastServerSnapshot.current = workout;
 
-        lastSavedSerialized.current =
-          serializeWorkout(
-            workout
-          );
+        lastSavedSerialized.current = serializeWorkout(workout);
 
-        setStatus(
-          "saved"
-        );
+        setStatus("saved");
 
         return;
       }
 
-
-      const serialized =
-        serializeWorkout(
-          workout
-        );
-
+      const serialized = serializeWorkout(workout);
 
       /**
        * Initial baseline.
        */
-      if (
-        lastSavedSerialized.current ===
-        null
-      ) {
-        serverRevision.current =
-          workout.revision;
+      if (lastSavedSerialized.current === null) {
+        serverRevision.current = workout.revision;
 
-        lastServerSnapshot.current =
-          workout;
+        lastServerSnapshot.current = workout;
 
-        lastSavedSerialized.current =
-          serialized;
+        lastSavedSerialized.current = serialized;
 
-        setStatus(
-          "saved"
-        );
+        setStatus("saved");
 
         return;
       }
 
-
-      if (
-        !enabled ||
-        serialized ===
-          lastSavedSerialized.current
-      ) {
+      if (!enabled || serialized === lastSavedSerialized.current) {
         return;
       }
 
-
-      setStatus(
-        "unsaved"
-      );
-
+      setStatus("unsaved");
 
       if (timer.current) {
-        clearTimeout(
-          timer.current
-        );
+        clearTimeout(timer.current);
       }
 
+      timer.current = setTimeout(() => {
+        timer.current = null;
 
-      timer.current =
-        setTimeout(
-          () => {
-            timer.current =
-              null;
-
-            void flush().catch(
-              () => {
-                /**
-                 * status is already set to "error"
-                 * inside performFlush.
-                 */
-              },
-            );
-          },
-          delay,
-        );
-
+        void flush().catch(() => {
+          /**
+           * status is already set to "error"
+           * inside performFlush.
+           */
+        });
+      }, delay);
 
       return () => {
         if (timer.current) {
-          clearTimeout(
-            timer.current
-          );
+          clearTimeout(timer.current);
 
-          timer.current =
-            null;
+          timer.current = null;
         }
       };
     },
     /* eslint-enable react-hooks/set-state-in-effect */
-    [
-      workout,
-      enabled,
-      delay,
-      flush,
-    ],
+    [workout, enabled, delay, flush],
   );
 
-
-  useEffect(
-    () => {
-      return () => {
-        if (timer.current) {
-          clearTimeout(
-            timer.current
-          );
-        }
-      };
-    },
-    [],
-  );
-
+  useEffect(() => {
+    return () => {
+      if (timer.current) {
+        clearTimeout(timer.current);
+      }
+    };
+  }, []);
 
   return {
     status,
 
-    saveNow:
-      flush,
+    saveNow: flush,
 
     adoptServerSnapshot,
   };

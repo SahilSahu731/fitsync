@@ -1,6 +1,4 @@
-import {
-  apiClient,
-} from "@/lib/api/client";
+import { apiClient } from "@/lib/api/client";
 
 import type {
   ActiveWorkoutResponse,
@@ -14,219 +12,172 @@ import type {
   WorkoutUpdateInput,
 } from "./types";
 
-
 // =====================================================
 // TEMPLATES
 // =====================================================
 
-
-export async function getWorkoutTemplates():
-  Promise<WorkoutTemplateListResponse> {
+export async function getWorkoutTemplates(): Promise<WorkoutTemplateListResponse> {
   const response =
-    await apiClient
-      .get<WorkoutTemplateListResponse>(
-        "/workout-templates",
-      );
+    await apiClient.get<WorkoutTemplateListResponse>("/workout-templates");
 
   return response.data;
 }
-
 
 export async function getWorkoutTemplate(
   templateId: string,
 ): Promise<WorkoutTemplate> {
-  const response =
-    await apiClient.get<WorkoutTemplate>(
-      `/workout-templates/${templateId}`,
-    );
+  const response = await apiClient.get<WorkoutTemplate>(
+    `/workout-templates/${templateId}`,
+  );
 
   return response.data;
 }
-
 
 export async function createWorkoutTemplate(
   input: WorkoutTemplateInput,
 ): Promise<WorkoutTemplate> {
-  const response =
-    await apiClient.post<WorkoutTemplate>(
-      "/workout-templates",
-      input,
-    );
+  const response = await apiClient.post<WorkoutTemplate>(
+    "/workout-templates",
+    input,
+  );
 
   return response.data;
 }
-
 
 export async function updateWorkoutTemplate(
   templateId: string,
   input: WorkoutTemplateInput,
 ): Promise<WorkoutTemplate> {
-  const response =
-    await apiClient.patch<WorkoutTemplate>(
-      `/workout-templates/${templateId}`,
-      input,
-    );
+  const response = await apiClient.patch<WorkoutTemplate>(
+    `/workout-templates/${templateId}`,
+    input,
+  );
 
   return response.data;
 }
-
 
 export async function duplicateWorkoutTemplate(
   templateId: string,
 ): Promise<WorkoutTemplate> {
-  const response =
-    await apiClient.post<WorkoutTemplate>(
-      `/workout-templates/${templateId}/duplicate`,
-    );
+  const response = await apiClient.post<WorkoutTemplate>(
+    `/workout-templates/${templateId}/duplicate`,
+  );
 
   return response.data;
 }
 
-
 export async function archiveWorkoutTemplate(
   templateId: string,
 ): Promise<void> {
-  await apiClient.delete(
-    `/workout-templates/${templateId}`,
-  );
+  await apiClient.delete(`/workout-templates/${templateId}`);
 }
-
 
 // =====================================================
 // WORKOUT SESSIONS
 // =====================================================
 
-
 export async function startWorkout(
   input: StartWorkoutInput,
 ): Promise<WorkoutSession> {
-  const response =
-    await apiClient.post<WorkoutSession>(
-      "/workout-sessions",
-      input,
-    );
+  const response = await apiClient.post<WorkoutSession>(
+    "/workout-sessions",
+    input,
+  );
 
   return response.data;
 }
 
-
-export async function getActiveWorkout():
-  Promise<ActiveWorkoutResponse> {
-  const response =
-    await apiClient.get<ActiveWorkoutResponse>(
-      "/workout-sessions/active",
-    );
+export async function getActiveWorkout(): Promise<ActiveWorkoutResponse> {
+  const response = await apiClient.get<ActiveWorkoutResponse>(
+    "/workout-sessions/active",
+  );
 
   return response.data;
 }
-
 
 export async function getWorkoutSession(
   sessionId: string,
 ): Promise<WorkoutSession> {
-  const response =
-    await apiClient.get<WorkoutSession>(
-      `/workout-sessions/${sessionId}`,
-    );
+  const response = await apiClient.get<WorkoutSession>(
+    `/workout-sessions/${sessionId}`,
+  );
 
   return response.data;
 }
-
 
 export async function addWorkoutExercises(
   sessionId: string,
   exerciseIds: string[],
   revision: number,
 ): Promise<WorkoutSession> {
-  const response =
-    await apiClient.post<WorkoutSession>(
-      `/workout-sessions/${sessionId}/exercises`,
-      {
-        revision,
+  const response = await apiClient.post<WorkoutSession>(
+    `/workout-sessions/${sessionId}/exercises`,
+    {
+      revision,
 
-        exercise_ids:
-          exerciseIds,
-      },
-    );
+      exercise_ids: exerciseIds,
+    },
+  );
 
   return response.data;
 }
-
 
 export async function updateWorkoutSession(
   sessionId: string,
   input: WorkoutUpdateInput,
 ): Promise<WorkoutSession> {
-  const response =
-    await apiClient.patch<WorkoutSession>(
-      `/workout-sessions/${sessionId}`,
-      input,
-    );
+  const response = await apiClient.patch<WorkoutSession>(
+    `/workout-sessions/${sessionId}`,
+    input,
+  );
 
   return response.data;
 }
-
 
 export async function completeWorkout(
   sessionId: string,
   revision: number,
 ): Promise<WorkoutSession> {
-  const response =
-    await apiClient.post<WorkoutSession>(
-      `/workout-sessions/${sessionId}/complete`,
-      {
-        revision,
-      },
-    );
+  const response = await apiClient.post<WorkoutSession>(
+    `/workout-sessions/${sessionId}/complete`,
+    {
+      revision,
+    },
+  );
 
   return response.data;
 }
 
-
-export async function cancelWorkout(
-  sessionId: string,
-): Promise<void> {
-  await apiClient.post(
-    `/workout-sessions/${sessionId}/cancel`,
-  );
+export async function cancelWorkout(sessionId: string): Promise<void> {
+  await apiClient.post(`/workout-sessions/${sessionId}/cancel`);
 }
-
 
 export async function getWorkoutHistory(
-  cursor:
-    | string
-    | null = null,
+  cursor: string | null = null,
 ): Promise<WorkoutHistoryResponse> {
-  const response =
-    await apiClient.get<WorkoutHistoryResponse>(
-      "/workout-sessions/history",
-      {
-        params: {
-          cursor:
-            cursor ??
-            undefined,
+  const response = await apiClient.get<WorkoutHistoryResponse>(
+    "/workout-sessions/history",
+    {
+      params: {
+        cursor: cursor ?? undefined,
 
-          limit:
-            20,
-        },
+        limit: 20,
       },
-    );
+    },
+  );
 
   return response.data;
 }
-
 
 export async function getPreviousPerformance(
   exerciseIds: string[],
 ): Promise<PreviousPerformanceResponse> {
-  const response =
-    await apiClient.post<PreviousPerformanceResponse>(
-      "/workout-sessions/previous-performance",
-      {
-        exercise_ids:
-          exerciseIds,
-      },
-    );
+  const response = await apiClient.post<PreviousPerformanceResponse>(
+    "/workout-sessions/previous-performance",
+    {
+      exercise_ids: exerciseIds,
+    },
+  );
 
   return response.data;
 }

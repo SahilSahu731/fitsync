@@ -1,6 +1,6 @@
 import { Modal, Pressable, Text, View } from "react-native";
 
-import type { WorkoutSetType } from "../types";
+import type { WorkoutSetType } from "@/features/workouts/types";
 
 const OPTIONS: {
   value: WorkoutSetType;

@@ -6,7 +6,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { Pressable, Text, View } from "react-native";
 
-import { formatDuration } from "../utils";
+import { formatDuration } from "@/features/workouts/utils";
 
 interface Props {
   seconds: number;

@@ -6,14 +6,13 @@ import { Image, Pressable, Text, TextInput, View } from "react-native";
 
 import { WorkoutSetRow } from "./workout-set-row";
 
-import { randomLocalId } from "../utils";
+import { randomLocalId } from "@/features/workouts/utils";
 
 import type {
   PreviousExercisePerformance,
   WorkoutExercise,
   WorkoutSet,
-} from "../types";
-
+} from "@/features/workouts/types";
 interface Props {
   exercise: WorkoutExercise;
 

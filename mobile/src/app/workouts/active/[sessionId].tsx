@@ -1,12 +1,4 @@
-import { Ionicons } from "@expo/vector-icons";
-
-import * as Haptics from "expo-haptics";
-
-import { useQueryClient } from "@tanstack/react-query";
-
 import { router, useLocalSearchParams } from "expo-router";
-
-import { useEffect, useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -20,53 +12,21 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import type { Exercise } from "@/features/exercises/types";
+import { ActiveExerciseCard } from "@/features/workout-session/components/active-exercise-card";
 
-import { ActiveExerciseCard } from "@/features/workouts/components/active-exercise-card";
+import { EmptyWorkoutState } from "@/features/workout-session/components/empty-workout-state";
 
-import { ExerciseOptionsModal } from "@/features/workouts/components/exercise-options-modal";
+import { ExerciseOptionsModal } from "@/features/workout-session/components/exercise-options-modal";
 
-import { ExercisePickerModal } from "@/features/workouts/components/exercise-picker-modal";
+import { ExercisePickerModal } from "@/features/workout-session/components/exercise-picker-modal";
 
-import { RestTimer } from "@/features/workouts/components/rest-timer";
+import { RestTimer } from "@/features/workout-session/components/rest-timer";
 
-import {
-  addWorkoutExercises,
-  cancelWorkout,
-  completeWorkout,
-} from "@/features/workouts/api";
+import { SaveIndicator } from "@/features/workout-session/components/save-indicator";
 
-import { workoutSessionKeys } from "@/features/workouts/keys";
+import { WorkoutHeader } from "@/features/workout-session/components/workout-header";
 
-import { progressKeys } from "@/features/progress/keys";
-
-import {
-  usePreviousPerformance,
-  useWorkoutSession,
-} from "@/features/workouts/queries";
-
-import {
-  formatVolume,
-  reorderExercises,
-  workoutVolume,
-} from "@/features/workouts/utils";
-
-import { useWorkoutAutosave } from "@/features/workouts/use-workout-autosave";
-
-import type {
-  WorkoutExercise,
-  WorkoutSession,
-} from "@/features/workouts/types";
-
-import { useAuthStore } from "@/features/auth/store";
-
-import { parseApiError } from "@/lib/api/errors";
-
-interface RestState {
-  seconds: number;
-
-  exerciseName: string;
-}
+import { useActiveWorkoutController } from "@/features/workout-session/hooks/use-active-workout-controller";
 
 export default function ActiveWorkoutScreen() {
   const params = useLocalSearchParams<{
@@ -76,332 +36,60 @@ export default function ActiveWorkoutScreen() {
   const sessionId =
     typeof params.sessionId === "string" ? params.sessionId : "";
 
-  const queryClient = useQueryClient();
-
-  const user = useAuthStore((state) => state.user);
-
-  const workoutQuery = useWorkoutSession(sessionId);
-
-  const [localDraft, setDraft] = useState<WorkoutSession | null>(null);
-
-  const [selectedExpandedId, setExpandedId] = useState<
-    string | null | undefined
-  >(undefined);
-
-  const [pickerOpen, setPickerOpen] = useState(false);
-
-  const [optionsIndex, setOptionsIndex] = useState<number | null>(null);
-
-  const [rest, setRest] = useState<RestState | null>(null);
-
-  const [elapsed, setElapsed] = useState(0);
-
-  const [actionLoading, setActionLoading] = useState(false);
-
-  const [error, setError] = useState<string | null>(null);
-
-  // Use fetched data until the first edit; refetches must not overwrite a draft.
-  const draft =
-    localDraft?.id === sessionId ? localDraft : (workoutQuery.data ?? null);
-  const initialExpandedId =
-    workoutQuery.data?.exercises.find((exercise) =>
-      exercise.sets.some((workoutSet) => !workoutSet.completed),
-    )?.id ??
-    workoutQuery.data?.exercises[0]?.id ??
-    null;
-  // undefined means untouched; null means the user explicitly collapsed the card.
-  const expandedId =
-    selectedExpandedId === undefined ? initialExpandedId : selectedExpandedId;
-  const startedAt = draft?.started_at;
-
-  useEffect(() => {
-    if (!startedAt) return;
-    const started = new Date(startedAt).getTime();
-    const interval = setInterval(() => {
-      setElapsed(Math.max(0, Math.floor((Date.now() - started) / 1000)));
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [startedAt]);
-
-  const exerciseIds = useMemo(
-    () => draft?.exercises.map((exercise) => exercise.exercise_id) ?? [],
-    [draft?.exercises],
-  );
-
-  const previousQuery = usePreviousPerformance(exerciseIds);
-
-  const previousMap = useMemo(
-    () =>
-      new Map(
-        (previousQuery.data?.items ?? []).map((item) => [
-          item.exercise_id,
-          item,
-        ]),
-      ),
-    [previousQuery.data],
-  );
-
-  const autosave = useWorkoutAutosave({
-    workout: draft,
-
-    enabled: Boolean(draft && draft.status === "IN_PROGRESS"),
-
-    onSaved: (saved) => {
-      queryClient.setQueryData(workoutSessionKeys.detail(saved.id), saved);
-
-      queryClient.setQueryData(workoutSessionKeys.active(), {
-        workout: saved,
-      });
-    },
-  });
-
-  const completedSets = useMemo(
-    () =>
-      draft?.exercises.reduce(
-        (total, exercise) =>
-          total +
-          exercise.sets.filter((workoutSet) => workoutSet.completed).length,
-        0,
-      ) ?? 0,
-    [draft],
-  );
-
-  const volume = useMemo(
-    () => (draft ? workoutVolume(draft, user?.weight_unit ?? "KG") : 0),
-    [draft, user?.weight_unit],
-  );
-
-  function updateExercise(updated: WorkoutExercise) {
-    if (!draft) {
-      return;
-    }
-
-    setDraft({
-      ...draft,
-
-      exercises: draft.exercises.map((exercise) =>
-        exercise.id === updated.id ? updated : exercise,
-      ),
-    });
-  }
+  const controller = useActiveWorkoutController(sessionId);
 
-  async function addExercises(exercises: Exercise[]) {
-    if (!draft || exercises.length === 0) {
-      return;
-    }
-
-    setActionLoading(true);
+  const {
+    workoutQuery,
 
-    setError(null);
-
-    try {
-      /**
-       * Critical:
-       *
-       * Make sure every pending set/reps/weight edit
-       * has reached MongoDB before performing another
-       * revision-changing server mutation.
-       */
-      const savedBeforeAdd = await autosave.saveNow();
+    draft,
 
-      const revision = savedBeforeAdd?.revision ?? draft.revision;
+    expandedId,
+    setExpandedId,
 
-      const updated = await addWorkoutExercises(
-        draft.id,
+    pickerOpen,
+    setPickerOpen,
 
-        exercises.map((exercise) => exercise.id),
+    optionsIndex,
+    setOptionsIndex,
 
-        revision,
-      );
-
-      /**
-       * Add Exercise increments server revision too.
-       *
-       * Tell autosave that this entire returned snapshot
-       * is now the confirmed server baseline.
-       */
-      autosave.adoptServerSnapshot(updated);
-
-      setDraft(updated);
-
-      const newlyAdded = updated.exercises.find((exercise) =>
-        exercises.some((selected) => selected.id === exercise.exercise_id),
-      );
-
-      if (newlyAdded) {
-        setExpandedId(newlyAdded.id);
-      }
-
-      await queryClient.invalidateQueries({
-        queryKey: workoutSessionKeys.all,
-      });
-    } catch (requestError) {
-      const parsed = parseApiError(requestError, "Unable to add exercises.");
-
-      setError(
-        parsed.code === "WORKOUT_REVISION_CONFLICT"
-          ? "This workout changed somewhere else. " +
-              "Leave and reopen it before continuing."
-          : parsed.message,
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  }
-
-  function moveExercise(index: number, direction: -1 | 1) {
-    if (!draft) {
-      return;
-    }
-
-    const target = index + direction;
-
-    if (target < 0 || target >= draft.exercises.length) {
-      return;
-    }
-
-    const copy = [...draft.exercises];
-
-    const [moved] = copy.splice(index, 1);
-
-    copy.splice(target, 0, moved);
-
-    setDraft({
-      ...draft,
-
-      exercises: reorderExercises(copy),
-    });
-  }
+    rest,
+    setRest,
 
-  function removeExercise(index: number) {
-    if (!draft) {
-      return;
-    }
-
-    const removing = draft.exercises[index];
-
-    const next = reorderExercises(
-      draft.exercises.filter((_, current) => current !== index),
-    );
-
-    if (expandedId === removing.id) {
-      setExpandedId(next[index]?.id ?? next[index - 1]?.id ?? null);
-    }
-
-    setDraft({
-      ...draft,
-
-      exercises: next,
-    });
-  }
-
-  function createSuperset(index: number) {
-    if (!draft || index >= draft.exercises.length - 1) {
-      return;
-    }
-
-    const groupId = `superset-${Date.now()}`;
-
-    setDraft({
-      ...draft,
-
-      exercises: draft.exercises.map((exercise, currentIndex) =>
-        currentIndex === index || currentIndex === index + 1
-          ? {
-              ...exercise,
-
-              superset_group_id: groupId,
-            }
-          : exercise,
-      ),
-    });
-  }
-
-  function removeSuperset(groupId: string) {
-    if (!draft) {
-      return;
-    }
-
-    setDraft({
-      ...draft,
-
-      exercises: draft.exercises.map((exercise) =>
-        exercise.superset_group_id === groupId
-          ? {
-              ...exercise,
-
-              superset_group_id: null,
-            }
-          : exercise,
-      ),
-    });
-  }
-
-  async function finishWorkout() {
-    if (!draft) {
-      return;
-    }
-
-    setActionLoading(true);
-
-    setError(null);
-
-    try {
-      /**
-       * Do not complete the workout until ALL local
-       * edits have been persisted.
-       */
-      const saved = await autosave.saveNow();
-
-      const revision = saved?.revision ?? draft.revision;
-
-      const completed = await completeWorkout(draft.id, revision);
-
-      queryClient.setQueryData(
-        workoutSessionKeys.detail(completed.id),
-        completed,
-      );
-
-      queryClient.setQueryData(workoutSessionKeys.active(), {
-        workout: null,
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: workoutSessionKeys.all,
-      });
-
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      /**
-       * You already have a proper summary screen.
-       *
-       * Use it.
-       */
-      router.replace({
-        pathname: "/workout-summary/[sessionId]",
-
-        params: {
-          sessionId: completed.id,
-        },
-      });
-    } catch (requestError) {
-      const parsed = parseApiError(requestError, "Unable to finish workout.");
-
-      setError(
-        parsed.code === "WORKOUT_REVISION_CONFLICT"
-          ? "This workout changed somewhere else. " +
-              "Leave and reopen it before finishing."
-          : parsed.message,
-      );
-    } finally {
-      setActionLoading(false);
-    }
-  }
+    actionLoading,
+    error,
+
+    autosave,
+
+    completedSets,
+    previousMap,
+
+    activeOptionsExercise,
+
+    updateDraft,
+    updateExercise,
+
+    moveExercise,
+    removeExercise,
+
+    createSuperset,
+    removeSuperset,
+
+    addExercises,
+    finishWorkout,
+    cancelCurrentWorkout,
+
+    completeSet,
+
+    elapsedLabel,
+    volumeLabel,
+  } = controller;
 
   function confirmFinish() {
     Alert.alert(
       "Finish workout?",
+
       `${completedSets} completed sets will be saved.`,
+
       [
         {
           text: "Keep training",
@@ -423,7 +111,9 @@ export default function ActiveWorkoutScreen() {
   function confirmCancel() {
     Alert.alert(
       "Discard workout?",
+
       "This workout will be marked as cancelled.",
+
       [
         {
           text: "Keep training",
@@ -437,25 +127,11 @@ export default function ActiveWorkoutScreen() {
           style: "destructive",
 
           onPress: () => {
-            void handleCancel();
+            void cancelCurrentWorkout();
           },
         },
       ],
     );
-  }
-
-  async function handleCancel() {
-    if (!draft) {
-      return;
-    }
-
-    await cancelWorkout(draft.id);
-
-    await queryClient.invalidateQueries({
-      queryKey: workoutSessionKeys.all,
-    });
-
-    router.replace("/train");
   }
 
   if (workoutQuery.isLoading || !draft) {
@@ -466,65 +142,19 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  const activeOptionsExercise =
-    optionsIndex !== null ? draft.exercises[optionsIndex] : null;
-
   return (
     <SafeAreaView className="flex-1 bg-background">
-      {/* HEADER */}
-
-      <View className="border-b border-white/[0.07]">
-        <View className="flex-row items-center px-4 py-2">
-          <Pressable
-            onPress={() => {
-              router.replace("/train");
-            }}
-            className="h-10 w-10 items-center justify-center"
-          >
-            <Ionicons name="chevron-down" size={22} color="#FFFFFF" />
-          </Pressable>
-
-          <Text className="ml-1 flex-1 text-[16px] font-extrabold text-white">
-            Log Workout
-          </Text>
-
-          <Pressable
-            onPress={confirmCancel}
-            className="mr-2 h-9 w-9 items-center justify-center"
-          >
-            <Ionicons
-              name="ellipsis-horizontal"
-              size={20}
-              color="rgba(255,255,255,.55)"
-            />
-          </Pressable>
-
-          <Pressable
-            disabled={actionLoading}
-            onPress={confirmFinish}
-            className="min-h-[38px] min-w-[70px] items-center justify-center rounded-xl bg-brand px-4"
-          >
-            {actionLoading ? (
-              <ActivityIndicator size="small" color="#FFFFFF" />
-            ) : (
-              <Text className="text-[13px] font-extrabold text-white">
-                Finish
-              </Text>
-            )}
-          </Pressable>
-        </View>
-
-        <View className="flex-row px-5 pb-3 pt-1">
-          <Metric title="Duration" value={formatClock(elapsed)} />
-
-          <Metric
-            title="Volume"
-            value={`${formatVolume(volume)} ${user?.weight_unit ?? "KG"}`}
-          />
-
-          <Metric title="Sets" value={String(completedSets)} />
-        </View>
-      </View>
+      <WorkoutHeader
+        elapsedLabel={elapsedLabel}
+        volumeLabel={volumeLabel}
+        completedSets={completedSets}
+        actionLoading={actionLoading}
+        onExit={() => {
+          router.replace("/train");
+        }}
+        onCancel={confirmCancel}
+        onFinish={confirmFinish}
+      />
 
       <ScrollView
         pointerEvents={actionLoading ? "none" : "auto"}
@@ -538,8 +168,7 @@ export default function ActiveWorkoutScreen() {
           <TextInput
             value={draft.name}
             onChangeText={(name) => {
-              setDraft({
-                ...draft,
+              updateDraft({
                 name,
               });
             }}
@@ -557,19 +186,7 @@ export default function ActiveWorkoutScreen() {
         </View>
 
         {draft.exercises.length === 0 ? (
-          <View className="items-center px-8 py-16">
-            <View className="h-16 w-16 items-center justify-center rounded-3xl bg-brand-muted">
-              <Ionicons name="barbell-outline" size={28} color="#60A5FA" />
-            </View>
-
-            <Text className="mt-5 text-[18px] font-extrabold text-white">
-              Add your first exercise
-            </Text>
-
-            <Text className="mt-2 text-center text-[13px] leading-5 text-white/35">
-              Build this workout as you train.
-            </Text>
-          </View>
+          <EmptyWorkoutState />
         ) : (
           draft.exercises.map((exercise, index) => (
             <View key={exercise.id} className="flex-row">
@@ -589,28 +206,14 @@ export default function ActiveWorkoutScreen() {
                   }}
                   onChange={updateExercise}
                   onCompletedSet={(seconds, exerciseName, updatedExercise) => {
-                    updateExercise(updatedExercise);
+                    completeSet(
+                      exercise,
 
-                    const completedIndex = updatedExercise.sets.findIndex(
-                      (workoutSet) =>
-                        workoutSet.completed &&
-                        !exercise.sets.find(
-                          (oldSet) =>
-                            oldSet.id === workoutSet.id && oldSet.completed,
-                        ),
-                    );
+                      updatedExercise,
 
-                    const nextSet = updatedExercise.sets[completedIndex + 1];
+                      seconds,
 
-                    if (nextSet?.type !== "DROP") {
-                      setRest({
-                        seconds,
-                        exerciseName,
-                      });
-                    }
-
-                    void Haptics.impactAsync(
-                      Haptics.ImpactFeedbackStyle.Medium,
+                      exerciseName,
                     );
                   }}
                   onMenu={() => {
@@ -636,9 +239,7 @@ export default function ActiveWorkoutScreen() {
         <TextInput
           value={draft.notes ?? ""}
           onChangeText={(value) => {
-            setDraft({
-              ...draft,
-
+            updateDraft({
               notes: value || null,
             });
           }}
@@ -715,57 +316,4 @@ export default function ActiveWorkoutScreen() {
       ) : null}
     </SafeAreaView>
   );
-}
-
-function Metric({
-  title,
-  value,
-}: {
-  title: string;
-
-  value: string;
-}) {
-  return (
-    <View className="flex-1">
-      <Text className="text-[10px] font-medium text-white/25">{title}</Text>
-
-      <Text className="mt-1 text-[13px] font-bold text-white/70">{value}</Text>
-    </View>
-  );
-}
-
-function SaveIndicator({
-  status,
-}: {
-  status: "saved" | "saving" | "unsaved" | "error";
-}) {
-  if (status === "saving") {
-    return <Text className="text-[10px] text-white/25">Saving…</Text>;
-  }
-
-  if (status === "error") {
-    return (
-      <Text className="text-[10px] text-red-300/70">
-        Not saved · check connection
-      </Text>
-    );
-  }
-
-  if (status === "unsaved") {
-    return <Text className="text-[10px] text-white/25">Unsaved changes</Text>;
-  }
-
-  return <Text className="text-[10px] text-white/20">Saved</Text>;
-}
-
-function formatClock(seconds: number): string {
-  const hours = Math.floor(seconds / 3600);
-
-  const minutes = Math.floor((seconds % 3600) / 60);
-
-  if (hours > 0) {
-    return `${hours}h ${minutes}m`;
-  }
-
-  return `${minutes}m`;
 }

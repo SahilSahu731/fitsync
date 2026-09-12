@@ -10,7 +10,7 @@ import { RpeModal } from "./rpe-modal";
 
 import { SetTypeModal } from "./set-type-modal";
 
-import type { PreviousSet, WorkoutSet } from "../types";
+import type { PreviousSet, WorkoutSet } from "@/features/workouts/types";
 
 interface Props {
   workoutSet: WorkoutSet;
