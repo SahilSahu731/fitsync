@@ -1,6 +1,4 @@
-export type ExerciseSource =
-  | "SYSTEM"
-  | "CUSTOM";
+export type ExerciseSource = "SYSTEM" | "CUSTOM";
 
 export type MuscleGroup =
   | "CHEST"
@@ -39,9 +37,7 @@ export type Equipment =
   | "OTHER"
   | "NONE";
 
-export type ExerciseMechanic =
-  | "COMPOUND"
-  | "ISOLATION";
+export type ExerciseMechanic = "COMPOUND" | "ISOLATION";
 
 export type MovementPattern =
   | "HORIZONTAL_PUSH"
@@ -59,9 +55,7 @@ export type MovementPattern =
 export interface ExerciseMedia {
   id: string;
 
-  type:
-    | "IMAGE"
-    | "VIDEO";
+  type: "IMAGE" | "VIDEO";
 
   public_id: string;
 
@@ -73,13 +67,9 @@ export interface ExerciseMedia {
 
   height: number | null;
 
-  duration_seconds:
-    | number
-    | null;
+  duration_seconds: number | null;
 
-  format:
-    | string
-    | null;
+  format: string | null;
 
   sort_order: number;
 }
@@ -91,24 +81,17 @@ export interface Exercise {
 
   name: string;
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
-  primary_muscles:
-    MuscleGroup[];
+  primary_muscles: MuscleGroup[];
 
-  secondary_muscles:
-    MuscleGroup[];
+  secondary_muscles: MuscleGroup[];
 
-  equipment:
-    Equipment[];
+  equipment: Equipment[];
 
-  mechanic:
-    ExerciseMechanic;
+  mechanic: ExerciseMechanic;
 
-  movement_pattern:
-    MovementPattern;
+  movement_pattern: MovementPattern;
 
   instructions: string[];
 
@@ -124,49 +107,31 @@ export interface Exercise {
 export interface ExerciseFilters {
   q?: string;
 
-  muscle?:
-    | MuscleGroup
-    | null;
+  muscle?: MuscleGroup | null;
 
-  equipment?:
-    | Equipment
-    | null;
+  equipment?: Equipment | null;
 
-  source?:
-    | ExerciseSource
-    | null;
+  source?: ExerciseSource | null;
 }
 
 export interface ExerciseListResponse {
   items: Exercise[];
 
-  next_cursor:
-    | string
-    | null;
+  next_cursor: string | null;
 }
 
 export interface ExerciseMediaInput {
-  type:
-    | "IMAGE"
-    | "VIDEO";
+  type: "IMAGE" | "VIDEO";
 
   public_id: string;
 
-  width:
-    | number
-    | null;
+  width: number | null;
 
-  height:
-    | number
-    | null;
+  height: number | null;
 
-  duration_seconds:
-    | number
-    | null;
+  duration_seconds: number | null;
 
-  format:
-    | string
-    | null;
+  format: string | null;
 
   sort_order: number;
 }
@@ -174,29 +139,21 @@ export interface ExerciseMediaInput {
 export interface ExerciseMutationInput {
   name: string;
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
-  primary_muscles:
-    MuscleGroup[];
+  primary_muscles: MuscleGroup[];
 
-  secondary_muscles:
-    MuscleGroup[];
+  secondary_muscles: MuscleGroup[];
 
-  equipment:
-    Equipment[];
+  equipment: Equipment[];
 
-  mechanic:
-    ExerciseMechanic;
+  mechanic: ExerciseMechanic;
 
-  movement_pattern:
-    MovementPattern;
+  movement_pattern: MovementPattern;
 
   instructions: string[];
 
   tips: string[];
 
-  media:
-    ExerciseMediaInput[];
+  media: ExerciseMediaInput[];
 }

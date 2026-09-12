@@ -1,80 +1,38 @@
-import {
-  useInfiniteQuery,
-  useQuery,
-} from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 
-import {
-  getExercise,
-  getExercises,
-} from "./api";
+import { getExercise, getExercises } from "./api";
 
-import {
-  exerciseKeys,
-} from "./keys";
+import { exerciseKeys } from "./keys";
 
-import type {
-  ExerciseFilters,
-} from "./types";
+import type { ExerciseFilters } from "./types";
 
-
-export function useExercises(
-  filters: ExerciseFilters,
-) {
+export function useExercises(filters: ExerciseFilters) {
   return useInfiniteQuery({
-    queryKey:
-      exerciseKeys.list(
-        filters
-      ),
+    queryKey: exerciseKeys.list(filters),
 
-    queryFn: ({
-      pageParam,
-    }) =>
+    queryFn: ({ pageParam }) =>
       getExercises({
         ...filters,
 
-        cursor:
-          pageParam,
+        cursor: pageParam,
       }),
 
-    initialPageParam:
-      null as
-        | string
-        | null,
+    initialPageParam: null as string | null,
 
-    getNextPageParam:
-      (
-        lastPage,
-      ) =>
-        lastPage
-          .next_cursor,
+    getNextPageParam: (lastPage) => lastPage.next_cursor,
 
-    staleTime:
-      5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }
 
-
-export function useExercise(
-  exerciseId: string,
-) {
+export function useExercise(exerciseId: string) {
   return useQuery({
-    queryKey:
-      exerciseKeys.detail(
-        exerciseId
-      ),
+    queryKey: exerciseKeys.detail(exerciseId),
 
-    queryFn:
-      () =>
-        getExercise(
-          exerciseId
-        ),
+    queryFn: () => getExercise(exerciseId),
 
-    enabled:
-      Boolean(
-        exerciseId
-      ),
+    enabled: Boolean(exerciseId),
 
-    staleTime:
-      5 * 60 * 1000,
+    staleTime: 5 * 60 * 1000,
   });
 }

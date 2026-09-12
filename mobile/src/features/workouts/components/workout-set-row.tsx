@@ -1,67 +1,33 @@
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-import * as Haptics
-  from "expo-haptics";
+import * as Haptics from "expo-haptics";
 
-import {
-  useState,
-} from "react";
+import { useState } from "react";
 
-import {
-  Pressable,
-  Text,
-  TextInput,
-  View,
-} from "react-native";
+import { Pressable, Text, TextInput, View } from "react-native";
 
-import {
-  RpeModal,
-} from "./rpe-modal";
+import { RpeModal } from "./rpe-modal";
 
-import {
-  SetTypeModal,
-} from "./set-type-modal";
+import { SetTypeModal } from "./set-type-modal";
 
-import type {
-  PreviousSet,
-  WorkoutSet,
-} from "../types";
-
+import type { PreviousSet, WorkoutSet } from "../types";
 
 interface Props {
   workoutSet: WorkoutSet;
 
-  previous:
-    | PreviousSet
-    | undefined;
+  previous: PreviousSet | undefined;
 
   index: number;
 
-  onChange: (
-    patch:
-      Partial<
-        WorkoutSet
-      >,
-  ) => void;
+  onChange: (patch: Partial<WorkoutSet>) => void;
 
-  onToggleComplete:
-    () => void;
+  onToggleComplete: () => void;
 
-  onRemove:
-    () => void;
+  onRemove: () => void;
 }
 
-
-function setLabel(
-  workoutSet:
-    WorkoutSet,
-  index: number,
-): string {
-  switch (
-    workoutSet.type
-  ) {
+function setLabel(workoutSet: WorkoutSet, index: number): string {
+  switch (workoutSet.type) {
     case "WARMUP":
       return "W";
 
@@ -78,37 +44,21 @@ function setLabel(
       return "A";
 
     default:
-      return String(
-        index + 1
-      );
+      return String(index + 1);
   }
 }
 
-
-function previousLabel(
-  previous:
-    | PreviousSet
-    | undefined,
-): string {
+function previousLabel(previous: PreviousSet | undefined): string {
   if (!previous) {
     return "—";
   }
 
-  const weight =
-    previous.weight ===
-    null
-      ? "—"
-      : previous.weight;
+  const weight = previous.weight === null ? "—" : previous.weight;
 
-  const reps =
-    previous.reps ===
-    null
-      ? "—"
-      : previous.reps;
+  const reps = previous.reps === null ? "—" : previous.reps;
 
   return `${weight} × ${reps}`;
 }
-
 
 export function WorkoutSetRow({
   workoutSet,
@@ -118,16 +68,9 @@ export function WorkoutSetRow({
   onToggleComplete,
   onRemove,
 }: Props) {
-  const [
-    setTypeOpen,
-    setSetTypeOpen,
-  ] = useState(false);
+  const [setTypeOpen, setSetTypeOpen] = useState(false);
 
-  const [
-    rpeOpen,
-    setRpeOpen,
-  ] = useState(false);
-
+  const [rpeOpen, setRpeOpen] = useState(false);
 
   function copyPrevious() {
     if (!previous) {
@@ -135,40 +78,31 @@ export function WorkoutSetRow({
     }
 
     onChange({
-      weight:
-        previous.weight,
+      weight: previous.weight,
 
-      weight_unit:
-        previous.weight_unit,
+      weight_unit: previous.weight_unit,
 
-      reps:
-        previous.reps,
+      reps: previous.reps,
 
-      rpe:
-        previous.rpe,
+      rpe: previous.rpe,
     });
 
-    void Haptics
-      .selectionAsync();
+    void Haptics.selectionAsync();
   }
-
 
   return (
     <>
       <View
         className="min-h-[48px] flex-row items-center rounded-xl px-1"
         style={{
-          backgroundColor:
-            workoutSet.completed
-              ? "rgba(37,99,235,.13)"
-              : "transparent",
+          backgroundColor: workoutSet.completed
+            ? "rgba(37,99,235,.13)"
+            : "transparent",
         }}
       >
         <Pressable
           onPress={() => {
-            setSetTypeOpen(
-              true
-            );
+            setSetTypeOpen(true);
           }}
           className="w-[34px] items-center justify-center"
         >
@@ -176,73 +110,42 @@ export function WorkoutSetRow({
             className="text-[11px] font-extrabold"
             style={{
               color:
-                workoutSet.type ===
-                "WARMUP"
+                workoutSet.type === "WARMUP"
                   ? "#F59E0B"
-                  : workoutSet.type ===
-                      "DROP"
+                  : workoutSet.type === "DROP"
                     ? "#60A5FA"
                     : "rgba(255,255,255,.55)",
             }}
           >
-            {setLabel(
-              workoutSet,
-              index,
-            )}
+            {setLabel(workoutSet, index)}
           </Text>
         </Pressable>
 
         <Pressable
-          onPress={
-            copyPrevious
-          }
+          onPress={copyPrevious}
           className="w-[76px] items-center justify-center"
         >
           <Text
-            numberOfLines={
-              1
-            }
-            className="text-[10px] font-medium text-white/27"
+            numberOfLines={1}
+            className="text-white/27 text-[10px] font-medium"
           >
-            {previousLabel(
-              previous
-            )}
+            {previousLabel(previous)}
           </Text>
         </Pressable>
 
         <View className="mx-1 flex-1">
           <TextInput
-            value={
-              workoutSet.weight
-                ?.toString() ??
-              ""
-            }
-            onChangeText={(
-              value,
-            ) => {
-              const cleaned =
-                value.replace(
-                  /[^0-9.]/g,
-                  ""
-                );
+            value={workoutSet.weight?.toString() ?? ""}
+            onChangeText={(value) => {
+              const cleaned = value.replace(/[^0-9.]/g, "");
 
               onChange({
-                weight:
-                  cleaned
-                    ? Number(
-                        cleaned
-                      )
-                    : null,
+                weight: cleaned ? Number(cleaned) : null,
               });
             }}
             keyboardType="decimal-pad"
             selectTextOnFocus
-            placeholder={
-              workoutSet
-                .target_weight
-                ?.toString() ??
-              "-"
-            }
+            placeholder={workoutSet.target_weight?.toString() ?? "-"}
             placeholderTextColor="rgba(255,255,255,.18)"
             className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[14px] font-bold text-white"
           />
@@ -250,37 +153,17 @@ export function WorkoutSetRow({
 
         <View className="mx-1 flex-1">
           <TextInput
-            value={
-              workoutSet.reps
-                ?.toString() ??
-              ""
-            }
-            onChangeText={(
-              value,
-            ) => {
-              const cleaned =
-                value.replace(
-                  /\D/g,
-                  ""
-                );
+            value={workoutSet.reps?.toString() ?? ""}
+            onChangeText={(value) => {
+              const cleaned = value.replace(/\D/g, "");
 
               onChange({
-                reps:
-                  cleaned
-                    ? Number(
-                        cleaned
-                      )
-                    : null,
+                reps: cleaned ? Number(cleaned) : null,
               });
             }}
             keyboardType="number-pad"
             selectTextOnFocus
-            placeholder={
-              workoutSet
-                .target_reps_min
-                ?.toString() ??
-              "-"
-            }
+            placeholder={workoutSet.target_reps_min?.toString() ?? "-"}
             placeholderTextColor="rgba(255,255,255,.18)"
             className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[14px] font-bold text-white"
           />
@@ -288,9 +171,7 @@ export function WorkoutSetRow({
 
         <Pressable
           onPress={() => {
-            setRpeOpen(
-              true
-            );
+            setRpeOpen(true);
           }}
           className="mx-1 h-[39px] w-[43px] items-center justify-center rounded-lg bg-white/[0.045]"
         >
@@ -298,59 +179,38 @@ export function WorkoutSetRow({
             className="text-[11px] font-bold"
             style={{
               color:
-                workoutSet.rpe !==
-                null
-                  ? "#60A5FA"
-                  : "rgba(255,255,255,.25)",
+                workoutSet.rpe !== null ? "#60A5FA" : "rgba(255,255,255,.25)",
             }}
           >
-            {workoutSet.rpe ??
-              "RPE"}
+            {workoutSet.rpe ?? "RPE"}
           </Text>
         </Pressable>
 
         <Pressable
-          onLongPress={
-            onRemove
-          }
-          onPress={
-            onToggleComplete
-          }
+          onLongPress={onRemove}
+          onPress={onToggleComplete}
           className="ml-1 h-9 w-9 items-center justify-center rounded-full"
           style={{
-            backgroundColor:
-              workoutSet.completed
-                ? "#2563EB"
-                : "rgba(255,255,255,.065)",
+            backgroundColor: workoutSet.completed
+              ? "#2563EB"
+              : "rgba(255,255,255,.065)",
           }}
         >
           <Ionicons
             name="checkmark"
             size={18}
-            color={
-              workoutSet.completed
-                ? "#FFFFFF"
-                : "rgba(255,255,255,.25)"
-            }
+            color={workoutSet.completed ? "#FFFFFF" : "rgba(255,255,255,.25)"}
           />
         </Pressable>
       </View>
 
       <SetTypeModal
-        visible={
-          setTypeOpen
-        }
-        value={
-          workoutSet.type
-        }
+        visible={setTypeOpen}
+        value={workoutSet.type}
         onClose={() => {
-          setSetTypeOpen(
-            false
-          );
+          setSetTypeOpen(false);
         }}
-        onSelect={(
-          type,
-        ) => {
+        onSelect={(type) => {
           onChange({
             type,
           });
@@ -358,20 +218,12 @@ export function WorkoutSetRow({
       />
 
       <RpeModal
-        visible={
-          rpeOpen
-        }
-        value={
-          workoutSet.rpe
-        }
+        visible={rpeOpen}
+        value={workoutSet.rpe}
         onClose={() => {
-          setRpeOpen(
-            false
-          );
+          setRpeOpen(false);
         }}
-        onSelect={(
-          rpe,
-        ) => {
+        onSelect={(rpe) => {
           onChange({
             rpe,
           });

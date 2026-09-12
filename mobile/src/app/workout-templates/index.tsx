@@ -1,10 +1,6 @@
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-import {
-  router,
-} from "expo-router";
+import { router } from "expo-router";
 
 import {
   ActivityIndicator,
@@ -15,33 +11,21 @@ import {
   View,
 } from "react-native";
 
-import {
-  SafeAreaView,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  useWorkoutTemplates,
-} from "@/features/workouts/queries";
-
+import { useWorkoutTemplates } from "@/features/workouts/queries";
 
 export default function WorkoutTemplatesScreen() {
-  const query =
-    useWorkoutTemplates();
+  const query = useWorkoutTemplates();
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-row items-center px-5 pt-3">
         <Pressable
-          onPress={
-            router.back
-          }
+          onPress={router.back}
           className="h-11 w-11 items-center justify-center rounded-full bg-white/[0.05]"
         >
-          <Ionicons
-            name="arrow-back"
-            size={20}
-            color="#FFFFFF"
-          />
+          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
         </Pressable>
 
         <View className="ml-4 flex-1">
@@ -56,47 +40,28 @@ export default function WorkoutTemplatesScreen() {
 
         <Pressable
           onPress={() => {
-            router.push(
-              "/workout-templates/create"
-            );
+            router.push("/workout-templates/create");
           }}
           className="h-11 w-11 items-center justify-center rounded-2xl bg-brand"
         >
-          <Ionicons
-            name="add"
-            size={24}
-            color="#FFFFFF"
-          />
+          <Ionicons name="add" size={24} color="#FFFFFF" />
         </Pressable>
       </View>
 
       {query.isLoading ? (
         <View className="flex-1 items-center justify-center">
-          <ActivityIndicator
-            color="#3B82F6"
-          />
+          <ActivityIndicator color="#3B82F6" />
         </View>
       ) : (
         <FlatList
-          data={
-            query.data?.items ??
-            []
-          }
-          keyExtractor={(
-            item,
-          ) =>
-            item.id
-          }
+          data={query.data?.items ?? []}
+          keyExtractor={(item) => item.id}
           contentContainerStyle={{
-            padding:
-              20,
+            padding: 20,
 
-            gap:
-              12,
+            gap: 12,
           }}
-          renderItem={({
-            item,
-          }) => (
+          renderItem={({ item }) => (
             <Pressable
               onPress={() => {
                 router.push({
@@ -110,8 +75,7 @@ export default function WorkoutTemplatesScreen() {
                 {item.thumbnail_url ? (
                   <Image
                     source={{
-                      uri:
-                        item.thumbnail_url,
+                      uri: item.thumbnail_url,
                     }}
                     className="h-[72px] w-[72px] rounded-2xl bg-elevated"
                   />
@@ -130,20 +94,15 @@ export default function WorkoutTemplatesScreen() {
                     {item.name}
                   </Text>
 
-                  <Text className="mt-2 text-[12px] text-white/38">
-                    {item.exercise_count}{" "}
-                    exercises
+                  <Text className="text-white/38 mt-2 text-[12px]">
+                    {item.exercise_count} exercises
                   </Text>
 
                   <Text
-                    numberOfLines={
-                      1
-                    }
+                    numberOfLines={1}
                     className="mt-2 text-[11px] text-white/25"
                   >
-                    {item.exercise_names.join(
-                      " · "
-                    )}
+                    {item.exercise_names.join(" · ")}
                   </Text>
                 </View>
 
@@ -158,11 +117,7 @@ export default function WorkoutTemplatesScreen() {
           ListEmptyComponent={
             <View className="items-center px-8 pt-24">
               <View className="h-16 w-16 items-center justify-center rounded-3xl bg-brand-muted">
-                <Ionicons
-                  name="albums-outline"
-                  size={27}
-                  color="#60A5FA"
-                />
+                <Ionicons name="albums-outline" size={27} color="#60A5FA" />
               </View>
 
               <Text className="mt-5 text-[18px] font-extrabold text-white">
@@ -175,15 +130,11 @@ export default function WorkoutTemplatesScreen() {
 
               <Pressable
                 onPress={() => {
-                  router.push(
-                    "/workout-templates/create"
-                  );
+                  router.push("/workout-templates/create");
                 }}
                 className="mt-6 rounded-2xl bg-brand px-6 py-4"
               >
-                <Text className="font-bold text-white">
-                  Create template
-                </Text>
+                <Text className="font-bold text-white">Create template</Text>
               </Pressable>
             </View>
           }

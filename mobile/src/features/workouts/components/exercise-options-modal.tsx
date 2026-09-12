@@ -1,14 +1,6 @@
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-import {
-  Modal,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
-
+import { Modal, Pressable, Text, View } from "react-native";
 
 interface Props {
   visible: boolean;
@@ -25,18 +17,14 @@ interface Props {
 
   onMoveDown: () => void;
 
-  onSupersetNext:
-    () => void;
+  onSupersetNext: () => void;
 
-  onRemoveSuperset:
-    () => void;
+  onRemoveSuperset: () => void;
 
-  onRemoveExercise:
-    () => void;
+  onRemoveExercise: () => void;
 
   onClose: () => void;
 }
-
 
 export function ExerciseOptionsModal({
   visible,
@@ -51,40 +39,22 @@ export function ExerciseOptionsModal({
   onRemoveExercise,
   onClose,
 }: Props) {
-  function run(
-    callback:
-      () => void,
-  ) {
+  function run(callback: () => void) {
     onClose();
 
     callback();
   }
 
-
   return (
     <Modal
-      visible={
-        visible
-      }
+      visible={visible}
       transparent
       animationType="slide"
-      onRequestClose={
-        onClose
-      }
+      onRequestClose={onClose}
     >
-      <Pressable
-        onPress={
-          onClose
-        }
-        className="flex-1 justify-end bg-black/60"
-      >
+      <Pressable onPress={onClose} className="flex-1 justify-end bg-black/60">
         <Pressable
-          onPress={(
-            event,
-          ) =>
-            event
-              .stopPropagation()
-          }
+          onPress={(event) => event.stopPropagation()}
           className="rounded-t-[30px] border-t border-white/10 bg-[#111111] px-5 pb-9 pt-5"
         >
           <View className="mx-auto mb-5 h-1 w-10 rounded-full bg-white/15" />
@@ -97,13 +67,9 @@ export function ExerciseOptionsModal({
             <Option
               icon="arrow-up"
               title="Move up"
-              disabled={
-                !canMoveUp
-              }
+              disabled={!canMoveUp}
               onPress={() => {
-                run(
-                  onMoveUp
-                );
+                run(onMoveUp);
               }}
             />
 
@@ -112,13 +78,9 @@ export function ExerciseOptionsModal({
             <Option
               icon="arrow-down"
               title="Move down"
-              disabled={
-                !canMoveDown
-              }
+              disabled={!canMoveDown}
               onPress={() => {
-                run(
-                  onMoveDown
-                );
+                run(onMoveDown);
               }}
             />
 
@@ -129,22 +91,16 @@ export function ExerciseOptionsModal({
                 icon="unlink-outline"
                 title="Remove from superset"
                 onPress={() => {
-                  run(
-                    onRemoveSuperset
-                  );
+                  run(onRemoveSuperset);
                 }}
               />
             ) : (
               <Option
                 icon="link-outline"
                 title="Superset with next exercise"
-                disabled={
-                  !canSupersetNext
-                }
+                disabled={!canSupersetNext}
                 onPress={() => {
-                  run(
-                    onSupersetNext
-                  );
+                  run(onSupersetNext);
                 }}
               />
             )}
@@ -156,9 +112,7 @@ export function ExerciseOptionsModal({
               title="Remove exercise"
               danger
               onPress={() => {
-                run(
-                  onRemoveExercise
-                );
+                run(onRemoveExercise);
               }}
             />
           </View>
@@ -168,13 +122,9 @@ export function ExerciseOptionsModal({
   );
 }
 
-
 function Divider() {
-  return (
-    <View className="ml-14 h-px bg-white/[0.06]" />
-  );
+  return <View className="ml-14 h-px bg-white/[0.06]" />;
 }
-
 
 function Option({
   icon,
@@ -183,10 +133,7 @@ function Option({
   disabled = false,
   onPress,
 }: {
-  icon:
-    React.ComponentProps<
-      typeof Ionicons
-    >["name"];
+  icon: React.ComponentProps<typeof Ionicons>["name"];
 
   title: string;
 
@@ -198,39 +145,19 @@ function Option({
 }) {
   return (
     <Pressable
-      disabled={
-        disabled
-      }
-      onPress={
-        onPress
-      }
+      disabled={disabled}
+      onPress={onPress}
       className="min-h-[55px] flex-row items-center px-4"
       style={{
-        opacity:
-          disabled
-            ? 0.3
-            : 1,
+        opacity: disabled ? 0.3 : 1,
       }}
     >
-      <Ionicons
-        name={
-          icon
-        }
-        size={19}
-        color={
-          danger
-            ? "#F87171"
-            : "#FFFFFF"
-        }
-      />
+      <Ionicons name={icon} size={19} color={danger ? "#F87171" : "#FFFFFF"} />
 
       <Text
         className="ml-4 text-[14px] font-semibold"
         style={{
-          color:
-            danger
-              ? "#FCA5A5"
-              : "#FFFFFF",
+          color: danger ? "#FCA5A5" : "#FFFFFF",
         }}
       >
         {title}

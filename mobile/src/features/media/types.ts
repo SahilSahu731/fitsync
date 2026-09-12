@@ -1,6 +1,4 @@
-export type UploadResourceType =
-  | "image"
-  | "video";
+export type UploadResourceType = "image" | "video";
 
 export interface UploadSignature {
   cloud_name: string;
@@ -13,8 +11,7 @@ export interface UploadSignature {
 
   folder: string;
 
-  resource_type:
-    UploadResourceType;
+  resource_type: UploadResourceType;
 
   upload_url: string;
 }
@@ -22,50 +19,31 @@ export interface UploadSignature {
 export interface LocalMediaAsset {
   uri: string;
 
-  type:
-    | "image"
-    | "video";
+  type: "image" | "video";
 
-  fileName:
-    | string
-    | null;
+  fileName: string | null;
 
-  mimeType:
-    | string
-    | null;
+  mimeType: string | null;
 
   width: number;
 
   height: number;
 
-  duration:
-    | number
-    | null;
+  duration: number | null;
 
-  fileSize:
-    | number
-    | null;
+  fileSize: number | null;
 }
 
 export interface UploadedCloudinaryAsset {
   publicId: string;
 
-  resourceType:
-    UploadResourceType;
+  resourceType: UploadResourceType;
 
-  format:
-    | string
-    | null;
+  format: string | null;
 
-  width:
-    | number
-    | null;
+  width: number | null;
 
-  height:
-    | number
-    | null;
+  height: number | null;
 
-  durationSeconds:
-    | number
-    | null;
+  durationSeconds: number | null;
 }

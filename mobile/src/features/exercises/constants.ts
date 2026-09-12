@@ -1,8 +1,4 @@
-import type {
-  Equipment,
-  MuscleGroup,
-} from "./types";
-
+import type { Equipment, MuscleGroup } from "./types";
 
 export const MUSCLE_OPTIONS: {
   value: MuscleGroup;
@@ -62,7 +58,6 @@ export const MUSCLE_OPTIONS: {
   },
 ];
 
-
 export const EQUIPMENT_OPTIONS: {
   value: Equipment;
   label: string;
@@ -101,19 +96,10 @@ export const EQUIPMENT_OPTIONS: {
   },
 ];
 
-
-export function prettifyEnum(
-  value: string,
-): string {
+export function prettifyEnum(value: string): string {
   return value
     .toLowerCase()
     .split("_")
-    .map(
-      (part) =>
-        part
-          .charAt(0)
-          .toUpperCase() +
-        part.slice(1),
-    )
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
     .join(" ");
 }

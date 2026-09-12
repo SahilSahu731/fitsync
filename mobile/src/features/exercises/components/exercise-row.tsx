@@ -1,22 +1,10 @@
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-import {
-  Image,
-  Pressable,
-  Text,
-  View,
-} from "react-native";
+import { Image, Pressable, Text, View } from "react-native";
 
-import {
-  prettifyEnum,
-} from "../constants";
+import { prettifyEnum } from "../constants";
 
-import type {
-  Exercise,
-} from "../types";
-
+import type { Exercise } from "../types";
 
 interface Props {
   exercise: Exercise;
@@ -24,35 +12,19 @@ interface Props {
   onPress: () => void;
 }
 
-
-export function ExerciseRow({
-  exercise,
-  onPress,
-}: Props) {
-  const thumbnail =
-    exercise.media[0]
-      ?.thumbnail_url;
+export function ExerciseRow({ exercise, onPress }: Props) {
+  const thumbnail = exercise.media[0]?.thumbnail_url;
 
   return (
     <Pressable
-      onPress={
-        onPress
-      }
+      onPress={onPress}
       className="flex-row items-center px-5 py-3"
-      style={({
-        pressed,
-      }) => ({
-        opacity:
-          pressed
-            ? 0.72
-            : 1,
+      style={({ pressed }) => ({
+        opacity: pressed ? 0.72 : 1,
 
         transform: [
           {
-            scale:
-              pressed
-                ? 0.99
-                : 1,
+            scale: pressed ? 0.99 : 1,
           },
         ],
       })}
@@ -60,27 +32,20 @@ export function ExerciseRow({
       {thumbnail ? (
         <Image
           source={{
-            uri:
-              thumbnail,
+            uri: thumbnail,
           }}
           className="h-[62px] w-[62px] rounded-2xl bg-elevated"
         />
       ) : (
         <View className="h-[62px] w-[62px] items-center justify-center rounded-2xl bg-elevated">
-          <Ionicons
-            name="barbell-outline"
-            size={24}
-            color="#737373"
-          />
+          <Ionicons name="barbell-outline" size={24} color="#737373" />
         </View>
       )}
 
       <View className="ml-4 flex-1">
         <View className="flex-row items-center">
           <Text
-            numberOfLines={
-              1
-            }
+            numberOfLines={1}
             className="flex-1 text-[16px] font-bold text-white"
           >
             {exercise.name}
@@ -95,36 +60,19 @@ export function ExerciseRow({
           ) : null}
         </View>
 
-        <Text className="mt-1 text-[12px] text-white/38">
-          {exercise
-            .primary_muscles
-            .map(
-              prettifyEnum,
-            )
-            .join(" · ")}
+        <Text className="text-white/38 mt-1 text-[12px]">
+          {exercise.primary_muscles.map(prettifyEnum).join(" · ")}
         </Text>
 
         <Text className="mt-1 text-[11px] text-white/25">
-          {[
-            ...exercise.equipment,
-            exercise.mechanic,
-          ]
-            .slice(
-              0,
-              2,
-            )
-            .map(
-              prettifyEnum,
-            )
+          {[...exercise.equipment, exercise.mechanic]
+            .slice(0, 2)
+            .map(prettifyEnum)
             .join(" · ")}
         </Text>
       </View>
 
-      <Ionicons
-        name="chevron-forward"
-        size={18}
-        color="rgba(255,255,255,.2)"
-      />
+      <Ionicons name="chevron-forward" size={18} color="rgba(255,255,255,.2)" />
     </Pressable>
   );
 }

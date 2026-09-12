@@ -5,7 +5,10 @@ const vm = require("node:vm");
 const { test } = require("node:test");
 const patchExpoRouter = require("./patch-expo-router.cjs");
 
-const file = path.join(path.dirname(require.resolve("expo-router/package.json")), "build/fork/useLinking.native.js");
+const file = path.join(
+  path.dirname(require.resolve("expo-router/package.json")),
+  "build/fork/useLinking.native.js",
+);
 
 test("router patch is idempotent and defers initial-link updates until mount", () => {
   patchExpoRouter();
@@ -21,12 +24,17 @@ test("router patch is idempotent and defers initial-link updates until mount", (
     react_1: {
       useRef: (value) => ({ current: value }),
       useCallback: (fn) => fn,
-      useEffect: (fn) => { mount = fn; },
+      useEffect: (fn) => {
+        mount = fn;
+      },
     },
     onUnhandledLinking: (value) => calls.push(value),
   };
   vm.createContext(context);
-  vm.runInContext(source.slice(start, end) + "\nglobalThis.report = reportInitialLink;", context);
+  vm.runInContext(
+    source.slice(start, end) + "\nglobalThis.report = reportInitialLink;",
+    context,
+  );
   context.report("/exercises/123");
   assert.deepEqual(calls, []);
   const unmount = mount();
@@ -37,7 +45,14 @@ test("router patch is idempotent and defers initial-link updates until mount", (
   context.report("/late-link");
   assert.equal(calls.length, 2);
   mount();
-  assert.deepEqual(calls, ["/exercises/123", "/workout-templates", "/late-link"]);
-  const initialHandler = source.slice(end, source.indexOf("    (0, react_1.useEffect)", end));
+  assert.deepEqual(calls, [
+    "/exercises/123",
+    "/workout-templates",
+    "/late-link",
+  ]);
+  const initialHandler = source.slice(
+    end,
+    source.indexOf("    (0, react_1.useEffect)", end),
+  );
   assert.equal(initialHandler.includes("onUnhandledLinking("), false);
 });

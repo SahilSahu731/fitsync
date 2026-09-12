@@ -14,12 +14,18 @@ export function TemplateScreen({ templateId }: { templateId?: string }) {
   const query = useWorkoutTemplate(templateId ?? "");
   const queryClient = useQueryClient();
   const mutation = useMutation({
-    mutationFn: (input: WorkoutTemplateInput) => templateId
-      ? updateWorkoutTemplate(templateId, input)
-      : createWorkoutTemplate(input),
+    mutationFn: (input: WorkoutTemplateInput) =>
+      templateId
+        ? updateWorkoutTemplate(templateId, input)
+        : createWorkoutTemplate(input),
     onSuccess: async (template) => {
-      queryClient.setQueryData(workoutTemplateKeys.detail(template.id), template);
-      await queryClient.invalidateQueries({ queryKey: workoutTemplateKeys.all });
+      queryClient.setQueryData(
+        workoutTemplateKeys.detail(template.id),
+        template,
+      );
+      await queryClient.invalidateQueries({
+        queryKey: workoutTemplateKeys.all,
+      });
       router.back();
     },
   });
@@ -27,7 +33,11 @@ export function TemplateScreen({ templateId }: { templateId?: string }) {
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-row items-center gap-4 px-6 py-4">
-        <Pressable accessibilityRole="button" onPress={router.back} hitSlop={12}>
+        <Pressable
+          accessibilityRole="button"
+          onPress={router.back}
+          hitSlop={12}
+        >
           <Text className="text-[16px] font-semibold text-sky-400">Back</Text>
         </Pressable>
         <Text className="text-[22px] font-bold text-white">
@@ -36,7 +46,10 @@ export function TemplateScreen({ templateId }: { templateId?: string }) {
       </View>
       {mutation.isError ? (
         <Text accessibilityRole="alert" className="px-6 py-3 text-red-300">
-          {parseApiError(mutation.error, "Could not save your template.").message}
+          {
+            parseApiError(mutation.error, "Could not save your template.")
+              .message
+          }
         </Text>
       ) : null}
       {templateId && query.isLoading ? (
@@ -44,7 +57,12 @@ export function TemplateScreen({ templateId }: { templateId?: string }) {
       ) : templateId && !query.data ? (
         <View className="px-6 py-8">
           <Text className="text-white">Could not load this template.</Text>
-          <Pressable accessibilityRole="button" onPress={() => { void query.refetch(); }}>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              void query.refetch();
+            }}
+          >
             <Text className="py-4 text-sky-400">Try again</Text>
           </Pressable>
         </View>

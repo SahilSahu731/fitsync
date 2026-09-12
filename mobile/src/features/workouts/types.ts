@@ -1,21 +1,10 @@
 export type WorkoutSetType =
-  | "WARMUP"
-  | "NORMAL"
-  | "BACKOFF"
-  | "DROP"
-  | "FAILURE"
-  | "AMRAP";
+  "WARMUP" | "NORMAL" | "BACKOFF" | "DROP" | "FAILURE" | "AMRAP";
 
 export type WorkoutStatus =
-  | "PLANNED"
-  | "IN_PROGRESS"
-  | "COMPLETED"
-  | "CANCELLED";
+  "PLANNED" | "IN_PROGRESS" | "COMPLETED" | "CANCELLED";
 
-export type WeightUnit =
-  | "KG"
-  | "LB";
-
+export type WeightUnit = "KG" | "LB";
 
 export interface TemplateSet {
   id: string;
@@ -24,27 +13,16 @@ export interface TemplateSet {
 
   type: WorkoutSetType;
 
-  target_reps_min:
-    | number
-    | null;
+  target_reps_min: number | null;
 
-  target_reps_max:
-    | number
-    | null;
+  target_reps_max: number | null;
 
-  target_weight:
-    | number
-    | null;
+  target_weight: number | null;
 
-  target_rpe:
-    | number
-    | null;
+  target_rpe: number | null;
 
-  target_rir:
-    | number
-    | null;
+  target_rir: number | null;
 }
-
 
 export interface TemplateExercise {
   id: string;
@@ -53,134 +31,92 @@ export interface TemplateExercise {
 
   exercise_name: string;
 
-  thumbnail_url:
-    | string
-    | null;
+  thumbnail_url: string | null;
 
   position: number;
 
   rest_seconds: number;
 
-  notes:
-    | string
-    | null;
+  notes: string | null;
 
-  superset_group_id:
-    | string
-    | null;
+  superset_group_id: string | null;
 
-  planned_sets:
-    TemplateSet[];
+  planned_sets: TemplateSet[];
 }
-
 
 export interface WorkoutTemplate {
   id: string;
 
   name: string;
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
   exercise_count: number;
 
-  exercises:
-    TemplateExercise[];
+  exercises: TemplateExercise[];
 
   created_at: string;
 
   updated_at: string;
 }
 
-
 export interface WorkoutTemplateListItem {
   id: string;
 
   name: string;
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
   exercise_count: number;
 
-  exercise_names:
-    string[];
+  exercise_names: string[];
 
-  thumbnail_url:
-    | string
-    | null;
+  thumbnail_url: string | null;
 
   updated_at: string;
 }
 
-
 export interface WorkoutTemplateListResponse {
-  items:
-    WorkoutTemplateListItem[];
+  items: WorkoutTemplateListItem[];
 }
-
 
 export interface TemplateSetInput {
   type: WorkoutSetType;
 
-  target_reps_min:
-    | number
-    | null;
+  target_reps_min: number | null;
 
-  target_reps_max:
-    | number
-    | null;
+  target_reps_max: number | null;
 
-  target_weight:
-    | number
-    | null;
+  target_weight: number | null;
 
-  target_rpe:
-    | number
-    | null;
+  target_rpe: number | null;
 
-  target_rir:
-    | number
-    | null;
+  target_rir: number | null;
 }
-
 
 export interface TemplateExerciseInput {
   exercise_id: string;
 
   rest_seconds: number;
 
-  notes:
-    | string
-    | null;
+  notes: string | null;
 
-  superset_group_id:
-    | string
-    | null;
+  superset_group_id: string | null;
 
-  planned_sets:
-    TemplateSetInput[];
+  planned_sets: TemplateSetInput[];
 }
-
 
 export interface WorkoutTemplateInput {
   name: string;
 
-  description:
-    | string
-    | null;
+  description: string | null;
 
-  exercises:
-    TemplateExerciseInput[];
+  exercises: TemplateExerciseInput[];
 }
-
 
 // =====================================================
 // SESSION
 // =====================================================
-
 
 export interface WorkoutSet {
   id: string;
@@ -189,52 +125,30 @@ export interface WorkoutSet {
 
   type: WorkoutSetType;
 
-  target_reps_min:
-    | number
-    | null;
+  target_reps_min: number | null;
 
-  target_reps_max:
-    | number
-    | null;
+  target_reps_max: number | null;
 
-  target_weight:
-    | number
-    | null;
+  target_weight: number | null;
 
-  target_rpe:
-    | number
-    | null;
+  target_rpe: number | null;
 
-  target_rir:
-    | number
-    | null;
+  target_rir: number | null;
 
-  reps:
-    | number
-    | null;
+  reps: number | null;
 
-  weight:
-    | number
-    | null;
+  weight: number | null;
 
-  weight_unit:
-    WeightUnit;
+  weight_unit: WeightUnit;
 
-  rpe:
-    | number
-    | null;
+  rpe: number | null;
 
-  rir:
-    | number
-    | null;
+  rir: number | null;
 
   completed: boolean;
 
-  completed_at:
-    | string
-    | null;
+  completed_at: string | null;
 }
-
 
 export interface WorkoutExercise {
   id: string;
@@ -243,33 +157,23 @@ export interface WorkoutExercise {
 
   exercise_name: string;
 
-  thumbnail_url:
-    | string
-    | null;
+  thumbnail_url: string | null;
 
   position: number;
 
   rest_seconds: number;
 
-  notes:
-    | string
-    | null;
+  notes: string | null;
 
-  superset_group_id:
-    | string
-    | null;
+  superset_group_id: string | null;
 
-  sets:
-    WorkoutSet[];
+  sets: WorkoutSet[];
 }
-
 
 export interface WorkoutSession {
   id: string;
 
-  template_id:
-    | string
-    | null;
+  template_id: string | null;
 
   name: string;
 
@@ -277,24 +181,15 @@ export interface WorkoutSession {
 
   started_at: string;
 
-  completed_at:
-    | string
-    | null;
+  completed_at: string | null;
 
-  cancelled_at:
-    | string
-    | null;
+  cancelled_at: string | null;
 
-  duration_seconds:
-    | number
-    | null;
+  duration_seconds: number | null;
 
-  notes:
-    | string
-    | null;
+  notes: string | null;
 
-  exercises:
-    WorkoutExercise[];
+  exercises: WorkoutExercise[];
 
   completed_set_count: number;
 
@@ -303,72 +198,43 @@ export interface WorkoutSession {
   revision: number;
 }
 
-
 export interface ActiveWorkoutResponse {
-  workout:
-    | WorkoutSession
-    | null;
+  workout: WorkoutSession | null;
 }
-
 
 export interface StartWorkoutInput {
-  template_id?:
-    | string
-    | null;
+  template_id?: string | null;
 
-  name?:
-    | string
-    | null;
+  name?: string | null;
 }
-
 
 export interface WorkoutSetMutationInput {
   id: string;
 
   type: WorkoutSetType;
 
-  target_reps_min:
-    | number
-    | null;
+  target_reps_min: number | null;
 
-  target_reps_max:
-    | number
-    | null;
+  target_reps_max: number | null;
 
-  target_weight:
-    | number
-    | null;
+  target_weight: number | null;
 
-  target_rpe:
-    | number
-    | null;
+  target_rpe: number | null;
 
-  target_rir:
-    | number
-    | null;
+  target_rir: number | null;
 
-  reps:
-    | number
-    | null;
+  reps: number | null;
 
-  weight:
-    | number
-    | null;
+  weight: number | null;
 
-  weight_unit:
-    WeightUnit;
+  weight_unit: WeightUnit;
 
-  rpe:
-    | number
-    | null;
+  rpe: number | null;
 
-  rir:
-    | number
-    | null;
+  rir: number | null;
 
   completed: boolean;
 }
-
 
 export interface WorkoutExerciseMutationInput {
   id: string;
@@ -377,30 +243,20 @@ export interface WorkoutExerciseMutationInput {
 
   rest_seconds: number;
 
-  notes:
-    | string
-    | null;
+  notes: string | null;
 
-  superset_group_id:
-    | string
-    | null;
+  superset_group_id: string | null;
 
-  sets:
-    WorkoutSetMutationInput[];
+  sets: WorkoutSetMutationInput[];
 }
-
 
 export interface WorkoutUpdateInput {
   name: string;
 
-  notes:
-    | string
-    | null;
+  notes: string | null;
 
-  exercises:
-    WorkoutExerciseMutationInput[];
+  exercises: WorkoutExerciseMutationInput[];
 }
-
 
 export interface WorkoutHistoryItem {
   id: string;
@@ -420,47 +276,32 @@ export interface WorkoutHistoryItem {
   exercise_names: string[];
 }
 
-
 export interface WorkoutHistoryResponse {
-  items:
-    WorkoutHistoryItem[];
+  items: WorkoutHistoryItem[];
 
-  next_cursor:
-    | string
-    | null;
+  next_cursor: string | null;
 }
 
 export interface PreviousSet {
   type: WorkoutSetType;
 
-  weight:
-    | number
-    | null;
+  weight: number | null;
 
-  weight_unit:
-    WeightUnit;
+  weight_unit: WeightUnit;
 
-  reps:
-    | number
-    | null;
+  reps: number | null;
 
-  rpe:
-    | number
-    | null;
+  rpe: number | null;
 }
-
 
 export interface PreviousExercisePerformance {
   exercise_id: string;
 
   completed_at: string;
 
-  sets:
-    PreviousSet[];
+  sets: PreviousSet[];
 }
 
-
 export interface PreviousPerformanceResponse {
-  items:
-    PreviousExercisePerformance[];
+  items: PreviousExercisePerformance[];
 }

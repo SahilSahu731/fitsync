@@ -1,18 +1,13 @@
-import {
-  Stack,
-} from "expo-router";
-
+import { Stack } from "expo-router";
 
 export default function WorkoutTemplatesLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown:
-          false,
+        headerShown: false,
 
         contentStyle: {
-          backgroundColor:
-            "#080808",
+          backgroundColor: "#080808",
         },
       }}
     />

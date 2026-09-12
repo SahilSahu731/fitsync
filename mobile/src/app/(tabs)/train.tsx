@@ -1,10 +1,6 @@
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-import {
-  router,
-} from "expo-router";
+import { router } from "expo-router";
 
 import {
   ActivityIndicator,
@@ -14,72 +10,51 @@ import {
   View,
 } from "react-native";
 
-import {
-  SafeAreaView,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import {
-  useStartWorkout,
-} from "@/features/workouts/hooks";
+import { useStartWorkout } from "@/features/workouts/hooks";
 
 import {
   useActiveWorkout,
   useWorkoutTemplates,
 } from "@/features/workouts/queries";
 
-
-
-
 export default function TrainScreen() {
-  const templates =
-    useWorkoutTemplates();
+  const templates = useWorkoutTemplates();
 
-  const active =
-    useActiveWorkout();
+  const active = useActiveWorkout();
 
-  const startMutation =
-    useStartWorkout();
+  const startMutation = useStartWorkout();
 
-  const activeWorkout =
-    active.data
-      ?.workout;
-
+  const activeWorkout = active.data?.workout;
 
   function startEmpty() {
     startMutation.mutate({
-      name:
-        "Workout",
+      name: "Workout",
     });
   }
-
 
   return (
     <SafeAreaView className="flex-1 bg-background">
       <ScrollView
-        showsVerticalScrollIndicator={
-          false
-        }
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          padding:
-            20,
+          padding: 20,
 
-          paddingBottom:
-            100,
+          paddingBottom: 100,
         }}
       >
         <Text className="text-[34px] font-extrabold tracking-[-1.4px] text-white">
           Train
         </Text>
 
-        <Text className="mt-2 text-[14px] text-white/38">
+        <Text className="text-white/38 mt-2 text-[14px]">
           Log your workout. Keep moving.
         </Text>
 
         {active.isLoading ? (
           <View className="mt-8 h-28 items-center justify-center rounded-[24px] bg-white/[0.03]">
-            <ActivityIndicator
-              color="#3B82F6"
-            />
+            <ActivityIndicator color="#3B82F6" />
           </View>
         ) : activeWorkout ? (
           <Pressable
@@ -129,44 +104,24 @@ export default function TrainScreen() {
           </Pressable>
         ) : (
           <Pressable
-            disabled={
-              startMutation
-                .isPending
-            }
-            onPress={
-              startEmpty
-            }
+            disabled={startMutation.isPending}
+            onPress={startEmpty}
             className="mt-8 overflow-hidden rounded-[26px] bg-brand p-6"
-            style={({
-              pressed,
-            }) => ({
-              backgroundColor:
-                pressed
-                  ? "#1D4ED8"
-                  : "#2563EB",
+            style={({ pressed }) => ({
+              backgroundColor: pressed ? "#1D4ED8" : "#2563EB",
 
               transform: [
                 {
-                  scale:
-                    pressed
-                      ? 0.985
-                      : 1,
+                  scale: pressed ? 0.985 : 1,
                 },
               ],
             })}
           >
             <View className="h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-              {startMutation
-                .isPending ? (
-                <ActivityIndicator
-                  color="#FFFFFF"
-                />
+              {startMutation.isPending ? (
+                <ActivityIndicator color="#FFFFFF" />
               ) : (
-                <Ionicons
-                  name="play"
-                  size={22}
-                  color="#FFFFFF"
-                />
+                <Ionicons name="play" size={22} color="#FFFFFF" />
               )}
             </View>
 
@@ -183,55 +138,38 @@ export default function TrainScreen() {
         <View className="mt-7 flex-row gap-3">
           <Pressable
             onPress={() => {
-              router.push(
-                "/workout-templates"
-              );
+              router.push("/workout-templates");
             }}
             className="flex-1 rounded-[22px] border border-white/10 bg-white/[0.035] p-5"
           >
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
-              <Ionicons
-                name="albums-outline"
-                size={20}
-                color="#60A5FA"
-              />
+              <Ionicons name="albums-outline" size={20} color="#60A5FA" />
             </View>
 
             <Text className="mt-5 text-[15px] font-bold text-white">
               Templates
             </Text>
 
-            <Text className="mt-1 text-[12px] text-white/32">
-              {templates
-                .data
-                ?.items
-                .length ??
-                0}{" "}
-              saved
+            <Text className="text-white/32 mt-1 text-[12px]">
+              {templates.data?.items.length ?? 0} saved
             </Text>
           </Pressable>
 
           <Pressable
             onPress={() => {
-              router.push(
-                "/exercises"
-              );
+              router.push("/exercises");
             }}
             className="flex-1 rounded-[22px] border border-white/10 bg-white/[0.035] p-5"
           >
             <View className="h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06]">
-              <Ionicons
-                name="barbell-outline"
-                size={20}
-                color="#FFFFFF"
-              />
+              <Ionicons name="barbell-outline" size={20} color="#FFFFFF" />
             </View>
 
             <Text className="mt-5 text-[15px] font-bold text-white">
               Exercises
             </Text>
 
-            <Text className="mt-1 text-[12px] text-white/32">
+            <Text className="text-white/32 mt-1 text-[12px]">
               Browse library
             </Text>
           </Pressable>
@@ -244,9 +182,7 @@ export default function TrainScreen() {
 
           <Pressable
             onPress={() => {
-              router.push(
-                "/workout-templates"
-              );
+              router.push("/workout-templates");
             }}
           >
             <Text className="text-[12px] font-bold text-brand-bright">
@@ -256,111 +192,71 @@ export default function TrainScreen() {
         </View>
 
         <View className="mt-4 gap-3">
-          {templates
-            .data
-            ?.items
-            .slice(
-              0,
-              4,
-            )
-            .map(
-              (
-                template,
-              ) => (
-                <View
-                  key={
-                    template.id
-                  }
-                  className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-                >
-                  <View className="flex-row items-center">
-                    <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
-                      <Ionicons
-                        name="barbell"
-                        size={18}
-                        color="#60A5FA"
-                      />
-                    </View>
-
-                    <View className="ml-3 flex-1">
-                      <Text className="text-[15px] font-bold text-white">
-                        {template.name}
-                      </Text>
-
-                      <Text
-                        numberOfLines={
-                          1
-                        }
-                        className="mt-1 text-[11px] text-white/30"
-                      >
-                        {template.exercise_names.join(
-                          " · "
-                        )}
-                      </Text>
-                    </View>
-                  </View>
-
-                  <View className="mt-4 flex-row gap-2">
-                    <Pressable
-                      onPress={() => {
-                        router.push(
-                          `/workout-templates/${template.id}`
-                        );
-                      }}
-                      className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-white/[0.05]"
-                    >
-                      <Text className="text-[12px] font-bold text-white/65">
-                        Edit
-                      </Text>
-                    </Pressable>
-
-                    <Pressable
-                      disabled={
-                        Boolean(
-                          activeWorkout
-                        ) ||
-                        startMutation
-                          .isPending
-                      }
-                      onPress={() => {
-                        startMutation
-                          .mutate({
-                            template_id:
-                              template.id,
-                          });
-                      }}
-                      className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-brand"
-                      style={{
-                        opacity:
-                          activeWorkout
-                            ? 0.35
-                            : 1,
-                      }}
-                    >
-                      <Text className="text-[12px] font-extrabold text-white">
-                        Start
-                      </Text>
-                    </Pressable>
-                  </View>
+          {templates.data?.items.slice(0, 4).map((template) => (
+            <View
+              key={template.id}
+              className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+            >
+              <View className="flex-row items-center">
+                <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
+                  <Ionicons name="barbell" size={18} color="#60A5FA" />
                 </View>
-              ),
-            )}
+
+                <View className="ml-3 flex-1">
+                  <Text className="text-[15px] font-bold text-white">
+                    {template.name}
+                  </Text>
+
+                  <Text
+                    numberOfLines={1}
+                    className="mt-1 text-[11px] text-white/30"
+                  >
+                    {template.exercise_names.join(" · ")}
+                  </Text>
+                </View>
+              </View>
+
+              <View className="mt-4 flex-row gap-2">
+                <Pressable
+                  onPress={() => {
+                    router.push(`/workout-templates/${template.id}`);
+                  }}
+                  className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-white/[0.05]"
+                >
+                  <Text className="text-[12px] font-bold text-white/65">
+                    Edit
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  disabled={Boolean(activeWorkout) || startMutation.isPending}
+                  onPress={() => {
+                    startMutation.mutate({
+                      template_id: template.id,
+                    });
+                  }}
+                  className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-brand"
+                  style={{
+                    opacity: activeWorkout ? 0.35 : 1,
+                  }}
+                >
+                  <Text className="text-[12px] font-extrabold text-white">
+                    Start
+                  </Text>
+                </Pressable>
+              </View>
+            </View>
+          ))}
         </View>
 
         <Pressable
           onPress={() => {
-            router.push(
-              "/workout-history"
-            );
+            router.push("/workout-history");
           }}
           className="mt-8 flex-row items-center rounded-2xl border border-white/10 bg-white/[0.03] p-4"
         >
           <View className="h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05]">
-            <Ionicons
-              name="time-outline"
-              size={19}
-              color="#FFFFFF"
-            />
+            <Ionicons name="time-outline" size={19} color="#FFFFFF" />
           </View>
 
           <View className="ml-3 flex-1">

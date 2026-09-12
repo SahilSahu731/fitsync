@@ -1,24 +1,12 @@
-import {
-  Ionicons,
-} from "@expo/vector-icons";
+import { Ionicons } from "@expo/vector-icons";
 
-import * as Haptics
-  from "expo-haptics";
+import * as Haptics from "expo-haptics";
 
-import {
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useQueryClient } from "@tanstack/react-query";
 
-import {
-  router,
-  useLocalSearchParams,
-} from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 
-import {
-  useEffect,
-  useMemo,
-  useState,
-} from "react";
+import { useEffect, useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -30,29 +18,17 @@ import {
   View,
 } from "react-native";
 
-import {
-  SafeAreaView,
-} from "react-native-safe-area-context";
+import { SafeAreaView } from "react-native-safe-area-context";
 
-import type {
-  Exercise,
-} from "@/features/exercises/types";
+import type { Exercise } from "@/features/exercises/types";
 
-import {
-  ActiveExerciseCard,
-} from "@/features/workouts/components/active-exercise-card";
+import { ActiveExerciseCard } from "@/features/workouts/components/active-exercise-card";
 
-import {
-  ExerciseOptionsModal,
-} from "@/features/workouts/components/exercise-options-modal";
+import { ExerciseOptionsModal } from "@/features/workouts/components/exercise-options-modal";
 
-import {
-  ExercisePickerModal,
-} from "@/features/workouts/components/exercise-picker-modal";
+import { ExercisePickerModal } from "@/features/workouts/components/exercise-picker-modal";
 
-import {
-  RestTimer,
-} from "@/features/workouts/components/rest-timer";
+import { RestTimer } from "@/features/workouts/components/rest-timer";
 
 import {
   addWorkoutExercises,
@@ -60,9 +36,9 @@ import {
   completeWorkout,
 } from "@/features/workouts/api";
 
-import {
-  workoutSessionKeys,
-} from "@/features/workouts/keys";
+import { workoutSessionKeys } from "@/features/workouts/keys";
+
+import { progressKeys } from "@/features/progress/keys";
 
 import {
   usePreviousPerformance,
@@ -75,23 +51,16 @@ import {
   workoutVolume,
 } from "@/features/workouts/utils";
 
-import {
-  useWorkoutAutosave,
-} from "@/features/workouts/use-workout-autosave";
+import { useWorkoutAutosave } from "@/features/workouts/use-workout-autosave";
 
 import type {
   WorkoutExercise,
   WorkoutSession,
 } from "@/features/workouts/types";
 
-import {
-  useAuthStore,
-} from "@/features/auth/store";
+import { useAuthStore } from "@/features/auth/store";
 
-import {
-  parseApiError,
-} from "@/lib/api/errors";
-
+import { parseApiError } from "@/lib/api/errors";
 
 interface RestState {
   seconds: number;
@@ -99,93 +68,50 @@ interface RestState {
   exerciseName: string;
 }
 
-
 export default function ActiveWorkoutScreen() {
-  const params =
-    useLocalSearchParams<{
-      sessionId?: string;
-    }>();
+  const params = useLocalSearchParams<{
+    sessionId?: string;
+  }>();
 
   const sessionId =
-    typeof params.sessionId ===
-    "string"
-      ? params.sessionId
-      : "";
+    typeof params.sessionId === "string" ? params.sessionId : "";
 
-  const queryClient =
-    useQueryClient();
+  const queryClient = useQueryClient();
 
-  const user =
-    useAuthStore(
-      (
-        state,
-      ) =>
-        state.user,
-    );
+  const user = useAuthStore((state) => state.user);
 
-  const workoutQuery =
-    useWorkoutSession(
-      sessionId
-    );
+  const workoutQuery = useWorkoutSession(sessionId);
 
-  const [
-    localDraft,
-    setDraft,
-  ] = useState<
-    WorkoutSession | null
-  >(null);
+  const [localDraft, setDraft] = useState<WorkoutSession | null>(null);
 
-  const [
-    selectedExpandedId,
-    setExpandedId,
-  ] = useState<
+  const [selectedExpandedId, setExpandedId] = useState<
     string | null | undefined
   >(undefined);
 
-  const [
-    pickerOpen,
-    setPickerOpen,
-  ] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
 
-  const [
-    optionsIndex,
-    setOptionsIndex,
-  ] = useState<
-    number | null
-  >(null);
+  const [optionsIndex, setOptionsIndex] = useState<number | null>(null);
 
-  const [
-    rest,
-    setRest,
-  ] = useState<
-    RestState | null
-  >(null);
+  const [rest, setRest] = useState<RestState | null>(null);
 
-  const [
-    elapsed,
-    setElapsed,
-  ] = useState(0);
+  const [elapsed, setElapsed] = useState(0);
 
-  const [
-    actionLoading,
-    setActionLoading,
-  ] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
 
-  const [
-    error,
-    setError,
-  ] = useState<
-    string | null
-  >(null);
-
+  const [error, setError] = useState<string | null>(null);
 
   // Use fetched data until the first edit; refetches must not overwrite a draft.
-  const draft = localDraft?.id === sessionId ? localDraft : workoutQuery.data ?? null;
-  const initialExpandedId = workoutQuery.data?.exercises.find((exercise) =>
-    exercise.sets.some((workoutSet) => !workoutSet.completed),
-  )?.id ?? workoutQuery.data?.exercises[0]?.id ?? null;
+  const draft =
+    localDraft?.id === sessionId ? localDraft : (workoutQuery.data ?? null);
+  const initialExpandedId =
+    workoutQuery.data?.exercises.find((exercise) =>
+      exercise.sets.some((workoutSet) => !workoutSet.completed),
+    )?.id ??
+    workoutQuery.data?.exercises[0]?.id ??
+    null;
   // undefined means untouched; null means the user explicitly collapsed the card.
-  const expandedId = selectedExpandedId === undefined ? initialExpandedId : selectedExpandedId;
+  const expandedId =
+    selectedExpandedId === undefined ? initialExpandedId : selectedExpandedId;
   const startedAt = draft?.started_at;
 
   useEffect(() => {
@@ -197,136 +123,55 @@ export default function ActiveWorkoutScreen() {
     return () => clearInterval(interval);
   }, [startedAt]);
 
-  const exerciseIds =
-    useMemo(
-      () =>
-        draft?.exercises.map(
-          (
-            exercise,
-          ) =>
-            exercise.exercise_id,
-        ) ??
-        [],
-      [
-        draft?.exercises,
-      ],
-    );
+  const exerciseIds = useMemo(
+    () => draft?.exercises.map((exercise) => exercise.exercise_id) ?? [],
+    [draft?.exercises],
+  );
 
+  const previousQuery = usePreviousPerformance(exerciseIds);
 
-  const previousQuery =
-    usePreviousPerformance(
-      exerciseIds
-    );
+  const previousMap = useMemo(
+    () =>
+      new Map(
+        (previousQuery.data?.items ?? []).map((item) => [
+          item.exercise_id,
+          item,
+        ]),
+      ),
+    [previousQuery.data],
+  );
 
+  const autosave = useWorkoutAutosave({
+    workout: draft,
 
-  const previousMap =
-    useMemo(
-      () =>
-        new Map(
-          (
-            previousQuery
-              .data
-              ?.items ??
-            []
-          ).map(
-            (
-              item,
-            ) => [
-              item.exercise_id,
-              item,
-            ],
-          ),
-        ),
-      [
-        previousQuery.data,
-      ],
-    );
+    enabled: Boolean(draft && draft.status === "IN_PROGRESS"),
 
+    onSaved: (saved) => {
+      queryClient.setQueryData(workoutSessionKeys.detail(saved.id), saved);
 
-  const autosave =
-    useWorkoutAutosave({
-      workout:
-        draft,
+      queryClient.setQueryData(workoutSessionKeys.active(), {
+        workout: saved,
+      });
+    },
+  });
 
-      enabled:
-        Boolean(
-          draft &&
-          draft.status ===
-            "IN_PROGRESS"
-        ),
-
-      onSaved:
-        (
-          saved,
-        ) => {
-          queryClient
-            .setQueryData(
-              workoutSessionKeys
-                .detail(
-                  saved.id
-                ),
-              saved,
-            );
-
-          queryClient
-            .setQueryData(
-              workoutSessionKeys
-                .active(),
-              {
-                workout:
-                  saved,
-              },
-            );
-        },
-    });
-
-
-  const completedSets =
-    useMemo(
-      () =>
-        draft?.exercises.reduce(
-          (
-            total,
-            exercise,
-          ) =>
-            total +
-            exercise.sets.filter(
-              (
-                workoutSet,
-              ) =>
-                workoutSet.completed,
-            ).length,
-          0,
-        ) ??
+  const completedSets = useMemo(
+    () =>
+      draft?.exercises.reduce(
+        (total, exercise) =>
+          total +
+          exercise.sets.filter((workoutSet) => workoutSet.completed).length,
         0,
-      [
-        draft,
-      ],
-    );
+      ) ?? 0,
+    [draft],
+  );
 
+  const volume = useMemo(
+    () => (draft ? workoutVolume(draft, user?.weight_unit ?? "KG") : 0),
+    [draft, user?.weight_unit],
+  );
 
-  const volume =
-    useMemo(
-      () =>
-        draft
-          ? workoutVolume(
-              draft,
-              user
-                ?.weight_unit ??
-                "KG",
-            )
-          : 0,
-      [
-        draft,
-        user?.weight_unit,
-      ],
-    );
-
-
-  function updateExercise(
-    updated:
-      WorkoutExercise,
-  ) {
+  function updateExercise(updated: WorkoutExercise) {
     if (!draft) {
       return;
     }
@@ -334,240 +179,115 @@ export default function ActiveWorkoutScreen() {
     setDraft({
       ...draft,
 
-      exercises:
-        draft.exercises.map(
-          (
-            exercise,
-          ) =>
-            exercise.id ===
-            updated.id
-              ? updated
-              : exercise,
-        ),
+      exercises: draft.exercises.map((exercise) =>
+        exercise.id === updated.id ? updated : exercise,
+      ),
     });
   }
 
-
-  async function addExercises(
-    exercises:
-      Exercise[],
-  ) {
-    if (
-      !draft ||
-      exercises.length ===
-        0
-    ) {
+  async function addExercises(exercises: Exercise[]) {
+    if (!draft || exercises.length === 0) {
       return;
     }
 
-    setActionLoading(
-      true
-    );
+    setActionLoading(true);
 
     try {
-      const updated =
-        await addWorkoutExercises(
-          draft.id,
+      const updated = await addWorkoutExercises(
+        draft.id,
 
-          exercises.map(
-            (
-              exercise,
-            ) =>
-              exercise.id,
-          ),
-        );
-
-      setDraft(
-        updated
+        exercises.map((exercise) => exercise.id),
       );
 
-      const newlyAdded =
-        updated.exercises.find(
-          (
-            exercise,
-          ) =>
-            exercises.some(
-              (
-                selected,
-              ) =>
-                selected.id ===
-                exercise.exercise_id,
-            ),
-        );
+      setDraft(updated);
+
+      const newlyAdded = updated.exercises.find((exercise) =>
+        exercises.some((selected) => selected.id === exercise.exercise_id),
+      );
 
       if (newlyAdded) {
-        setExpandedId(
-          newlyAdded.id
-        );
+        setExpandedId(newlyAdded.id);
       }
 
-      await queryClient
-        .invalidateQueries({
-          queryKey:
-            workoutSessionKeys
-              .all,
-        });
-
-    } catch (
-      requestError
-    ) {
-      setError(
-        parseApiError(
-          requestError,
-          "Unable to add exercises.",
-        ).message,
-      );
-
+      await queryClient.invalidateQueries({
+        queryKey: workoutSessionKeys.all,
+      });
+    } catch (requestError) {
+      setError(parseApiError(requestError, "Unable to add exercises.").message);
     } finally {
-      setActionLoading(
-        false
-      );
+      setActionLoading(false);
     }
   }
 
-
-  function moveExercise(
-    index: number,
-    direction:
-      | -1
-      | 1,
-  ) {
+  function moveExercise(index: number, direction: -1 | 1) {
     if (!draft) {
       return;
     }
 
-    const target =
-      index +
-      direction;
+    const target = index + direction;
 
-    if (
-      target < 0 ||
-      target >=
-        draft.exercises
-          .length
-    ) {
+    if (target < 0 || target >= draft.exercises.length) {
       return;
     }
 
-    const copy = [
-      ...draft.exercises,
-    ];
+    const copy = [...draft.exercises];
 
-    const [
-      moved,
-    ] = copy.splice(
-      index,
-      1,
+    const [moved] = copy.splice(index, 1);
+
+    copy.splice(target, 0, moved);
+
+    setDraft({
+      ...draft,
+
+      exercises: reorderExercises(copy),
+    });
+  }
+
+  function removeExercise(index: number) {
+    if (!draft) {
+      return;
+    }
+
+    const removing = draft.exercises[index];
+
+    const next = reorderExercises(
+      draft.exercises.filter((_, current) => current !== index),
     );
 
-    copy.splice(
-      target,
-      0,
-      moved,
-    );
+    if (expandedId === removing.id) {
+      setExpandedId(next[index]?.id ?? next[index - 1]?.id ?? null);
+    }
 
     setDraft({
       ...draft,
 
-      exercises:
-        reorderExercises(
-          copy
-        ),
+      exercises: next,
     });
   }
 
-
-  function removeExercise(
-    index: number,
-  ) {
-    if (!draft) {
+  function createSuperset(index: number) {
+    if (!draft || index >= draft.exercises.length - 1) {
       return;
     }
 
-    const removing =
-      draft.exercises[
-        index
-      ];
-
-    const next =
-      reorderExercises(
-        draft.exercises.filter(
-          (
-            _,
-            current,
-          ) =>
-            current !==
-            index,
-        ),
-      );
-
-    if (
-      expandedId ===
-      removing.id
-    ) {
-      setExpandedId(
-        next[index]
-          ?.id ??
-          next[
-            index - 1
-          ]?.id ??
-          null,
-      );
-    }
+    const groupId = `superset-${Date.now()}`;
 
     setDraft({
       ...draft,
 
-      exercises:
-        next,
+      exercises: draft.exercises.map((exercise, currentIndex) =>
+        currentIndex === index || currentIndex === index + 1
+          ? {
+              ...exercise,
+
+              superset_group_id: groupId,
+            }
+          : exercise,
+      ),
     });
   }
 
-
-  function createSuperset(
-    index: number,
-  ) {
-    if (
-      !draft ||
-      index >=
-        draft.exercises
-          .length -
-          1
-    ) {
-      return;
-    }
-
-    const groupId =
-      `superset-${Date.now()}`;
-
-    setDraft({
-      ...draft,
-
-      exercises:
-        draft.exercises.map(
-          (
-            exercise,
-            currentIndex,
-          ) =>
-            currentIndex ===
-              index ||
-            currentIndex ===
-              index + 1
-              ? {
-                  ...exercise,
-
-                  superset_group_id:
-                    groupId,
-                }
-              : exercise,
-        ),
-    });
-  }
-
-
-  function removeSuperset(
-    groupId: string,
-  ) {
+  function removeSuperset(groupId: string) {
     if (!draft) {
       return;
     }
@@ -575,89 +295,57 @@ export default function ActiveWorkoutScreen() {
     setDraft({
       ...draft,
 
-      exercises:
-        draft.exercises.map(
-          (
-            exercise,
-          ) =>
-            exercise
-              .superset_group_id ===
-            groupId
-              ? {
-                  ...exercise,
+      exercises: draft.exercises.map((exercise) =>
+        exercise.superset_group_id === groupId
+          ? {
+              ...exercise,
 
-                  superset_group_id:
-                    null,
-                }
-              : exercise,
-        ),
+              superset_group_id: null,
+            }
+          : exercise,
+      ),
     });
   }
-
 
   async function finishWorkout() {
     if (!draft) {
       return;
     }
 
-    setActionLoading(
-      true
-    );
+    setActionLoading(true);
 
     try {
-      await autosave
-        .saveNow();
+      await autosave.saveNow();
 
-      const completed =
-        await completeWorkout(
-          draft.id
-        );
+      const completed = await completeWorkout(draft.id);
 
-      queryClient
-        .setQueryData(
-          workoutSessionKeys
-            .detail(
-              completed.id
-            ),
-          completed,
-        );
+      queryClient.setQueryData(
+        workoutSessionKeys.detail(completed.id),
+        completed,
+      );
 
-      await queryClient
-        .invalidateQueries({
-          queryKey:
-            workoutSessionKeys
-              .all,
-        });
+      await queryClient.invalidateQueries({
+        queryKey: workoutSessionKeys.all,
+      });
 
-      await Haptics
-        .notificationAsync(
-          Haptics
-            .NotificationFeedbackType
-            .Success,
-        );
+      await queryClient.invalidateQueries({
+        queryKey: progressKeys.all,
+      });
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
 
       router.replace({
         pathname: "/workout-history/[sessionId]",
         params: { sessionId: completed.id },
       });
-
-    } catch (
-      requestError
-    ) {
+    } catch (requestError) {
       setError(
-        parseApiError(
-          requestError,
-          "Unable to finish workout.",
-        ).message,
+        parseApiError(requestError, "Unable to finish workout.").message,
       );
-
     } finally {
-      setActionLoading(
-        false
-      );
+      setActionLoading(false);
     }
   }
-
 
   function confirmFinish() {
     Alert.alert(
@@ -665,26 +353,21 @@ export default function ActiveWorkoutScreen() {
       `${completedSets} completed sets will be saved.`,
       [
         {
-          text:
-            "Keep training",
+          text: "Keep training",
 
-          style:
-            "cancel",
+          style: "cancel",
         },
 
         {
-          text:
-            "Finish",
+          text: "Finish",
 
-          onPress:
-            () => {
-              void finishWorkout();
-            },
+          onPress: () => {
+            void finishWorkout();
+          },
         },
       ],
     );
   }
-
 
   function confirmCancel() {
     Alert.alert(
@@ -692,74 +375,48 @@ export default function ActiveWorkoutScreen() {
       "This workout will be marked as cancelled.",
       [
         {
-          text:
-            "Keep training",
+          text: "Keep training",
 
-          style:
-            "cancel",
+          style: "cancel",
         },
 
         {
-          text:
-            "Discard",
+          text: "Discard",
 
-          style:
-            "destructive",
+          style: "destructive",
 
-          onPress:
-            () => {
-              void handleCancel();
-            },
+          onPress: () => {
+            void handleCancel();
+          },
         },
       ],
     );
   }
-
 
   async function handleCancel() {
     if (!draft) {
       return;
     }
 
-    await cancelWorkout(
-      draft.id
-    );
+    await cancelWorkout(draft.id);
 
-    await queryClient
-      .invalidateQueries({
-        queryKey:
-          workoutSessionKeys
-            .all,
-      });
+    await queryClient.invalidateQueries({
+      queryKey: workoutSessionKeys.all,
+    });
 
-    router.replace(
-      "/train"
-    );
+    router.replace("/train");
   }
 
-
-  if (
-    workoutQuery.isLoading ||
-    !draft
-  ) {
+  if (workoutQuery.isLoading || !draft) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator
-          color="#3B82F6"
-        />
+        <ActivityIndicator color="#3B82F6" />
       </SafeAreaView>
     );
   }
 
-
   const activeOptionsExercise =
-    optionsIndex !==
-    null
-      ? draft.exercises[
-          optionsIndex
-        ]
-      : null;
-
+    optionsIndex !== null ? draft.exercises[optionsIndex] : null;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -769,17 +426,11 @@ export default function ActiveWorkoutScreen() {
         <View className="flex-row items-center px-4 py-2">
           <Pressable
             onPress={() => {
-              router.replace(
-                "/train"
-              );
+              router.replace("/train");
             }}
             className="h-10 w-10 items-center justify-center"
           >
-            <Ionicons
-              name="chevron-down"
-              size={22}
-              color="#FFFFFF"
-            />
+            <Ionicons name="chevron-down" size={22} color="#FFFFFF" />
           </Pressable>
 
           <Text className="ml-1 flex-1 text-[16px] font-extrabold text-white">
@@ -787,9 +438,7 @@ export default function ActiveWorkoutScreen() {
           </Text>
 
           <Pressable
-            onPress={
-              confirmCancel
-            }
+            onPress={confirmCancel}
             className="mr-2 h-9 w-9 items-center justify-center"
           >
             <Ionicons
@@ -800,19 +449,12 @@ export default function ActiveWorkoutScreen() {
           </Pressable>
 
           <Pressable
-            disabled={
-              actionLoading
-            }
-            onPress={
-              confirmFinish
-            }
+            disabled={actionLoading}
+            onPress={confirmFinish}
             className="min-h-[38px] min-w-[70px] items-center justify-center rounded-xl bg-brand px-4"
           >
             {actionLoading ? (
-              <ActivityIndicator
-                size="small"
-                color="#FFFFFF"
-              />
+              <ActivityIndicator size="small" color="#FFFFFF" />
             ) : (
               <Text className="text-[13px] font-extrabold text-white">
                 Finish
@@ -822,57 +464,28 @@ export default function ActiveWorkoutScreen() {
         </View>
 
         <View className="flex-row px-5 pb-3 pt-1">
-          <Metric
-            title="Duration"
-            value={
-              formatClock(
-                elapsed
-              )
-            }
-          />
+          <Metric title="Duration" value={formatClock(elapsed)} />
 
           <Metric
             title="Volume"
-            value={`${formatVolume(
-              volume
-            )} ${
-              user
-                ?.weight_unit ??
-              "KG"
-            }`}
+            value={`${formatVolume(volume)} ${user?.weight_unit ?? "KG"}`}
           />
 
-          <Metric
-            title="Sets"
-            value={
-              String(
-                completedSets
-              )
-            }
-          />
+          <Metric title="Sets" value={String(completedSets)} />
         </View>
       </View>
 
       <ScrollView
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={
-          false
-        }
+        showsVerticalScrollIndicator={false}
         contentContainerStyle={{
-          paddingBottom:
-            rest
-              ? 150
-              : 100,
+          paddingBottom: rest ? 150 : 100,
         }}
       >
         <View className="px-4 py-4">
           <TextInput
-            value={
-              draft.name
-            }
-            onChangeText={(
-              name,
-            ) => {
+            value={draft.name}
+            onChangeText={(name) => {
               setDraft({
                 ...draft,
                 name,
@@ -883,29 +496,18 @@ export default function ActiveWorkoutScreen() {
           />
 
           <View className="mt-1 flex-row items-center">
-            <SaveIndicator
-              status={
-                autosave.status
-              }
-            />
+            <SaveIndicator status={autosave.status} />
           </View>
 
           {error ? (
-            <Text className="mt-3 text-[12px] text-red-300">
-              {error}
-            </Text>
+            <Text className="mt-3 text-[12px] text-red-300">{error}</Text>
           ) : null}
         </View>
 
-        {draft.exercises.length ===
-        0 ? (
+        {draft.exercises.length === 0 ? (
           <View className="items-center px-8 py-16">
             <View className="h-16 w-16 items-center justify-center rounded-3xl bg-brand-muted">
-              <Ionicons
-                name="barbell-outline"
-                size={28}
-                color="#60A5FA"
-              />
+              <Ionicons name="barbell-outline" size={28} color="#60A5FA" />
             </View>
 
             <Text className="mt-5 text-[18px] font-extrabold text-white">
@@ -917,101 +519,60 @@ export default function ActiveWorkoutScreen() {
             </Text>
           </View>
         ) : (
-          draft.exercises.map(
-            (
-              exercise,
-              index,
-            ) => (
-              <View
-                key={
-                  exercise.id
-                }
-                className="flex-row"
-              >
-                {exercise.superset_group_id ? (
-                  <View className="w-[3px] bg-brand-bright" />
-                ) : null}
+          draft.exercises.map((exercise, index) => (
+            <View key={exercise.id} className="flex-row">
+              {exercise.superset_group_id ? (
+                <View className="w-[3px] bg-brand-bright" />
+              ) : null}
 
-                <View className="flex-1">
-                  <ActiveExerciseCard
-                    exercise={
-                      exercise
+              <View className="flex-1">
+                <ActiveExerciseCard
+                  exercise={exercise}
+                  previous={previousMap.get(exercise.exercise_id)}
+                  expanded={expandedId === exercise.id}
+                  onToggleExpanded={() => {
+                    setExpandedId((current) =>
+                      current === exercise.id ? null : exercise.id,
+                    );
+                  }}
+                  onChange={updateExercise}
+                  onCompletedSet={(seconds, exerciseName, updatedExercise) => {
+                    updateExercise(updatedExercise);
+
+                    const completedIndex = updatedExercise.sets.findIndex(
+                      (workoutSet) =>
+                        workoutSet.completed &&
+                        !exercise.sets.find(
+                          (oldSet) =>
+                            oldSet.id === workoutSet.id && oldSet.completed,
+                        ),
+                    );
+
+                    const nextSet = updatedExercise.sets[completedIndex + 1];
+
+                    if (nextSet?.type !== "DROP") {
+                      setRest({
+                        seconds,
+                        exerciseName,
+                      });
                     }
-                    previous={
-                      previousMap.get(
-                        exercise
-                          .exercise_id
-                      )
-                    }
-                    expanded={
-                      expandedId ===
-                      exercise.id
-                    }
-                    onToggleExpanded={() => {
-                      setExpandedId(
-                        (
-                          current,
-                        ) =>
-                          current ===
-                          exercise.id
-                            ? null
-                            : exercise.id,
-                      );
-                    }}
-                    onChange={
-                      updateExercise
-                    }
-                    onCompletedSet={(
-                      seconds,
-                      exerciseName,
-                      updatedExercise,
-                    ) => {
-                      updateExercise(
-                        updatedExercise
-                      );
 
-                      const completedIndex = updatedExercise.sets.findIndex(
-                        (workoutSet) =>
-                          workoutSet.completed &&
-                          !exercise.sets.find(
-                            (oldSet) =>
-                              oldSet.id === workoutSet.id && oldSet.completed,
-                          ),
-                      );
-
-                      const nextSet = updatedExercise.sets[completedIndex + 1];
-
-                      if (nextSet?.type !== "DROP") {
-                        setRest({
-                          seconds,
-                          exerciseName,
-                        });
-                      }
-
-                      void Haptics
-                        .impactAsync(
-                          Haptics
-                            .ImpactFeedbackStyle
-                            .Medium,
-                        );
-                    }}
-                    onMenu={() => {
-                      setOptionsIndex(
-                        index
-                      );
-                    }}
-                  />
-                </View>
+                    void Haptics.impactAsync(
+                      Haptics.ImpactFeedbackStyle.Medium,
+                    );
+                  }}
+                  onMenu={() => {
+                    setOptionsIndex(index);
+                  }}
+                />
               </View>
-            ),
-          )
+            </View>
+          ))
         )}
 
         <Pressable
           onPress={() => {
-            setPickerOpen(
-              true
-            );
+            setPickerOpen(true);
           }}
           className="mx-4 mt-5 min-h-[48px] items-center justify-center rounded-xl bg-brand"
         >
@@ -1021,19 +582,12 @@ export default function ActiveWorkoutScreen() {
         </Pressable>
 
         <TextInput
-          value={
-            draft.notes ??
-            ""
-          }
-          onChangeText={(
-            value,
-          ) => {
+          value={draft.notes ?? ""}
+          onChangeText={(value) => {
             setDraft({
               ...draft,
 
-              notes:
-                value ||
-                null,
+              notes: value || null,
             });
           }}
           multiline
@@ -1046,138 +600,70 @@ export default function ActiveWorkoutScreen() {
       {rest ? (
         <RestTimer
           key={`${rest.exerciseName}-${rest.seconds}`}
-          seconds={
-            rest.seconds
-          }
-          exerciseName={
-            rest.exerciseName
-          }
+          seconds={rest.seconds}
+          exerciseName={rest.exerciseName}
           onClose={() => {
-            setRest(
-              null
-            );
+            setRest(null);
           }}
         />
       ) : null}
 
       <ExercisePickerModal
-        visible={
-          pickerOpen
-        }
+        visible={pickerOpen}
         onClose={() => {
-          setPickerOpen(
-            false
-          );
+          setPickerOpen(false);
         }}
-        onAdd={(
-          exercises,
-        ) => {
-          void addExercises(
-            exercises
-          );
+        onAdd={(exercises) => {
+          void addExercises(exercises);
         }}
       />
 
       {activeOptionsExercise ? (
         <ExerciseOptionsModal
-          visible={
-            optionsIndex !==
-            null
-          }
-          canMoveUp={
-            optionsIndex !==
-            null &&
-            optionsIndex >
-              0
-          }
+          visible={optionsIndex !== null}
+          canMoveUp={optionsIndex !== null && optionsIndex > 0}
           canMoveDown={
-            optionsIndex !==
-            null &&
-            optionsIndex <
-              draft
-                .exercises
-                .length -
-                1
+            optionsIndex !== null && optionsIndex < draft.exercises.length - 1
           }
-          inSuperset={
-            Boolean(
-              activeOptionsExercise
-                .superset_group_id
-            )
-          }
+          inSuperset={Boolean(activeOptionsExercise.superset_group_id)}
           canSupersetNext={
-            optionsIndex !==
-            null &&
-            optionsIndex <
-              draft
-                .exercises
-                .length -
-                1
+            optionsIndex !== null && optionsIndex < draft.exercises.length - 1
           }
           onMoveUp={() => {
-            if (
-              optionsIndex !==
-              null
-            ) {
-              moveExercise(
-                optionsIndex,
-                -1,
-              );
+            if (optionsIndex !== null) {
+              moveExercise(optionsIndex, -1);
             }
           }}
           onMoveDown={() => {
-            if (
-              optionsIndex !==
-              null
-            ) {
-              moveExercise(
-                optionsIndex,
-                1,
-              );
+            if (optionsIndex !== null) {
+              moveExercise(optionsIndex, 1);
             }
           }}
           onSupersetNext={() => {
-            if (
-              optionsIndex !==
-              null
-            ) {
-              createSuperset(
-                optionsIndex
-              );
+            if (optionsIndex !== null) {
+              createSuperset(optionsIndex);
             }
           }}
           onRemoveSuperset={() => {
-            const group =
-              activeOptionsExercise
-                .superset_group_id;
+            const group = activeOptionsExercise.superset_group_id;
 
             if (group) {
-              removeSuperset(
-                group
-              );
+              removeSuperset(group);
             }
           }}
           onRemoveExercise={() => {
-            if (
-              optionsIndex !==
-              null
-            ) {
-              removeExercise(
-                optionsIndex
-              );
+            if (optionsIndex !== null) {
+              removeExercise(optionsIndex);
             }
           }}
           onClose={() => {
-            setOptionsIndex(
-              null
-            );
+            setOptionsIndex(null);
           }}
         />
       ) : null}
     </SafeAreaView>
   );
 }
-
 
 function Metric({
   title,
@@ -1189,42 +675,23 @@ function Metric({
 }) {
   return (
     <View className="flex-1">
-      <Text className="text-[10px] font-medium text-white/25">
-        {title}
-      </Text>
+      <Text className="text-[10px] font-medium text-white/25">{title}</Text>
 
-      <Text className="mt-1 text-[13px] font-bold text-white/70">
-        {value}
-      </Text>
+      <Text className="mt-1 text-[13px] font-bold text-white/70">{value}</Text>
     </View>
   );
 }
 
-
 function SaveIndicator({
   status,
 }: {
-  status:
-    | "saved"
-    | "saving"
-    | "unsaved"
-    | "error";
+  status: "saved" | "saving" | "unsaved" | "error";
 }) {
-  if (
-    status ===
-    "saving"
-  ) {
-    return (
-      <Text className="text-[10px] text-white/25">
-        Saving…
-      </Text>
-    );
+  if (status === "saving") {
+    return <Text className="text-[10px] text-white/25">Saving…</Text>;
   }
 
-  if (
-    status ===
-    "error"
-  ) {
+  if (status === "error") {
     return (
       <Text className="text-[10px] text-red-300/70">
         Not saved · check connection
@@ -1232,40 +699,17 @@ function SaveIndicator({
     );
   }
 
-  if (
-    status ===
-    "unsaved"
-  ) {
-    return (
-      <Text className="text-[10px] text-white/25">
-        Unsaved changes
-      </Text>
-    );
+  if (status === "unsaved") {
+    return <Text className="text-[10px] text-white/25">Unsaved changes</Text>;
   }
 
-  return (
-    <Text className="text-[10px] text-white/20">
-      Saved
-    </Text>
-  );
+  return <Text className="text-[10px] text-white/20">Saved</Text>;
 }
 
+function formatClock(seconds: number): string {
+  const hours = Math.floor(seconds / 3600);
 
-function formatClock(
-  seconds: number,
-): string {
-  const hours =
-    Math.floor(
-      seconds / 3600
-    );
-
-  const minutes =
-    Math.floor(
-      (
-        seconds %
-        3600
-      ) / 60
-    );
+  const minutes = Math.floor((seconds % 3600) / 60);
 
   if (hours > 0) {
     return `${hours}h ${minutes}m`;

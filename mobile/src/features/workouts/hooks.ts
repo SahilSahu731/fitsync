@@ -1,52 +1,27 @@
-import {
-  useMutation,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 
-import {
-  router,
-} from "expo-router";
+import { router } from "expo-router";
 
-import {
-  startWorkout,
-} from "./api";
+import { startWorkout } from "./api";
 
-import {
-  workoutSessionKeys,
-} from "./keys";
-
+import { workoutSessionKeys } from "./keys";
 
 export function useStartWorkout() {
-  const queryClient =
-    useQueryClient();
+  const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn:
-      startWorkout,
+    mutationFn: startWorkout,
 
-    onSuccess:
-      async (
-        session,
-      ) => {
-        queryClient.setQueryData(
-          workoutSessionKeys
-            .active(),
-          {
-            workout:
-              session,
-          },
-        );
+    onSuccess: async (session) => {
+      queryClient.setQueryData(workoutSessionKeys.active(), {
+        workout: session,
+      });
 
-        await queryClient
-          .invalidateQueries({
-            queryKey:
-              workoutSessionKeys
-                .all,
-          });
+      await queryClient.invalidateQueries({
+        queryKey: workoutSessionKeys.all,
+      });
 
-        router.push(
-          `/workouts/active/${session.id}`
-        );
-      },
+      router.push(`/workouts/active/${session.id}`);
+    },
   });
 }
