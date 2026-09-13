@@ -6,7 +6,7 @@ import { useSQLiteContext } from "expo-sqlite";
 
 import { useAuthStore } from "@/features/auth/store";
 
-import { syncPendingWorkouts } from "./sync-engine";
+import { syncAppData } from "./app-sync";
 
 export function useSyncOnReconnect() {
   const database = useSQLiteContext();
@@ -23,7 +23,7 @@ export function useSyncOnReconnect() {
         state.isConnected !== false && state.isInternetReachable !== false;
 
       if (online) {
-        void syncPendingWorkouts(database, user.id);
+        void syncAppData(database, user.id);
       }
     });
 

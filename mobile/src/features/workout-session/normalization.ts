@@ -41,6 +41,10 @@ export function normalizeWorkoutSession(
   return {
     ...workout,
 
+    template_client_id: workout.template_client_id ?? null,
+
+    template_name_snapshot: workout.template_name_snapshot ?? null,
+
     exercises: workout.exercises.map(normalizeWorkoutExercise),
   };
 }
@@ -66,6 +70,8 @@ function normalizeTemplateExercise(
     laterality: exercise.laterality ?? "BILATERAL",
 
     load_mode: exercise.load_mode ?? "TOTAL",
+
+    primary_muscles: exercise.primary_muscles ?? [],
 
     planned_sets: exercise.planned_sets.map(normalizeTemplateSet),
   };

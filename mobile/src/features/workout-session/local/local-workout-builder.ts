@@ -105,7 +105,11 @@ export function buildLocalWorkout({
      */
     id: localId,
 
-    template_id: template?.id ?? null,
+    template_id: template?.server_id ?? null,
+
+    template_client_id: template?.client_template_id ?? null,
+
+    template_name_snapshot: template?.name ?? null,
 
     name: name?.trim() || template?.name || "Workout",
 

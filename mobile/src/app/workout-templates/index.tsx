@@ -1,145 +1,242 @@
 import { Ionicons } from "@expo/vector-icons";
-
-import { router } from "expo-router";
-
+import { router, useFocusEffect } from "expo-router";
+import { useCallback, useMemo, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   FlatList,
-  Image,
   Pressable,
   Text,
+  TextInput,
   View,
 } from "react-native";
-
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSQLiteContext } from "expo-sqlite";
+import { useAuthStore } from "@/features/auth/store";
+import { RoutineCard } from "@/features/workout-templates/components/routine-card";
+import { FolderPicker } from "@/features/workout-templates/components/folder-picker";
+import { RoutineConflictCard } from "@/features/workout-templates/components/routine-conflict-card";
+import { RoutineMenu } from "@/features/workout-templates/components/routine-menu";
+import { useLocalRoutines } from "@/features/workout-templates/hooks/use-local-routines";
+import { useRoutineFolders } from "@/features/workout-templates/hooks/use-routine-folders";
+import {
+  duplicateLocalTemplate,
+  patchLocalTemplate,
+} from "@/features/workout-templates/local-services";
+import { requestRoutineSync } from "@/features/workout-templates/sync-manager";
+import {
+  useLocalRoutineVersion as resolveWithLocalRoutine,
+  useServerRoutineVersion as resolveWithServerRoutine,
+} from "@/features/workout-templates/conflict-resolver";
+import { startLocalWorkout } from "@/features/workout-session/local/start-local-workout";
 
-import { useWorkoutTemplates } from "@/features/workouts/queries";
-
-export default function WorkoutTemplatesScreen() {
-  const query = useWorkoutTemplates();
-
+export default function RoutinesScreen() {
+  const database = useSQLiteContext(),
+    user = useAuthStore((state) => state.user),
+    routines = useLocalRoutines(),
+    folders = useRoutineFolders();
+  const [search, setSearch] = useState(""),
+    [filter, setFilter] = useState("ALL"),
+    [menuId, setMenuId] = useState<string | null>(null),
+    [moveId, setMoveId] = useState<string | null>(null);
+  const reloadRoutines = routines.reload;
+  const reloadFolders = folders.reload;
+  useFocusEffect(
+    useCallback(() => {
+      void reloadRoutines();
+      void reloadFolders();
+      if (user?.id) requestRoutineSync(database, user.id);
+      return undefined;
+    }, [database, reloadFolders, reloadRoutines, user]),
+  );
+  const records = useMemo(() => {
+    const q = search.trim().toLowerCase();
+    return routines.items.filter(
+      ({ template }) =>
+        (filter === "ALL" ||
+          (filter === "FAVORITES"
+            ? template.is_favorite
+            : template.folder_client_id === filter)) &&
+        (!q ||
+          template.name.toLowerCase().includes(q) ||
+          template.exercises.some((item) =>
+            item.exercise_name.toLowerCase().includes(q),
+          )),
+    );
+  }, [filter, routines.items, search]);
+  const selected =
+    routines.items.find((item) => item.localId === menuId) ?? null;
+  const mutate = async (
+    id: string,
+    patch: Parameters<typeof patchLocalTemplate>[3],
+  ) => {
+    if (!user) return;
+    await patchLocalTemplate(database, user.id, id, patch);
+    requestRoutineSync(database, user.id, 0);
+    await routines.reload();
+  };
+  if (routines.loading)
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-background">
+        <ActivityIndicator color="#3B82F6" />
+      </SafeAreaView>
+    );
   return (
     <SafeAreaView className="flex-1 bg-background">
       <View className="flex-row items-center px-5 pt-3">
         <Pressable
           onPress={router.back}
-          className="h-11 w-11 items-center justify-center rounded-full bg-white/[0.05]"
+          className="h-11 w-11 items-center justify-center"
         >
-          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
+          <Ionicons name="arrow-back" size={20} color="#fff" />
         </Pressable>
-
         <View className="ml-4 flex-1">
-          <Text className="text-[26px] font-extrabold tracking-[-1px] text-white">
-            Templates
-          </Text>
-
-          <Text className="mt-1 text-[12px] text-white/35">
-            Your reusable workouts
+          <Text className="text-[27px] font-extrabold text-white">
+            Routines
           </Text>
         </View>
-
         <Pressable
-          onPress={() => {
-            router.push("/workout-templates/create");
-          }}
+          onPress={() => router.push("/workout-templates/create")}
           className="h-11 w-11 items-center justify-center rounded-2xl bg-brand"
         >
-          <Ionicons name="add" size={24} color="#FFFFFF" />
+          <Ionicons name="add" size={24} color="#fff" />
         </Pressable>
       </View>
-
-      {query.isLoading ? (
-        <View className="flex-1 items-center justify-center">
-          <ActivityIndicator color="#3B82F6" />
-        </View>
-      ) : (
-        <FlatList
-          data={query.data?.items ?? []}
-          keyExtractor={(item) => item.id}
-          contentContainerStyle={{
-            padding: 20,
-
-            gap: 12,
-          }}
-          renderItem={({ item }) => (
-            <Pressable
-              onPress={() => {
-                router.push({
-                  pathname: "/workout-templates/[templateId]",
-                  params: { templateId: item.id },
-                });
-              }}
-              className="overflow-hidden rounded-[24px] border border-white/10 bg-white/[0.03]"
-            >
-              <View className="flex-row p-4">
-                {item.thumbnail_url ? (
-                  <Image
-                    source={{
-                      uri: item.thumbnail_url,
-                    }}
-                    className="h-[72px] w-[72px] rounded-2xl bg-elevated"
-                  />
-                ) : (
-                  <View className="h-[72px] w-[72px] items-center justify-center rounded-2xl bg-brand-muted">
-                    <Ionicons
-                      name="barbell-outline"
-                      size={25}
-                      color="#60A5FA"
-                    />
-                  </View>
-                )}
-
-                <View className="ml-4 flex-1">
-                  <Text className="text-[17px] font-extrabold text-white">
-                    {item.name}
-                  </Text>
-
-                  <Text className="text-white/38 mt-2 text-[12px]">
-                    {item.exercise_count} exercises
-                  </Text>
-
-                  <Text
-                    numberOfLines={1}
-                    className="mt-2 text-[11px] text-white/25"
-                  >
-                    {item.exercise_names.join(" · ")}
-                  </Text>
-                </View>
-
-                <Ionicons
-                  name="chevron-forward"
-                  size={18}
-                  color="rgba(255,255,255,.2)"
-                />
-              </View>
-            </Pressable>
-          )}
-          ListEmptyComponent={
-            <View className="items-center px-8 pt-24">
-              <View className="h-16 w-16 items-center justify-center rounded-3xl bg-brand-muted">
-                <Ionicons name="albums-outline" size={27} color="#60A5FA" />
-              </View>
-
-              <Text className="mt-5 text-[18px] font-extrabold text-white">
-                No templates yet
-              </Text>
-
-              <Text className="mt-2 text-center text-[13px] leading-5 text-white/35">
-                Build your first reusable workout and start faster next time.
-              </Text>
-
-              <Pressable
-                onPress={() => {
-                  router.push("/workout-templates/create");
-                }}
-                className="mt-6 rounded-2xl bg-brand px-6 py-4"
-              >
-                <Text className="font-bold text-white">Create template</Text>
-              </Pressable>
-            </View>
-          }
+      <View className="mx-5 mt-5 flex-row items-center rounded-2xl bg-white/[0.04] px-4">
+        <Ionicons name="search" size={18} color="rgba(255,255,255,.3)" />
+        <TextInput
+          value={search}
+          onChangeText={setSearch}
+          placeholder="Search routines"
+          placeholderTextColor="rgba(255,255,255,.2)"
+          className="ml-3 flex-1 py-4 text-white"
         />
-      )}
+      </View>
+      <FlatList
+        horizontal
+        data={[
+          { id: "ALL", name: "All" },
+          { id: "FAVORITES", name: "Favorites" },
+          ...folders.items.map((item) => ({
+            id: item.clientFolderId,
+            name: item.name,
+          })),
+        ]}
+        keyExtractor={(item) => item.id}
+        className="mt-4 max-h-12"
+        contentContainerStyle={{ paddingHorizontal: 20, gap: 8 }}
+        renderItem={({ item }) => (
+          <Pressable
+            onPress={() => setFilter(item.id)}
+            className="rounded-full px-4 py-2.5"
+            style={{
+              backgroundColor:
+                filter === item.id ? "#2563EB" : "rgba(255,255,255,.045)",
+            }}
+          >
+            <Text className="font-bold text-white/60">{item.name}</Text>
+          </Pressable>
+        )}
+      />
+      <FlatList
+        data={records}
+        keyExtractor={(item) => item.localId}
+        contentContainerStyle={{ padding: 20, gap: 12, paddingBottom: 100 }}
+        renderItem={({ item }) => (
+          <View>
+            {item.syncStatus === "CONFLICT" ? (
+              <RoutineConflictCard
+                routineName={item.template.name}
+                onUseLocal={() => {
+                  if (user)
+                    void resolveWithLocalRoutine(
+                      database,
+                      user.id,
+                      item.localId,
+                    ).then(routines.reload);
+                }}
+                onUseServer={() => {
+                  if (user)
+                    void resolveWithServerRoutine(
+                      database,
+                      user.id,
+                      item.localId,
+                    ).then(routines.reload);
+                }}
+              />
+            ) : (
+              <RoutineCard
+                routine={item.template}
+                onOpen={() => router.push(`/workout-templates/${item.localId}`)}
+                onStart={() => {
+                  if (user)
+                    void startLocalWorkout(database, user, {
+                      template: item.template,
+                    }).then((id) => router.push(`/workouts/active/${id}`));
+                }}
+                onMenu={() => setMenuId(item.localId)}
+              />
+            )}
+          </View>
+        )}
+        ListEmptyComponent={
+          <Text className="pt-20 text-center text-white/30">
+            No routines here.
+          </Text>
+        }
+      />
+      {selected ? (
+        <RoutineMenu
+          visible
+          favorite={selected.template.is_favorite}
+          onEdit={() =>
+            router.push(`/workout-templates/${selected.localId}/edit`)
+          }
+          onDuplicate={() => {
+            if (user)
+              void duplicateLocalTemplate(
+                database,
+                user.id,
+                selected.localId,
+              ).then(async (id) => {
+                requestRoutineSync(database, user.id, 0);
+                await routines.reload();
+                router.push(`/workout-templates/${id}/edit`);
+              });
+          }}
+          onFavorite={() =>
+            void mutate(selected.localId, {
+              is_favorite: !selected.template.is_favorite,
+            })
+          }
+          onMove={() => setMoveId(selected.localId)}
+          onArchive={() =>
+            Alert.alert("Archive routine?", selected.template.name, [
+              { text: "Cancel", style: "cancel" },
+              {
+                text: "Archive",
+                style: "destructive",
+                onPress: () =>
+                  void mutate(selected.localId, { archived: true }),
+              },
+            ])
+          }
+          onClose={() => setMenuId(null)}
+        />
+      ) : null}
+      <FolderPicker
+        visible={moveId !== null}
+        folders={folders.items}
+        selectedId={
+          routines.items.find((item) => item.localId === moveId)?.template
+            .folder_client_id ?? null
+        }
+        onSelect={(folderId) => {
+          if (moveId) void mutate(moveId, { folder_client_id: folderId });
+        }}
+        onCreate={() => router.push("/workout-templates/folders")}
+        onClose={() => setMoveId(null)}
+      />
     </SafeAreaView>
   );
 }

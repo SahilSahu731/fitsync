@@ -2,8 +2,11 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { router, useLocalSearchParams } from "expo-router";
 
+import { useEffect, useState } from "react";
+
 import {
   ActivityIndicator,
+  Alert,
   Pressable,
   ScrollView,
   Text,
@@ -12,9 +15,23 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
+import { useSQLiteContext } from "expo-sqlite";
+
 import { useAuthStore } from "@/features/auth/store";
 
 import { useResolvedWorkout } from "@/features/workout-session/hooks/use-resolved-workout";
+
+import { compareWorkoutToTemplate } from "@/features/workout-templates/compare-workout-template";
+import { getLocalRoutineByAnyId } from "@/features/workout-templates/local-routine-repository";
+import {
+  createLocalTemplate,
+  saveLocalTemplate,
+} from "@/features/workout-templates/local-services";
+import { requestRoutineSync } from "@/features/workout-templates/sync-manager";
+import { structureFromWorkout } from "@/features/workout-templates/update-from-workout";
+import { workoutToRoutineInput } from "@/features/workout-templates/workout-to-routine";
+
+import type { WorkoutTemplate } from "@/features/workouts/types";
 
 import {
   formatCompactDuration,
@@ -61,6 +78,7 @@ function SyncBadge({ status }: { status: string | null }) {
 }
 
 export default function WorkoutSummaryScreen() {
+  const database = useSQLiteContext();
   const params = useLocalSearchParams<{
     sessionId?: string;
   }>();
@@ -70,7 +88,32 @@ export default function WorkoutSummaryScreen() {
 
   const user = useAuthStore((state) => state.user);
 
+  const [sourceRoutine, setSourceRoutine] = useState<WorkoutTemplate | null>(
+    null,
+  );
+
   const resolved = useResolvedWorkout(workoutKey);
+
+  const workout = resolved.workout;
+
+  const templateKey =
+    workout?.template_client_id ?? workout?.template_id ?? null;
+
+  useEffect(() => {
+    let active = true;
+    if (!templateKey || !user?.id)
+      return () => {
+        active = false;
+      };
+    void getLocalRoutineByAnyId(database, user.id, templateKey).then(
+      (record) => {
+        if (active) setSourceRoutine(record?.template ?? null);
+      },
+    );
+    return () => {
+      active = false;
+    };
+  }, [database, templateKey, user?.id]);
 
   if (resolved.isLoading) {
     return (
@@ -79,8 +122,6 @@ export default function WorkoutSummaryScreen() {
       </SafeAreaView>
     );
   }
-
-  const workout = resolved.workout;
 
   if (!workout) {
     return (
@@ -104,6 +145,40 @@ export default function WorkoutSummaryScreen() {
   const volume = workoutVolume(workout, user?.weight_unit ?? "KG");
 
   const historyKey = resolved.localId ?? resolved.serverId ?? workout.id;
+
+  const difference = sourceRoutine
+    ? compareWorkoutToTemplate(workout, sourceRoutine)
+    : null;
+
+  async function createRoutine(mode: "STRUCTURE_ONLY" | "USE_LOGGED_VALUES") {
+    if (!user || !workout) return;
+    const localId = await createLocalTemplate(database, {
+      userId: user.id,
+      input: workoutToRoutineInput(workout, mode),
+      folderId: null,
+      isFavorite: false,
+    });
+    requestRoutineSync(database, user.id, 0);
+    router.push(`/workout-templates/${localId}`);
+  }
+
+  function saveAsRoutine() {
+    Alert.alert(
+      "Save as Routine",
+      "What should FitSync use as the routine targets?",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Structure only",
+          onPress: () => void createRoutine("STRUCTURE_ONLY"),
+        },
+        {
+          text: "Use logged values",
+          onPress: () => void createRoutine("USE_LOGGED_VALUES"),
+        },
+      ],
+    );
+  }
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -173,6 +248,66 @@ export default function WorkoutSummaryScreen() {
             </View>
           ))}
         </View>
+
+        {!templateKey ? (
+          <Pressable
+            onPress={saveAsRoutine}
+            className="mt-6 flex-row items-center rounded-2xl border border-white/[0.08] bg-white/[0.035] p-4"
+          >
+            <Ionicons name="albums-outline" size={20} color="#60A5FA" />
+            <View className="ml-3 flex-1">
+              <Text className="font-bold text-white">Save as Routine</Text>
+              <Text className="mt-1 text-[10px] text-white/30">
+                Reuse this workout whenever you want.
+              </Text>
+            </View>
+          </Pressable>
+        ) : null}
+
+        {sourceRoutine && difference?.changed ? (
+          <View className="mt-5 rounded-2xl border border-brand-bright/20 bg-brand/[0.08] p-4">
+            <Text className="font-bold text-white">
+              You changed this routine
+            </Text>
+            <Text className="mt-1 text-[10px] text-white/35">
+              Update {sourceRoutine.name} so your next workout uses this
+              structure.
+            </Text>
+            <Pressable
+              onPress={() => {
+                if (!user) return;
+                void getLocalRoutineByAnyId(
+                  database,
+                  user.id,
+                  sourceRoutine.id,
+                ).then(async (record) => {
+                  if (!record) return;
+                  await saveLocalTemplate(database, {
+                    localId: record.localId,
+                    userId: user.id,
+                    input: structureFromWorkout(workout, sourceRoutine),
+                    folderId: sourceRoutine.folder_client_id,
+                    isFavorite: sourceRoutine.is_favorite,
+                  });
+                  requestRoutineSync(database, user.id, 0);
+                  const updated = await getLocalRoutineByAnyId(
+                    database,
+                    user.id,
+                    record.localId,
+                  );
+                  setSourceRoutine(updated?.template ?? null);
+                  Alert.alert(
+                    "Routine updated",
+                    `${sourceRoutine.name} now uses this workout structure.`,
+                  );
+                });
+              }}
+              className="mt-4 min-h-[44px] items-center justify-center rounded-xl bg-brand"
+            >
+              <Text className="font-extrabold text-white">Update Routine</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <Pressable
           onPress={() => {

@@ -1,6 +1,10 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
-import { CREATE_V1_SCHEMA, DATABASE_VERSION } from "./schema";
+import {
+  CREATE_PHASE_5_SCHEMA,
+  CREATE_V1_SCHEMA,
+  DATABASE_VERSION,
+} from "./schema";
 
 interface UserVersionRow {
   user_version: number;
@@ -49,6 +53,8 @@ export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
     await database.withTransactionAsync(async () => {
       await database.execAsync(CREATE_V1_SCHEMA);
 
+      await database.execAsync(CREATE_PHASE_5_SCHEMA);
+
       await database.execAsync(`PRAGMA user_version = ${DATABASE_VERSION};`);
     });
 
@@ -79,6 +85,29 @@ export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
       `);
 
       await database.execAsync("PRAGMA user_version = 2;");
+    });
+  }
+
+  if (currentVersion < 3) {
+    await database.withTransactionAsync(async () => {
+      await database.execAsync(CREATE_PHASE_5_SCHEMA);
+
+      await database.execAsync(`
+        INSERT OR IGNORE INTO local_templates (
+          local_id, user_id, client_template_id, server_id, server_revision,
+          payload_json, payload_version, archived, sync_status, dirty,
+          local_version, last_synced_payload_json, last_sync_error, retry_count,
+          next_retry_at, created_at, updated_at, last_synced_at
+        )
+        SELECT
+          template_id, user_id, template_id, template_id, 1,
+          payload_json, 1, 0, 'SYNCED', 0,
+          1, payload_json, NULL, 0,
+          NULL, cached_at, cached_at, cached_at
+        FROM cached_templates;
+      `);
+
+      await database.execAsync("PRAGMA user_version = 3;");
     });
   }
 }

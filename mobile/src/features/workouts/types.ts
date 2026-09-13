@@ -2,6 +2,7 @@ import type {
   ExerciseLaterality,
   ExerciseLoadMode,
   ExerciseTrackingType,
+  MuscleGroup,
 } from "@/features/exercises/types";
 
 export type WorkoutSetType =
@@ -49,6 +50,8 @@ export interface TemplateExercise {
 
   load_mode: ExerciseLoadMode;
 
+  primary_muscles: MuscleGroup[];
+
   position: number;
 
   rest_seconds: number;
@@ -63,13 +66,35 @@ export interface TemplateExercise {
 export interface WorkoutTemplate {
   id: string;
 
+  client_template_id: string;
+
+  server_id?: string | null;
+
   name: string;
 
   description: string | null;
 
+  folder_client_id: string | null;
+
+  is_favorite: boolean;
+
+  position: number;
+
+  archived: boolean;
+
   exercise_count: number;
 
+  set_count: number;
+
+  muscle_groups: MuscleGroup[];
+
   exercises: TemplateExercise[];
+
+  revision: number;
+
+  times_performed: number;
+
+  last_performed_at: string | null;
 
   created_at: string;
 
@@ -93,7 +118,23 @@ export interface WorkoutTemplateListItem {
 }
 
 export interface WorkoutTemplateListResponse {
-  items: WorkoutTemplateListItem[];
+  items: WorkoutTemplate[];
+}
+
+export interface TemplateFolder {
+  id: string;
+  client_folder_id: string;
+  server_id?: string | null;
+  name: string;
+  position: number;
+  revision: number;
+  archived: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface TemplateFolderListResponse {
+  items: TemplateFolder[];
 }
 
 export interface TemplateSetInput {
@@ -211,6 +252,10 @@ export interface WorkoutSession {
 
   template_id: string | null;
 
+  template_client_id: string | null;
+
+  template_name_snapshot: string | null;
+
   name: string;
 
   status: WorkoutStatus;
@@ -240,6 +285,8 @@ export interface ActiveWorkoutResponse {
 
 export interface StartWorkoutInput {
   template_id?: string | null;
+
+  template_client_id?: string | null;
 
   name?: string | null;
 

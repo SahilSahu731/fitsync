@@ -7,6 +7,7 @@ from app.modules.exercises.models import (
     ExerciseLaterality,
     ExerciseLoadMode,
     ExerciseTrackingType,
+    MuscleGroup,
 )
 
 WorkoutSetType = Literal[
@@ -44,6 +45,12 @@ class TemplateSetDocument(TypedDict):
 class TemplateExerciseDocument(TypedDict):
     id: str
     exercise_id: ObjectId
+    exercise_name_snapshot: str
+    thumbnail_url_snapshot: str | None
+    tracking_type_snapshot: ExerciseTrackingType
+    laterality_snapshot: ExerciseLaterality
+    load_mode_snapshot: ExerciseLoadMode
+    primary_muscles_snapshot: list[MuscleGroup]
     position: int
     rest_seconds: int
     notes: str | None
@@ -54,9 +61,26 @@ class TemplateExerciseDocument(TypedDict):
 class WorkoutTemplateDocument(TypedDict):
     _id: ObjectId
     user_id: ObjectId
+    client_template_id: str
     name: str
     description: str | None
+    folder_id: ObjectId | None
+    is_favorite: bool
+    position: int
     exercises: list[TemplateExerciseDocument]
+    revision: int
+    created_at: datetime
+    updated_at: datetime
+    archived_at: datetime | None
+
+
+class TemplateFolderDocument(TypedDict):
+    _id: ObjectId
+    user_id: ObjectId
+    client_folder_id: str
+    name: str
+    position: int
+    revision: int
     created_at: datetime
     updated_at: datetime
     archived_at: datetime | None
@@ -105,6 +129,8 @@ class WorkoutSessionDocument(TypedDict):
     # Added in Phase 2.
     client_workout_id: str
     template_id: ObjectId | None
+    template_client_id_snapshot: str | None
+    template_name_snapshot: str | None
     name: str
     status: WorkoutStatus
     started_at: datetime

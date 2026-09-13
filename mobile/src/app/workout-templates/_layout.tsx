@@ -6,8 +6,10 @@ export default function WorkoutTemplatesLayout() {
       screenOptions={{
         headerShown: false,
 
+        animation: "slide_from_right",
+
         contentStyle: {
-          backgroundColor: "#080808",
+          backgroundColor: "#08090B",
         },
       }}
     />

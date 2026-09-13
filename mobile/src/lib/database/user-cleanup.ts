@@ -26,6 +26,22 @@ export async function deleteLocalUserData(
       userId,
     );
 
+    await database.runAsync(
+      `
+            DELETE FROM local_templates
+            WHERE user_id = ?
+            `,
+      userId,
+    );
+
+    await database.runAsync(
+      `
+            DELETE FROM template_folders
+            WHERE user_id = ?
+            `,
+      userId,
+    );
+
     /*
      * Exercise/template caches may contain
      * private user-created data.

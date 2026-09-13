@@ -24,6 +24,10 @@ from app.modules.workouts.schemas import (
     PreviousPerformanceRequest,
     PreviousPerformanceResponse,
     StartWorkoutRequest,
+    TemplateFolderCreateRequest,
+    TemplateFolderListResponse,
+    TemplateFolderResponse,
+    TemplateFolderUpdateRequest,
     WorkoutHistoryResponse,
     WorkoutRevisionRequest,
     WorkoutSessionResponse,
@@ -115,38 +119,47 @@ async def update_template(
     )
 
 
+@router.get(
+    "/workout-template-folders",
+    response_model=TemplateFolderListResponse,
+)
+async def list_template_folders(
+    database: DatabaseDep,
+    user: CurrentUserDep,
+) -> TemplateFolderListResponse:
+    items = await service.list_template_folders(database, user_id=user["_id"])
+    return TemplateFolderListResponse(items=items)
+
+
 @router.post(
-    "/workout-templates/{template_id}/duplicate",
-    response_model=WorkoutTemplateResponse,
+    "/workout-template-folders",
+    response_model=TemplateFolderResponse,
+    status_code=201,
 )
-async def duplicate_template(
-    template_id: str,
+async def create_template_folder(
+    payload: TemplateFolderCreateRequest,
     database: DatabaseDep,
     user: CurrentUserDep,
-) -> WorkoutTemplateResponse:
-    return await service.duplicate_template(
-        database,
-        user_id=user["_id"],
-        template_id=template_id,
-    )
+) -> TemplateFolderResponse:
+    return await service.create_template_folder(database, user_id=user["_id"], payload=payload)
 
 
-@router.delete(
-    "/workout-templates/{template_id}",
-    response_model=MessageResponse,
+@router.patch(
+    "/workout-template-folders/{folder_id}",
+    response_model=TemplateFolderResponse,
 )
-async def archive_template(
-    template_id: str,
+async def update_template_folder(
+    folder_id: str,
+    payload: TemplateFolderUpdateRequest,
     database: DatabaseDep,
     user: CurrentUserDep,
-) -> MessageResponse:
-    await service.archive_template(
+) -> TemplateFolderResponse:
+    return await service.update_template_folder(
         database,
         user_id=user["_id"],
-        template_id=template_id,
+        folder_id=folder_id,
+        payload=payload,
     )
-
-    return MessageResponse(message="Workout template archived.")
 
 
 # =========================================================

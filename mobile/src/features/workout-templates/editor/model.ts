@@ -1,3 +1,5 @@
+import * as Crypto from "expo-crypto";
+
 import type {
   Exercise,
   ExerciseTrackingType,
@@ -6,10 +8,13 @@ import type {
 } from "@/features/exercises/types";
 
 import type {
+  TemplateSet,
   WorkoutSetType,
   WorkoutTemplate,
   WorkoutTemplateInput,
 } from "@/features/workouts/types";
+
+import { defaultSetsForExercise, newTemplateSet } from "./defaults";
 
 export interface LocalTemplateSet {
   id: string;
@@ -45,6 +50,8 @@ export interface LocalTemplateExercise {
   restSeconds: number;
 
   notes: string;
+
+  supersetGroupId: string | null;
 
   sets: LocalTemplateSet[];
 }
@@ -92,6 +99,8 @@ export function templateToLocalExercises(
     restSeconds: exercise.rest_seconds,
 
     notes: exercise.notes ?? "",
+
+    supersetGroupId: exercise.superset_group_id,
 
     sets: exercise.planned_sets.map((plannedSet) => ({
       id: plannedSet.id,
@@ -141,6 +150,8 @@ export function addSelectedExercises(
         restSeconds: exercise.default_rest_seconds,
 
         notes: "",
+
+        supersetGroupId: null,
 
         sets: [makeTemplateSet(), makeTemplateSet(), makeTemplateSet()],
       })),
@@ -200,7 +211,7 @@ export function buildTemplateInput(
 
       notes: exercise.notes.trim() || null,
 
-      superset_group_id: null,
+      superset_group_id: exercise.supersetGroupId,
 
       planned_sets: exercise.sets.map((set) => ({
         type: set.type,
@@ -221,4 +232,174 @@ export function buildTemplateInput(
       })),
     })),
   };
+}
+
+export function applyTemplateSetToAll(
+  exercise: LocalTemplateExercise,
+  sourceSetId: string,
+): LocalTemplateExercise {
+  const source = exercise.sets.find((set) => set.id === sourceSetId);
+  if (!source) return exercise;
+  return {
+    ...exercise,
+    sets: exercise.sets.map((set) => ({
+      ...set,
+      repsMin: source.repsMin,
+      repsMax: source.repsMax,
+      weight: source.weight,
+      duration: source.duration,
+      distance: source.distance,
+      rpe: source.rpe,
+    })),
+  };
+}
+
+export function normalizeSupersetGroups(
+  exercises: LocalTemplateExercise[],
+): LocalTemplateExercise[] {
+  const counts = new Map<string, number>();
+  exercises.forEach(({ supersetGroupId }) => {
+    if (supersetGroupId)
+      counts.set(supersetGroupId, (counts.get(supersetGroupId) ?? 0) + 1);
+  });
+  return exercises.map((exercise) => ({
+    ...exercise,
+    supersetGroupId:
+      exercise.supersetGroupId &&
+      (counts.get(exercise.supersetGroupId) ?? 0) >= 2
+        ? exercise.supersetGroupId
+        : null,
+  }));
+}
+
+export interface RoutineEditorExercise {
+  id: string;
+  exerciseId: string;
+  exerciseName: string;
+  thumbnailUrl: string | null;
+  trackingType: ExerciseTrackingType;
+  laterality: ExerciseLaterality;
+  loadMode: ExerciseLoadMode;
+  primaryMuscles: string[];
+  restSeconds: number;
+  notes: string;
+  supersetGroupId: string | null;
+  sets: TemplateSet[];
+}
+
+export interface RoutineEditorState {
+  name: string;
+  description: string;
+  folderClientId: string | null;
+  favorite: boolean;
+  position: number;
+  archived: boolean;
+  exercises: RoutineEditorExercise[];
+}
+
+export function routineToEditor(routine: WorkoutTemplate): RoutineEditorState {
+  return {
+    name: routine.name,
+    description: routine.description ?? "",
+    folderClientId: routine.folder_client_id,
+    favorite: routine.is_favorite,
+    position: routine.position,
+    archived: routine.archived,
+    exercises: routine.exercises.map((exercise) => ({
+      id: exercise.id,
+      exerciseId: exercise.exercise_id,
+      exerciseName: exercise.exercise_name,
+      thumbnailUrl: exercise.thumbnail_url,
+      trackingType: exercise.tracking_type,
+      laterality: exercise.laterality,
+      loadMode: exercise.load_mode,
+      primaryMuscles: exercise.primary_muscles,
+      restSeconds: exercise.rest_seconds,
+      notes: exercise.notes ?? "",
+      supersetGroupId: exercise.superset_group_id,
+      sets: exercise.planned_sets.map((set, position) => ({
+        ...set,
+        position,
+      })),
+    })),
+  };
+}
+
+export function emptyRoutineEditor(position = 0): RoutineEditorState {
+  return {
+    name: "",
+    description: "",
+    folderClientId: null,
+    favorite: false,
+    position,
+    archived: false,
+    exercises: [],
+  };
+}
+
+export function addExercisesToEditor(
+  state: RoutineEditorState,
+  selected: Exercise[],
+): RoutineEditorState {
+  const existing = new Set(
+    state.exercises.map((exercise) => exercise.exerciseId),
+  );
+  const additions = selected
+    .filter((exercise) => !existing.has(exercise.id))
+    .map((exercise) => ({
+      id: Crypto.randomUUID(),
+      exerciseId: exercise.id,
+      exerciseName: exercise.name,
+      thumbnailUrl:
+        exercise.media.find((item) => item.type === "IMAGE")?.thumbnail_url ??
+        exercise.media[0]?.thumbnail_url ??
+        null,
+      trackingType: exercise.tracking_type,
+      laterality: exercise.laterality,
+      loadMode: exercise.load_mode,
+      primaryMuscles: exercise.primary_muscles,
+      restSeconds: exercise.default_rest_seconds,
+      notes: "",
+      supersetGroupId: null,
+      sets: defaultSetsForExercise(exercise),
+    }));
+  return { ...state, exercises: [...state.exercises, ...additions] };
+}
+
+export function addEditorSet(
+  exercise: RoutineEditorExercise,
+): RoutineEditorExercise {
+  const last = exercise.sets[exercise.sets.length - 1];
+  const next = last
+    ? { ...last, id: Crypto.randomUUID(), position: exercise.sets.length }
+    : newTemplateSet(0);
+  return { ...exercise, sets: [...exercise.sets, next] };
+}
+
+export function duplicateEditorExercise(
+  exercise: RoutineEditorExercise,
+): RoutineEditorExercise {
+  return {
+    ...exercise,
+    id: Crypto.randomUUID(),
+    supersetGroupId: null,
+    sets: exercise.sets.map((set, position) => ({
+      ...set,
+      id: Crypto.randomUUID(),
+      position,
+    })),
+  };
+}
+
+export function moveEditorExercise(
+  exercises: RoutineEditorExercise[],
+  index: number,
+  direction: -1 | 1,
+) {
+  const destination = index + direction;
+  if (destination < 0 || destination >= exercises.length) return exercises;
+  const copy = [...exercises];
+  const [item] = copy.splice(index, 1);
+  copy.splice(destination, 0, item);
+  return copy;
 }

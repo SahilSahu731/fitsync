@@ -7,6 +7,7 @@ from app.modules.exercises.models import (
     ExerciseLaterality,
     ExerciseLoadMode,
     ExerciseTrackingType,
+    MuscleGroup,
 )
 from app.modules.workouts.models import WeightUnit, WorkoutSetType
 
@@ -28,7 +29,7 @@ class TemplateSetInput(BaseModel):
             and self.target_reps_max is not None
             and self.target_reps_min > self.target_reps_max
         ):
-            raise ValueError("Minimum reps cannot be greater than maximum reps")
+            raise ValueError("Minimum reps cannot exceed maximum reps.")
         return self
 
 
@@ -38,20 +39,27 @@ class TemplateExerciseInput(BaseModel):
     notes: str | None = Field(default=None, max_length=500)
     superset_group_id: str | None = Field(default=None, max_length=100)
     planned_sets: list[TemplateSetInput] = Field(
-        default_factory=lambda: [TemplateSetInput(), TemplateSetInput(), TemplateSetInput()],
         min_length=1,
-        max_length=20,
+        max_length=30,
     )
 
 
-class WorkoutTemplateCreateRequest(BaseModel):
+class WorkoutTemplatePayload(BaseModel):
     name: str = Field(min_length=1, max_length=80)
     description: str | None = Field(default=None, max_length=500)
-    exercises: list[TemplateExerciseInput] = Field(min_length=1, max_length=30)
+    folder_client_id: str | None = Field(default=None, max_length=100)
+    is_favorite: bool = False
+    position: int = Field(default=0, ge=0)
+    archived: bool = False
+    exercises: list[TemplateExerciseInput] = Field(min_length=1, max_length=40)
 
 
-class WorkoutTemplateUpdateRequest(WorkoutTemplateCreateRequest):
-    pass
+class WorkoutTemplateCreateRequest(WorkoutTemplatePayload):
+    client_template_id: str | None = Field(default=None, min_length=10, max_length=100)
+
+
+class WorkoutTemplateUpdateRequest(WorkoutTemplatePayload):
+    revision: int = Field(ge=1)
 
 
 class TemplateSetResponse(BaseModel):
@@ -75,6 +83,7 @@ class TemplateExerciseResponse(BaseModel):
     tracking_type: ExerciseTrackingType
     laterality: ExerciseLaterality
     load_mode: ExerciseLoadMode
+    primary_muscles: list[MuscleGroup]
     position: int
     rest_seconds: int
     notes: str | None
@@ -84,30 +93,59 @@ class TemplateExerciseResponse(BaseModel):
 
 class WorkoutTemplateResponse(BaseModel):
     id: str
+    client_template_id: str
     name: str
     description: str | None
+    folder_client_id: str | None
+    is_favorite: bool
+    position: int
+    archived: bool
     exercise_count: int
+    set_count: int
+    muscle_groups: list[MuscleGroup]
     exercises: list[TemplateExerciseResponse]
+    revision: int
+    times_performed: int
+    last_performed_at: str | None
     created_at: str
     updated_at: str
 
 
-class WorkoutTemplateListItem(BaseModel):
+class WorkoutTemplateListResponse(BaseModel):
+    items: list[WorkoutTemplateResponse]
+
+
+class TemplateFolderCreateRequest(BaseModel):
+    client_folder_id: str | None = Field(default=None, min_length=10, max_length=100)
+    name: str = Field(min_length=1, max_length=60)
+    position: int = Field(default=0, ge=0)
+
+
+class TemplateFolderUpdateRequest(BaseModel):
+    revision: int = Field(ge=1)
+    name: str = Field(min_length=1, max_length=60)
+    position: int = Field(ge=0)
+    archived: bool = False
+
+
+class TemplateFolderResponse(BaseModel):
     id: str
+    client_folder_id: str
     name: str
-    description: str | None
-    exercise_count: int
-    exercise_names: list[str]
-    thumbnail_url: str | None
+    position: int
+    revision: int
+    archived: bool
+    created_at: str
     updated_at: str
 
 
-class WorkoutTemplateListResponse(BaseModel):
-    items: list[WorkoutTemplateListItem]
+class TemplateFolderListResponse(BaseModel):
+    items: list[TemplateFolderResponse]
 
 
 class StartWorkoutRequest(BaseModel):
     template_id: str | None = None
+    template_client_id: str | None = Field(default=None, max_length=100)
     name: str | None = Field(default=None, max_length=80)
     client_workout_id: str | None = Field(default=None, min_length=10, max_length=100)
     started_at: datetime | None = None
@@ -216,6 +254,8 @@ class WorkoutSessionResponse(BaseModel):
     id: str
     client_workout_id: str
     template_id: str | None
+    template_client_id: str | None
+    template_name_snapshot: str | None
     name: str
     status: Literal["PLANNED", "IN_PROGRESS", "COMPLETED", "CANCELLED"]
     started_at: str

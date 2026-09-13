@@ -316,6 +316,12 @@ async def delete_user_data(
         }
     )
 
+    await database["template_folders"].delete_many(
+        {
+            "user_id": user_id,
+        }
+    )
+
     await database["exercises"].delete_many(
         {
             "source": "CUSTOM",

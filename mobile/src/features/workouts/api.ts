@@ -48,9 +48,18 @@ export async function updateWorkoutTemplate(
   templateId: string,
   input: WorkoutTemplateInput,
 ): Promise<WorkoutTemplate> {
+  const current = await getWorkoutTemplate(templateId);
+
   const response = await apiClient.patch<WorkoutTemplate>(
     `/workout-templates/${templateId}`,
-    input,
+    {
+      ...input,
+      folder_client_id: current.folder_client_id,
+      is_favorite: current.is_favorite,
+      position: current.position,
+      archived: current.archived,
+      revision: current.revision,
+    },
   );
 
   return response.data;
@@ -59,9 +68,32 @@ export async function updateWorkoutTemplate(
 export async function duplicateWorkoutTemplate(
   templateId: string,
 ): Promise<WorkoutTemplate> {
-  const response = await apiClient.post<WorkoutTemplate>(
-    `/workout-templates/${templateId}/duplicate`,
-  );
+  const current = await getWorkoutTemplate(templateId);
+
+  const response = await apiClient.post<WorkoutTemplate>("/workout-templates", {
+    name: `${current.name} Copy`,
+    description: current.description,
+    folder_client_id: current.folder_client_id,
+    is_favorite: false,
+    position: current.position + 1,
+    archived: false,
+    exercises: current.exercises.map((exercise) => ({
+      exercise_id: exercise.exercise_id,
+      rest_seconds: exercise.rest_seconds,
+      notes: exercise.notes,
+      superset_group_id: exercise.superset_group_id,
+      planned_sets: exercise.planned_sets.map((set) => ({
+        type: set.type,
+        target_reps_min: set.target_reps_min,
+        target_reps_max: set.target_reps_max,
+        target_weight: set.target_weight,
+        target_duration_seconds: set.target_duration_seconds,
+        target_distance_meters: set.target_distance_meters,
+        target_rpe: set.target_rpe,
+        target_rir: set.target_rir,
+      })),
+    })),
+  });
 
   return response.data;
 }
@@ -69,7 +101,33 @@ export async function duplicateWorkoutTemplate(
 export async function archiveWorkoutTemplate(
   templateId: string,
 ): Promise<void> {
-  await apiClient.delete(`/workout-templates/${templateId}`);
+  const current = await getWorkoutTemplate(templateId);
+
+  await apiClient.patch(`/workout-templates/${templateId}`, {
+    revision: current.revision,
+    name: current.name,
+    description: current.description,
+    folder_client_id: current.folder_client_id,
+    is_favorite: current.is_favorite,
+    position: current.position,
+    archived: true,
+    exercises: current.exercises.map((exercise) => ({
+      exercise_id: exercise.exercise_id,
+      rest_seconds: exercise.rest_seconds,
+      notes: exercise.notes,
+      superset_group_id: exercise.superset_group_id,
+      planned_sets: exercise.planned_sets.map((set) => ({
+        type: set.type,
+        target_reps_min: set.target_reps_min,
+        target_reps_max: set.target_reps_max,
+        target_weight: set.target_weight,
+        target_duration_seconds: set.target_duration_seconds,
+        target_distance_meters: set.target_distance_meters,
+        target_rpe: set.target_rpe,
+        target_rir: set.target_rir,
+      })),
+    })),
+  });
 }
 
 // =====================================================

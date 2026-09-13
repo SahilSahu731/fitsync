@@ -31,6 +31,8 @@ async def ensure_indexes(
 
     templates = database["workout_templates"]
 
+    template_folders = database["template_folders"]
+
     workout_sessions = database["workout_sessions"]
 
     # USERS
@@ -310,5 +312,42 @@ async def ensure_indexes(
             ),
         ],
         name=("idx_templates_user_active"),
+    )
+
+    await ensure_index(
+        templates,
+        [("user_id", ASCENDING), ("client_template_id", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"client_template_id": {"$type": "string"}},
+        name="uq_template_client_id",
+    )
+
+    await ensure_index(
+        templates,
+        [
+            ("user_id", ASCENDING),
+            ("archived_at", ASCENDING),
+            ("is_favorite", DESCENDING),
+            ("position", ASCENDING),
+        ],
+        name="idx_template_library",
+    )
+
+    await ensure_index(
+        template_folders,
+        [("user_id", ASCENDING), ("client_folder_id", ASCENDING)],
+        unique=True,
+        partialFilterExpression={"client_folder_id": {"$type": "string"}},
+        name="uq_template_folder_client_id",
+    )
+
+    await ensure_index(
+        template_folders,
+        [
+            ("user_id", ASCENDING),
+            ("archived_at", ASCENDING),
+            ("position", ASCENDING),
+        ],
+        name="idx_template_folders",
     )
     await ensure_progress_indexes(database)

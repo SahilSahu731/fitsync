@@ -1,5 +1,7 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
+import { ensureRoutineSyncedByClientId } from "@/features/workout-templates/routine-sync-engine";
+
 import {
   cancelWorkout,
   completeWorkout,
@@ -104,8 +106,26 @@ async function createServerWorkout(
 }> {
   syncLog(record.localId, "creating server workout");
 
+  let templateServerId = record.workout.template_id;
+
+  const templateClientId = record.workout.template_client_id;
+
+  if (templateClientId) {
+    const routine = await ensureRoutineSyncedByClientId(
+      database,
+      record.userId,
+      templateClientId,
+    );
+
+    if (routine?.serverId) {
+      templateServerId = routine.serverId;
+    }
+  }
+
   const created = await startWorkout({
-    template_id: record.workout.template_id,
+    template_id: templateServerId,
+
+    template_client_id: templateClientId,
 
     name: record.workout.name,
 

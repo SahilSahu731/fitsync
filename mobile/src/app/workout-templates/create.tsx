@@ -1,53 +1,40 @@
-import { Ionicons } from "@expo/vector-icons";
-
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-
 import { router } from "expo-router";
-
-import { Pressable, Text, View } from "react-native";
-
+import { useState } from "react";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { useSQLiteContext } from "expo-sqlite";
+import { useAuthStore } from "@/features/auth/store";
+import { RoutineEditor } from "@/features/workout-templates/editor/routine-editor";
+import { useRoutineFolders } from "@/features/workout-templates/hooks/use-routine-folders";
+import { createLocalTemplate } from "@/features/workout-templates/local-services";
+import { requestRoutineSync } from "@/features/workout-templates/sync-manager";
 
-import { createWorkoutTemplate } from "@/features/workouts/api";
-
-import { TemplateEditor } from "@/features/workouts/components/template-editor";
-
-import { workoutTemplateKeys } from "@/features/workouts/keys";
-
-export default function CreateTemplateScreen() {
-  const queryClient = useQueryClient();
-
-  const mutation = useMutation({
-    mutationFn: createWorkoutTemplate,
-
-    onSuccess: async (template) => {
-      await queryClient.invalidateQueries({
-        queryKey: workoutTemplateKeys.all,
-      });
-
-      router.replace(`/workout-templates/${template.id}`);
-    },
-  });
-
+export default function CreateRoutineScreen() {
+  const database = useSQLiteContext();
+  const user = useAuthStore((state) => state.user);
+  const folders = useRoutineFolders();
+  const [saving, setSaving] = useState(false);
+  if (!user) return null;
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <View className="flex-row items-center px-5 pt-3">
-        <Pressable
-          onPress={router.back}
-          className="h-11 w-11 items-center justify-center rounded-full bg-white/[0.05]"
-        >
-          <Ionicons name="arrow-back" size={20} color="#FFFFFF" />
-        </Pressable>
-
-        <Text className="ml-4 text-[22px] font-extrabold text-white">
-          New template
-        </Text>
-      </View>
-
-      <TemplateEditor
-        saving={mutation.isPending}
-        onSave={async (input) => {
-          await mutation.mutateAsync(input);
+      <RoutineEditor
+        folders={folders.items}
+        saving={saving}
+        onCreateFolder={() => router.push("/workout-templates/folders")}
+        onCancel={router.back}
+        onSave={async (input, metadata) => {
+          setSaving(true);
+          try {
+            const id = await createLocalTemplate(database, {
+              userId: user.id,
+              input,
+              folderId: metadata.folderId,
+              isFavorite: metadata.favorite,
+            });
+            requestRoutineSync(database, user.id, 0);
+            router.replace(`/workout-templates/${id}`);
+          } finally {
+            setSaving(false);
+          }
         }}
       />
     </SafeAreaView>

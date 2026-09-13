@@ -1,10 +1,12 @@
+from datetime import datetime
 from typing import cast
 
 from bson import ObjectId
-from pymongo import DESCENDING
+from pymongo import ASCENDING, DESCENDING, ReturnDocument
 
 from app.db.mongo import Database
 from app.modules.workouts.models import (
+    TemplateFolderDocument,
     WorkoutSessionDocument,
     WorkoutTemplateDocument,
 )
@@ -21,6 +23,18 @@ async def insert_template(
     await database["workout_templates"].insert_one(template)
 
 
+async def get_template_by_client_id(
+    database: Database,
+    *,
+    user_id: ObjectId,
+    client_template_id: str,
+) -> WorkoutTemplateDocument | None:
+    document = await database["workout_templates"].find_one(
+        {"user_id": user_id, "client_template_id": client_template_id}
+    )
+    return cast(WorkoutTemplateDocument | None, document)
+
+
 async def list_templates(
     database: Database,
     *,
@@ -31,16 +45,18 @@ async def list_templates(
         .find(
             {
                 "user_id": user_id,
-                "archived_at": None,
             }
         )
         .sort(
-            "updated_at",
-            DESCENDING,
+            [
+                ("is_favorite", DESCENDING),
+                ("position", ASCENDING),
+                ("updated_at", DESCENDING),
+            ]
         )
     )
 
-    documents = await cursor.to_list(length=200)
+    documents = await cursor.to_list(length=500)
 
     return cast(
         list[WorkoutTemplateDocument],
@@ -58,7 +74,6 @@ async def get_template(
         {
             "_id": template_id,
             "user_id": user_id,
-            "archived_at": None,
         }
     )
 
@@ -68,49 +83,126 @@ async def get_template(
     )
 
 
-async def update_template(
+async def update_template_with_revision(
     database: Database,
     *,
     template_id: ObjectId,
     user_id: ObjectId,
+    expected_revision: int,
     fields: dict,
-) -> bool:
-    result = await database["workout_templates"].update_one(
+) -> WorkoutTemplateDocument | None:
+    document = await database["workout_templates"].find_one_and_update(
         {
             "_id": template_id,
             "user_id": user_id,
-            "archived_at": None,
+            "revision": expected_revision,
         },
         {
             "$set": fields,
+            "$inc": {"revision": 1},
         },
+        return_document=ReturnDocument.AFTER,
     )
+    return cast(WorkoutTemplateDocument | None, document)
 
-    return result.matched_count == 1
 
-
-async def archive_template(
+async def unset_folder_from_templates(
     database: Database,
     *,
-    template_id: ObjectId,
     user_id: ObjectId,
-    timestamp,
-) -> bool:
-    result = await database["workout_templates"].update_one(
+    folder_id: ObjectId,
+    timestamp: datetime,
+) -> None:
+    await database["workout_templates"].update_many(
+        {"user_id": user_id, "folder_id": folder_id},
         {
-            "_id": template_id,
-            "user_id": user_id,
-            "archived_at": None,
-        },
-        {
-            "$set": {
-                "archived_at": timestamp,
-                "updated_at": timestamp,
-            }
+            "$set": {"folder_id": None, "updated_at": timestamp},
+            "$inc": {"revision": 1},
         },
     )
 
-    return result.modified_count == 1
+
+async def template_usage(
+    database: Database,
+    *,
+    user_id: ObjectId,
+    template_ids: list[ObjectId],
+) -> dict[str, dict]:
+    if not template_ids:
+        return {}
+    cursor = database["workout_sessions"].aggregate(
+        [
+            {
+                "$match": {
+                    "user_id": user_id,
+                    "status": "COMPLETED",
+                    "template_id": {"$in": template_ids},
+                }
+            },
+            {
+                "$group": {
+                    "_id": "$template_id",
+                    "count": {"$sum": 1},
+                    "last_performed_at": {"$max": "$completed_at"},
+                }
+            },
+        ]
+    )
+    result = {}
+    async for item in cursor:
+        result[str(item["_id"])] = {
+            "count": item["count"],
+            "last_performed_at": item["last_performed_at"],
+        }
+    return result
+
+
+# =========================================================
+# TEMPLATE FOLDERS
+# =========================================================
+
+
+async def insert_template_folder(database: Database, folder: TemplateFolderDocument) -> None:
+    await database["template_folders"].insert_one(folder)
+
+
+async def list_template_folders(
+    database: Database, *, user_id: ObjectId
+) -> list[TemplateFolderDocument]:
+    cursor = database["template_folders"].find({"user_id": user_id}).sort("position", ASCENDING)
+    return cast(list[TemplateFolderDocument], await cursor.to_list(length=200))
+
+
+async def get_template_folder(
+    database: Database, *, folder_id: ObjectId, user_id: ObjectId
+) -> TemplateFolderDocument | None:
+    document = await database["template_folders"].find_one({"_id": folder_id, "user_id": user_id})
+    return cast(TemplateFolderDocument | None, document)
+
+
+async def get_template_folder_by_client_id(
+    database: Database, *, user_id: ObjectId, client_folder_id: str
+) -> TemplateFolderDocument | None:
+    document = await database["template_folders"].find_one(
+        {"user_id": user_id, "client_folder_id": client_folder_id}
+    )
+    return cast(TemplateFolderDocument | None, document)
+
+
+async def update_template_folder_with_revision(
+    database: Database,
+    *,
+    folder_id: ObjectId,
+    user_id: ObjectId,
+    expected_revision: int,
+    fields: dict,
+) -> TemplateFolderDocument | None:
+    document = await database["template_folders"].find_one_and_update(
+        {"_id": folder_id, "user_id": user_id, "revision": expected_revision},
+        {"$set": fields, "$inc": {"revision": 1}},
+        return_document=ReturnDocument.AFTER,
+    )
+    return cast(TemplateFolderDocument | None, document)
 
 
 # =========================================================

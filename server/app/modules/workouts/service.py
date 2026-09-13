@@ -35,6 +35,7 @@ from app.modules.workouts import (
 )
 from app.modules.workouts.models import (
     TemplateExerciseDocument,
+    TemplateFolderDocument,
     TemplateSetDocument,
     WeightUnit,
     WorkoutExerciseDocument,
@@ -49,6 +50,9 @@ from app.modules.workouts.schemas import (
     PreviousSetResponse,
     StartWorkoutRequest,
     TemplateExerciseResponse,
+    TemplateFolderCreateRequest,
+    TemplateFolderResponse,
+    TemplateFolderUpdateRequest,
     TemplateSetResponse,
     WorkoutExerciseResponse,
     WorkoutHistoryItem,
@@ -56,7 +60,6 @@ from app.modules.workouts.schemas import (
     WorkoutSessionUpdateRequest,
     WorkoutSetResponse,
     WorkoutTemplateCreateRequest,
-    WorkoutTemplateListItem,
     WorkoutTemplateResponse,
     WorkoutTemplateUpdateRequest,
 )
@@ -72,6 +75,38 @@ def template_not_found():
         detail={
             "code": "TEMPLATE_NOT_FOUND",
             "message": "Workout template not found.",
+        },
+    )
+
+
+def template_revision_conflict(current_revision: int):
+    return HTTPException(
+        status_code=409,
+        detail={
+            "code": "TEMPLATE_REVISION_CONFLICT",
+            "message": "This routine changed on another device.",
+            "current_revision": current_revision,
+        },
+    )
+
+
+def template_folder_not_found():
+    return HTTPException(
+        status_code=404,
+        detail={
+            "code": "TEMPLATE_FOLDER_NOT_FOUND",
+            "message": "Routine folder not found.",
+        },
+    )
+
+
+def template_folder_revision_conflict(current_revision: int):
+    return HTTPException(
+        status_code=409,
+        detail={
+            "code": "TEMPLATE_FOLDER_REVISION_CONFLICT",
+            "message": "This routine folder changed on another device.",
+            "current_revision": current_revision,
         },
     )
 
@@ -237,7 +272,13 @@ def build_template_exercises(
         result.append(
             {
                 "id": str(uuid4()),
-                "exercise_id": ObjectId(input_exercise.exercise_id),
+                "exercise_id": exercise["_id"],
+                "exercise_name_snapshot": exercise["name"],
+                "thumbnail_url_snapshot": thumbnail_for_exercise(exercise),
+                "tracking_type_snapshot": tracking_type,
+                "laterality_snapshot": exercise_laterality(exercise),
+                "load_mode_snapshot": exercise_load_mode(exercise),
+                "primary_muscles_snapshot": exercise.get("primary_muscles", []),
                 "position": exercise_position,
                 "rest_seconds": input_exercise.rest_seconds,
                 "notes": input_exercise.notes,
@@ -249,36 +290,70 @@ def build_template_exercises(
     return result
 
 
+def clean_template_supersets(
+    exercises: list[TemplateExerciseDocument],
+) -> list[TemplateExerciseDocument]:
+    counts: dict[str, int] = {}
+    for exercise in exercises:
+        group = exercise.get("superset_group_id")
+        if group:
+            counts[group] = counts.get(group, 0) + 1
+
+    for exercise in exercises:
+        group = exercise.get("superset_group_id")
+        if group and counts.get(group, 0) < 2:
+            exercise["superset_group_id"] = None
+
+    return exercises
+
+
+async def resolve_template_folder(
+    database: Database,
+    *,
+    user_id: ObjectId,
+    client_folder_id: str | None,
+) -> ObjectId | None:
+    if client_folder_id is None:
+        return None
+
+    folder = await repository.get_template_folder_by_client_id(
+        database,
+        user_id=user_id,
+        client_folder_id=client_folder_id,
+    )
+    if folder is None or folder.get("archived_at") is not None:
+        raise template_folder_not_found()
+    return folder["_id"]
+
+
 def template_response(
     template: WorkoutTemplateDocument,
-    exercise_map: dict[str, ExerciseDocument],
+    *,
+    folder_client_id: str | None,
+    usage: dict | None = None,
 ) -> WorkoutTemplateResponse:
     response_exercises = []
+    muscle_groups = []
 
     for item in sorted(
         template["exercises"],
         key=lambda exercise: exercise["position"],
     ):
-        exercise_id = str(item["exercise_id"])
-
-        exercise = exercise_map[exercise_id]
-
-        media = exercise.get(
-            "media",
-            [],
-        )
-
-        thumbnail = media[0]["thumbnail_url"] if media else None
+        muscles = item.get("primary_muscles_snapshot", [])
+        for muscle in muscles:
+            if muscle not in muscle_groups:
+                muscle_groups.append(muscle)
 
         response_exercises.append(
             TemplateExerciseResponse(
                 id=item["id"],
-                exercise_id=exercise_id,
-                exercise_name=exercise["name"],
-                thumbnail_url=thumbnail,
-                tracking_type=exercise_tracking_type(exercise),
-                laterality=exercise_laterality(exercise),
-                load_mode=exercise_load_mode(exercise),
+                exercise_id=str(item["exercise_id"]),
+                exercise_name=item.get("exercise_name_snapshot", "Exercise"),
+                thumbnail_url=item.get("thumbnail_url_snapshot"),
+                tracking_type=item.get("tracking_type_snapshot", "WEIGHT_REPS"),
+                laterality=item.get("laterality_snapshot", "BILATERAL"),
+                load_mode=item.get("load_mode_snapshot", "TOTAL"),
+                primary_muscles=muscles,
                 position=item["position"],
                 rest_seconds=item["rest_seconds"],
                 notes=item["notes"],
@@ -304,12 +379,26 @@ def template_response(
             )
         )
 
+    usage = usage or {}
+
     return WorkoutTemplateResponse(
         id=str(template["_id"]),
+        client_template_id=template.get("client_template_id") or str(template["_id"]),
         name=template["name"],
-        description=template["description"],
+        description=template.get("description"),
+        folder_client_id=folder_client_id,
+        is_favorite=template.get("is_favorite", False),
+        position=template.get("position", 0),
+        archived=template.get("archived_at") is not None,
         exercise_count=len(response_exercises),
+        set_count=sum(len(exercise.planned_sets) for exercise in response_exercises),
+        muscle_groups=muscle_groups[:4],
         exercises=response_exercises,
+        revision=template.get("revision", 1),
+        times_performed=usage.get("count", 0),
+        last_performed_at=(
+            usage["last_performed_at"].isoformat() if usage.get("last_performed_at") else None
+        ),
         created_at=template["created_at"].isoformat(),
         updated_at=template["updated_at"].isoformat(),
     )
@@ -326,6 +415,32 @@ async def create_template(
     user_id: ObjectId,
     payload: WorkoutTemplateCreateRequest,
 ):
+    client_template_id = payload.client_template_id or str(uuid4())
+
+    existing = await repository.get_template_by_client_id(
+        database,
+        user_id=user_id,
+        client_template_id=client_template_id,
+    )
+    if existing:
+        folder_client_id = None
+        if existing.get("folder_id"):
+            folder = await repository.get_template_folder(
+                database,
+                folder_id=existing["folder_id"],
+                user_id=user_id,
+            )
+            if folder:
+                folder_client_id = folder.get("client_folder_id")
+        usage_map = await repository.template_usage(
+            database, user_id=user_id, template_ids=[existing["_id"]]
+        )
+        return template_response(
+            existing,
+            folder_client_id=folder_client_id,
+            usage=usage_map.get(str(existing["_id"])),
+        )
+
     raw_ids = [item.exercise_id for item in payload.exercises]
 
     exercise_map = await resolve_exercises(
@@ -336,25 +451,45 @@ async def create_template(
 
     now = utc_now()
 
+    folder_id = await resolve_template_folder(
+        database,
+        user_id=user_id,
+        client_folder_id=payload.folder_client_id,
+    )
+
+    exercises = clean_template_supersets(build_template_exercises(payload.exercises, exercise_map))
+
     template: WorkoutTemplateDocument = {
         "_id": ObjectId(),
         "user_id": user_id,
+        "client_template_id": client_template_id,
         "name": payload.name.strip(),
         "description": (payload.description.strip() if payload.description else None),
-        "exercises": build_template_exercises(payload.exercises, exercise_map),
+        "folder_id": folder_id,
+        "is_favorite": payload.is_favorite,
+        "position": payload.position,
+        "exercises": exercises,
+        "revision": 1,
         "created_at": now,
         "updated_at": now,
-        "archived_at": None,
+        "archived_at": now if payload.archived else None,
     }
 
-    await repository.insert_template(
-        database,
-        template,
-    )
+    try:
+        await repository.insert_template(database, template)
+    except DuplicateKeyError:
+        retry = await repository.get_template_by_client_id(
+            database,
+            user_id=user_id,
+            client_template_id=client_template_id,
+        )
+        if retry:
+            return template_response(retry, folder_client_id=payload.folder_client_id)
+        raise
 
     return template_response(
         template,
-        exercise_map,
+        folder_client_id=payload.folder_client_id,
     )
 
 
@@ -367,55 +502,21 @@ async def list_templates(
         database,
         user_id=user_id,
     )
-
-    all_ids = []
-
-    for template in templates:
-        all_ids.extend(str(item["exercise_id"]) for item in template["exercises"])
-
-    exercise_map = (
-        await resolve_exercises(
-            database,
-            user_id=user_id,
-            raw_ids=list(dict.fromkeys(all_ids)),
-        )
-        if all_ids
-        else {}
+    folders = await repository.list_template_folders(database, user_id=user_id)
+    folder_clients = {folder["_id"]: folder.get("client_folder_id") for folder in folders}
+    usage = await repository.template_usage(
+        database,
+        user_id=user_id,
+        template_ids=[template["_id"] for template in templates],
     )
-
-    result = []
-
-    for template in templates:
-        sorted_items = sorted(
-            template["exercises"],
-            key=lambda item: item["position"],
+    return [
+        template_response(
+            template,
+            folder_client_id=folder_clients.get(template.get("folder_id")),
+            usage=usage.get(str(template["_id"])),
         )
-
-        exercise_names = []
-
-        thumbnail = None
-
-        for item in sorted_items:
-            exercise = exercise_map[str(item["exercise_id"])]
-
-            exercise_names.append(exercise["name"])
-
-            if thumbnail is None and exercise.get("media"):
-                thumbnail = exercise["media"][0]["thumbnail_url"]
-
-        result.append(
-            WorkoutTemplateListItem(
-                id=str(template["_id"]),
-                name=template["name"],
-                description=template["description"],
-                exercise_count=len(sorted_items),
-                exercise_names=exercise_names,
-                thumbnail_url=thumbnail,
-                updated_at=template["updated_at"].isoformat(),
-            )
-        )
-
-    return result
+        for template in templates
+    ]
 
 
 async def get_template(
@@ -436,17 +537,22 @@ async def get_template(
     if template is None:
         raise template_not_found()
 
-    raw_ids = [str(item["exercise_id"]) for item in template["exercises"]]
+    folder_client_id = None
+    if template.get("folder_id"):
+        folder = await repository.get_template_folder(
+            database, folder_id=template["folder_id"], user_id=user_id
+        )
+        if folder:
+            folder_client_id = folder.get("client_folder_id")
 
-    exercise_map = await resolve_exercises(
-        database,
-        user_id=user_id,
-        raw_ids=raw_ids,
+    usage = await repository.template_usage(
+        database, user_id=user_id, template_ids=[ObjectId(template_id)]
     )
 
     return template_response(
         template,
-        exercise_map,
+        folder_client_id=folder_client_id,
+        usage=usage.get(template_id),
     )
 
 
@@ -460,6 +566,12 @@ async def update_template(
     if not ObjectId.is_valid(template_id):
         raise template_not_found()
 
+    object_id = ObjectId(template_id)
+
+    current = await repository.get_template(database, template_id=object_id, user_id=user_id)
+    if current is None:
+        raise template_not_found()
+
     raw_ids = [item.exercise_id for item in payload.exercises]
 
     exercise_map = await resolve_exercises(
@@ -470,100 +582,137 @@ async def update_template(
 
     now = utc_now()
 
-    updated = await repository.update_template(
+    folder_id = await resolve_template_folder(
         database,
-        template_id=ObjectId(template_id),
         user_id=user_id,
+        client_folder_id=payload.folder_client_id,
+    )
+
+    updated = await repository.update_template_with_revision(
+        database,
+        template_id=object_id,
+        user_id=user_id,
+        expected_revision=payload.revision,
         fields={
             "name": payload.name.strip(),
             "description": (payload.description.strip() if payload.description else None),
-            "exercises": build_template_exercises(payload.exercises, exercise_map),
+            "folder_id": folder_id,
+            "is_favorite": payload.is_favorite,
+            "position": payload.position,
+            "exercises": clean_template_supersets(
+                build_template_exercises(payload.exercises, exercise_map)
+            ),
+            "archived_at": now if payload.archived else None,
             "updated_at": now,
         },
     )
 
-    if not updated:
-        raise template_not_found()
+    if updated is None:
+        latest = await repository.get_template(database, template_id=object_id, user_id=user_id)
+        if latest is None:
+            raise template_not_found()
+        raise template_revision_conflict(latest.get("revision", 1))
 
-    template = await repository.get_template(
-        database,
-        template_id=ObjectId(template_id),
-        user_id=user_id,
-    )
-
-    if template is None:
-        raise template_not_found()
+    usage = await repository.template_usage(database, user_id=user_id, template_ids=[object_id])
 
     return template_response(
-        template,
-        exercise_map,
+        updated,
+        folder_client_id=payload.folder_client_id,
+        usage=usage.get(template_id),
     )
 
 
-async def duplicate_template(
+def folder_response(folder: TemplateFolderDocument) -> TemplateFolderResponse:
+    return TemplateFolderResponse(
+        id=str(folder["_id"]),
+        client_folder_id=folder.get("client_folder_id") or str(folder["_id"]),
+        name=folder["name"],
+        position=folder.get("position", 0),
+        revision=folder.get("revision", 1),
+        archived=folder.get("archived_at") is not None,
+        created_at=folder["created_at"].isoformat(),
+        updated_at=folder["updated_at"].isoformat(),
+    )
+
+
+async def create_template_folder(
     database: Database,
     *,
     user_id: ObjectId,
-    template_id: str,
+    payload: TemplateFolderCreateRequest,
 ):
-    original = await get_template(
-        database,
-        user_id=user_id,
-        template_id=template_id,
+    client_id = payload.client_folder_id or str(uuid4())
+    existing = await repository.get_template_folder_by_client_id(
+        database, user_id=user_id, client_folder_id=client_id
     )
+    if existing:
+        return folder_response(existing)
 
-    payload = WorkoutTemplateCreateRequest(
-        name=(f"{original.name} Copy"),
-        description=original.description,
-        exercises=[
-            {
-                "exercise_id": exercise.exercise_id,
-                "rest_seconds": exercise.rest_seconds,
-                "notes": exercise.notes,
-                "superset_group_id": exercise.superset_group_id,
-                "planned_sets": [
-                    {
-                        "type": planned_set.type,
-                        "target_reps_min": planned_set.target_reps_min,
-                        "target_reps_max": planned_set.target_reps_max,
-                        "target_weight": planned_set.target_weight,
-                        "target_duration_seconds": planned_set.target_duration_seconds,
-                        "target_distance_meters": planned_set.target_distance_meters,
-                        "target_rpe": planned_set.target_rpe,
-                        "target_rir": planned_set.target_rir,
-                    }
-                    for planned_set in exercise.planned_sets
-                ],
-            }
-            for exercise in original.exercises
-        ],
-    )
-
-    return await create_template(
-        database,
-        user_id=user_id,
-        payload=payload,
-    )
+    now = utc_now()
+    folder: TemplateFolderDocument = {
+        "_id": ObjectId(),
+        "user_id": user_id,
+        "client_folder_id": client_id,
+        "name": payload.name.strip(),
+        "position": payload.position,
+        "revision": 1,
+        "created_at": now,
+        "updated_at": now,
+        "archived_at": None,
+    }
+    try:
+        await repository.insert_template_folder(database, folder)
+    except DuplicateKeyError:
+        existing = await repository.get_template_folder_by_client_id(
+            database, user_id=user_id, client_folder_id=client_id
+        )
+        if existing:
+            return folder_response(existing)
+        raise
+    return folder_response(folder)
 
 
-async def archive_template(
+async def list_template_folders(database: Database, *, user_id: ObjectId):
+    folders = await repository.list_template_folders(database, user_id=user_id)
+    return [folder_response(folder) for folder in folders]
+
+
+async def update_template_folder(
     database: Database,
     *,
     user_id: ObjectId,
-    template_id: str,
+    folder_id: str,
+    payload: TemplateFolderUpdateRequest,
 ):
-    if not ObjectId.is_valid(template_id):
-        raise template_not_found()
-
-    archived = await repository.archive_template(
+    if not ObjectId.is_valid(folder_id):
+        raise template_folder_not_found()
+    object_id = ObjectId(folder_id)
+    now = utc_now()
+    updated = await repository.update_template_folder_with_revision(
         database,
-        template_id=ObjectId(template_id),
+        folder_id=object_id,
         user_id=user_id,
-        timestamp=utc_now(),
+        expected_revision=payload.revision,
+        fields={
+            "name": payload.name.strip(),
+            "position": payload.position,
+            "archived_at": now if payload.archived else None,
+            "updated_at": now,
+        },
     )
+    if updated is None:
+        latest = await repository.get_template_folder(
+            database, folder_id=object_id, user_id=user_id
+        )
+        if latest is None:
+            raise template_folder_not_found()
+        raise template_folder_revision_conflict(latest.get("revision", 1))
 
-    if not archived:
-        raise template_not_found()
+    if payload.archived:
+        await repository.unset_folder_from_templates(
+            database, user_id=user_id, folder_id=object_id, timestamp=now
+        )
+    return folder_response(updated)
 
 
 # =========================================================
@@ -646,6 +795,8 @@ def session_response(
         id=str(session["_id"]),
         client_workout_id=(session.get("client_workout_id") or str(session["_id"])),
         template_id=(str(session["template_id"]) if session.get("template_id") else None),
+        template_client_id=session.get("template_client_id_snapshot"),
+        template_name_snapshot=session.get("template_name_snapshot"),
         name=session["name"],
         status=session["status"],
         started_at=(session["started_at"].isoformat()),
@@ -794,8 +945,12 @@ async def start_workout(
     exercises: list[WorkoutExerciseDocument] = []
 
     template_id = None
+    template_client_id = None
+    template_name_snapshot = None
 
     name = payload.name.strip() if payload.name else "Workout"
+
+    template = None
 
     if payload.template_id:
         if not ObjectId.is_valid(payload.template_id):
@@ -807,10 +962,22 @@ async def start_workout(
             user_id=user["_id"],
         )
 
-        if template is None:
-            raise template_not_found()
+    elif payload.template_client_id:
+        template = await repository.get_template_by_client_id(
+            database,
+            user_id=user["_id"],
+            client_template_id=payload.template_client_id,
+        )
 
+    if (payload.template_id or payload.template_client_id) and template is None:
+        raise template_not_found()
+
+    if template is not None:
+        if template.get("archived_at") is not None:
+            raise template_not_found()
         template_id = template["_id"]
+        template_client_id = template.get("client_template_id") or str(template["_id"])
+        template_name_snapshot = template["name"]
 
         name = template["name"]
 
@@ -873,6 +1040,8 @@ async def start_workout(
         "user_id": user["_id"],
         "client_workout_id": client_workout_id,
         "template_id": template_id,
+        "template_client_id_snapshot": template_client_id,
+        "template_name_snapshot": template_name_snapshot,
         "name": name,
         "status": "IN_PROGRESS",
         "started_at": started_at,

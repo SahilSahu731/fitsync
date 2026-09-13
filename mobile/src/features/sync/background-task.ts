@@ -12,7 +12,7 @@ import { getMemoryTokens, hydrateTokens } from "@/features/auth/token-storage";
 
 import { migrateDatabase } from "@/lib/database/migrations";
 
-import { syncPendingWorkouts } from "./sync-engine";
+import { syncAppData } from "./app-sync";
 
 export const WORKOUT_SYNC_BACKGROUND_TASK = "fitsync-workout-sync-v1";
 
@@ -42,7 +42,7 @@ TaskManager.defineTask(
 
       await migrateDatabase(database);
 
-      await syncPendingWorkouts(database, user.id);
+      await syncAppData(database, user.id);
 
       return BackgroundTask.BackgroundTaskResult.Success;
     } catch {

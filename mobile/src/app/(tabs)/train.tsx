@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import { router, useFocusEffect } from "expo-router";
 
-import { useCallback, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -24,14 +24,20 @@ import type { LocalWorkoutRecord } from "@/features/workout-session/local/types"
 
 import { useStartLocalWorkout } from "@/features/workout-session/hooks/use-start-local-workout";
 
-import { useOfflineTemplates } from "@/features/workout-templates/use-offline-templates";
+import { useLocalRoutines } from "@/features/workout-templates/hooks/use-local-routines";
+
+import { requestRoutineSync } from "@/features/workout-templates/sync-manager";
+
+import { startLocalWorkout } from "@/features/workout-session/local/start-local-workout";
 
 export default function TrainScreen() {
   const database = useSQLiteContext();
 
   const user = useAuthStore((state) => state.user);
 
-  const templates = useOfflineTemplates();
+  const routines = useLocalRoutines();
+
+  const reloadRoutines = routines.reload;
 
   const starter = useStartLocalWorkout();
 
@@ -63,11 +69,29 @@ export default function TrainScreen() {
     useCallback(() => {
       void loadActive();
 
+      void reloadRoutines();
+
+      if (user?.id) {
+        requestRoutineSync(database, user.id);
+      }
+
       return undefined;
-    }, [loadActive]),
+    }, [database, loadActive, reloadRoutines, user]),
   );
 
   const activeWorkout = active?.workout ?? null;
+
+  const mostRecentRoutine = useMemo(
+    () =>
+      [...routines.items]
+        .filter((record) => record.template.last_performed_at)
+        .sort(
+          (a, b) =>
+            new Date(b.template.last_performed_at!).getTime() -
+            new Date(a.template.last_performed_at!).getTime(),
+        )[0] ?? null,
+    [routines.items],
+  );
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -203,7 +227,7 @@ export default function TrainScreen() {
             </Text>
 
             <Text className="text-white/32 mt-1 text-[12px]">
-              {templates.items.length} saved
+              {routines.items.length} saved
             </Text>
           </Pressable>
 
@@ -227,17 +251,31 @@ export default function TrainScreen() {
           </Pressable>
         </View>
 
+        {mostRecentRoutine ? (
+          <Pressable
+            onPress={() =>
+              router.push(`/workout-templates/${mostRecentRoutine.localId}`)
+            }
+            className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4"
+          >
+            <Text className="text-[9px] font-bold uppercase text-white/20">
+              Last routine
+            </Text>
+            <Text className="mt-2 text-[15px] font-extrabold text-white">
+              {mostRecentRoutine.template.name}
+            </Text>
+          </Pressable>
+        ) : null}
+
         <View className="mt-9 flex-row items-center justify-between">
           <View>
             <Text className="text-[19px] font-extrabold text-white">
               Templates
             </Text>
 
-            {templates.isOfflineFallback ? (
-              <Text className="mt-1 text-[10px] text-white/25">
-                Offline cache
-              </Text>
-            ) : null}
+            <Text className="mt-1 text-[10px] text-white/25">
+              Available offline
+            </Text>
           </View>
 
           <Pressable
@@ -251,15 +289,15 @@ export default function TrainScreen() {
           </Pressable>
         </View>
 
-        {templates.isLoading ? (
+        {routines.loading ? (
           <View className="mt-5 items-center py-8">
             <ActivityIndicator color="#3B82F6" />
           </View>
         ) : (
           <View className="mt-4 gap-3">
-            {templates.items.slice(0, 4).map((template) => (
+            {routines.items.slice(0, 4).map((record) => (
               <View
-                key={template.id}
+                key={record.localId}
                 className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
               >
                 <View className="flex-row items-center">
@@ -269,14 +307,16 @@ export default function TrainScreen() {
 
                   <View className="ml-3 flex-1">
                     <Text className="text-[15px] font-bold text-white">
-                      {template.name}
+                      {record.template.name}
                     </Text>
 
                     <Text
                       numberOfLines={1}
                       className="mt-1 text-[11px] text-white/30"
                     >
-                      {template.exercise_names.join(" · ")}
+                      {record.template.exercises
+                        .map((exercise) => exercise.exercise_name)
+                        .join(" · ")}
                     </Text>
                   </View>
                 </View>
@@ -284,7 +324,7 @@ export default function TrainScreen() {
                 <View className="mt-4 flex-row gap-2">
                   <Pressable
                     onPress={() => {
-                      router.push(`/workout-templates/${template.id}`);
+                      router.push(`/workout-templates/${record.localId}`);
                     }}
                     className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-white/[0.05]"
                   >
@@ -296,7 +336,10 @@ export default function TrainScreen() {
                   <Pressable
                     disabled={Boolean(activeWorkout) || starter.isPending}
                     onPress={() => {
-                      void starter.startTemplate(template.id);
+                      if (!user) return;
+                      void startLocalWorkout(database, user, {
+                        template: record.template,
+                      }).then((id) => router.push(`/workouts/active/${id}`));
                     }}
                     className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-brand"
                     style={{
