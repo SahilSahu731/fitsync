@@ -4,36 +4,36 @@
     "slug": "fitsync",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/fitsync-icon.png",
     "scheme": "fitsync",
     "userInterfaceStyle": "dark",
     "ios": {
-      "icon": "./assets/expo.icon",
+      "icon": "./assets/images/fitsync-icon.png",
       "bundleIdentifier": "com.sahilsahu.fitsync"
     },
     "android": {
       "package": "com.sahilsahu.fitsync",
       "adaptiveIcon": {
-        "backgroundColor": "#E6F4FE",
-        "foregroundImage": "./assets/images/android-icon-foreground.png",
-        "backgroundImage": "./assets/images/android-icon-background.png",
-        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+        "backgroundColor": "#08090B",
+        "foregroundImage": "./assets/images/fitsync-mark.png",
+        "monochromeImage": "./assets/images/fitsync-monochrome.png"
       },
       "predictiveBackGestureEnabled": false
     },
     "web": {
       "output": "static",
       "bundler": "metro",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/fitsync-favicon.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#208AEF",
-          "image": "./assets/images/splash-icon.png",
-          "imageWidth": 76
+          "backgroundColor": "#08090B",
+          "image": "./assets/images/fitsync-splash.png",
+          "imageWidth": 190,
+          "resizeMode": "contain"
         }
       ],
       "expo-secure-store",
@@ -43,7 +43,8 @@
       "expo-image",
       "expo-web-browser",
       "expo-sqlite",
-      "expo-background-task"
+      "expo-background-task",
+      "expo-notifications"
     ],
     "experiments": {
       "typedRoutes": true,

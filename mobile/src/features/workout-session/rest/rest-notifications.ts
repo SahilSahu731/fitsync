@@ -1,22 +1,53 @@
 import { Platform } from "react-native";
 
-import * as Notifications from "expo-notifications";
+import Constants, { AppOwnership } from "expo-constants";
 
 export const REST_NOTIFICATION_CHANNEL = "fitsync-rest";
 
-Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldPlaySound: true,
+type NotificationsModule = typeof import("expo-notifications");
 
-    shouldSetBadge: false,
+let notificationsPromise: Promise<NotificationsModule | null> | null = null;
 
-    shouldShowBanner: true,
+function notificationsAvailable(): boolean {
+  /*
+   * Importing expo-notifications itself throws in Expo Go on Android SDK 53+.
+   * Development builds and standalone apps still support local rest alerts.
+   */
+  return !(
+    Platform.OS === "android" && Constants.appOwnership === AppOwnership.Expo
+  );
+}
 
-    shouldShowList: true,
-  }),
-});
+async function getNotifications(): Promise<NotificationsModule | null> {
+  if (!notificationsAvailable()) {
+    return null;
+  }
+
+  notificationsPromise ??= import("expo-notifications").then(
+    (Notifications) => {
+      Notifications.setNotificationHandler({
+        handleNotification: async () => ({
+          shouldPlaySound: true,
+          shouldSetBadge: false,
+          shouldShowBanner: true,
+          shouldShowList: true,
+        }),
+      });
+
+      return Notifications;
+    },
+  );
+
+  return notificationsPromise;
+}
 
 export async function configureRestNotifications(): Promise<void> {
+  const Notifications = await getNotifications();
+
+  if (!Notifications) {
+    return;
+  }
+
   if (Platform.OS === "android") {
     await Notifications.setNotificationChannelAsync(
       REST_NOTIFICATION_CHANNEL,
@@ -35,6 +66,12 @@ export async function configureRestNotifications(): Promise<void> {
 }
 
 export async function hasRestNotificationPermission(): Promise<boolean> {
+  const Notifications = await getNotifications();
+
+  if (!Notifications) {
+    return false;
+  }
+
   const permissions = await Notifications.getPermissionsAsync();
 
   return permissions.status === "granted";
@@ -42,6 +79,12 @@ export async function hasRestNotificationPermission(): Promise<boolean> {
 
 export async function requestRestNotificationPermission(): Promise<boolean> {
   await configureRestNotifications();
+
+  const Notifications = await getNotifications();
+
+  if (!Notifications) {
+    return false;
+  }
 
   const existing = await Notifications.getPermissionsAsync();
 
@@ -59,6 +102,12 @@ export async function scheduleRestNotification(
 
   exerciseName: string,
 ): Promise<string | null> {
+  const Notifications = await getNotifications();
+
+  if (!Notifications) {
+    return null;
+  }
+
   const allowed = await hasRestNotificationPermission();
 
   if (!allowed) {
@@ -104,6 +153,12 @@ export async function cancelRestNotification(
   }
 
   try {
+    const Notifications = await getNotifications();
+
+    if (!Notifications) {
+      return;
+    }
+
     await Notifications.cancelScheduledNotificationAsync(notificationId);
   } catch {
     /*
