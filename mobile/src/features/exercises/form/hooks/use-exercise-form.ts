@@ -11,8 +11,11 @@ import type { LocalMediaAsset } from "@/features/media/types";
 import type {
   Equipment,
   Exercise,
+  ExerciseLaterality,
+  ExerciseLoadMode,
   ExerciseMechanic,
   ExerciseMutationInput,
+  ExerciseTrackingType,
   MovementPattern,
   MuscleGroup,
 } from "../../types";
@@ -63,6 +66,23 @@ export function useExerciseForm({ initial, onSubmit }: Props) {
 
   const [movementPattern, setMovementPattern] = useState<MovementPattern>(
     initial?.movement_pattern ?? "OTHER",
+  );
+
+  const [trackingType, setTrackingType] = useState<ExerciseTrackingType>(
+    initial?.tracking_type ?? "WEIGHT_REPS",
+  );
+
+  const [laterality, setLaterality] = useState<ExerciseLaterality>(
+    initial?.laterality ?? "BILATERAL",
+  );
+
+  const [loadMode, setLoadMode] = useState<ExerciseLoadMode>(
+    initial?.load_mode ?? "TOTAL",
+  );
+
+  const [defaultRestSeconds, setDefaultRestSeconds] = useState(
+    initial?.default_rest_seconds ??
+      (initial?.mechanic === "ISOLATION" ? 90 : 180),
   );
 
   const [instructionsText, setInstructionsText] = useState(
@@ -252,6 +272,14 @@ export function useExerciseForm({ initial, onSubmit }: Props) {
 
         movement_pattern: movementPattern,
 
+        tracking_type: trackingType,
+
+        laterality,
+
+        load_mode: loadMode,
+
+        default_rest_seconds: defaultRestSeconds,
+
         instructions: splitLines(instructionsText),
 
         tips: splitLines(tipsText),
@@ -284,6 +312,14 @@ export function useExerciseForm({ initial, onSubmit }: Props) {
 
     movementPattern,
 
+    trackingType,
+
+    laterality,
+
+    loadMode,
+
+    defaultRestSeconds,
+
     instructionsText,
 
     tipsText,
@@ -303,6 +339,14 @@ export function useExerciseForm({ initial, onSubmit }: Props) {
     setMechanic,
 
     setMovementPattern,
+
+    setTrackingType,
+
+    setLaterality,
+
+    setLoadMode,
+
+    setDefaultRestSeconds,
 
     setInstructionsText,
 

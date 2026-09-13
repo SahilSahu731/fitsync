@@ -26,6 +26,9 @@ from app.modules.exercises.schemas import (
     ExerciseUpdateRequest,
     normalize_exercise_name,
 )
+from app.modules.exercises.tracking import (
+    uses_weight,
+)
 from app.modules.media.service import (
     image_delivery_url,
     image_thumbnail_url,
@@ -274,6 +277,8 @@ async def create_custom_exercise(
         media_inputs=(payload.media),
     )
 
+    tracking_type = payload.tracking_type
+
     exercise: ExerciseDocument = {
         "_id": ObjectId(),
         "source": "CUSTOM",
@@ -286,6 +291,10 @@ async def create_custom_exercise(
         "equipment": payload.equipment,
         "mechanic": payload.mechanic,
         "movement_pattern": payload.movement_pattern,
+        "tracking_type": tracking_type,
+        "laterality": payload.laterality,
+        "load_mode": payload.load_mode if uses_weight(tracking_type) else "TOTAL",
+        "default_rest_seconds": payload.default_rest_seconds,
         "instructions": payload.instructions,
         "tips": payload.tips,
         "media": media,
@@ -332,6 +341,8 @@ async def update_custom_exercise(
         media_inputs=(payload.media),
     )
 
+    tracking_type = payload.tracking_type
+
     fields = {
         "name": payload.name,
         "normalized_name": normalize_exercise_name(payload.name),
@@ -341,6 +352,10 @@ async def update_custom_exercise(
         "equipment": payload.equipment,
         "mechanic": payload.mechanic,
         "movement_pattern": payload.movement_pattern,
+        "tracking_type": tracking_type,
+        "laterality": payload.laterality,
+        "load_mode": payload.load_mode if uses_weight(tracking_type) else "TOTAL",
+        "default_rest_seconds": payload.default_rest_seconds,
         "instructions": payload.instructions,
         "tips": payload.tips,
         "media": media,

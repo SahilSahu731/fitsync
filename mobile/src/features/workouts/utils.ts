@@ -59,8 +59,12 @@ export function workoutVolume(
   session: WorkoutSession,
   displayUnit: WeightUnit,
 ): number {
-  return session.exercises.reduce(
-    (total, exercise) =>
+  return session.exercises.reduce((total, exercise) => {
+    if (exercise.tracking_type !== "WEIGHT_REPS") {
+      return total;
+    }
+
+    return (
       total +
       exercise.sets.reduce((setTotal, workoutSet) => {
         if (
@@ -80,9 +84,9 @@ export function workoutVolume(
           ) *
             workoutSet.reps
         );
-      }, 0),
-    0,
-  );
+      }, 0)
+    );
+  }, 0);
 }
 
 export function formatVolume(value: number): string {
@@ -111,6 +115,12 @@ export function sessionToUpdateInput(
 
       exercise_id: exercise.exercise_id,
 
+      tracking_type: exercise.tracking_type,
+
+      laterality: exercise.laterality,
+
+      load_mode: exercise.load_mode,
+
       rest_seconds: exercise.rest_seconds,
 
       notes: exercise.notes,
@@ -128,6 +138,10 @@ export function sessionToUpdateInput(
 
         target_weight: workoutSet.target_weight,
 
+        target_duration_seconds: workoutSet.target_duration_seconds,
+
+        target_distance_meters: workoutSet.target_distance_meters,
+
         target_rpe: workoutSet.target_rpe,
 
         target_rir: workoutSet.target_rir,
@@ -137,6 +151,10 @@ export function sessionToUpdateInput(
         weight: workoutSet.weight,
 
         weight_unit: workoutSet.weight_unit,
+
+        duration_seconds: workoutSet.duration_seconds,
+
+        distance_meters: workoutSet.distance_meters,
 
         rpe: workoutSet.rpe,
 

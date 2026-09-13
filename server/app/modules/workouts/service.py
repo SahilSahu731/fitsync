@@ -19,6 +19,14 @@ from app.modules.exercises import (
 from app.modules.exercises.models import (
     ExerciseDocument,
 )
+from app.modules.exercises.tracking import (
+    exercise_default_rest_seconds,
+    exercise_laterality,
+    exercise_load_mode,
+    exercise_tracking_type,
+    validate_template_set,
+    validate_workout_set,
+)
 from app.modules.users.models import (
     UserDocument,
 )
@@ -28,9 +36,11 @@ from app.modules.workouts import (
 from app.modules.workouts.models import (
     TemplateExerciseDocument,
     TemplateSetDocument,
+    WeightUnit,
     WorkoutExerciseDocument,
     WorkoutSessionDocument,
     WorkoutSetDocument,
+    WorkoutSetType,
     WorkoutTemplateDocument,
 )
 from app.modules.workouts.schemas import (
@@ -183,19 +193,32 @@ async def resolve_exercises(
 
 def build_template_exercises(
     payload_exercises,
+    exercise_map: dict[
+        str,
+        ExerciseDocument,
+    ],
 ) -> list[TemplateExerciseDocument]:
     result = []
 
     for (
         exercise_position,
-        exercise,
+        input_exercise,
     ) in enumerate(payload_exercises):
+        exercise = exercise_map[input_exercise.exercise_id]
+
+        tracking_type = exercise_tracking_type(exercise)
+
         sets: list[TemplateSetDocument] = []
 
         for (
             set_position,
             planned_set,
-        ) in enumerate(exercise.planned_sets):
+        ) in enumerate(input_exercise.planned_sets):
+            validate_template_set(
+                tracking_type,
+                planned_set,
+            )
+
             sets.append(
                 {
                     "id": str(uuid4()),
@@ -204,6 +227,8 @@ def build_template_exercises(
                     "target_reps_min": planned_set.target_reps_min,
                     "target_reps_max": planned_set.target_reps_max,
                     "target_weight": planned_set.target_weight,
+                    "target_duration_seconds": planned_set.target_duration_seconds,
+                    "target_distance_meters": planned_set.target_distance_meters,
                     "target_rpe": planned_set.target_rpe,
                     "target_rir": planned_set.target_rir,
                 }
@@ -212,11 +237,11 @@ def build_template_exercises(
         result.append(
             {
                 "id": str(uuid4()),
-                "exercise_id": ObjectId(exercise.exercise_id),
+                "exercise_id": ObjectId(input_exercise.exercise_id),
                 "position": exercise_position,
-                "rest_seconds": exercise.rest_seconds,
-                "notes": exercise.notes,
-                "superset_group_id": exercise.superset_group_id,
+                "rest_seconds": input_exercise.rest_seconds,
+                "notes": input_exercise.notes,
+                "superset_group_id": input_exercise.superset_group_id,
                 "planned_sets": sets,
             }
         )
@@ -251,12 +276,26 @@ def template_response(
                 exercise_id=exercise_id,
                 exercise_name=exercise["name"],
                 thumbnail_url=thumbnail,
+                tracking_type=exercise_tracking_type(exercise),
+                laterality=exercise_laterality(exercise),
+                load_mode=exercise_load_mode(exercise),
                 position=item["position"],
                 rest_seconds=item["rest_seconds"],
                 notes=item["notes"],
                 superset_group_id=item["superset_group_id"],
                 planned_sets=[
-                    TemplateSetResponse(**planned_set)
+                    TemplateSetResponse(
+                        id=planned_set["id"],
+                        position=planned_set["position"],
+                        type=planned_set["type"],
+                        target_reps_min=planned_set.get("target_reps_min"),
+                        target_reps_max=planned_set.get("target_reps_max"),
+                        target_weight=planned_set.get("target_weight"),
+                        target_duration_seconds=planned_set.get("target_duration_seconds"),
+                        target_distance_meters=planned_set.get("target_distance_meters"),
+                        target_rpe=planned_set.get("target_rpe"),
+                        target_rir=planned_set.get("target_rir"),
+                    )
                     for planned_set in sorted(
                         item["planned_sets"],
                         key=lambda value: value["position"],
@@ -302,7 +341,7 @@ async def create_template(
         "user_id": user_id,
         "name": payload.name.strip(),
         "description": (payload.description.strip() if payload.description else None),
-        "exercises": build_template_exercises(payload.exercises),
+        "exercises": build_template_exercises(payload.exercises, exercise_map),
         "created_at": now,
         "updated_at": now,
         "archived_at": None,
@@ -438,7 +477,7 @@ async def update_template(
         fields={
             "name": payload.name.strip(),
             "description": (payload.description.strip() if payload.description else None),
-            "exercises": build_template_exercises(payload.exercises),
+            "exercises": build_template_exercises(payload.exercises, exercise_map),
             "updated_at": now,
         },
     )
@@ -488,6 +527,8 @@ async def duplicate_template(
                         "target_reps_min": planned_set.target_reps_min,
                         "target_reps_max": planned_set.target_reps_max,
                         "target_weight": planned_set.target_weight,
+                        "target_duration_seconds": planned_set.target_duration_seconds,
+                        "target_distance_meters": planned_set.target_distance_meters,
                         "target_rpe": planned_set.target_rpe,
                         "target_rir": planned_set.target_rir,
                     }
@@ -550,7 +591,7 @@ def session_response(
         ):
             total_set_count += 1
 
-            if workout_set["completed"]:
+            if workout_set.get("completed", False):
                 completed_set_count += 1
 
             sets.append(
@@ -558,20 +599,24 @@ def session_response(
                     id=workout_set["id"],
                     position=workout_set["position"],
                     type=workout_set["type"],
-                    target_reps_min=(workout_set["target_reps_min"]),
-                    target_reps_max=(workout_set["target_reps_max"]),
-                    target_weight=(workout_set["target_weight"]),
-                    target_rpe=(workout_set["target_rpe"]),
-                    target_rir=(workout_set["target_rir"]),
-                    reps=workout_set["reps"],
-                    weight=workout_set["weight"],
-                    weight_unit=(workout_set["weight_unit"]),
-                    rpe=workout_set["rpe"],
-                    rir=workout_set["rir"],
-                    completed=(workout_set["completed"]),
+                    target_reps_min=workout_set.get("target_reps_min"),
+                    target_reps_max=workout_set.get("target_reps_max"),
+                    target_weight=workout_set.get("target_weight"),
+                    target_duration_seconds=workout_set.get("target_duration_seconds"),
+                    target_distance_meters=workout_set.get("target_distance_meters"),
+                    target_rpe=workout_set.get("target_rpe"),
+                    target_rir=workout_set.get("target_rir"),
+                    reps=workout_set.get("reps"),
+                    weight=workout_set.get("weight"),
+                    weight_unit=workout_set.get("weight_unit", "KG"),
+                    duration_seconds=workout_set.get("duration_seconds"),
+                    distance_meters=workout_set.get("distance_meters"),
+                    rpe=workout_set.get("rpe"),
+                    rir=workout_set.get("rir"),
+                    completed=workout_set.get("completed", False),
                     completed_at=(
                         workout_set["completed_at"].isoformat()
-                        if workout_set["completed_at"]
+                        if workout_set.get("completed_at")
                         else None
                     ),
                 )
@@ -582,11 +627,17 @@ def session_response(
                 id=exercise["id"],
                 exercise_id=str(exercise["exercise_id"]),
                 exercise_name=(exercise["exercise_name_snapshot"]),
-                thumbnail_url=(exercise["thumbnail_url_snapshot"]),
+                thumbnail_url=exercise.get("thumbnail_url_snapshot"),
+                tracking_type=exercise.get(
+                    "tracking_type_snapshot",
+                    "WEIGHT_REPS",
+                ),
+                laterality=exercise.get("laterality_snapshot", "BILATERAL"),
+                load_mode=exercise.get("load_mode_snapshot", "TOTAL"),
                 position=(exercise["position"]),
                 rest_seconds=(exercise["rest_seconds"]),
-                notes=(exercise["notes"]),
-                superset_group_id=(exercise["superset_group_id"]),
+                notes=exercise.get("notes"),
+                superset_group_id=exercise.get("superset_group_id"),
                 sets=sets,
             )
         )
@@ -594,14 +645,14 @@ def session_response(
     return WorkoutSessionResponse(
         id=str(session["_id"]),
         client_workout_id=(session.get("client_workout_id") or str(session["_id"])),
-        template_id=(str(session["template_id"]) if session["template_id"] else None),
+        template_id=(str(session["template_id"]) if session.get("template_id") else None),
         name=session["name"],
         status=session["status"],
         started_at=(session["started_at"].isoformat()),
-        completed_at=(session["completed_at"].isoformat() if session["completed_at"] else None),
-        cancelled_at=(session["cancelled_at"].isoformat() if session["cancelled_at"] else None),
-        duration_seconds=(session["duration_seconds"]),
-        notes=session["notes"],
+        completed_at=(session["completed_at"].isoformat() if session.get("completed_at") else None),
+        cancelled_at=(session["cancelled_at"].isoformat() if session.get("cancelled_at") else None),
+        duration_seconds=session.get("duration_seconds"),
+        notes=session.get("notes"),
         exercises=exercises,
         completed_set_count=(completed_set_count),
         total_set_count=(total_set_count),
@@ -625,14 +676,16 @@ def default_weight_unit(
 
 def build_session_set(
     *,
-    weight_unit,
+    weight_unit: WeightUnit,
     position: int,
-    set_type="NORMAL",
-    target_reps_min=None,
-    target_reps_max=None,
-    target_weight=None,
-    target_rpe=None,
-    target_rir=None,
+    set_type: WorkoutSetType = "NORMAL",
+    target_reps_min: int | None = None,
+    target_reps_max: int | None = None,
+    target_weight: float | None = None,
+    target_duration_seconds: int | None = None,
+    target_distance_meters: float | None = None,
+    target_rpe: float | None = None,
+    target_rir: int | None = None,
 ) -> WorkoutSetDocument:
     return {
         "id": str(uuid4()),
@@ -641,11 +694,15 @@ def build_session_set(
         "target_reps_min": target_reps_min,
         "target_reps_max": target_reps_max,
         "target_weight": target_weight,
+        "target_duration_seconds": target_duration_seconds,
+        "target_distance_meters": target_distance_meters,
         "target_rpe": target_rpe,
         "target_rir": target_rir,
         "reps": None,
         "weight": None,
         "weight_unit": weight_unit,
+        "duration_seconds": None,
+        "distance_meters": None,
         "rpe": None,
         "rir": None,
         "completed": False,
@@ -787,6 +844,8 @@ async def start_workout(
                         target_reps_min=(planned_set["target_reps_min"]),
                         target_reps_max=(planned_set["target_reps_max"]),
                         target_weight=(planned_set["target_weight"]),
+                        target_duration_seconds=planned_set.get("target_duration_seconds"),
+                        target_distance_meters=planned_set.get("target_distance_meters"),
                         target_rpe=(planned_set["target_rpe"]),
                         target_rir=(planned_set["target_rir"]),
                     )
@@ -798,6 +857,9 @@ async def start_workout(
                     "exercise_id": exercise["_id"],
                     "exercise_name_snapshot": exercise["name"],
                     "thumbnail_url_snapshot": thumbnail_for_exercise(exercise),
+                    "tracking_type_snapshot": exercise_tracking_type(exercise),
+                    "laterality_snapshot": exercise_laterality(exercise),
+                    "load_mode_snapshot": exercise_load_mode(exercise),
                     "position": len(exercises),
                     "rest_seconds": template_exercise["rest_seconds"],
                     "notes": template_exercise["notes"],
@@ -959,8 +1021,11 @@ async def add_exercises_to_workout(
                 "exercise_id": exercise["_id"],
                 "exercise_name_snapshot": exercise["name"],
                 "thumbnail_url_snapshot": thumbnail_for_exercise(exercise),
+                "tracking_type_snapshot": exercise_tracking_type(exercise),
+                "laterality_snapshot": exercise_laterality(exercise),
+                "load_mode_snapshot": exercise_load_mode(exercise),
                 "position": len(exercises),
-                "rest_seconds": (180 if exercise["mechanic"] == "COMPOUND" else 90),
+                "rest_seconds": exercise_default_rest_seconds(exercise),
                 "notes": None,
                 "superset_group_id": None,
                 "sets": sets,
@@ -1058,6 +1123,11 @@ async def update_workout(
             set_position,
             input_set,
         ) in enumerate(input_exercise.sets):
+            validate_workout_set(
+                input_exercise.tracking_type,
+                input_set,
+            )
+
             old_completed_at = previous_completed_at.get(input_set.id)
 
             completed_at = (
@@ -1074,11 +1144,15 @@ async def update_workout(
                     "target_reps_min": input_set.target_reps_min,
                     "target_reps_max": input_set.target_reps_max,
                     "target_weight": input_set.target_weight,
+                    "target_duration_seconds": input_set.target_duration_seconds,
+                    "target_distance_meters": input_set.target_distance_meters,
                     "target_rpe": input_set.target_rpe,
                     "target_rir": input_set.target_rir,
                     "reps": input_set.reps,
                     "weight": input_set.weight,
                     "weight_unit": input_set.weight_unit,
+                    "duration_seconds": input_set.duration_seconds,
+                    "distance_meters": input_set.distance_meters,
                     "rpe": input_set.rpe,
                     "rir": input_set.rir,
                     "completed": input_set.completed,
@@ -1092,6 +1166,9 @@ async def update_workout(
                 "exercise_id": exercise["_id"],
                 "exercise_name_snapshot": exercise["name"],
                 "thumbnail_url_snapshot": thumbnail_for_exercise(exercise),
+                "tracking_type_snapshot": input_exercise.tracking_type,
+                "laterality_snapshot": input_exercise.laterality,
+                "load_mode_snapshot": input_exercise.load_mode,
                 "position": exercise_position,
                 "rest_seconds": input_exercise.rest_seconds,
                 "notes": input_exercise.notes,
@@ -1369,10 +1446,12 @@ async def previous_performance(
                 sets=[
                     PreviousSetResponse(
                         type=workout_set["type"],
-                        weight=workout_set["weight"],
-                        weight_unit=(workout_set["weight_unit"]),
-                        reps=workout_set["reps"],
-                        rpe=workout_set["rpe"],
+                        weight=workout_set.get("weight"),
+                        weight_unit=workout_set.get("weight_unit", "KG"),
+                        reps=workout_set.get("reps"),
+                        duration_seconds=workout_set.get("duration_seconds"),
+                        distance_meters=workout_set.get("distance_meters"),
+                        rpe=workout_set.get("rpe"),
                     )
                     for workout_set in completed_sets
                 ],

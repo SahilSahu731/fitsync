@@ -14,6 +14,8 @@ import { GuidanceSection } from "../form/components/guidance-section";
 
 import { MediaSection } from "../form/components/media-section";
 
+import { TrackingSection } from "../form/components/tracking-section";
+
 import { useExerciseForm } from "../form/hooks/use-exercise-form";
 
 import type { Exercise, ExerciseMutationInput } from "../types";
@@ -57,6 +59,17 @@ export function ExerciseForm({
         description={form.description}
         onNameChange={form.setName}
         onDescriptionChange={form.setDescription}
+      />
+
+      <TrackingSection
+        trackingType={form.trackingType}
+        laterality={form.laterality}
+        loadMode={form.loadMode}
+        defaultRestSeconds={form.defaultRestSeconds}
+        onTrackingTypeChange={form.setTrackingType}
+        onLateralityChange={form.setLaterality}
+        onLoadModeChange={form.setLoadMode}
+        onDefaultRestChange={form.setDefaultRestSeconds}
       />
 
       <ClassificationSection

@@ -8,6 +8,8 @@ import { useAuthStore } from "@/features/auth/store";
 
 import type { WorkoutSession } from "@/features/workouts/types";
 
+import { normalizeWorkoutSession } from "../normalization";
+
 export interface LocalHistoryItem {
   route_id: string;
 
@@ -87,7 +89,9 @@ export function useLocalWorkoutHistory() {
 
       for (const row of rows) {
         try {
-          const workout = JSON.parse(row.payload_json) as WorkoutSession;
+          const workout = normalizeWorkoutSession(
+            JSON.parse(row.payload_json) as WorkoutSession,
+          );
 
           if (!workout.completed_at) {
             continue;

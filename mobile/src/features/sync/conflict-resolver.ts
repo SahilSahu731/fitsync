@@ -45,6 +45,7 @@ export async function resolveConflictUsingServer(
     SET
       server_revision = ?,
       payload_json = ?,
+      payload_version = 2,
       local_status = ?,
       sync_status = 'SYNCED',
       dirty = 0,

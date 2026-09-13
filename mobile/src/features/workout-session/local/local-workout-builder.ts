@@ -40,6 +40,12 @@ export function buildLocalWorkout({
 
         thumbnail_url: templateExercise.thumbnail_url,
 
+        tracking_type: templateExercise.tracking_type,
+
+        laterality: templateExercise.laterality,
+
+        load_mode: templateExercise.load_mode,
+
         position: exerciseIndex,
 
         rest_seconds: templateExercise.rest_seconds,
@@ -61,6 +67,10 @@ export function buildLocalWorkout({
 
           target_weight: plannedSet.target_weight,
 
+          target_duration_seconds: plannedSet.target_duration_seconds,
+
+          target_distance_meters: plannedSet.target_distance_meters,
+
           target_rpe: plannedSet.target_rpe,
 
           target_rir: plannedSet.target_rir,
@@ -70,6 +80,10 @@ export function buildLocalWorkout({
           weight: null,
 
           weight_unit: weightUnit,
+
+          duration_seconds: null,
+
+          distance_meters: null,
 
           rpe: null,
 

@@ -6,16 +6,34 @@ import { useState } from "react";
 
 import { Pressable, Text, TextInput, View } from "react-native";
 
+import {
+  formatExerciseDuration,
+  parseExerciseDuration,
+} from "@/features/exercises/duration";
+
+import { formatDistanceMeters } from "@/features/exercises/distance";
+
+import {
+  usesDistance,
+  usesDuration,
+  usesReps,
+  usesWeight,
+} from "@/features/exercises/tracking";
+
+import type { ExerciseTrackingType } from "@/features/exercises/types";
+
+import type { PreviousSet, WorkoutSet } from "@/features/workouts/types";
+
 import { RpeModal } from "./rpe-modal";
 
 import { SetTypeModal } from "./set-type-modal";
-
-import type { PreviousSet, WorkoutSet } from "@/features/workouts/types";
 
 interface Props {
   workoutSet: WorkoutSet;
 
   previous: PreviousSet | undefined;
+
+  trackingType: ExerciseTrackingType;
 
   index: number;
 
@@ -26,7 +44,11 @@ interface Props {
   onRemove: () => void;
 }
 
-function setLabel(workoutSet: WorkoutSet, index: number): string {
+function setLabel(
+  workoutSet: WorkoutSet,
+
+  index: number,
+): string {
   switch (workoutSet.type) {
     case "WARMUP":
       return "W";
@@ -48,21 +70,74 @@ function setLabel(workoutSet: WorkoutSet, index: number): string {
   }
 }
 
-function previousLabel(previous: PreviousSet | undefined): string {
+function previousLabel(
+  previous: PreviousSet | undefined,
+
+  trackingType: ExerciseTrackingType,
+): string {
   if (!previous) {
     return "—";
   }
 
-  const weight = previous.weight === null ? "—" : previous.weight;
+  if (trackingType === "DURATION") {
+    return previous.duration_seconds !== null
+      ? formatExerciseDuration(previous.duration_seconds)
+      : "—";
+  }
 
-  const reps = previous.reps === null ? "—" : previous.reps;
+  if (trackingType === "DISTANCE_DURATION") {
+    const distance =
+      previous.distance_meters !== null
+        ? formatDistanceMeters(previous.distance_meters)
+        : "—";
 
-  return `${weight} × ${reps}`;
+    const duration =
+      previous.duration_seconds !== null
+        ? formatExerciseDuration(previous.duration_seconds)
+        : "—";
+
+    return `${distance} · ${duration}`;
+  }
+
+  if (trackingType === "WEIGHT_DURATION") {
+    return (
+      `${previous.weight ?? "—"} · ` +
+      (previous.duration_seconds !== null
+        ? formatExerciseDuration(previous.duration_seconds)
+        : "—")
+    );
+  }
+
+  if (trackingType === "WEIGHT_DISTANCE") {
+    return (
+      `${previous.weight ?? "—"} · ` +
+      (previous.distance_meters !== null
+        ? formatDistanceMeters(previous.distance_meters)
+        : "—")
+    );
+  }
+
+  if (trackingType === "REPS_ONLY") {
+    return `${previous.reps ?? "—"} reps`;
+  }
+
+  if (trackingType === "BODYWEIGHT_REPS") {
+    return previous.weight
+      ? `+${previous.weight} × ${previous.reps ?? "—"}`
+      : `BW × ${previous.reps ?? "—"}`;
+  }
+
+  if (trackingType === "ASSISTED_REPS") {
+    return `${previous.weight ?? "—"} assist × ` + `${previous.reps ?? "—"}`;
+  }
+
+  return `${previous.weight ?? "—"} × ` + `${previous.reps ?? "—"}`;
 }
 
 export function WorkoutSetRow({
   workoutSet,
   previous,
+  trackingType,
   index,
   onChange,
   onToggleComplete,
@@ -71,6 +146,17 @@ export function WorkoutSetRow({
   const [setTypeOpen, setSetTypeOpen] = useState(false);
 
   const [rpeOpen, setRpeOpen] = useState(false);
+
+  const [durationDraft, setDurationDraft] = useState({
+    source: workoutSet.duration_seconds,
+
+    text: formatExerciseDuration(workoutSet.duration_seconds),
+  });
+
+  const durationText =
+    durationDraft.source === workoutSet.duration_seconds
+      ? durationDraft.text
+      : formatExerciseDuration(workoutSet.duration_seconds);
 
   function copyPrevious() {
     if (!previous) {
@@ -83,6 +169,10 @@ export function WorkoutSetRow({
       weight_unit: previous.weight_unit,
 
       reps: previous.reps,
+
+      duration_seconds: previous.duration_seconds,
+
+      distance_meters: previous.distance_meters,
 
       rpe: previous.rpe,
     });
@@ -106,68 +196,111 @@ export function WorkoutSetRow({
           }}
           className="w-[34px] items-center justify-center"
         >
-          <Text
-            className="text-[11px] font-extrabold"
-            style={{
-              color:
-                workoutSet.type === "WARMUP"
-                  ? "#F59E0B"
-                  : workoutSet.type === "DROP"
-                    ? "#60A5FA"
-                    : "rgba(255,255,255,.55)",
-            }}
-          >
+          <Text className="text-[11px] font-extrabold text-white/55">
             {setLabel(workoutSet, index)}
           </Text>
         </Pressable>
 
         <Pressable
           onPress={copyPrevious}
-          className="w-[76px] items-center justify-center"
+          className="w-[84px] items-center justify-center px-1"
         >
           <Text
             numberOfLines={1}
-            className="text-white/27 text-[10px] font-medium"
+            className="text-white/27 text-[9px] font-medium"
           >
-            {previousLabel(previous)}
+            {previousLabel(previous, trackingType)}
           </Text>
         </Pressable>
 
-        <View className="mx-1 flex-1">
-          <TextInput
-            value={workoutSet.weight?.toString() ?? ""}
-            onChangeText={(value) => {
-              const cleaned = value.replace(/[^0-9.]/g, "");
+        {usesWeight(trackingType) ? (
+          <View className="mx-1 flex-1">
+            <TextInput
+              value={workoutSet.weight?.toString() ?? ""}
+              onChangeText={(value) => {
+                const cleaned = value.replace(/[^0-9.]/g, "");
 
-              onChange({
-                weight: cleaned ? Number(cleaned) : null,
-              });
-            }}
-            keyboardType="decimal-pad"
-            selectTextOnFocus
-            placeholder={workoutSet.target_weight?.toString() ?? "-"}
-            placeholderTextColor="rgba(255,255,255,.18)"
-            className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[14px] font-bold text-white"
-          />
-        </View>
+                onChange({
+                  weight: cleaned ? Number(cleaned) : null,
+                });
+              }}
+              keyboardType="decimal-pad"
+              selectTextOnFocus
+              placeholder={workoutSet.target_weight?.toString() ?? "-"}
+              placeholderTextColor="rgba(255,255,255,.18)"
+              className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[13px] font-bold text-white"
+            />
+          </View>
+        ) : null}
 
-        <View className="mx-1 flex-1">
-          <TextInput
-            value={workoutSet.reps?.toString() ?? ""}
-            onChangeText={(value) => {
-              const cleaned = value.replace(/\D/g, "");
+        {usesReps(trackingType) ? (
+          <View className="mx-1 flex-1">
+            <TextInput
+              value={workoutSet.reps?.toString() ?? ""}
+              onChangeText={(value) => {
+                const cleaned = value.replace(/\D/g, "");
 
-              onChange({
-                reps: cleaned ? Number(cleaned) : null,
-              });
-            }}
-            keyboardType="number-pad"
-            selectTextOnFocus
-            placeholder={workoutSet.target_reps_min?.toString() ?? "-"}
-            placeholderTextColor="rgba(255,255,255,.18)"
-            className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[14px] font-bold text-white"
-          />
-        </View>
+                onChange({
+                  reps: cleaned ? Number(cleaned) : null,
+                });
+              }}
+              keyboardType="number-pad"
+              selectTextOnFocus
+              placeholder={workoutSet.target_reps_min?.toString() ?? "-"}
+              placeholderTextColor="rgba(255,255,255,.18)"
+              className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[13px] font-bold text-white"
+            />
+          </View>
+        ) : null}
+
+        {usesDuration(trackingType) ? (
+          <View className="mx-1 flex-1">
+            <TextInput
+              value={durationText}
+              onChangeText={(text) => {
+                setDurationDraft({
+                  source: workoutSet.duration_seconds,
+
+                  text,
+                });
+              }}
+              onBlur={() => {
+                onChange({
+                  duration_seconds: parseExerciseDuration(durationText),
+                });
+              }}
+              keyboardType="numbers-and-punctuation"
+              selectTextOnFocus
+              placeholder={
+                workoutSet.target_duration_seconds
+                  ? formatExerciseDuration(workoutSet.target_duration_seconds)
+                  : "0:00"
+              }
+              placeholderTextColor="rgba(255,255,255,.18)"
+              className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[13px] font-bold text-white"
+            />
+          </View>
+        ) : null}
+
+        {usesDistance(trackingType) ? (
+          <View className="mx-1 flex-1">
+            <TextInput
+              value={workoutSet.distance_meters?.toString() ?? ""}
+              onChangeText={(value) => {
+                const cleaned = value.replace(/[^0-9.]/g, "");
+
+                onChange({
+                  distance_meters: cleaned ? Number(cleaned) : null,
+                });
+              }}
+              keyboardType="decimal-pad"
+              selectTextOnFocus
+              placeholder={workoutSet.target_distance_meters?.toString() ?? "m"}
+              placeholderTextColor="rgba(255,255,255,.18)"
+              className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[13px] font-bold text-white"
+            />
+          </View>
+        ) : null}
 
         <Pressable
           onPress={() => {
@@ -175,13 +308,7 @@ export function WorkoutSetRow({
           }}
           className="mx-1 h-[39px] w-[43px] items-center justify-center rounded-lg bg-white/[0.045]"
         >
-          <Text
-            className="text-[11px] font-bold"
-            style={{
-              color:
-                workoutSet.rpe !== null ? "#60A5FA" : "rgba(255,255,255,.25)",
-            }}
-          >
+          <Text className="text-[10px] font-bold text-white/30">
             {workoutSet.rpe ?? "RPE"}
           </Text>
         </Pressable>

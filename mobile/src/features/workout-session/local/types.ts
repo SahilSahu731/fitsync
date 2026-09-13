@@ -18,6 +18,8 @@ export interface LocalWorkoutRow {
 
   payload_json: string;
 
+  payload_version: number;
+
   local_status: LocalWorkoutStatus;
 
   sync_status: WorkoutSyncStatus;
@@ -53,6 +55,8 @@ export interface LocalWorkoutRecord {
   serverRevision: number | null;
 
   workout: WorkoutSession;
+
+  payloadVersion: number;
 
   localStatus: LocalWorkoutStatus;
 

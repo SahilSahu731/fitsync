@@ -18,6 +18,8 @@ import { useDebouncedValue } from "@/features/exercises/hooks";
 
 import { useOfflineExercises } from "@/features/exercises/use-offline-exercises";
 
+import { trackingLabel } from "@/features/exercises/tracking";
+
 import type { Exercise } from "@/features/exercises/types";
 
 interface Props {
@@ -163,6 +165,10 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
 
                     <Text className="mt-1 text-[11px] text-white/35">
                       {item.primary_muscles.join(" · ")}
+                    </Text>
+
+                    <Text className="mt-1 text-[10px] font-semibold text-brand-bright/70">
+                      {trackingLabel(item.tracking_type)}
                     </Text>
                   </View>
 

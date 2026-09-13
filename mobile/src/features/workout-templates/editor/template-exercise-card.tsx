@@ -3,6 +3,14 @@ import { Ionicons } from "@expo/vector-icons";
 import { Pressable, Text, TextInput, View } from "react-native";
 
 import {
+  usesDistance,
+  usesDuration,
+  usesReps,
+  usesWeight,
+  weightLabel,
+} from "@/features/exercises/tracking";
+
+import {
   makeTemplateSet,
   type LocalTemplateExercise,
   type LocalTemplateSet,
@@ -115,90 +123,89 @@ export function TemplateExerciseCard({
         })}
       </View>
 
-      <View className="mt-6 flex-row px-1">
-        <Text className="w-8 text-[10px] font-bold uppercase text-white/25">
-          Set
-        </Text>
-
-        <Text className="flex-1 text-center text-[10px] font-bold uppercase text-white/25">
-          Min
-        </Text>
-
-        <Text className="flex-1 text-center text-[10px] font-bold uppercase text-white/25">
-          Max
-        </Text>
-
-        <Text className="flex-1 text-center text-[10px] font-bold uppercase text-white/25">
-          Weight
-        </Text>
-
-        <Text className="flex-1 text-center text-[10px] font-bold uppercase text-white/25">
-          RPE
-        </Text>
-
-        <View className="w-8" />
-      </View>
-
-      <View className="mt-2 gap-2">
+      <View className="mt-4">
         {exercise.sets.map((set, setIndex) => (
-          <View key={set.id} className="flex-row items-center">
+          <View key={set.id} className="mt-2 flex-row items-center">
             <View className="w-8">
               <Text className="text-[12px] font-bold text-white/45">
                 {setIndex + 1}
               </Text>
             </View>
 
-            <TextInput
-              value={set.repsMin}
-              onChangeText={(value) => {
-                onSetChange(exercise.localId, set.id, {
-                  repsMin: value.replace(/\D/g, ""),
-                });
-              }}
-              keyboardType="number-pad"
-              placeholder="-"
-              placeholderTextColor="rgba(255,255,255,.2)"
-              className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[13px] font-semibold text-white"
-            />
+            {usesWeight(exercise.trackingType) ? (
+              <TextInput
+                value={set.weight}
+                onChangeText={(value) => {
+                  onSetChange(exercise.localId, set.id, {
+                    weight: value.replace(/[^0-9.]/g, ""),
+                  });
+                }}
+                keyboardType="decimal-pad"
+                placeholder={weightLabel(exercise.trackingType, "KG")}
+                placeholderTextColor="rgba(255,255,255,.2)"
+                className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[12px] font-semibold text-white"
+              />
+            ) : null}
 
-            <TextInput
-              value={set.repsMax}
-              onChangeText={(value) => {
-                onSetChange(exercise.localId, set.id, {
-                  repsMax: value.replace(/\D/g, ""),
-                });
-              }}
-              keyboardType="number-pad"
-              placeholder="-"
-              placeholderTextColor="rgba(255,255,255,.2)"
-              className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[13px] font-semibold text-white"
-            />
+            {usesReps(exercise.trackingType) ? (
+              <>
+                <TextInput
+                  value={set.repsMin}
+                  onChangeText={(value) => {
+                    onSetChange(exercise.localId, set.id, {
+                      repsMin: value.replace(/\D/g, ""),
+                    });
+                  }}
+                  keyboardType="number-pad"
+                  placeholder="Min"
+                  placeholderTextColor="rgba(255,255,255,.2)"
+                  className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[12px] font-semibold text-white"
+                />
 
-            <TextInput
-              value={set.weight}
-              onChangeText={(value) => {
-                onSetChange(exercise.localId, set.id, {
-                  weight: value.replace(/[^0-9.]/g, ""),
-                });
-              }}
-              keyboardType="decimal-pad"
-              placeholder="-"
-              placeholderTextColor="rgba(255,255,255,.2)"
-              className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[13px] font-semibold text-white"
-            />
+                <TextInput
+                  value={set.repsMax}
+                  onChangeText={(value) => {
+                    onSetChange(exercise.localId, set.id, {
+                      repsMax: value.replace(/\D/g, ""),
+                    });
+                  }}
+                  keyboardType="number-pad"
+                  placeholder="Max"
+                  placeholderTextColor="rgba(255,255,255,.2)"
+                  className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[12px] font-semibold text-white"
+                />
+              </>
+            ) : null}
 
-            <TextInput
-              value={set.rpe}
-              onChangeText={(value) => {
-                onSetChange(exercise.localId, set.id, {
-                  rpe: value.replace(/[^0-9.]/g, ""),
-                });
-              }}
-              keyboardType="decimal-pad"
-              placeholder="-"
-              placeholderTextColor="rgba(255,255,255,.2)"
-              className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[13px] font-semibold text-white"
-            />
+            {usesDuration(exercise.trackingType) ? (
+              <TextInput
+                value={set.duration}
+                onChangeText={(value) => {
+                  onSetChange(exercise.localId, set.id, {
+                    duration: value.replace(/\D/g, ""),
+                  });
+                }}
+                keyboardType="number-pad"
+                placeholder="Seconds"
+                placeholderTextColor="rgba(255,255,255,.2)"
+                className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[12px] font-semibold text-white"
+              />
+            ) : null}
+
+            {usesDistance(exercise.trackingType) ? (
+              <TextInput
+                value={set.distance}
+                onChangeText={(value) => {
+                  onSetChange(exercise.localId, set.id, {
+                    distance: value.replace(/[^0-9.]/g, ""),
+                  });
+                }}
+                keyboardType="decimal-pad"
+                placeholder="Meters"
+                placeholderTextColor="rgba(255,255,255,.2)"
+                className="mx-1 min-h-[42px] flex-1 rounded-xl bg-white/[0.045] text-center text-[12px] font-semibold text-white"
+              />
+            ) : null}
 
             <Pressable
               onPress={() => {

@@ -1,6 +1,6 @@
 export const DATABASE_NAME = "fitsync.db";
 
-export const DATABASE_VERSION = 1;
+export const DATABASE_VERSION = 2;
 
 export const CREATE_V1_SCHEMA = `
 CREATE TABLE IF NOT EXISTS local_workouts (
@@ -15,6 +15,8 @@ CREATE TABLE IF NOT EXISTS local_workouts (
   server_revision INTEGER,
 
   payload_json TEXT NOT NULL,
+
+  payload_version INTEGER NOT NULL DEFAULT 2,
 
   local_status TEXT NOT NULL
     CHECK (

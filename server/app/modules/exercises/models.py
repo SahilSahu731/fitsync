@@ -8,6 +8,7 @@ ExerciseSource = Literal[
     "CUSTOM",
 ]
 
+
 MuscleGroup = Literal[
     "CHEST",
     "BACK",
@@ -31,6 +32,7 @@ MuscleGroup = Literal[
     "OTHER",
 ]
 
+
 Equipment = Literal[
     "BARBELL",
     "DUMBBELL",
@@ -47,10 +49,12 @@ Equipment = Literal[
     "NONE",
 ]
 
+
 ExerciseMechanic = Literal[
     "COMPOUND",
     "ISOLATION",
 ]
+
 
 MovementPattern = Literal[
     "HORIZONTAL_PUSH",
@@ -66,9 +70,35 @@ MovementPattern = Literal[
     "OTHER",
 ]
 
+
 ExerciseMediaType = Literal[
     "IMAGE",
     "VIDEO",
+]
+
+
+ExerciseTrackingType = Literal[
+    "WEIGHT_REPS",
+    "BODYWEIGHT_REPS",
+    "ASSISTED_REPS",
+    "REPS_ONLY",
+    "DURATION",
+    "DISTANCE_DURATION",
+    "WEIGHT_DURATION",
+    "WEIGHT_DISTANCE",
+]
+
+
+ExerciseLaterality = Literal[
+    "BILATERAL",
+    "UNILATERAL",
+    "ALTERNATING",
+]
+
+
+ExerciseLoadMode = Literal[
+    "TOTAL",
+    "PER_SIDE",
 ]
 
 
@@ -120,6 +150,14 @@ class ExerciseDocument(
     mechanic: ExerciseMechanic
 
     movement_pattern: MovementPattern
+
+    tracking_type: ExerciseTrackingType
+
+    laterality: ExerciseLaterality
+
+    load_mode: ExerciseLoadMode
+
+    default_rest_seconds: int
 
     instructions: list[str]
 

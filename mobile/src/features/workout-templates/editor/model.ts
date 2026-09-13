@@ -1,4 +1,9 @@
-import type { Exercise } from "@/features/exercises/types";
+import type {
+  Exercise,
+  ExerciseTrackingType,
+  ExerciseLaterality,
+  ExerciseLoadMode,
+} from "@/features/exercises/types";
 
 import type {
   WorkoutSetType,
@@ -17,6 +22,10 @@ export interface LocalTemplateSet {
 
   weight: string;
 
+  duration: string;
+
+  distance: string;
+
   rpe: string;
 }
 
@@ -26,6 +35,12 @@ export interface LocalTemplateExercise {
   exerciseId: string;
 
   exerciseName: string;
+
+  trackingType: ExerciseTrackingType;
+
+  laterality: ExerciseLaterality;
+
+  loadMode: ExerciseLoadMode;
 
   restSeconds: number;
 
@@ -50,6 +65,10 @@ export function makeTemplateSet(): LocalTemplateSet {
 
     weight: "",
 
+    duration: "",
+
+    distance: "",
+
     rpe: "",
   };
 }
@@ -63,6 +82,12 @@ export function templateToLocalExercises(
     exerciseId: exercise.exercise_id,
 
     exerciseName: exercise.exercise_name,
+
+    trackingType: exercise.tracking_type,
+
+    laterality: exercise.laterality,
+
+    loadMode: exercise.load_mode,
 
     restSeconds: exercise.rest_seconds,
 
@@ -78,6 +103,10 @@ export function templateToLocalExercises(
       repsMax: plannedSet.target_reps_max?.toString() ?? "",
 
       weight: plannedSet.target_weight?.toString() ?? "",
+
+      duration: plannedSet.target_duration_seconds?.toString() ?? "",
+
+      distance: plannedSet.target_distance_meters?.toString() ?? "",
 
       rpe: plannedSet.target_rpe?.toString() ?? "",
     })),
@@ -103,7 +132,13 @@ export function addSelectedExercises(
 
         exerciseName: exercise.name,
 
-        restSeconds: exercise.mechanic === "COMPOUND" ? 180 : 90,
+        trackingType: exercise.tracking_type,
+
+        laterality: exercise.laterality,
+
+        loadMode: exercise.load_mode,
+
+        restSeconds: exercise.default_rest_seconds,
 
         notes: "",
 
@@ -134,6 +169,18 @@ export function moveLocalExercise(
   return copy;
 }
 
+function numericOrNull(value: string): number | null {
+  const cleaned = value.trim();
+
+  if (!cleaned) {
+    return null;
+  }
+
+  const numeric = Number(cleaned);
+
+  return Number.isFinite(numeric) ? numeric : null;
+}
+
 export function buildTemplateInput(
   name: string,
 
@@ -158,13 +205,17 @@ export function buildTemplateInput(
       planned_sets: exercise.sets.map((set) => ({
         type: set.type,
 
-        target_reps_min: set.repsMin ? Number(set.repsMin) : null,
+        target_reps_min: numericOrNull(set.repsMin),
 
-        target_reps_max: set.repsMax ? Number(set.repsMax) : null,
+        target_reps_max: numericOrNull(set.repsMax),
 
-        target_weight: set.weight ? Number(set.weight) : null,
+        target_weight: numericOrNull(set.weight),
 
-        target_rpe: set.rpe ? Number(set.rpe) : null,
+        target_duration_seconds: numericOrNull(set.duration),
+
+        target_distance_meters: numericOrNull(set.distance),
+
+        target_rpe: numericOrNull(set.rpe),
 
         target_rir: null,
       })),

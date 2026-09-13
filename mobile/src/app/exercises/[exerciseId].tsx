@@ -18,6 +18,8 @@ import { prettifyEnum } from "@/features/exercises/constants";
 
 import { useExercise } from "@/features/exercises/queries";
 
+import { trackingLabel, usesWeight } from "@/features/exercises/tracking";
+
 export default function ExerciseDetailScreen() {
   const params = useLocalSearchParams<{
     exerciseId?: string;
@@ -96,6 +98,34 @@ export default function ExerciseDetailScreen() {
               .map(prettifyEnum)
               .join(" · ")}
           </Text>
+
+          <View className="mt-5 flex-row flex-wrap gap-2">
+            <View className="rounded-xl bg-brand-muted px-3 py-2">
+              <Text className="text-[11px] font-semibold text-brand-bright">
+                {trackingLabel(exercise.tracking_type)}
+              </Text>
+            </View>
+
+            <View className="rounded-xl bg-white/[0.05] px-3 py-2">
+              <Text className="text-[11px] font-semibold text-white/50">
+                {prettifyEnum(exercise.laterality)}
+              </Text>
+            </View>
+
+            <View className="rounded-xl bg-white/[0.05] px-3 py-2">
+              <Text className="text-[11px] font-semibold text-white/50">
+                {exercise.default_rest_seconds >= 60
+                  ? `${exercise.default_rest_seconds / 60} min rest`
+                  : `${exercise.default_rest_seconds} sec rest`}
+              </Text>
+            </View>
+          </View>
+
+          {usesWeight(exercise.tracking_type) ? (
+            <Text className="mt-3 text-[12px] text-white/30">
+              Weight: {exercise.load_mode === "PER_SIDE" ? "per side" : "total"}
+            </Text>
+          ) : null}
 
           {exercise.description ? (
             <Text className="text-white/62 mt-6 text-[15px] leading-6">

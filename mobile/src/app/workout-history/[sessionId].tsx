@@ -14,15 +14,9 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useResolvedWorkout } from "@/features/workout-session/hooks/use-resolved-workout";
 
+import { formatWorkoutSetMetrics } from "@/features/workouts/set-display";
+
 import { formatDuration } from "@/features/workouts/utils";
-
-function displayWeight(value: number | null, unit: string): string {
-  if (value === null) {
-    return "—";
-  }
-
-  return `${value} ${unit}`;
-}
 
 export default function WorkoutHistoryDetailScreen() {
   const params = useLocalSearchParams<{
@@ -119,56 +113,28 @@ export default function WorkoutHistoryDetailScreen() {
                   {completed.length} completed sets
                 </Text>
 
-                <View className="mt-5 flex-row">
-                  <Text className="w-10 text-[9px] font-bold uppercase text-white/25">
-                    Set
-                  </Text>
-
-                  <Text className="flex-1 text-center text-[9px] font-bold uppercase text-white/25">
-                    Weight
-                  </Text>
-
-                  <Text className="flex-1 text-center text-[9px] font-bold uppercase text-white/25">
-                    Reps
-                  </Text>
-
-                  <Text className="flex-1 text-center text-[9px] font-bold uppercase text-white/25">
-                    RPE
-                  </Text>
-                </View>
-
-                <View className="mt-2 gap-1">
+                <View className="mt-3">
                   {completed.map((workoutSet, index) => (
                     <View
                       key={workoutSet.id}
-                      className="flex-row items-center rounded-xl bg-white/[0.025] px-2 py-3"
+                      className="mt-2 flex-row items-center rounded-xl bg-white/[0.025] px-3 py-3"
                     >
-                      <Text
-                        className="w-10 text-[11px] font-bold"
-                        style={{
-                          color:
-                            workoutSet.type === "WARMUP"
-                              ? "#F59E0B"
-                              : "rgba(255,255,255,.45)",
-                        }}
-                      >
+                      <Text className="w-10 text-[11px] font-bold text-white/35">
                         {workoutSet.type === "WARMUP" ? "W" : index + 1}
                       </Text>
 
-                      <Text className="flex-1 text-center text-[13px] font-semibold text-white/70">
-                        {displayWeight(
-                          workoutSet.weight,
-                          workoutSet.weight_unit,
+                      <Text className="flex-1 text-[13px] font-semibold text-white/70">
+                        {formatWorkoutSetMetrics(
+                          exercise.tracking_type,
+                          workoutSet,
                         )}
                       </Text>
 
-                      <Text className="flex-1 text-center text-[13px] font-semibold text-white/70">
-                        {workoutSet.reps ?? "—"}
-                      </Text>
-
-                      <Text className="flex-1 text-center text-[13px] font-semibold text-white/70">
-                        {workoutSet.rpe ?? "—"}
-                      </Text>
+                      {workoutSet.rpe ? (
+                        <Text className="text-[11px] font-semibold text-brand-bright">
+                          RPE {workoutSet.rpe}
+                        </Text>
+                      ) : null}
                     </View>
                   ))}
                 </View>

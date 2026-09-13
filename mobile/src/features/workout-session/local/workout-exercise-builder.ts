@@ -2,6 +2,8 @@ import * as Crypto from "expo-crypto";
 
 import type { Exercise } from "@/features/exercises/types";
 
+import { normalizeExercise } from "@/features/exercises/normalization";
+
 import type {
   WeightUnit,
   WorkoutExercise,
@@ -26,6 +28,10 @@ function createSet(
 
     target_weight: null,
 
+    target_duration_seconds: null,
+
+    target_distance_meters: null,
+
     target_rpe: null,
 
     target_rir: null,
@@ -35,6 +41,10 @@ function createSet(
     weight: null,
 
     weight_unit: weightUnit,
+
+    duration_seconds: null,
+
+    distance_meters: null,
 
     rpe: null,
 
@@ -54,12 +64,14 @@ export function exerciseThumbnail(exercise: Exercise): string | null {
 }
 
 export function buildWorkoutExercise(
-  exercise: Exercise,
+  rawExercise: Exercise,
 
   position: number,
 
   weightUnit: WeightUnit,
 ): WorkoutExercise {
+  const exercise = normalizeExercise(rawExercise);
+
   return {
     id: Crypto.randomUUID(),
 
@@ -69,9 +81,15 @@ export function buildWorkoutExercise(
 
     thumbnail_url: exerciseThumbnail(exercise),
 
+    tracking_type: exercise.tracking_type,
+
+    laterality: exercise.laterality,
+
+    load_mode: exercise.load_mode,
+
     position,
 
-    rest_seconds: exercise.mechanic === "COMPOUND" ? 180 : 90,
+    rest_seconds: exercise.default_rest_seconds,
 
     notes: null,
 

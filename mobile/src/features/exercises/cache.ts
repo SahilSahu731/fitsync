@@ -2,6 +2,8 @@ import type { SQLiteDatabase } from "expo-sqlite";
 
 import type { Exercise } from "./types";
 
+import { normalizeExercise } from "./normalization";
+
 interface ExerciseCacheRow {
   payload_json: string;
 }
@@ -38,7 +40,7 @@ export async function cacheExercise(
     `,
     userId,
     exercise.id,
-    JSON.stringify(exercise),
+    JSON.stringify(normalizeExercise(exercise)),
     now,
   );
 }
@@ -80,7 +82,9 @@ export async function getCachedExercises(
 
   for (const row of rows) {
     try {
-      exercises.push(JSON.parse(row.payload_json) as Exercise);
+      exercises.push(
+        normalizeExercise(JSON.parse(row.payload_json) as Exercise),
+      );
     } catch {
       // Ignore malformed cache row.
     }

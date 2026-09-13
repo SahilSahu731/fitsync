@@ -2,6 +2,8 @@ import type { SQLiteDatabase } from "expo-sqlite";
 
 import type { WorkoutSession } from "@/features/workouts/types";
 
+import { normalizeWorkoutSession } from "../normalization";
+
 import type {
   LocalWorkoutRecord,
   LocalWorkoutRow,
@@ -10,7 +12,7 @@ import type {
 } from "./types";
 
 function parseWorkout(raw: string): WorkoutSession {
-  return JSON.parse(raw) as WorkoutSession;
+  return normalizeWorkoutSession(JSON.parse(raw) as WorkoutSession);
 }
 
 function rowToRecord(row: LocalWorkoutRow): LocalWorkoutRecord {
@@ -26,6 +28,8 @@ function rowToRecord(row: LocalWorkoutRow): LocalWorkoutRecord {
     serverRevision: row.server_revision,
 
     workout: parseWorkout(row.payload_json),
+
+    payloadVersion: row.payload_version ?? 1,
 
     localStatus: row.local_status,
 
@@ -67,6 +71,7 @@ export async function insertLocalWorkout(
       server_id,
       server_revision,
       payload_json,
+      payload_version,
       local_status,
       sync_status,
       dirty,
@@ -86,6 +91,7 @@ export async function insertLocalWorkout(
       NULL,
       NULL,
       ?,
+      2,
       'IN_PROGRESS',
       'LOCAL_ONLY',
       1,
@@ -222,6 +228,7 @@ export async function saveLocalWorkoutPayload(
     UPDATE local_workouts
     SET
       payload_json = ?,
+      payload_version = 2,
       dirty = 1,
       local_version = local_version + 1,
       sync_status = CASE
@@ -489,6 +496,7 @@ export async function completeLocalWorkout(
     UPDATE local_workouts
     SET
       payload_json = ?,
+      payload_version = 2,
       local_status = 'COMPLETED',
       dirty = 1,
       local_version = local_version + 1,
@@ -527,6 +535,7 @@ export async function cancelLocalWorkout(
     UPDATE local_workouts
     SET
       payload_json = ?,
+      payload_version = 2,
       local_status = 'CANCELLED',
       dirty = 1,
       local_version = local_version + 1,

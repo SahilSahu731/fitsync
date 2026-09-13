@@ -1,198 +1,110 @@
-import {
-  Platform,
-} from "react-native";
+import { Platform } from "react-native";
 
-import * as Notifications
-  from "expo-notifications";
+import * as Notifications from "expo-notifications";
 
+export const REST_NOTIFICATION_CHANNEL = "fitsync-rest";
 
-export const REST_NOTIFICATION_CHANNEL =
-  "fitsync-rest";
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldPlaySound: true,
 
+    shouldSetBadge: false,
 
-Notifications
-  .setNotificationHandler({
-    handleNotification:
-      async () => ({
-        shouldPlaySound:
-          true,
+    shouldShowBanner: true,
 
-        shouldSetBadge:
-          false,
+    shouldShowList: true,
+  }),
+});
 
-        shouldShowBanner:
-          true,
+export async function configureRestNotifications(): Promise<void> {
+  if (Platform.OS === "android") {
+    await Notifications.setNotificationChannelAsync(
+      REST_NOTIFICATION_CHANNEL,
 
-        shouldShowList:
-          true,
-      }),
-  });
+      {
+        name: "Rest timers",
 
+        importance: Notifications.AndroidImportance.HIGH,
 
-export async function configureRestNotifications():
-  Promise<void> {
-  if (
-    Platform.OS ===
-    "android"
-  ) {
-    await Notifications
-      .setNotificationChannelAsync(
-        REST_NOTIFICATION_CHANNEL,
+        vibrationPattern: [0, 250, 150, 250],
 
-        {
-          name:
-            "Rest timers",
-
-          importance:
-            Notifications
-              .AndroidImportance
-              .HIGH,
-
-          vibrationPattern: [
-            0,
-            250,
-            150,
-            250,
-          ],
-
-          sound:
-            "default",
-        },
-      );
+        sound: "default",
+      },
+    );
   }
 }
 
+export async function hasRestNotificationPermission(): Promise<boolean> {
+  const permissions = await Notifications.getPermissionsAsync();
 
-export async function hasRestNotificationPermission():
-  Promise<boolean> {
-  const permissions =
-    await Notifications
-      .getPermissionsAsync();
-
-
-  return (
-    permissions.status ===
-    "granted"
-  );
+  return permissions.status === "granted";
 }
 
-
-export async function requestRestNotificationPermission():
-  Promise<boolean> {
+export async function requestRestNotificationPermission(): Promise<boolean> {
   await configureRestNotifications();
 
+  const existing = await Notifications.getPermissionsAsync();
 
-  const existing =
-    await Notifications
-      .getPermissionsAsync();
-
-
-  if (
-    existing.status ===
-    "granted"
-  ) {
+  if (existing.status === "granted") {
     return true;
   }
 
+  const requested = await Notifications.requestPermissionsAsync();
 
-  const requested =
-    await Notifications
-      .requestPermissionsAsync();
-
-
-  return (
-    requested.status ===
-    "granted"
-  );
+  return requested.status === "granted";
 }
 
-
 export async function scheduleRestNotification(
-  restEndsAt:
-    string,
+  restEndsAt: string,
 
-  exerciseName:
-    string,
-): Promise<
-  string | null
-> {
-  const allowed =
-    await hasRestNotificationPermission();
-
+  exerciseName: string,
+): Promise<string | null> {
+  const allowed = await hasRestNotificationPermission();
 
   if (!allowed) {
     return null;
   }
 
+  const date = new Date(restEndsAt);
 
-  const date =
-    new Date(
-      restEndsAt
-    );
-
-
-  if (
-    date.getTime() <=
-    Date.now()
-  ) {
+  if (date.getTime() <= Date.now()) {
     return null;
   }
 
+  return Notifications.scheduleNotificationAsync({
+    content: {
+      title: "Rest complete",
 
-  return Notifications
-    .scheduleNotificationAsync({
-      content: {
-        title:
-          "Rest complete",
+      body: `${exerciseName} · Ready for your next set`,
 
-        body:
-          `${exerciseName} · Ready for your next set`,
+      sound: "default",
 
-        sound:
-          "default",
+      data: {
+        type: "REST_COMPLETE",
 
-        data: {
-          type:
-            "REST_COMPLETE",
-
-          exerciseName,
-        },
+        exerciseName,
       },
+    },
 
-      trigger: {
-        type:
-          Notifications
-            .SchedulableTriggerInputTypes
-            .DATE,
+    trigger: {
+      type: Notifications.SchedulableTriggerInputTypes.DATE,
 
-        date,
+      date,
 
-        channelId:
-          REST_NOTIFICATION_CHANNEL,
-      },
-    });
+      channelId: REST_NOTIFICATION_CHANNEL,
+    },
+  });
 }
 
-
 export async function cancelRestNotification(
-  notificationId:
-    | string
-    | null
-    | undefined,
+  notificationId: string | null | undefined,
 ): Promise<void> {
-  if (
-    !notificationId
-  ) {
+  if (!notificationId) {
     return;
   }
 
-
   try {
-    await Notifications
-      .cancelScheduledNotificationAsync(
-        notificationId
-      );
-
+    await Notifications.cancelScheduledNotificationAsync(notificationId);
   } catch {
     /*
      * The OS may already have delivered it.

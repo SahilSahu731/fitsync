@@ -10,12 +10,22 @@ from pydantic import (
 from app.modules.exercises.models import (
     Equipment,
     ExerciseDocument,
+    ExerciseLaterality,
+    ExerciseLoadMode,
     ExerciseMechanic,
     ExerciseMediaDocument,
     ExerciseMediaType,
     ExerciseSource,
+    ExerciseTrackingType,
     MovementPattern,
     MuscleGroup,
+)
+from app.modules.exercises.tracking import (
+    exercise_default_rest_seconds,
+    exercise_laterality,
+    exercise_load_mode,
+    exercise_tracking_type,
+    uses_weight,
 )
 
 
@@ -85,7 +95,7 @@ class ExerciseMediaResponse(BaseModel):
     def from_document(
         cls,
         media: ExerciseMediaDocument,
-    ) -> "ExerciseMediaResponse":
+    ):
         return cls(**media)
 
 
@@ -118,6 +128,18 @@ class ExerciseCreateRequest(BaseModel):
     mechanic: ExerciseMechanic
 
     movement_pattern: MovementPattern
+
+    tracking_type: ExerciseTrackingType = "WEIGHT_REPS"
+
+    laterality: ExerciseLaterality = "BILATERAL"
+
+    load_mode: ExerciseLoadMode = "TOTAL"
+
+    default_rest_seconds: int = Field(
+        default=120,
+        ge=15,
+        le=900,
+    )
 
     instructions: list[str] = Field(
         default_factory=list,
@@ -190,6 +212,14 @@ class ExerciseResponse(BaseModel):
 
     movement_pattern: MovementPattern
 
+    tracking_type: ExerciseTrackingType
+
+    laterality: ExerciseLaterality
+
+    load_mode: ExerciseLoadMode
+
+    default_rest_seconds: int
+
     instructions: list[str]
 
     tips: list[str]
@@ -206,7 +236,7 @@ class ExerciseResponse(BaseModel):
         exercise: ExerciseDocument,
         *,
         current_user_id,
-    ) -> "ExerciseResponse":
+    ):
         custom = exercise["source"] == "CUSTOM"
 
         editable = custom and exercise["owner_user_id"] == current_user_id
@@ -219,23 +249,33 @@ class ExerciseResponse(BaseModel):
             key=lambda item: item["sort_order"],
         )
 
+        tracking_type = exercise_tracking_type(exercise)
+
         return cls(
             id=str(exercise["_id"]),
-            source=exercise["source"],
-            name=exercise["name"],
-            description=exercise.get("description"),
-            primary_muscles=exercise["primary_muscles"],
-            secondary_muscles=exercise["secondary_muscles"],
-            equipment=exercise["equipment"],
-            mechanic=exercise["mechanic"],
-            movement_pattern=exercise["movement_pattern"],
-            instructions=exercise.get(
-                "instructions",
-                [],
+            source=(exercise["source"]),
+            name=(exercise["name"]),
+            description=(exercise.get("description")),
+            primary_muscles=(exercise["primary_muscles"]),
+            secondary_muscles=(exercise["secondary_muscles"]),
+            equipment=(exercise["equipment"]),
+            mechanic=(exercise["mechanic"]),
+            movement_pattern=(exercise["movement_pattern"]),
+            tracking_type=(tracking_type),
+            laterality=(exercise_laterality(exercise)),
+            load_mode=(exercise_load_mode(exercise) if uses_weight(tracking_type) else "TOTAL"),
+            default_rest_seconds=(exercise_default_rest_seconds(exercise)),
+            instructions=(
+                exercise.get(
+                    "instructions",
+                    [],
+                )
             ),
-            tips=exercise.get(
-                "tips",
-                [],
+            tips=(
+                exercise.get(
+                    "tips",
+                    [],
+                )
             ),
             media=[ExerciseMediaResponse.from_document(item) for item in media],
             is_custom=custom,

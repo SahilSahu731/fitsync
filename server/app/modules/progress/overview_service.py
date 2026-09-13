@@ -63,6 +63,11 @@ def session_metrics(
         "exercises",
         [],
     ):
+        tracking_type = exercise.get(
+            "tracking_type_snapshot",
+            "WEIGHT_REPS",
+        )
+
         for workout_set in exercise.get(
             "sets",
             [],
@@ -72,7 +77,8 @@ def session_metrics(
 
             working_sets += 1
 
-            volume_kg += calculations.calculate_set_volume_kg(workout_set)
+            if tracking_type == "WEIGHT_REPS":
+                volume_kg += calculations.calculate_set_volume_kg(workout_set)
 
     return (
         working_sets,

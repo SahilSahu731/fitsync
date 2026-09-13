@@ -1,3 +1,9 @@
+import type {
+  ExerciseLaterality,
+  ExerciseLoadMode,
+  ExerciseTrackingType,
+} from "@/features/exercises/types";
+
 export type WorkoutSetType =
   "WARMUP" | "NORMAL" | "BACKOFF" | "DROP" | "FAILURE" | "AMRAP";
 
@@ -19,6 +25,10 @@ export interface TemplateSet {
 
   target_weight: number | null;
 
+  target_duration_seconds: number | null;
+
+  target_distance_meters: number | null;
+
   target_rpe: number | null;
 
   target_rir: number | null;
@@ -32,6 +42,12 @@ export interface TemplateExercise {
   exercise_name: string;
 
   thumbnail_url: string | null;
+
+  tracking_type: ExerciseTrackingType;
+
+  laterality: ExerciseLaterality;
+
+  load_mode: ExerciseLoadMode;
 
   position: number;
 
@@ -89,6 +105,10 @@ export interface TemplateSetInput {
 
   target_weight: number | null;
 
+  target_duration_seconds: number | null;
+
+  target_distance_meters: number | null;
+
   target_rpe: number | null;
 
   target_rir: number | null;
@@ -131,6 +151,10 @@ export interface WorkoutSet {
 
   target_weight: number | null;
 
+  target_duration_seconds: number | null;
+
+  target_distance_meters: number | null;
+
   target_rpe: number | null;
 
   target_rir: number | null;
@@ -140,6 +164,10 @@ export interface WorkoutSet {
   weight: number | null;
 
   weight_unit: WeightUnit;
+
+  duration_seconds: number | null;
+
+  distance_meters: number | null;
 
   rpe: number | null;
 
@@ -158,6 +186,12 @@ export interface WorkoutExercise {
   exercise_name: string;
 
   thumbnail_url: string | null;
+
+  tracking_type: ExerciseTrackingType;
+
+  laterality: ExerciseLaterality;
+
+  load_mode: ExerciseLoadMode;
 
   position: number;
 
@@ -232,6 +266,10 @@ export interface WorkoutSetMutationInput {
 
   target_weight: number | null;
 
+  target_duration_seconds: number | null;
+
+  target_distance_meters: number | null;
+
   target_rpe: number | null;
 
   target_rir: number | null;
@@ -241,6 +279,10 @@ export interface WorkoutSetMutationInput {
   weight: number | null;
 
   weight_unit: WeightUnit;
+
+  duration_seconds: number | null;
+
+  distance_meters: number | null;
 
   rpe: number | null;
 
@@ -253,6 +295,12 @@ export interface WorkoutExerciseMutationInput {
   id: string;
 
   exercise_id: string;
+
+  tracking_type: ExerciseTrackingType;
+
+  laterality: ExerciseLaterality;
+
+  load_mode: ExerciseLoadMode;
 
   rest_seconds: number;
 
@@ -305,6 +353,10 @@ export interface PreviousSet {
   weight_unit: WeightUnit;
 
   reps: number | null;
+
+  duration_seconds: number | null;
+
+  distance_meters: number | null;
 
   rpe: number | null;
 }

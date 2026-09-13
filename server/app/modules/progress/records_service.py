@@ -81,6 +81,14 @@ def build_historical_bests(
             "exercises",
             [],
         ):
+            tracking_type = exercise.get(
+                "tracking_type_snapshot",
+                "WEIGHT_REPS",
+            )
+
+            if tracking_type != "WEIGHT_REPS":
+                continue
+
             exercise_id = str(exercise.get("exercise_id"))
 
             if exercise_id not in states:
@@ -155,6 +163,14 @@ async def detect_personal_records_for_workout(
             0,
         ),
     ):
+        tracking_type = exercise.get(
+            "tracking_type_snapshot",
+            "WEIGHT_REPS",
+        )
+
+        if tracking_type != "WEIGHT_REPS":
+            continue
+
         exercise_id_obj = exercise["exercise_id"]
 
         exercise_id = str(exercise_id_obj)

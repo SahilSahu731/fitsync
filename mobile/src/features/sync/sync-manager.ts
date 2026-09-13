@@ -1,7 +1,6 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 import { syncPendingWorkouts } from "./sync-engine";
 
-
 const timers = new Map<string, ReturnType<typeof setTimeout>>();
 
 export function requestWorkoutSync(

@@ -97,6 +97,10 @@ export function ActiveExerciseCard({
 
       target_weight: previousSet?.target_weight ?? null,
 
+      target_duration_seconds: previousSet?.target_duration_seconds ?? null,
+
+      target_distance_meters: previousSet?.target_distance_meters ?? null,
+
       target_rpe: previousSet?.target_rpe ?? null,
 
       target_rir: previousSet?.target_rir ?? null,
@@ -106,6 +110,10 @@ export function ActiveExerciseCard({
       weight: null,
 
       weight_unit: previousSet?.weight_unit ?? "KG",
+
+      duration_seconds: null,
+
+      distance_meters: null,
 
       rpe: null,
 
@@ -274,19 +282,15 @@ export function ActiveExerciseCard({
               Set
             </Text>
 
-            <Text className="text-white/22 w-[76px] text-center text-[9px] font-bold uppercase">
+            <Text className="text-white/22 w-[84px] text-center text-[9px] font-bold uppercase">
               Previous
             </Text>
 
-            <Text className="text-white/22 mx-1 flex-1 text-center text-[9px] font-bold uppercase">
-              {exercise.sets[0]?.weight_unit ?? "KG"}
+            <Text className="text-white/22 flex-1 text-center text-[9px] font-bold uppercase">
+              Log
             </Text>
 
-            <Text className="text-white/22 mx-1 flex-1 text-center text-[9px] font-bold uppercase">
-              Reps
-            </Text>
-
-            <Text className="text-white/22 mx-1 w-[43px] text-center text-[9px] font-bold uppercase">
+            <Text className="text-white/22 w-[43px] text-center text-[9px] font-bold uppercase">
               RPE
             </Text>
 
@@ -299,6 +303,7 @@ export function ActiveExerciseCard({
                 key={workoutSet.id}
                 workoutSet={workoutSet}
                 previous={previous?.sets[index]}
+                trackingType={exercise.tracking_type}
                 index={index}
                 onChange={(patch) => {
                   updateSet(workoutSet.id, patch);

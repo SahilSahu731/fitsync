@@ -12,6 +12,8 @@ import { workoutSessionKeys } from "@/features/workouts/keys";
 
 import type { WorkoutSession } from "@/features/workouts/types";
 
+import { normalizeWorkoutSession } from "../normalization";
+
 export type LocalWorkoutSyncStatus =
   "LOCAL_ONLY" | "DIRTY" | "SYNCING" | "SYNCED" | "CONFLICT" | "ERROR";
 
@@ -137,7 +139,9 @@ export function useResolvedWorkout(workoutKey: string): ResolvedWorkout {
 
   if (localRow) {
     try {
-      localWorkout = JSON.parse(localRow.payload_json) as WorkoutSession;
+      localWorkout = normalizeWorkoutSession(
+        JSON.parse(localRow.payload_json) as WorkoutSession,
+      );
     } catch {
       localWorkout = null;
     }

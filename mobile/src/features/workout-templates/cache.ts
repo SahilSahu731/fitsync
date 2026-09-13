@@ -2,6 +2,8 @@ import type { SQLiteDatabase } from "expo-sqlite";
 
 import type { WorkoutTemplate } from "@/features/workouts/types";
 
+import { normalizeWorkoutTemplate } from "@/features/workout-session/normalization";
+
 interface TemplateCacheRow {
   payload_json: string;
 }
@@ -14,6 +16,8 @@ export async function cacheWorkoutTemplate(
   template: WorkoutTemplate,
 ): Promise<void> {
   const now = new Date().toISOString();
+
+  const normalized = normalizeWorkoutTemplate(template);
 
   await database.runAsync(
     `
@@ -38,7 +42,7 @@ export async function cacheWorkoutTemplate(
     `,
     userId,
     template.id,
-    JSON.stringify(template),
+    JSON.stringify(normalized),
     now,
   );
 }
@@ -76,7 +80,11 @@ export async function getCachedWorkoutTemplates(
 
   for (const row of rows) {
     try {
-      templates.push(JSON.parse(row.payload_json) as WorkoutTemplate);
+      templates.push(
+        normalizeWorkoutTemplate(
+          JSON.parse(row.payload_json) as WorkoutTemplate,
+        ),
+      );
     } catch {
       // Ignore malformed cache row.
     }
@@ -109,7 +117,9 @@ export async function getCachedWorkoutTemplate(
   }
 
   try {
-    return JSON.parse(row.payload_json) as WorkoutTemplate;
+    return normalizeWorkoutTemplate(
+      JSON.parse(row.payload_json) as WorkoutTemplate,
+    );
   } catch {
     return null;
   }

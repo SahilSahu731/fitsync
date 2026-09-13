@@ -14,6 +14,18 @@ async function getDatabaseVersion(database: SQLiteDatabase): Promise<number> {
   return row?.user_version ?? 0;
 }
 
+async function hasColumn(
+  database: SQLiteDatabase,
+  table: string,
+  column: string,
+): Promise<boolean> {
+  const rows = await database.getAllAsync<{ name: string }>(
+    `PRAGMA table_info(${table})`,
+  );
+
+  return rows.some((row) => row.name === column);
+}
+
 export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
   /*
    * Foreign keys are disabled by default
@@ -39,14 +51,34 @@ export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
 
       await database.execAsync(`PRAGMA user_version = ${DATABASE_VERSION};`);
     });
+
+    return;
   }
 
-  /*
-   * Future migrations:
-   *
-   * if (currentVersion < 2) {
-   *   ...
-   *   PRAGMA user_version = 2
-   * }
-   */
+  if (currentVersion < 2) {
+    await database.withTransactionAsync(async () => {
+      const exists = await hasColumn(
+        database,
+        "local_workouts",
+        "payload_version",
+      );
+
+      if (!exists) {
+        await database.execAsync(`
+          ALTER TABLE local_workouts
+          ADD COLUMN payload_version
+          INTEGER NOT NULL
+          DEFAULT 1;
+        `);
+      }
+
+      await database.execAsync(`
+        UPDATE local_workouts
+        SET payload_version = 1
+        WHERE payload_version IS NULL;
+      `);
+
+      await database.execAsync("PRAGMA user_version = 2;");
+    });
+  }
 }

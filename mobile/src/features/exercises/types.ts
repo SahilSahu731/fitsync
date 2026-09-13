@@ -52,6 +52,20 @@ export type MovementPattern =
   | "CORE"
   | "OTHER";
 
+export type ExerciseTrackingType =
+  | "WEIGHT_REPS"
+  | "BODYWEIGHT_REPS"
+  | "ASSISTED_REPS"
+  | "REPS_ONLY"
+  | "DURATION"
+  | "DISTANCE_DURATION"
+  | "WEIGHT_DURATION"
+  | "WEIGHT_DISTANCE";
+
+export type ExerciseLaterality = "BILATERAL" | "UNILATERAL" | "ALTERNATING";
+
+export type ExerciseLoadMode = "TOTAL" | "PER_SIDE";
+
 export interface ExerciseMedia {
   id: string;
 
@@ -92,6 +106,14 @@ export interface Exercise {
   mechanic: ExerciseMechanic;
 
   movement_pattern: MovementPattern;
+
+  tracking_type: ExerciseTrackingType;
+
+  laterality: ExerciseLaterality;
+
+  load_mode: ExerciseLoadMode;
+
+  default_rest_seconds: number;
 
   instructions: string[];
 
@@ -150,6 +172,14 @@ export interface ExerciseMutationInput {
   mechanic: ExerciseMechanic;
 
   movement_pattern: MovementPattern;
+
+  tracking_type: ExerciseTrackingType;
+
+  laterality: ExerciseLaterality;
+
+  load_mode: ExerciseLoadMode;
+
+  default_rest_seconds: number;
 
   instructions: string[];
 
