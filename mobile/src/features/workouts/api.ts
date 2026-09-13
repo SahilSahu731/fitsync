@@ -137,11 +137,14 @@ export async function updateWorkoutSession(
 export async function completeWorkout(
   sessionId: string,
   revision: number,
+  completedAt?: string,
 ): Promise<WorkoutSession> {
   const response = await apiClient.post<WorkoutSession>(
     `/workout-sessions/${sessionId}/complete`,
     {
       revision,
+
+      completed_at: completedAt ?? undefined,
     },
   );
 

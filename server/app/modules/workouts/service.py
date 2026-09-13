@@ -1,5 +1,8 @@
 import base64
-from datetime import datetime
+from datetime import (
+    datetime,
+    timedelta,
+)
 from uuid import uuid4
 
 from bson import ObjectId
@@ -580,9 +583,9 @@ def session_response(
                 exercise_id=str(exercise["exercise_id"]),
                 exercise_name=(exercise["exercise_name_snapshot"]),
                 thumbnail_url=(exercise["thumbnail_url_snapshot"]),
-                position=exercise["position"],
-                rest_seconds=exercise["rest_seconds"],
-                notes=exercise["notes"],
+                position=(exercise["position"]),
+                rest_seconds=(exercise["rest_seconds"]),
+                notes=(exercise["notes"]),
                 superset_group_id=(exercise["superset_group_id"]),
                 sets=sets,
             )
@@ -590,10 +593,11 @@ def session_response(
 
     return WorkoutSessionResponse(
         id=str(session["_id"]),
+        client_workout_id=(session.get("client_workout_id") or str(session["_id"])),
         template_id=(str(session["template_id"]) if session["template_id"] else None),
         name=session["name"],
         status=session["status"],
-        started_at=session["started_at"].isoformat(),
+        started_at=(session["started_at"].isoformat()),
         completed_at=(session["completed_at"].isoformat() if session["completed_at"] else None),
         cancelled_at=(session["cancelled_at"].isoformat() if session["cancelled_at"] else None),
         duration_seconds=(session["duration_seconds"]),
@@ -601,7 +605,7 @@ def session_response(
         exercises=exercises,
         completed_set_count=(completed_set_count),
         total_set_count=(total_set_count),
-        revision=session["revision"],
+        revision=(session["revision"]),
     )
 
 
@@ -663,6 +667,35 @@ def thumbnail_for_exercise(
     return media[0]["thumbnail_url"]
 
 
+def validated_started_at(
+    value: datetime | None,
+    *,
+    now: datetime,
+) -> datetime:
+    if value is None:
+        return now
+
+    if value.tzinfo is None or value.utcoffset() is None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "INVALID_WORKOUT_TIMESTAMP",
+                "message": "started_at must include a timezone.",
+            },
+        )
+
+    if value > now + timedelta(minutes=5):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "INVALID_WORKOUT_TIMESTAMP",
+                "message": "Workout start time is too far in the future.",
+            },
+        )
+
+    return value
+
+
 # =========================================================
 # START WORKOUT
 # =========================================================
@@ -674,6 +707,16 @@ async def start_workout(
     user: UserDocument,
     payload: StartWorkoutRequest,
 ):
+    if payload.client_workout_id is not None:
+        existing_by_client_id = await repository.get_session_by_client_workout_id(
+            database,
+            user_id=user["_id"],
+            client_workout_id=(payload.client_workout_id),
+        )
+
+        if existing_by_client_id is not None:
+            return session_response(existing_by_client_id)
+
     existing = await repository.get_active_session(
         database,
         user_id=user["_id"],
@@ -683,6 +726,13 @@ async def start_workout(
         raise active_workout_exists(str(existing["_id"]))
 
     now = utc_now()
+
+    started_at = validated_started_at(
+        payload.started_at,
+        now=now,
+    )
+
+    client_workout_id = payload.client_workout_id or str(uuid4())
 
     exercises: list[WorkoutExerciseDocument] = []
 
@@ -733,7 +783,7 @@ async def start_workout(
                     build_session_set(
                         weight_unit=(default_weight_unit(user)),
                         position=len(sets),
-                        set_type=planned_set["type"],
+                        set_type=(planned_set["type"]),
                         target_reps_min=(planned_set["target_reps_min"]),
                         target_reps_max=(planned_set["target_reps_max"]),
                         target_weight=(planned_set["target_weight"]),
@@ -759,10 +809,11 @@ async def start_workout(
     session: WorkoutSessionDocument = {
         "_id": ObjectId(),
         "user_id": user["_id"],
+        "client_workout_id": client_workout_id,
         "template_id": template_id,
         "name": name,
         "status": "IN_PROGRESS",
-        "started_at": now,
+        "started_at": started_at,
         "completed_at": None,
         "cancelled_at": None,
         "duration_seconds": None,
@@ -780,6 +831,15 @@ async def start_workout(
         )
 
     except DuplicateKeyError as error:
+        retry_session = await repository.get_session_by_client_workout_id(
+            database,
+            user_id=user["_id"],
+            client_workout_id=client_workout_id,
+        )
+
+        if retry_session is not None:
+            return session_response(retry_session)
+
         active = await repository.get_active_session(
             database,
             user_id=user["_id"],
@@ -787,7 +847,9 @@ async def start_workout(
 
         if active is not None:
             raise active_workout_exists(str(active["_id"])) from error
+
         raise
+
     return session_response(session)
 
 
@@ -1081,6 +1143,7 @@ async def finish_workout(
     user_id: ObjectId,
     session_id: str,
     expected_revision: int,
+    completed_at: datetime | None = None,
 ):
     if not ObjectId.is_valid(session_id):
         raise workout_not_found()
@@ -1101,9 +1164,15 @@ async def finish_workout(
 
     now = utc_now()
 
+    actual_completed_at = validated_completed_at(
+        completed_at,
+        started_at=(session["started_at"]),
+        now=now,
+    )
+
     duration_seconds = max(
         0,
-        int((now - session["started_at"]).total_seconds()),
+        int((actual_completed_at - session["started_at"]).total_seconds()),
     )
 
     completed = await repository.complete_session(
@@ -1111,7 +1180,7 @@ async def finish_workout(
         session_id=object_id,
         user_id=user_id,
         expected_revision=expected_revision,
-        completed_at=now,
+        completed_at=actual_completed_at,
         duration_seconds=duration_seconds,
     )
 
@@ -1310,3 +1379,41 @@ async def previous_performance(
             )
 
     return list(found.values())
+
+
+def validated_completed_at(
+    value: datetime | None,
+    *,
+    started_at: datetime,
+    now: datetime,
+) -> datetime:
+    completed_at = value if value is not None else now
+
+    if completed_at.tzinfo is None or completed_at.utcoffset() is None:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "INVALID_WORKOUT_TIMESTAMP",
+                "message": "completed_at must include a timezone.",
+            },
+        )
+
+    if completed_at < started_at:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "INVALID_WORKOUT_TIMESTAMP",
+                "message": "Workout cannot finish before it starts.",
+            },
+        )
+
+    if completed_at > now + timedelta(minutes=5):
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": "INVALID_WORKOUT_TIMESTAMP",
+                "message": "Workout completion time is too far in the future.",
+            },
+        )
+
+    return completed_at

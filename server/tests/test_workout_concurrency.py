@@ -126,6 +126,12 @@ async def test_start_race_returns_existing_workout(
         AsyncMock(side_effect=DuplicateKeyError("duplicate active workout")),
     )
 
+    monkeypatch.setattr(
+        service.repository,
+        "get_session_by_client_workout_id",
+        AsyncMock(return_value=None),
+    )
+
     with pytest.raises(HTTPException) as caught:
         await service.start_workout(
             None,

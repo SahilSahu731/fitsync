@@ -162,6 +162,25 @@ async def get_session(
     )
 
 
+async def get_session_by_client_workout_id(
+    database: Database,
+    *,
+    user_id: ObjectId,
+    client_workout_id: str,
+) -> WorkoutSessionDocument | None:
+    document = await database["workout_sessions"].find_one(
+        {
+            "user_id": user_id,
+            "client_workout_id": client_workout_id,
+        }
+    )
+
+    return cast(
+        WorkoutSessionDocument | None,
+        document,
+    )
+
+
 async def replace_active_session_fields(
     database: Database,
     *,

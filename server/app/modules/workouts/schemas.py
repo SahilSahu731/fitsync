@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Literal
 
 from pydantic import (
@@ -204,6 +205,14 @@ class StartWorkoutRequest(BaseModel):
         max_length=80,
     )
 
+    client_workout_id: str | None = Field(
+        default=None,
+        min_length=10,
+        max_length=100,
+    )
+
+    started_at: datetime | None = None
+
 
 class WorkoutSetMutationInput(BaseModel):
     id: str
@@ -343,6 +352,8 @@ class WorkoutRevisionRequest(BaseModel):
         ge=1,
     )
 
+    completed_at: datetime | None = None
+
 
 # =========================================================
 # SESSION RESPONSES
@@ -403,6 +414,8 @@ class WorkoutExerciseResponse(BaseModel):
 
 class WorkoutSessionResponse(BaseModel):
     id: str
+
+    client_workout_id: str
 
     template_id: str | None
 

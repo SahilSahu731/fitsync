@@ -206,6 +206,17 @@ export interface StartWorkoutInput {
   template_id?: string | null;
 
   name?: string | null;
+
+  /*
+   * Phase 2 idempotency key.
+   */
+  client_workout_id?: string | null;
+
+  /*
+   * Required when syncing an offline-started
+   * workout so server history remains accurate.
+   */
+  started_at?: string | null;
 }
 
 export interface WorkoutSetMutationInput {

@@ -302,6 +302,7 @@ async def complete_workout(
         user_id=user["_id"],
         session_id=session_id,
         expected_revision=payload.revision,
+        completed_at=payload.completed_at,
     )
 
     try:

@@ -14,6 +14,8 @@ import { BootstrapError } from "@/features/auth/components/bootstrap-error";
 
 import { useAuthStore } from "@/features/auth/store";
 
+import { DatabaseProvider } from "@/lib/database/database-provider";
+
 import { AppProvider } from "@/providers/app-provider";
 
 void SplashScreen.preventAutoHideAsync();
@@ -45,7 +47,7 @@ function RootNavigator() {
     return null;
   }
 
-  if (status === "offline") {
+  if (status === "offline" && !user) {
     return (
       <BootstrapError
         onRetry={() => {
@@ -55,7 +57,7 @@ function RootNavigator() {
     );
   }
 
-  const authenticated = status === "authenticated";
+  const authenticated =  status === "authenticated" || (status === "offline" && Boolean(user));
 
   const needsOnboarding = authenticated && user?.onboarding_complete === false;
 
@@ -104,8 +106,10 @@ function RootNavigator() {
 
 export default function RootLayout() {
   return (
-    <AppProvider>
-      <RootNavigator />
-    </AppProvider>
+    <DatabaseProvider>
+      <AppProvider>
+        <RootNavigator />
+      </AppProvider>
+    </DatabaseProvider>
   );
 }

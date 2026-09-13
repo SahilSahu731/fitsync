@@ -269,6 +269,28 @@ async def ensure_indexes(
         ],
         name="idx_workout_history",
     )
+
+    await ensure_index(
+        workout_sessions,
+        [
+            (
+                "user_id",
+                ASCENDING,
+            ),
+            (
+                "client_workout_id",
+                ASCENDING,
+            ),
+        ],
+        unique=True,
+        partialFilterExpression={
+            "client_workout_id": {
+                "$type": "string",
+            },
+        },
+        name="uq_workout_client_workout_id",
+    )
+
     # WORKOUT TEMPLATES
 
     await ensure_index(

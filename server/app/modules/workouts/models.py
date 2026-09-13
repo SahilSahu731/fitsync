@@ -134,6 +134,8 @@ class WorkoutSessionDocument(TypedDict):
 
     user_id: ObjectId
 
+    client_workout_id: str
+
     template_id: ObjectId | None
 
     name: str

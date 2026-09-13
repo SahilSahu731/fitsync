@@ -66,6 +66,7 @@ async def test_all_startup_indexes_accept_equivalent_legacy_names():
         "idx_workout_previous_exercise",
         "idx_workout_session_active",
         "uq_workout_one_active_per_user",
+        "uq_workout_client_workout_id",
         "idx_workout_history",
         "idx_progress_completed",
         "idx_progress_exercise",
