@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 
-import { ActivityIndicator, Pressable, Text, View } from "react-native";
+import { Pressable, Text, View } from "react-native";
 
 interface Props {
   elapsedLabel: string;
@@ -8,6 +8,8 @@ interface Props {
   volumeLabel: string;
 
   completedSets: number;
+
+  totalSets: number;
 
   actionLoading: boolean;
 
@@ -18,78 +20,80 @@ interface Props {
   onFinish: () => void;
 }
 
-function Metric({
-  title,
-  value,
-}: {
-  title: string;
-
-  value: string;
-}) {
-  return (
-    <View className="flex-1">
-      <Text className="text-[10px] font-medium text-white/25">{title}</Text>
-
-      <Text className="mt-1 text-[13px] font-bold text-white/70">{value}</Text>
-    </View>
-  );
-}
-
 export function WorkoutHeader({
   elapsedLabel,
   volumeLabel,
   completedSets,
+  totalSets,
   actionLoading,
   onExit,
   onCancel,
   onFinish,
 }: Props) {
+  const progress = totalSets > 0 ? completedSets / totalSets : 0;
+
   return (
-    <View className="border-b border-white/[0.07]">
-      <View className="flex-row items-center px-4 py-2">
+    <View className="border-b border-white/[0.06] bg-[#07080A] px-4 pb-3 pt-2">
+      <View className="flex-row items-center">
         <Pressable
           onPress={onExit}
-          className="h-10 w-10 items-center justify-center"
+          className="h-10 w-10 items-center justify-center rounded-full bg-white/[0.045]"
         >
-          <Ionicons name="chevron-down" size={22} color="#FFFFFF" />
+          <Ionicons name="chevron-down" size={20} color="#FFFFFF" />
         </Pressable>
 
-        <Text className="ml-1 flex-1 text-[16px] font-extrabold text-white">
-          Log Workout
-        </Text>
+        <View className="ml-3 flex-1">
+          <Text className="text-[15px] font-extrabold text-white">
+            Log Workout
+          </Text>
+
+          <Text className="mt-0.5 text-[10px] text-white/30">
+            {completedSets}/{totalSets} sets
+            {" · "}
+            {elapsedLabel}
+          </Text>
+        </View>
 
         <Pressable
           onPress={onCancel}
-          className="mr-2 h-9 w-9 items-center justify-center"
+          className="h-10 w-10 items-center justify-center"
         >
           <Ionicons
             name="ellipsis-horizontal"
-            size={20}
-            color="rgba(255,255,255,.55)"
+            size={19}
+            color="rgba(255,255,255,.45)"
           />
         </Pressable>
 
         <Pressable
           disabled={actionLoading}
           onPress={onFinish}
-          className="min-h-[38px] min-w-[70px] items-center justify-center rounded-xl bg-brand px-4"
+          className="ml-2 min-h-[40px] items-center justify-center rounded-xl bg-brand px-4"
+          style={{
+            opacity: actionLoading ? 0.55 : 1,
+          }}
         >
-          {actionLoading ? (
-            <ActivityIndicator size="small" color="#FFFFFF" />
-          ) : (
-            <Text className="text-[13px] font-extrabold text-white">
-              Finish
-            </Text>
-          )}
+          <Text className="text-[12px] font-extrabold text-white">Finish</Text>
         </Pressable>
       </View>
 
-      <View className="flex-row px-5 pb-3 pt-1">
-        <Metric title="Duration" value={elapsedLabel} />
+      <View className="mt-3 h-[3px] overflow-hidden rounded-full bg-white/[0.07]">
+        <View
+          className="h-full rounded-full bg-brand"
+          style={{
+            width: `${Math.min(100, progress * 100)}%`,
+          }}
+        />
+      </View>
 
-        <Metric title="Volume" value={volumeLabel} />
+      <View className="mt-2 flex-row justify-between">
+        <Text className="text-[9px] font-semibold uppercase tracking-[1px] text-white/20">
+          {elapsedLabel}
+        </Text>
 
-        <Metric title="Sets" value={String(completedSets)} />
+        <Text className="text-[9px] font-semibold uppercase tracking-[1px] text-white/20">
+          {volumeLabel}
+        </Text>
       </View>
     </View>
   );

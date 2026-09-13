@@ -7,15 +7,17 @@ import {
 } from "../tracking";
 
 describe("exercise tracking capabilities", () => {
-  expect(usesWeight("WEIGHT_REPS")).toBe(true);
+  it("maps each tracking mode to its supported metrics and labels", () => {
+    expect(usesWeight("WEIGHT_REPS")).toBe(true);
 
-  expect(usesWeight("DURATION")).toBe(false);
+    expect(usesWeight("DURATION")).toBe(false);
 
-  expect(usesDuration("DISTANCE_DURATION")).toBe(true);
+    expect(usesDuration("DISTANCE_DURATION")).toBe(true);
 
-  expect(usesDistance("WEIGHT_DISTANCE")).toBe(true);
+    expect(usesDistance("WEIGHT_DISTANCE")).toBe(true);
 
-  expect(usesReps("REPS_ONLY")).toBe(true);
+    expect(usesReps("REPS_ONLY")).toBe(true);
 
-  expect(weightLabel("ASSISTED_REPS", "KG")).toBe("Assist");
+    expect(weightLabel("ASSISTED_REPS", "KG")).toBe("Assist");
+  });
 });

@@ -4,12 +4,24 @@ import { formatExerciseDuration } from "@/features/exercises/duration";
 
 import type { ExerciseTrackingType } from "@/features/exercises/types";
 
-import type { WorkoutSet } from "./types";
+import type { PreviousSet, WorkoutSet } from "./types";
 
-export function formatWorkoutSetMetrics(
+interface MetricSetLike {
+  weight: number | null;
+
+  weight_unit: string;
+
+  reps: number | null;
+
+  duration_seconds: number | null;
+
+  distance_meters: number | null;
+}
+
+export function formatSetLikeMetrics(
   trackingType: ExerciseTrackingType,
 
-  set: WorkoutSet,
+  set: MetricSetLike,
 ): string {
   switch (trackingType) {
     case "BODYWEIGHT_REPS":
@@ -30,10 +42,9 @@ export function formatWorkoutSetMetrics(
       return formatExerciseDuration(set.duration_seconds) || "—";
 
     case "DISTANCE_DURATION":
-      return (
-        `${formatDistanceMeters(set.distance_meters) || "—"} · ` +
-        (formatExerciseDuration(set.duration_seconds) || "—")
-      );
+      return `${formatDistanceMeters(set.distance_meters) || "—"} · ${
+        formatExerciseDuration(set.duration_seconds) || "—"
+      }`;
 
     case "WEIGHT_DURATION":
       return (
@@ -52,4 +63,20 @@ export function formatWorkoutSetMetrics(
         `${set.weight ?? "—"} ${set.weight_unit}` + ` × ${set.reps ?? "—"}`
       );
   }
+}
+
+export function formatWorkoutSetMetrics(
+  trackingType: ExerciseTrackingType,
+
+  set: WorkoutSet,
+): string {
+  return formatSetLikeMetrics(trackingType, set);
+}
+
+export function formatPreviousSetMetrics(
+  trackingType: ExerciseTrackingType,
+
+  set: PreviousSet,
+): string {
+  return formatSetLikeMetrics(trackingType, set);
 }

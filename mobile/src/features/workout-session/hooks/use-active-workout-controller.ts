@@ -10,18 +10,23 @@ import { useAuthStore } from "@/features/auth/store";
 
 import type { Exercise } from "@/features/exercises/types";
 
-import { usePreviousPerformance } from "@/features/workouts/queries";
-
 import type {
   WorkoutExercise,
   WorkoutSession,
 } from "@/features/workouts/types";
 
 import {
+  findActiveWorkoutPosition,
+  nextExerciseAfter,
+} from "../domain/active-set";
+
+import {
   formatVolume,
   formatWorkoutClock,
   workoutVolume,
 } from "../domain/calculations";
+
+import { replaceWorkoutExercise as buildReplacement } from "../domain/replacement";
 
 import {
   createWorkoutSuperset,
@@ -57,6 +62,8 @@ import {
 
 import { createRestEndsAt } from "../rest/rest-time";
 
+import { useResolvedPreviousPerformance } from "./use-resolved-previous-performance";
+
 export function useActiveWorkoutController(sessionId: string) {
   const database = useSQLiteContext();
 
@@ -83,6 +90,8 @@ export function useActiveWorkoutController(sessionId: string) {
   const [pickerOpen, setPickerOpen] = useState(false);
 
   const [optionsIndex, setOptionsIndex] = useState<number | null>(null);
+
+  const [replacementIndex, setReplacementIndex] = useState<number | null>(null);
 
   const [rest, setRest] = useState<RestRuntime | null>(null);
 
@@ -228,25 +237,12 @@ export function useActiveWorkoutController(sessionId: string) {
     [draft?.exercises],
   );
 
-  const previousQuery = usePreviousPerformance(exerciseIds);
+  const previousMap = useResolvedPreviousPerformance(exerciseIds);
 
-  const previousMap = useMemo(
-    () =>
-      new Map(
-        (previousQuery.data?.items ?? []).map((item) => [
-          item.exercise_id,
-          item,
-        ]),
-      ),
-    [previousQuery.data],
-  );
+  const initialPosition = draft ? findActiveWorkoutPosition(draft) : null;
 
   const initialExpandedId =
-    draft?.exercises.find((exercise) =>
-      exercise.sets.some((workoutSet) => !workoutSet.completed),
-    )?.id ??
-    draft?.exercises[0]?.id ??
-    null;
+    initialPosition?.exerciseId ?? draft?.exercises[0]?.id ?? null;
 
   const expandedId =
     selectedExpandedId === undefined ? initialExpandedId : selectedExpandedId;
@@ -265,6 +261,34 @@ export function useActiveWorkoutController(sessionId: string) {
     () =>
       draft?.exercises.reduce(
         (total, exercise) => total + exercise.sets.length,
+        0,
+      ) ?? 0,
+    [draft],
+  );
+
+  const incompleteSets = useMemo(
+    () =>
+      draft?.exercises.reduce(
+        (total, exercise) =>
+          total + exercise.sets.filter((set) => !set.completed).length,
+        0,
+      ) ?? 0,
+    [draft],
+  );
+
+  const incompleteSetsWithData = useMemo(
+    () =>
+      draft?.exercises.reduce(
+        (total, exercise) =>
+          total +
+          exercise.sets.filter(
+            (set) =>
+              !set.completed &&
+              (set.weight !== null ||
+                set.reps !== null ||
+                set.duration_seconds !== null ||
+                set.distance_meters !== null),
+          ).length,
         0,
       ) ?? 0,
     [draft],
@@ -320,6 +344,52 @@ export function useActiveWorkoutController(sessionId: string) {
     }
 
     replaceDraft(replaceWorkoutExercise(draft, updated));
+  }
+
+  function setExerciseRestSeconds(index: number, seconds: number) {
+    if (!draft) {
+      return;
+    }
+
+    const exercise = draft.exercises[index];
+
+    if (!exercise) {
+      return;
+    }
+
+    updateExercise({
+      ...exercise,
+
+      rest_seconds: seconds,
+    });
+  }
+
+  function replaceExerciseAtIndex(index: number, replacement: Exercise) {
+    if (!draft) {
+      return;
+    }
+
+    const current = draft.exercises[index];
+
+    if (!current) {
+      return;
+    }
+
+    const replaced = buildReplacement(current, replacement);
+
+    const next = {
+      ...draft,
+
+      exercises: draft.exercises.map((exercise, position) =>
+        position === index ? replaced : exercise,
+      ),
+    };
+
+    replaceDraft(next);
+
+    setExpandedId(replaced.id);
+
+    setReplacementIndex(null);
   }
 
   function moveExercise(
@@ -480,10 +550,9 @@ export function useActiveWorkoutController(sessionId: string) {
     seconds: number,
 
     exerciseName: string,
+
+    setIndex: number,
   ) {
-    /*
-     * Stamp completed_at locally.
-     */
     const oldById = new Map(original.sets.map((set) => [set.id, set]));
 
     const now = new Date().toISOString();
@@ -516,18 +585,63 @@ export function useActiveWorkoutController(sessionId: string) {
 
     updateExercise(normalized);
 
-    const completedIndex = normalized.sets.findIndex(
-      (set) => set.completed && !oldById.get(set.id)?.completed,
-    );
+    const completedSet = normalized.sets[setIndex];
 
-    if (completedIndex < 0) {
+    if (!completedSet || !completedSet.completed) {
       return;
     }
 
-    const nextSet = normalized.sets[completedIndex + 1];
+    const groupId = normalized.superset_group_id;
 
-    if (nextSet?.type !== "DROP") {
+    let shouldRest = true;
+
+    if (groupId) {
+      const members =
+        draft?.exercises.filter(
+          (exercise) => exercise.superset_group_id === groupId,
+        ) ?? [];
+
+      const memberIndex = members.findIndex(
+        (exercise) => exercise.id === normalized.id,
+      );
+
+      /*
+       * Rest only after the final exercise
+       * in the superset round.
+       */
+      shouldRest = memberIndex === members.length - 1;
+
+      if (!shouldRest) {
+        const nextMember = members[memberIndex + 1];
+
+        if (nextMember) {
+          setExpandedId(nextMember.id);
+        }
+      }
+    }
+
+    if (shouldRest && seconds > 0) {
       void startRest(seconds, normalized.exercise_id, exerciseName);
+    }
+
+    const allExerciseSetsDone = normalized.sets.every((set) => set.completed);
+
+    if (allExerciseSetsDone && draft) {
+      const next = nextExerciseAfter(
+        {
+          ...draft,
+
+          exercises: draft.exercises.map((item) =>
+            item.id === normalized.id ? normalized : item,
+          ),
+        },
+
+        normalized.id,
+      );
+
+      if (next && !groupId) {
+        setExpandedId(next.id);
+      }
     }
 
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
@@ -703,6 +817,10 @@ export function useActiveWorkoutController(sessionId: string) {
 
     setOptionsIndex,
 
+    replacementIndex,
+
+    setReplacementIndex,
+
     rest,
 
     actionLoading,
@@ -717,6 +835,10 @@ export function useActiveWorkoutController(sessionId: string) {
 
     completedSets,
 
+    incompleteSets,
+
+    incompleteSetsWithData,
+
     previousMap,
 
     activeOptionsExercise,
@@ -724,6 +846,10 @@ export function useActiveWorkoutController(sessionId: string) {
     updateDraft,
 
     updateExercise,
+
+    replaceExerciseAtIndex,
+
+    setExerciseRestSeconds,
 
     moveExercise,
 

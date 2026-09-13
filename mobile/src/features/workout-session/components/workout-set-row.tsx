@@ -2,31 +2,47 @@ import { Ionicons } from "@expo/vector-icons";
 
 import * as Haptics from "expo-haptics";
 
-import { useState } from "react";
-
-import { Pressable, Text, TextInput, View } from "react-native";
-
 import {
-  formatExerciseDuration,
-  parseExerciseDuration,
-} from "@/features/exercises/duration";
+  forwardRef,
+  useImperativeHandle,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 
-import { formatDistanceMeters } from "@/features/exercises/distance";
-
-import {
-  usesDistance,
-  usesDuration,
-  usesReps,
-  usesWeight,
-} from "@/features/exercises/tracking";
+import { Alert, Pressable, Text, View } from "react-native";
 
 import type { ExerciseTrackingType } from "@/features/exercises/types";
 
 import type { PreviousSet, WorkoutSet } from "@/features/workouts/types";
 
-import { RpeModal } from "./rpe-modal";
+import { completionError } from "../domain/completion";
+
+import { copyPreviousMetrics } from "../domain/previous-performance";
+
+import {
+  getTrackingColumns,
+  type WorkoutMetric,
+} from "../domain/tracking-layout";
+
+import {
+  MetricInput,
+  type MetricInputHandle,
+} from "./metric-inputs/metric-input";
+
+import { PreviousSetCell } from "./previous-set-cell";
+
+import { SetActionsModal } from "./set-actions-modal";
+
+import { SetCompletionButton } from "./set-completion-button";
 
 import { SetTypeModal } from "./set-type-modal";
+
+import { RpeModal } from "./rpe-modal";
+
+export interface WorkoutSetRowHandle {
+  focusFirst: () => void;
+}
 
 interface Props {
   workoutSet: WorkoutSet;
@@ -37,19 +53,25 @@ interface Props {
 
   index: number;
 
+  active: boolean;
+
+  totalSets: number;
+
   onChange: (patch: Partial<WorkoutSet>) => void;
 
   onToggleComplete: () => void;
+
+  onDuplicate: () => void;
 
   onRemove: () => void;
 }
 
 function setLabel(
-  workoutSet: WorkoutSet,
+  set: WorkoutSet,
 
   index: number,
 ): string {
-  switch (workoutSet.type) {
+  switch (set.type) {
     case "WARMUP":
       return "W";
 
@@ -70,292 +92,364 @@ function setLabel(
   }
 }
 
-function previousLabel(
-  previous: PreviousSet | undefined,
+function metricValue(
+  set: WorkoutSet,
 
-  trackingType: ExerciseTrackingType,
-): string {
-  if (!previous) {
-    return "—";
+  metric: WorkoutMetric,
+): number | null {
+  switch (metric) {
+    case "weight":
+      return set.weight;
+
+    case "reps":
+      return set.reps;
+
+    case "duration":
+      return set.duration_seconds;
+
+    case "distance":
+      return set.distance_meters;
   }
-
-  if (trackingType === "DURATION") {
-    return previous.duration_seconds !== null
-      ? formatExerciseDuration(previous.duration_seconds)
-      : "—";
-  }
-
-  if (trackingType === "DISTANCE_DURATION") {
-    const distance =
-      previous.distance_meters !== null
-        ? formatDistanceMeters(previous.distance_meters)
-        : "—";
-
-    const duration =
-      previous.duration_seconds !== null
-        ? formatExerciseDuration(previous.duration_seconds)
-        : "—";
-
-    return `${distance} · ${duration}`;
-  }
-
-  if (trackingType === "WEIGHT_DURATION") {
-    return (
-      `${previous.weight ?? "—"} · ` +
-      (previous.duration_seconds !== null
-        ? formatExerciseDuration(previous.duration_seconds)
-        : "—")
-    );
-  }
-
-  if (trackingType === "WEIGHT_DISTANCE") {
-    return (
-      `${previous.weight ?? "—"} · ` +
-      (previous.distance_meters !== null
-        ? formatDistanceMeters(previous.distance_meters)
-        : "—")
-    );
-  }
-
-  if (trackingType === "REPS_ONLY") {
-    return `${previous.reps ?? "—"} reps`;
-  }
-
-  if (trackingType === "BODYWEIGHT_REPS") {
-    return previous.weight
-      ? `+${previous.weight} × ${previous.reps ?? "—"}`
-      : `BW × ${previous.reps ?? "—"}`;
-  }
-
-  if (trackingType === "ASSISTED_REPS") {
-    return `${previous.weight ?? "—"} assist × ` + `${previous.reps ?? "—"}`;
-  }
-
-  return `${previous.weight ?? "—"} × ` + `${previous.reps ?? "—"}`;
 }
 
-export function WorkoutSetRow({
-  workoutSet,
-  previous,
-  trackingType,
-  index,
-  onChange,
-  onToggleComplete,
-  onRemove,
-}: Props) {
-  const [setTypeOpen, setSetTypeOpen] = useState(false);
+function targetPlaceholder(
+  set: WorkoutSet,
 
-  const [rpeOpen, setRpeOpen] = useState(false);
+  metric: WorkoutMetric,
+): string {
+  switch (metric) {
+    case "weight":
+      return set.target_weight?.toString() ?? "-";
 
-  const [durationDraft, setDurationDraft] = useState({
-    source: workoutSet.duration_seconds,
+    case "reps":
+      if (set.target_reps_min !== null && set.target_reps_max !== null) {
+        if (set.target_reps_min === set.target_reps_max) {
+          return String(set.target_reps_min);
+        }
 
-    text: formatExerciseDuration(workoutSet.duration_seconds),
-  });
+        return `${set.target_reps_min}` + `–${set.target_reps_max}`;
+      }
 
-  const durationText =
-    durationDraft.source === workoutSet.duration_seconds
-      ? durationDraft.text
-      : formatExerciseDuration(workoutSet.duration_seconds);
+      return set.target_reps_min?.toString() ?? "-";
 
-  function copyPrevious() {
-    if (!previous) {
-      return;
+    case "duration":
+      if (set.target_duration_seconds) {
+        const minutes = Math.floor(set.target_duration_seconds / 60);
+
+        const seconds = set.target_duration_seconds % 60;
+
+        return `${minutes}:` + `${seconds.toString().padStart(2, "0")}`;
+      }
+
+      return "0:00";
+
+    case "distance":
+      return set.target_distance_meters?.toString() ?? "m";
+  }
+}
+
+export const WorkoutSetRow = forwardRef<WorkoutSetRowHandle, Props>(
+  function WorkoutSetRow(
+    {
+      workoutSet,
+      previous,
+      trackingType,
+      index,
+      active,
+      totalSets,
+      onChange,
+      onToggleComplete,
+      onDuplicate,
+      onRemove,
+    },
+    forwardedRef,
+  ) {
+    const [setTypeOpen, setSetTypeOpen] = useState(false);
+
+    const [actionsOpen, setActionsOpen] = useState(false);
+
+    const [rpeOpen, setRpeOpen] = useState(false);
+
+    const columns = useMemo(
+      () => getTrackingColumns(trackingType, workoutSet.weight_unit),
+      [trackingType, workoutSet.weight_unit],
+    );
+
+    const inputRefs = useRef<
+      Partial<Record<WorkoutMetric, MetricInputHandle | null>>
+    >({});
+
+    useImperativeHandle(
+      forwardedRef,
+      () => ({
+        focusFirst() {
+          const first = columns[0]?.metric;
+
+          if (first) {
+            inputRefs.current[first]?.focus();
+          }
+        },
+      }),
+      [columns],
+    );
+
+    function commitMetric(
+      metric: WorkoutMetric,
+
+      value: number | null,
+    ) {
+      switch (metric) {
+        case "weight":
+          onChange({
+            weight: value,
+          });
+
+          break;
+
+        case "reps":
+          onChange({
+            reps: value === null ? null : Math.max(0, Math.floor(value)),
+          });
+
+          break;
+
+        case "duration":
+          onChange({
+            duration_seconds: value,
+          });
+
+          break;
+
+        case "distance":
+          onChange({
+            distance_meters: value,
+          });
+
+          break;
+      }
     }
 
-    onChange({
-      weight: previous.weight,
+    function focusNextMetric(metricIndex: number) {
+      const next = columns[metricIndex + 1];
 
-      weight_unit: previous.weight_unit,
+      if (next) {
+        inputRefs.current[next.metric]?.focus();
 
-      reps: previous.reps,
+        return;
+      }
 
-      duration_seconds: previous.duration_seconds,
+      /*
+       * Last metric:
+       * try to complete the set.
+       */
+      const error = completionError(trackingType, workoutSet);
 
-      distance_meters: previous.distance_meters,
+      if (!error) {
+        onToggleComplete();
+      }
+    }
 
-      rpe: previous.rpe,
-    });
+    function complete() {
+      if (workoutSet.completed) {
+        onToggleComplete();
 
-    void Haptics.selectionAsync();
-  }
+        return;
+      }
 
-  return (
-    <>
-      <View
-        className="min-h-[48px] flex-row items-center rounded-xl px-1"
-        style={{
-          backgroundColor: workoutSet.completed
-            ? "rgba(37,99,235,.13)"
-            : "transparent",
-        }}
-      >
-        <Pressable
-          onPress={() => {
-            setSetTypeOpen(true);
-          }}
-          className="w-[34px] items-center justify-center"
-        >
-          <Text className="text-[11px] font-extrabold text-white/55">
-            {setLabel(workoutSet, index)}
-          </Text>
-        </Pressable>
+      const error = completionError(trackingType, workoutSet);
 
-        <Pressable
-          onPress={copyPrevious}
-          className="w-[84px] items-center justify-center px-1"
-        >
-          <Text
-            numberOfLines={1}
-            className="text-white/27 text-[9px] font-medium"
-          >
-            {previousLabel(previous, trackingType)}
-          </Text>
-        </Pressable>
+      if (error) {
+        void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Error);
 
-        {usesWeight(trackingType) ? (
-          <View className="mx-1 flex-1">
-            <TextInput
-              value={workoutSet.weight?.toString() ?? ""}
-              onChangeText={(value) => {
-                const cleaned = value.replace(/[^0-9.]/g, "");
+        Alert.alert("Set isn't ready", error);
 
-                onChange({
-                  weight: cleaned ? Number(cleaned) : null,
-                });
-              }}
-              keyboardType="decimal-pad"
-              selectTextOnFocus
-              placeholder={workoutSet.target_weight?.toString() ?? "-"}
-              placeholderTextColor="rgba(255,255,255,.18)"
-              className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[13px] font-bold text-white"
-            />
-          </View>
-        ) : null}
+        return;
+      }
 
-        {usesReps(trackingType) ? (
-          <View className="mx-1 flex-1">
-            <TextInput
-              value={workoutSet.reps?.toString() ?? ""}
-              onChangeText={(value) => {
-                const cleaned = value.replace(/\D/g, "");
+      onToggleComplete();
+    }
 
-                onChange({
-                  reps: cleaned ? Number(cleaned) : null,
-                });
-              }}
-              keyboardType="number-pad"
-              selectTextOnFocus
-              placeholder={workoutSet.target_reps_min?.toString() ?? "-"}
-              placeholderTextColor="rgba(255,255,255,.18)"
-              className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[13px] font-bold text-white"
-            />
-          </View>
-        ) : null}
-
-        {usesDuration(trackingType) ? (
-          <View className="mx-1 flex-1">
-            <TextInput
-              value={durationText}
-              onChangeText={(text) => {
-                setDurationDraft({
-                  source: workoutSet.duration_seconds,
-
-                  text,
-                });
-              }}
-              onBlur={() => {
-                onChange({
-                  duration_seconds: parseExerciseDuration(durationText),
-                });
-              }}
-              keyboardType="numbers-and-punctuation"
-              selectTextOnFocus
-              placeholder={
-                workoutSet.target_duration_seconds
-                  ? formatExerciseDuration(workoutSet.target_duration_seconds)
-                  : "0:00"
-              }
-              placeholderTextColor="rgba(255,255,255,.18)"
-              className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[13px] font-bold text-white"
-            />
-          </View>
-        ) : null}
-
-        {usesDistance(trackingType) ? (
-          <View className="mx-1 flex-1">
-            <TextInput
-              value={workoutSet.distance_meters?.toString() ?? ""}
-              onChangeText={(value) => {
-                const cleaned = value.replace(/[^0-9.]/g, "");
-
-                onChange({
-                  distance_meters: cleaned ? Number(cleaned) : null,
-                });
-              }}
-              keyboardType="decimal-pad"
-              selectTextOnFocus
-              placeholder={workoutSet.target_distance_meters?.toString() ?? "m"}
-              placeholderTextColor="rgba(255,255,255,.18)"
-              className="min-h-[39px] rounded-lg bg-white/[0.045] text-center text-[13px] font-bold text-white"
-            />
-          </View>
-        ) : null}
-
-        <Pressable
-          onPress={() => {
-            setRpeOpen(true);
-          }}
-          className="mx-1 h-[39px] w-[43px] items-center justify-center rounded-lg bg-white/[0.045]"
-        >
-          <Text className="text-[10px] font-bold text-white/30">
-            {workoutSet.rpe ?? "RPE"}
-          </Text>
-        </Pressable>
-
-        <Pressable
-          onLongPress={onRemove}
-          onPress={onToggleComplete}
-          className="ml-1 h-9 w-9 items-center justify-center rounded-full"
+    return (
+      <>
+        <View
+          className="mb-1 min-h-[52px] flex-row items-center rounded-xl px-1"
           style={{
             backgroundColor: workoutSet.completed
-              ? "#2563EB"
-              : "rgba(255,255,255,.065)",
+              ? "rgba(37,99,235,.11)"
+              : active
+                ? "rgba(255,255,255,.035)"
+                : "transparent",
+
+            borderLeftWidth: active && !workoutSet.completed ? 2 : 0,
+
+            borderLeftColor: "#3B82F6",
           }}
         >
-          <Ionicons
-            name="checkmark"
-            size={18}
-            color={workoutSet.completed ? "#FFFFFF" : "rgba(255,255,255,.25)"}
+          <Pressable
+            onPress={() => {
+              setSetTypeOpen(true);
+            }}
+            className="w-[34px] items-center justify-center"
+          >
+            <Text
+              className="text-[11px] font-extrabold"
+              style={{
+                color:
+                  workoutSet.type === "WARMUP"
+                    ? "#F59E0B"
+                    : workoutSet.type === "DROP"
+                      ? "#60A5FA"
+                      : workoutSet.type === "FAILURE"
+                        ? "#F87171"
+                        : "rgba(255,255,255,.55)",
+              }}
+            >
+              {setLabel(workoutSet, index)}
+            </Text>
+          </Pressable>
+
+          <PreviousSetCell
+            trackingType={trackingType}
+            previous={previous}
+            onCopy={() => {
+              if (!previous) {
+                return;
+              }
+
+              const copied = copyPreviousMetrics(workoutSet, previous);
+
+              onChange({
+                weight: copied.weight,
+
+                weight_unit: copied.weight_unit,
+
+                reps: copied.reps,
+
+                duration_seconds: copied.duration_seconds,
+
+                distance_meters: copied.distance_meters,
+
+                rpe: copied.rpe,
+              });
+
+              void Haptics.selectionAsync();
+            }}
           />
-        </Pressable>
-      </View>
 
-      <SetTypeModal
-        visible={setTypeOpen}
-        value={workoutSet.type}
-        onClose={() => {
-          setSetTypeOpen(false);
-        }}
-        onSelect={(type) => {
-          onChange({
-            type,
-          });
-        }}
-      />
+          <View className="flex-1 flex-row gap-1.5">
+            {columns.map((column, metricIndex) => (
+              <View
+                key={column.metric}
+                style={{
+                  flex: column.flex,
+                }}
+              >
+                <MetricInput
+                  ref={(value) => {
+                    inputRefs.current[column.metric] = value;
+                  }}
+                  metric={column.metric}
+                  value={metricValue(workoutSet, column.metric)}
+                  placeholder={targetPlaceholder(workoutSet, column.metric)}
+                  completed={workoutSet.completed}
+                  returnKeyType={
+                    metricIndex === columns.length - 1 ? "done" : "next"
+                  }
+                  onCommit={(value) => {
+                    commitMetric(column.metric, value);
+                  }}
+                  onSubmit={() => {
+                    focusNextMetric(metricIndex);
+                  }}
+                />
+              </View>
+            ))}
+          </View>
 
-      <RpeModal
-        visible={rpeOpen}
-        value={workoutSet.rpe}
-        onClose={() => {
-          setRpeOpen(false);
-        }}
-        onSelect={(rpe) => {
-          onChange({
-            rpe,
-          });
-        }}
-      />
-    </>
-  );
-}
+          <SetCompletionButton
+            completed={workoutSet.completed}
+            onPress={complete}
+          />
+
+          <Pressable
+            onPress={() => {
+              setActionsOpen(true);
+            }}
+            hitSlop={6}
+            className="h-10 w-8 items-center justify-center"
+          >
+            <Ionicons
+              name="ellipsis-horizontal"
+              size={16}
+              color="rgba(255,255,255,.3)"
+            />
+          </Pressable>
+        </View>
+
+        <SetTypeModal
+          visible={setTypeOpen}
+          value={workoutSet.type}
+          onClose={() => {
+            setSetTypeOpen(false);
+          }}
+          onSelect={(type) => {
+            onChange({
+              type,
+            });
+          }}
+        />
+
+        <SetActionsModal
+          visible={actionsOpen}
+          canDelete={totalSets > 1}
+          onRpe={() => {
+            setRpeOpen(true);
+          }}
+          onDuplicate={onDuplicate}
+          onDelete={() => {
+            if (workoutSet.completed) {
+              Alert.alert(
+                "Delete completed set?",
+                "The logged values for this set will be removed.",
+                [
+                  {
+                    text: "Cancel",
+
+                    style: "cancel",
+                  },
+                  {
+                    text: "Delete",
+
+                    style: "destructive",
+
+                    onPress: onRemove,
+                  },
+                ],
+              );
+
+              return;
+            }
+
+            onRemove();
+          }}
+          onClose={() => {
+            setActionsOpen(false);
+          }}
+        />
+
+        <RpeModal
+          visible={rpeOpen}
+          value={workoutSet.rpe}
+          onClose={() => {
+            setRpeOpen(false);
+          }}
+          onSelect={(rpe) => {
+            onChange({
+              rpe,
+            });
+          }}
+        />
+      </>
+    );
+  },
+);

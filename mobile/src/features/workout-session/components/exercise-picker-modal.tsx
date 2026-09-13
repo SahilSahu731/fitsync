@@ -1,6 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -25,23 +25,62 @@ import type { Exercise } from "@/features/exercises/types";
 interface Props {
   visible: boolean;
 
+  title?: string;
+
+  selectionMode?: "single" | "multiple";
+
+  excludeExerciseIds?: string[];
+
   onClose: () => void;
 
   onAdd: (exercises: Exercise[]) => void;
 }
 
-export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
+export function ExercisePickerModal({
+  visible,
+  title = "Add exercises",
+  selectionMode = "multiple",
+  excludeExerciseIds = [],
+  onClose,
+  onAdd,
+}: Props) {
   const [search, setSearch] = useState("");
 
   const [selected, setSelected] = useState<Record<string, Exercise>>({});
 
-  const debounced = useDebouncedValue(search, 300);
+  const debounced = useDebouncedValue(search, 250);
 
   const library = useOfflineExercises({
     search: debounced,
   });
 
-  function toggle(exercise: Exercise) {
+  const excluded = useMemo(
+    () => new Set(excludeExerciseIds),
+    [excludeExerciseIds],
+  );
+
+  const items = useMemo(
+    () => library.items.filter((exercise) => !excluded.has(exercise.id)),
+    [library.items, excluded],
+  );
+
+  function resetAndClose() {
+    setSelected({});
+
+    setSearch("");
+
+    onClose();
+  }
+
+  function choose(exercise: Exercise) {
+    if (selectionMode === "single") {
+      onAdd([exercise]);
+
+      resetAndClose();
+
+      return;
+    }
+
     setSelected((current) => {
       const copy = {
         ...current,
@@ -57,16 +96,6 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
     });
   }
 
-  function add() {
-    onAdd(Object.values(selected));
-
-    setSelected({});
-
-    setSearch("");
-
-    onClose();
-  }
-
   const selectedCount = Object.keys(selected).length;
 
   return (
@@ -74,12 +103,12 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
       visible={visible}
       animationType="slide"
       presentationStyle="fullScreen"
-      onRequestClose={onClose}
+      onRequestClose={resetAndClose}
     >
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-row items-center px-5 pt-3">
           <Pressable
-            onPress={onClose}
+            onPress={resetAndClose}
             className="h-11 w-11 items-center justify-center rounded-full bg-white/[0.05]"
           >
             <Ionicons name="close" size={21} color="#FFFFFF" />
@@ -87,7 +116,7 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
 
           <View className="ml-4 flex-1">
             <Text className="text-[22px] font-extrabold text-white">
-              Add exercises
+              {title}
             </Text>
 
             {library.isOfflineFallback ? (
@@ -97,18 +126,24 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
             ) : null}
           </View>
 
-          <Pressable
-            disabled={selectedCount === 0}
-            onPress={add}
-            className="rounded-xl bg-brand px-4 py-3"
-            style={{
-              opacity: selectedCount === 0 ? 0.4 : 1,
-            }}
-          >
-            <Text className="text-[13px] font-bold text-white">
-              Add {selectedCount || ""}
-            </Text>
-          </Pressable>
+          {selectionMode === "multiple" ? (
+            <Pressable
+              disabled={selectedCount === 0}
+              onPress={() => {
+                onAdd(Object.values(selected));
+
+                resetAndClose();
+              }}
+              className="rounded-xl bg-brand px-4 py-3"
+              style={{
+                opacity: selectedCount === 0 ? 0.4 : 1,
+              }}
+            >
+              <Text className="text-[13px] font-bold text-white">
+                Add {selectedCount || ""}
+              </Text>
+            </Pressable>
+          ) : null}
         </View>
 
         <View className="mx-5 mt-6 flex-row items-center rounded-2xl border border-white/10 bg-white/[0.04] px-4">
@@ -130,9 +165,10 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
           </View>
         ) : (
           <FlatList
-            data={library.items}
+            data={items}
             keyExtractor={(item) => item.id}
             className="mt-4"
+            keyboardShouldPersistTaps="handled"
             onEndReached={() => {
               if (library.hasNextPage && !library.isFetchingNextPage) {
                 void library.fetchNextPage();
@@ -145,7 +181,7 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
               return (
                 <Pressable
                   onPress={() => {
-                    toggle(item);
+                    choose(item);
                   }}
                   className="mx-5 mb-2 flex-row items-center rounded-2xl border p-4"
                   style={{
@@ -167,23 +203,33 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
                       {item.primary_muscles.join(" · ")}
                     </Text>
 
-                    <Text className="mt-1 text-[10px] font-semibold text-brand-bright/70">
+                    <Text className="mt-1 text-[10px] font-semibold text-brand-bright/75">
                       {trackingLabel(item.tracking_type)}
                     </Text>
                   </View>
 
-                  <View
-                    className="h-6 w-6 items-center justify-center rounded-full border"
-                    style={{
-                      borderColor: active ? "#3B82F6" : "rgba(255,255,255,.2)",
+                  {selectionMode === "multiple" ? (
+                    <View
+                      className="h-6 w-6 items-center justify-center rounded-full border"
+                      style={{
+                        borderColor: active
+                          ? "#3B82F6"
+                          : "rgba(255,255,255,.2)",
 
-                      backgroundColor: active ? "#3B82F6" : "transparent",
-                    }}
-                  >
-                    {active ? (
-                      <Ionicons name="checkmark" size={15} color="#FFFFFF" />
-                    ) : null}
-                  </View>
+                        backgroundColor: active ? "#3B82F6" : "transparent",
+                      }}
+                    >
+                      {active ? (
+                        <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                      ) : null}
+                    </View>
+                  ) : (
+                    <Ionicons
+                      name="swap-horizontal"
+                      size={19}
+                      color="#60A5FA"
+                    />
+                  )}
                 </Pressable>
               );
             }}

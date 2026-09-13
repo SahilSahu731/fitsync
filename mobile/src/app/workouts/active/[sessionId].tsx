@@ -3,6 +3,8 @@ import { router, useLocalSearchParams } from "expo-router";
 import {
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
   Pressable,
   ScrollView,
   Text,
@@ -28,6 +30,8 @@ import { WorkoutHeader } from "@/features/workout-session/components/workout-hea
 
 import { useActiveWorkoutController } from "@/features/workout-session/hooks/use-active-workout-controller";
 
+import { useWorkoutLoggingUi } from "@/features/workout-session/hooks/use-workout-logging-ui";
+
 export default function ActiveWorkoutScreen() {
   const params = useLocalSearchParams<{
     sessionId?: string;
@@ -38,9 +42,11 @@ export default function ActiveWorkoutScreen() {
 
   const controller = useActiveWorkoutController(sessionId);
 
+  const { setScrollView, registerExercisePosition, scrollToExercise } =
+    useWorkoutLoggingUi();
+
   const {
     isLoading,
-
     draft,
 
     expandedId,
@@ -52,6 +58,9 @@ export default function ActiveWorkoutScreen() {
     optionsIndex,
     setOptionsIndex,
 
+    replacementIndex,
+    setReplacementIndex,
+
     rest,
 
     actionLoading,
@@ -62,8 +71,10 @@ export default function ActiveWorkoutScreen() {
     online,
 
     completedSets,
-    previousMap,
+    incompleteSets,
+    incompleteSetsWithData,
 
+    previousMap,
     activeOptionsExercise,
 
     updateDraft,
@@ -76,6 +87,9 @@ export default function ActiveWorkoutScreen() {
     removeSuperset,
 
     addExercises,
+    replaceExerciseAtIndex,
+    setExerciseRestSeconds,
+
     finishWorkout,
     cancelCurrentWorkout,
 
@@ -88,15 +102,29 @@ export default function ActiveWorkoutScreen() {
     volumeLabel,
   } = controller;
 
+  const totalSets =
+    draft?.exercises.reduce(
+      (total, exercise) => total + exercise.sets.length,
+      0,
+    ) ?? 0;
+
   function confirmFinish() {
+    const warning =
+      incompleteSetsWithData > 0
+        ? `You have ${incompleteSetsWithData} incomplete ` +
+          "set(s) containing logged values. " +
+          "They will remain in the workout but won't count as completed."
+        : incompleteSets > 0
+          ? `${incompleteSets} set(s) are still incomplete.`
+          : "Everything is logged.";
+
     Alert.alert(
       "Finish workout?",
 
-      `${completedSets} completed sets will be saved.`,
-
+      `${completedSets} completed sets.\n\n` + warning,
       [
         {
-          text: "Keep training",
+          text: "Go back",
 
           style: "cancel",
         },
@@ -116,8 +144,7 @@ export default function ActiveWorkoutScreen() {
     Alert.alert(
       "Discard workout?",
 
-      "This workout will be discarded.",
-
+      "This removes the current workout from " + "your device and cloud sync.",
       [
         {
           text: "Keep training",
@@ -167,178 +194,255 @@ export default function ActiveWorkoutScreen() {
 
   return (
     <SafeAreaView className="flex-1 bg-background">
-      <WorkoutHeader
-        elapsedLabel={elapsedLabel}
-        volumeLabel={volumeLabel}
-        completedSets={completedSets}
-        actionLoading={actionLoading}
-        onExit={() => {
-          router.replace("/train");
-        }}
-        onCancel={confirmCancel}
-        onFinish={confirmFinish}
-      />
-
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          paddingBottom: rest ? 150 : 100,
-        }}
+      <KeyboardAvoidingView
+        className="flex-1"
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
       >
-        <View className="px-4 py-4">
-          <TextInput
-            value={draft.name}
-            onChangeText={(name) => {
-              updateDraft({
-                name,
-              });
-            }}
-            selectionColor="#3B82F6"
-            className="text-[23px] font-extrabold tracking-[-0.7px] text-white"
-          />
+        <WorkoutHeader
+          elapsedLabel={elapsedLabel}
+          volumeLabel={volumeLabel}
+          completedSets={completedSets}
+          totalSets={totalSets}
+          actionLoading={actionLoading}
+          onExit={() => {
+            router.replace("/train");
+          }}
+          onCancel={confirmCancel}
+          onFinish={confirmFinish}
+        />
 
-          <View className="mt-1">
-            <SaveIndicator
-              localStatus={localSaveStatus}
-              syncStatus={syncStatus}
-              online={online}
+        <ScrollView
+          ref={setScrollView}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerStyle={{
+            paddingBottom: rest ? 145 : 80,
+          }}
+        >
+          <View className="px-4 pb-3 pt-4">
+            <TextInput
+              value={draft.name}
+              onChangeText={(name) => {
+                updateDraft({
+                  name,
+                });
+              }}
+              selectionColor="#3B82F6"
+              className="text-[22px] font-extrabold tracking-[-0.7px] text-white"
             />
+
+            <View className="mt-1">
+              <SaveIndicator
+                localStatus={localSaveStatus}
+                syncStatus={syncStatus}
+                online={online}
+              />
+            </View>
+
+            {error ? (
+              <Text className="mt-3 text-[12px] text-red-300">{error}</Text>
+            ) : null}
           </View>
 
-          {error ? (
-            <Text className="mt-3 text-[12px] text-red-300">{error}</Text>
-          ) : null}
-        </View>
+          {draft.exercises.length === 0 ? (
+            <EmptyWorkoutState />
+          ) : (
+            draft.exercises.map((exercise, index) => (
+              <View
+                key={exercise.id}
+                onLayout={(event) => {
+                  registerExercisePosition(
+                    exercise.id,
+                    event.nativeEvent.layout.y,
+                  );
+                }}
+                className="flex-row"
+              >
+                {exercise.superset_group_id ? (
+                  <View className="w-[3px] bg-brand/70" />
+                ) : null}
 
-        {draft.exercises.length === 0 ? (
-          <EmptyWorkoutState />
-        ) : (
-          draft.exercises.map((exercise, index) => (
-            <View key={exercise.id} className="flex-row">
-              {exercise.superset_group_id ? (
-                <View className="w-[3px] bg-brand-bright" />
-              ) : null}
+                <View className="flex-1">
+                  {exercise.superset_group_id ? (
+                    <View className="bg-brand/[0.06] px-4 py-1">
+                      <Text className="text-[9px] font-bold uppercase tracking-[1.5px] text-brand-bright/70">
+                        Superset
+                      </Text>
+                    </View>
+                  ) : null}
 
-              <View className="flex-1">
-                <ActiveExerciseCard
-                  exercise={exercise}
-                  previous={previousMap.get(exercise.exercise_id)}
-                  expanded={expandedId === exercise.id}
-                  onToggleExpanded={() => {
-                    setExpandedId((current) =>
-                      current === exercise.id ? null : exercise.id,
-                    );
-                  }}
-                  onChange={updateExercise}
-                  onCompletedSet={(seconds, exerciseName, updatedExercise) => {
-                    completeSet(
-                      exercise,
-                      updatedExercise,
+                  <ActiveExerciseCard
+                    exercise={exercise}
+                    previous={previousMap.get(exercise.exercise_id)}
+                    expanded={expandedId === exercise.id}
+                    onToggleExpanded={() => {
+                      const next =
+                        expandedId === exercise.id ? null : exercise.id;
+
+                      setExpandedId(next);
+
+                      if (next) {
+                        setTimeout(() => {
+                          scrollToExercise(next);
+                        }, 120);
+                      }
+                    }}
+                    onChange={updateExercise}
+                    onCompletedSet={(
                       seconds,
                       exerciseName,
-                    );
-                  }}
-                  onMenu={() => {
-                    setOptionsIndex(index);
-                  }}
-                />
+                      updatedExercise,
+                      setIndex,
+                    ) => {
+                      completeSet(
+                        exercise,
+                        updatedExercise,
+                        seconds,
+                        exerciseName,
+                        setIndex,
+                      );
+                    }}
+                    onMenu={() => {
+                      setOptionsIndex(index);
+                    }}
+                  />
+                </View>
               </View>
-            </View>
-          ))
-        )}
+            ))
+          )}
 
-        <Pressable
-          onPress={() => {
-            setPickerOpen(true);
-          }}
-          className="mx-4 mt-5 min-h-[48px] items-center justify-center rounded-xl bg-brand"
-        >
-          <Text className="text-[14px] font-extrabold text-white">
-            + Add Exercise
-          </Text>
-        </Pressable>
+          <Pressable
+            onPress={() => {
+              setPickerOpen(true);
+            }}
+            className="mx-4 mt-5 min-h-[48px] flex-row items-center justify-center rounded-xl bg-brand"
+          >
+            <Text className="text-[14px] font-extrabold text-white">
+              + Add Exercise
+            </Text>
+          </Pressable>
 
-        <TextInput
-          value={draft.notes ?? ""}
-          onChangeText={(value) => {
-            updateDraft({
-              notes: value || null,
-            });
-          }}
-          multiline
-          placeholder="Workout notes..."
-          placeholderTextColor="rgba(255,255,255,.2)"
-          className="mx-4 mt-4 min-h-[65px] rounded-xl bg-white/[0.025] px-4 py-3 text-[12px] leading-5 text-white"
-        />
-      </ScrollView>
+          <View className="mx-4 mt-6">
+            <Text className="mb-2 text-[10px] font-bold uppercase tracking-[1.4px] text-white/20">
+              Workout notes
+            </Text>
 
-      {rest ? (
-        <RestTimer
-          restEndsAt={rest.restEndsAt}
-          exerciseName={rest.exerciseName}
-          onAdjust={(next) => {
-            void updateRestEndsAt(next);
-          }}
+            <TextInput
+              value={draft.notes ?? ""}
+              onChangeText={(value) => {
+                updateDraft({
+                  notes: value || null,
+                });
+              }}
+              multiline
+              placeholder="Anything worth remembering?"
+              placeholderTextColor="rgba(255,255,255,.18)"
+              className="min-h-[72px] rounded-xl bg-white/[0.025] px-4 py-3 text-[12px] leading-5 text-white/55"
+            />
+          </View>
+        </ScrollView>
+
+        {rest ? (
+          <RestTimer
+            restEndsAt={rest.restEndsAt}
+            exerciseName={rest.exerciseName}
+            onAdjust={(next) => {
+              void updateRestEndsAt(next);
+            }}
+            onClose={() => {
+              void stopRest();
+            }}
+          />
+        ) : null}
+
+        <ExercisePickerModal
+          visible={pickerOpen}
           onClose={() => {
-            void stopRest();
+            setPickerOpen(false);
+          }}
+          onAdd={(exercises) => {
+            void addExercises(exercises);
           }}
         />
-      ) : null}
 
-      <ExercisePickerModal
-        visible={pickerOpen}
-        onClose={() => {
-          setPickerOpen(false);
-        }}
-        onAdd={(exercises) => {
-          void addExercises(exercises);
-        }}
-      />
-
-      {activeOptionsExercise ? (
-        <ExerciseOptionsModal
-          visible={optionsIndex !== null}
-          canMoveUp={optionsIndex !== null && optionsIndex > 0}
-          canMoveDown={
-            optionsIndex !== null && optionsIndex < draft.exercises.length - 1
-          }
-          inSuperset={Boolean(activeOptionsExercise.superset_group_id)}
-          canSupersetNext={
-            optionsIndex !== null && optionsIndex < draft.exercises.length - 1
-          }
-          onMoveUp={() => {
-            if (optionsIndex !== null) {
-              moveExercise(optionsIndex, -1);
-            }
-          }}
-          onMoveDown={() => {
-            if (optionsIndex !== null) {
-              moveExercise(optionsIndex, 1);
-            }
-          }}
-          onSupersetNext={() => {
-            if (optionsIndex !== null) {
-              createSuperset(optionsIndex);
-            }
-          }}
-          onRemoveSuperset={() => {
-            const group = activeOptionsExercise.superset_group_id;
-
-            if (group) {
-              removeSuperset(group);
-            }
-          }}
-          onRemoveExercise={() => {
-            if (optionsIndex !== null) {
-              removeExercise(optionsIndex);
-            }
-          }}
+        <ExercisePickerModal
+          visible={replacementIndex !== null}
+          title="Replace exercise"
+          selectionMode="single"
+          excludeExerciseIds={draft.exercises.map(
+            (exercise) => exercise.exercise_id,
+          )}
           onClose={() => {
-            setOptionsIndex(null);
+            setReplacementIndex(null);
+          }}
+          onAdd={(exercises) => {
+            const exercise = exercises[0];
+
+            if (exercise && replacementIndex !== null) {
+              replaceExerciseAtIndex(replacementIndex, exercise);
+            }
           }}
         />
-      ) : null}
+
+        {activeOptionsExercise ? (
+          <ExerciseOptionsModal
+            visible={optionsIndex !== null}
+            exerciseName={activeOptionsExercise.exercise_name}
+            restSeconds={activeOptionsExercise.rest_seconds}
+            canMoveUp={optionsIndex !== null && optionsIndex > 0}
+            canMoveDown={
+              optionsIndex !== null && optionsIndex < draft.exercises.length - 1
+            }
+            inSuperset={Boolean(activeOptionsExercise.superset_group_id)}
+            canSupersetNext={
+              optionsIndex !== null && optionsIndex < draft.exercises.length - 1
+            }
+            onViewExercise={() => {
+              router.push(`/exercises/${activeOptionsExercise.exercise_id}`);
+            }}
+            onReplace={() => {
+              if (optionsIndex !== null) {
+                setReplacementIndex(optionsIndex);
+              }
+            }}
+            onRestChange={(seconds) => {
+              if (optionsIndex !== null) {
+                setExerciseRestSeconds(optionsIndex, seconds);
+              }
+            }}
+            onMoveUp={() => {
+              if (optionsIndex !== null) {
+                moveExercise(optionsIndex, -1);
+              }
+            }}
+            onMoveDown={() => {
+              if (optionsIndex !== null) {
+                moveExercise(optionsIndex, 1);
+              }
+            }}
+            onSupersetNext={() => {
+              if (optionsIndex !== null) {
+                createSuperset(optionsIndex);
+              }
+            }}
+            onRemoveSuperset={() => {
+              const group = activeOptionsExercise.superset_group_id;
+
+              if (group) {
+                removeSuperset(group);
+              }
+            }}
+            onRemoveExercise={() => {
+              if (optionsIndex !== null) {
+                removeExercise(optionsIndex);
+              }
+            }}
+            onClose={() => {
+              setOptionsIndex(null);
+            }}
+          />
+        ) : null}
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }

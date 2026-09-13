@@ -2,7 +2,7 @@ import { Ionicons } from "@expo/vector-icons";
 
 import * as Haptics from "expo-haptics";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 
 import { Pressable, Text, View } from "react-native";
 
@@ -15,7 +15,7 @@ interface Props {
 
   exerciseName: string;
 
-  onAdjust: (restEndsAt: string) => void;
+  onAdjust: (value: string) => void;
 
   onClose: () => void;
 }
@@ -26,13 +26,9 @@ export function RestTimer({
   onAdjust,
   onClose,
 }: Props) {
-  const initial = remainingRestSeconds(restEndsAt);
+  const [remaining, setRemaining] = useState(remainingRestSeconds(restEndsAt));
 
-  const [remaining, setRemaining] = useState(initial);
-
-  const [startingSeconds, setStartingSeconds] = useState(Math.max(1, initial));
-
-  const [notified, setNotified] = useState(false);
+  const [announced, setAnnounced] = useState(false);
 
   useEffect(() => {
     const tick = () => {
@@ -40,117 +36,81 @@ export function RestTimer({
 
       setRemaining(next);
 
-      if (next <= 0 && !notified) {
-        setNotified(true);
+      if (next === 0 && !announced) {
+        setAnnounced(true);
 
         void Haptics.notificationAsync(
           Haptics.NotificationFeedbackType.Success,
         );
       }
+
+      if (next > 0 && announced) {
+        setAnnounced(false);
+      }
     };
 
     tick();
 
-    const interval = setInterval(tick, 500);
+    const id = setInterval(tick, 500);
 
     return () => {
-      clearInterval(interval);
+      clearInterval(id);
     };
-  }, [restEndsAt, notified]);
+  }, [restEndsAt, announced]);
 
-  useEffect(() => {
-    const timeoutId = setTimeout(() => {
-      const latest = remainingRestSeconds(restEndsAt);
-
-      setStartingSeconds((current) => Math.max(current, latest));
-
-      if (latest > 0) {
-        setNotified(false);
-      }
-    }, 0);
-
-    return () => clearTimeout(timeoutId);
-  }, [restEndsAt]);
-
-  const progress = useMemo(
-    () => (startingSeconds > 0 ? remaining / startingSeconds : 0),
-    [remaining, startingSeconds],
-  );
-
-  function adjust(amount: number) {
-    const next = adjustRestEndsAt(restEndsAt, amount);
-
-    onAdjust(next);
+  function adjust(seconds: number) {
+    onAdjust(adjustRestEndsAt(restEndsAt, seconds));
 
     void Haptics.selectionAsync();
   }
 
   return (
-    <View className="absolute bottom-4 left-4 right-4 z-50 overflow-hidden rounded-[22px] border border-brand-bright/25 bg-[#111827] shadow-2xl">
-      <View className="flex-row items-center px-4 pt-4">
-        <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand/20">
-          <Ionicons name="timer-outline" size={19} color="#60A5FA" />
+    <View className="absolute bottom-3 left-3 right-3 z-50 overflow-hidden rounded-[20px] border border-brand-bright/20 bg-[#121722] shadow-2xl">
+      <View className="flex-row items-center px-4 py-3">
+        <View className="h-9 w-9 items-center justify-center rounded-xl bg-brand/15">
+          <Ionicons
+            name={remaining > 0 ? "timer-outline" : "checkmark"}
+            size={18}
+            color="#60A5FA"
+          />
         </View>
 
         <View className="ml-3 flex-1">
           <Text
             numberOfLines={1}
-            className="text-[11px] font-semibold text-white/40"
+            className="text-[10px] font-semibold text-white/35"
           >
             {exerciseName}
           </Text>
 
-          <Text className="mt-0.5 text-[22px] font-extrabold tracking-[-0.7px] text-white">
-            {remaining === 0 ? "Rest complete" : formatDuration(remaining)}
+          <Text className="mt-0.5 text-[20px] font-extrabold text-white">
+            {remaining > 0 ? formatDuration(remaining) : "Rest complete"}
           </Text>
         </View>
 
         <Pressable
-          onPress={onClose}
-          hitSlop={10}
-          className="h-9 w-9 items-center justify-center rounded-full bg-white/[0.05]"
-        >
-          <Ionicons name="close" size={17} color="#FFFFFF" />
-        </Pressable>
-      </View>
-
-      <View className="mx-4 mt-3 h-[3px] overflow-hidden rounded-full bg-white/10">
-        <View
-          className="h-full rounded-full bg-brand-bright"
-          style={{
-            width: `${Math.min(100, Math.max(0, progress * 100))}%`,
-          }}
-        />
-      </View>
-
-      <View className="mt-3 flex-row border-t border-white/[0.06]">
-        <Pressable
           onPress={() => {
             adjust(-15);
           }}
-          className="min-h-[47px] flex-1 items-center justify-center"
+          className="h-10 min-w-[52px] items-center justify-center rounded-xl bg-white/[0.05]"
         >
-          <Text className="text-[13px] font-bold text-white/60">−15s</Text>
+          <Text className="text-[12px] font-bold text-white/55">−15</Text>
         </Pressable>
-
-        <View className="w-px bg-white/[0.06]" />
 
         <Pressable
           onPress={onClose}
-          className="min-h-[47px] flex-1 items-center justify-center"
+          className="ml-2 h-10 min-w-[52px] items-center justify-center rounded-xl bg-brand/15"
         >
-          <Text className="text-[13px] font-bold text-brand-bright">Skip</Text>
+          <Text className="text-[12px] font-bold text-brand-bright">Skip</Text>
         </Pressable>
-
-        <View className="w-px bg-white/[0.06]" />
 
         <Pressable
           onPress={() => {
             adjust(15);
           }}
-          className="min-h-[47px] flex-1 items-center justify-center"
+          className="ml-2 h-10 min-w-[52px] items-center justify-center rounded-xl bg-white/[0.05]"
         >
-          <Text className="text-[13px] font-bold text-white/60">+15s</Text>
+          <Text className="text-[12px] font-bold text-white/55">+15</Text>
         </Pressable>
       </View>
     </View>
