@@ -6,7 +6,6 @@ import { useMemo, useState } from "react";
 
 import {
   ActivityIndicator,
-  FlatList,
   Pressable,
   ScrollView,
   Text,

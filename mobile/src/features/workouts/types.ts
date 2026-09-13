@@ -173,6 +173,8 @@ export interface WorkoutExercise {
 export interface WorkoutSession {
   id: string;
 
+  client_workout_id?: string | null;
+
   template_id: string | null;
 
   name: string;

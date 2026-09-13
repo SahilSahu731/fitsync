@@ -1,5 +1,11 @@
 import "../../global.css";
 
+import { registerWorkoutBackgroundSync } from "@/features/sync/background-task";
+
+import { SyncLifecycle } from "@/features/sync/sync-lifecycle";
+
+import { configureRestNotifications } from "@/features/workout-session/rest/rest-notifications";
+
 import { Stack } from "expo-router";
 
 import * as SplashScreen from "expo-splash-screen";
@@ -30,6 +36,14 @@ function RootNavigator() {
   const invalidateSession = useAuthStore((state) => state.invalidateSession);
 
   useEffect(() => {
+    void configureRestNotifications();
+  }, []);
+
+  useEffect(() => {
+    void registerWorkoutBackgroundSync();
+  }, []);
+
+  useEffect(() => {
     const unsubscribe = subscribeToAuthInvalidation(invalidateSession);
 
     void bootstrap();
@@ -57,7 +71,8 @@ function RootNavigator() {
     );
   }
 
-  const authenticated =  status === "authenticated" || (status === "offline" && Boolean(user));
+  const authenticated =
+    status === "authenticated" || (status === "offline" && Boolean(user));
 
   const needsOnboarding = authenticated && user?.onboarding_complete === false;
 
@@ -66,6 +81,8 @@ function RootNavigator() {
   return (
     <>
       <StatusBar style="light" />
+
+      {appReady ? <SyncLifecycle /> : null}
 
       <Stack
         screenOptions={{

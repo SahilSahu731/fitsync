@@ -110,9 +110,7 @@ export async function insertLocalWorkout(
 
 export async function getLocalWorkout(
   database: SQLiteDatabase,
-  localId: string,
-
-  userId: string,
+  { localId, userId }: { localId: string; userId: string },
 ): Promise<LocalWorkoutRecord | null> {
   const row = await database.getFirstAsync<LocalWorkoutRow>(
     `
@@ -131,10 +129,7 @@ export async function getLocalWorkout(
 
 export async function getLocalWorkoutByAnyId(
   database: SQLiteDatabase,
-
-  workoutId: string,
-
-  userId: string,
+  { workoutId, userId }: { workoutId: string; userId: string },
 ): Promise<LocalWorkoutRecord | null> {
   const row = await database.getFirstAsync<LocalWorkoutRow>(
     `
@@ -191,8 +186,16 @@ export async function listPendingLocalWorkouts(
           AND dirty = 1
           AND sync_status != 'CONFLICT'
           AND (
-            next_retry_at IS NULL
-            OR next_retry_at <= ?
+            sync_status IN (
+              'LOCAL_ONLY',
+              'DIRTY',
+              'SYNCING'
+            )
+            OR (
+              sync_status = 'ERROR'
+              AND next_retry_at IS NOT NULL
+              AND next_retry_at <= ?
+            )
           )
         ORDER BY updated_at ASC
         `,
@@ -241,10 +244,7 @@ export async function saveLocalWorkoutPayload(
 
 export async function markLocalWorkoutSyncing(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
+  { localId, userId }: { localId: string; userId: string },
 ): Promise<void> {
   await database.runAsync(
     `
@@ -262,14 +262,17 @@ export async function markLocalWorkoutSyncing(
 
 export async function setServerWorkoutMetadata(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
-
-  serverId: string,
-
-  serverRevision: number,
+  {
+    localId,
+    userId,
+    serverId,
+    serverRevision,
+  }: {
+    localId: string;
+    userId: string;
+    serverId: string;
+    serverRevision: number;
+  },
 ): Promise<void> {
   await database.runAsync(
     `
@@ -298,18 +301,21 @@ export async function setServerWorkoutMetadata(
  */
 export async function markLocalWorkoutSyncedIfVersion(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
-
-  expectedLocalVersion: number,
-
-  serverId: string,
-
-  serverRevision: number,
-
-  syncedWorkout: WorkoutSession,
+  {
+    localId,
+    userId,
+    expectedLocalVersion,
+    serverId,
+    serverRevision,
+    syncedWorkout,
+  }: {
+    localId: string;
+    userId: string;
+    expectedLocalVersion: number;
+    serverId: string;
+    serverRevision: number;
+    syncedWorkout: WorkoutSession;
+  },
 ): Promise<boolean> {
   const now = new Date().toISOString();
 
@@ -344,14 +350,17 @@ export async function markLocalWorkoutSyncedIfVersion(
 
 export async function keepLocalWorkoutDirtyWithServerMetadata(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
-
-  serverId: string,
-
-  serverRevision: number,
+  {
+    localId,
+    userId,
+    serverId,
+    serverRevision,
+  }: {
+    localId: string;
+    userId: string;
+    serverId: string;
+    serverRevision: number;
+  },
 ): Promise<void> {
   await database.runAsync(
     `
@@ -373,12 +382,15 @@ export async function keepLocalWorkoutDirtyWithServerMetadata(
 
 export async function updateLocalWorkoutSyncStatus(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
-
-  status: WorkoutSyncStatus,
+  {
+    localId,
+    userId,
+    status,
+  }: {
+    localId: string;
+    userId: string;
+    status: WorkoutSyncStatus;
+  },
 ): Promise<void> {
   await database.runAsync(
     `
@@ -395,12 +407,15 @@ export async function updateLocalWorkoutSyncStatus(
 
 export async function markLocalWorkoutConflict(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
-
-  message: string,
+  {
+    localId,
+    userId,
+    message,
+  }: {
+    localId: string;
+    userId: string;
+    message: string;
+  },
 ): Promise<void> {
   await database.runAsync(
     `
@@ -421,16 +436,19 @@ export async function markLocalWorkoutConflict(
 
 export async function markLocalWorkoutSyncError(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
-
-  message: string,
-
-  retryCount: number,
-
-  nextRetryAt: string | null,
+  {
+    localId,
+    userId,
+    message,
+    retryCount,
+    nextRetryAt,
+  }: {
+    localId: string;
+    userId: string;
+    message: string;
+    retryCount: number;
+    nextRetryAt: string | null;
+  },
 ): Promise<void> {
   await database.runAsync(
     `
@@ -454,12 +472,15 @@ export async function markLocalWorkoutSyncError(
 
 export async function completeLocalWorkout(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
-
-  workout: WorkoutSession,
+  {
+    localId,
+    userId,
+    workout,
+  }: {
+    localId: string;
+    userId: string;
+    workout: WorkoutSession;
+  },
 ): Promise<void> {
   const now = new Date().toISOString();
 
@@ -489,12 +510,15 @@ export async function completeLocalWorkout(
 
 export async function cancelLocalWorkout(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
-
-  workout: WorkoutSession,
+  {
+    localId,
+    userId,
+    workout,
+  }: {
+    localId: string;
+    userId: string;
+    workout: WorkoutSession;
+  },
 ): Promise<void> {
   const now = new Date().toISOString();
 
@@ -524,10 +548,7 @@ export async function cancelLocalWorkout(
 
 export async function deleteLocalWorkout(
   database: SQLiteDatabase,
-
-  localId: string,
-
-  userId: string,
+  { localId, userId }: { localId: string; userId: string },
 ): Promise<void> {
   await database.runAsync(
     `
@@ -538,4 +559,31 @@ export async function deleteLocalWorkout(
     localId,
     userId,
   );
+}
+
+export async function deleteLocalWorkoutIfVersion(
+  database: SQLiteDatabase,
+  {
+    localId,
+    userId,
+    expectedLocalVersion,
+  }: {
+    localId: string;
+    userId: string;
+    expectedLocalVersion: number;
+  },
+): Promise<boolean> {
+  const result = await database.runAsync(
+    `
+    DELETE FROM local_workouts
+    WHERE local_id = ?
+      AND user_id = ?
+      AND local_version = ?
+    `,
+    localId,
+    userId,
+    expectedLocalVersion,
+  );
+
+  return result.changes === 1;
 }

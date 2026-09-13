@@ -8,44 +8,79 @@ import { Pressable, Text, View } from "react-native";
 
 import { formatDuration } from "@/features/workouts/utils";
 
+import { adjustRestEndsAt, remainingRestSeconds } from "../rest/rest-time";
+
 interface Props {
-  seconds: number;
+  restEndsAt: string;
 
   exerciseName: string;
+
+  onAdjust: (restEndsAt: string) => void;
 
   onClose: () => void;
 }
 
-export function RestTimer({ seconds, exerciseName, onClose }: Props) {
-  const [total, setTotal] = useState(seconds);
+export function RestTimer({
+  restEndsAt,
+  exerciseName,
+  onAdjust,
+  onClose,
+}: Props) {
+  const initial = remainingRestSeconds(restEndsAt);
 
-  const [remaining, setRemaining] = useState(seconds);
+  const [remaining, setRemaining] = useState(initial);
+
+  const [startingSeconds, setStartingSeconds] = useState(Math.max(1, initial));
+
+  const [notified, setNotified] = useState(false);
 
   useEffect(() => {
-    if (remaining <= 0) {
-      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+    const tick = () => {
+      const next = remainingRestSeconds(restEndsAt);
 
-      return;
-    }
+      setRemaining(next);
 
-    const timeout = setTimeout(() => {
-      setRemaining((current) => Math.max(current - 1, 0));
-    }, 1000);
+      if (next <= 0 && !notified) {
+        setNotified(true);
 
-    return () => clearTimeout(timeout);
-  }, [remaining]);
+        void Haptics.notificationAsync(
+          Haptics.NotificationFeedbackType.Success,
+        );
+      }
+    };
+
+    tick();
+
+    const interval = setInterval(tick, 500);
+
+    return () => {
+      clearInterval(interval);
+    };
+  }, [restEndsAt, notified]);
+
+  useEffect(() => {
+    const timeoutId = setTimeout(() => {
+      const latest = remainingRestSeconds(restEndsAt);
+
+      setStartingSeconds((current) => Math.max(current, latest));
+
+      if (latest > 0) {
+        setNotified(false);
+      }
+    }, 0);
+
+    return () => clearTimeout(timeoutId);
+  }, [restEndsAt]);
 
   const progress = useMemo(
-    () => (total > 0 ? remaining / total : 0),
-    [remaining, total],
+    () => (startingSeconds > 0 ? remaining / startingSeconds : 0),
+    [remaining, startingSeconds],
   );
 
   function adjust(amount: number) {
-    setRemaining((current) => Math.max(0, current + amount));
+    const next = adjustRestEndsAt(restEndsAt, amount);
 
-    if (amount > 0) {
-      setTotal((current) => current + amount);
-    }
+    onAdjust(next);
 
     void Haptics.selectionAsync();
   }

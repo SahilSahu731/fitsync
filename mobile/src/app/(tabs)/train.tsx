@@ -1,6 +1,8 @@
 import { Ionicons } from "@expo/vector-icons";
 
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
+
+import { useCallback, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -12,27 +14,60 @@ import {
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useStartWorkout } from "@/features/workouts/hooks";
+import { useSQLiteContext } from "expo-sqlite";
 
-import {
-  useActiveWorkout,
-  useWorkoutTemplates,
-} from "@/features/workouts/queries";
+import { useAuthStore } from "@/features/auth/store";
+
+import { resolveActiveWorkout } from "@/features/workout-session/local/active-workout-service";
+
+import type { LocalWorkoutRecord } from "@/features/workout-session/local/types";
+
+import { useStartLocalWorkout } from "@/features/workout-session/hooks/use-start-local-workout";
+
+import { useOfflineTemplates } from "@/features/workout-templates/use-offline-templates";
 
 export default function TrainScreen() {
-  const templates = useWorkoutTemplates();
+  const database = useSQLiteContext();
 
-  const active = useActiveWorkout();
+  const user = useAuthStore((state) => state.user);
 
-  const startMutation = useStartWorkout();
+  const templates = useOfflineTemplates();
 
-  const activeWorkout = active.data?.workout;
+  const starter = useStartLocalWorkout();
 
-  function startEmpty() {
-    startMutation.mutate({
-      name: "Workout",
-    });
-  }
+  const [active, setActive] = useState<LocalWorkoutRecord | null>(null);
+
+  const [loadingActive, setLoadingActive] = useState(true);
+
+  const loadActive = useCallback(async () => {
+    if (!user?.id) {
+      setActive(null);
+
+      setLoadingActive(false);
+
+      return;
+    }
+
+    setLoadingActive(true);
+
+    try {
+      const result = await resolveActiveWorkout(database, user.id);
+
+      setActive(result);
+    } finally {
+      setLoadingActive(false);
+    }
+  }, [database, user?.id]);
+
+  useFocusEffect(
+    useCallback(() => {
+      void loadActive();
+
+      return undefined;
+    }, [loadActive]),
+  );
+
+  const activeWorkout = active?.workout ?? null;
 
   return (
     <SafeAreaView className="flex-1 bg-background">
@@ -52,14 +87,18 @@ export default function TrainScreen() {
           Log your workout. Keep moving.
         </Text>
 
-        {active.isLoading ? (
+        {starter.error ? (
+          <Text className="mt-4 text-[12px] text-red-300">{starter.error}</Text>
+        ) : null}
+
+        {loadingActive ? (
           <View className="mt-8 h-28 items-center justify-center rounded-[24px] bg-white/[0.03]">
             <ActivityIndicator color="#3B82F6" />
           </View>
         ) : activeWorkout ? (
           <Pressable
             onPress={() => {
-              router.push(`/workouts/active/${activeWorkout.id}`);
+              router.push(`/workouts/active/${active!.localId}`);
             }}
             className="mt-7 overflow-hidden rounded-[24px] border border-brand-bright/20 bg-[#101725]"
           >
@@ -75,9 +114,16 @@ export default function TrainScreen() {
                   <Text className="text-[10px] font-bold uppercase tracking-[1.4px] text-brand-bright">
                     Workout in progress
                   </Text>
+
                   <Text className="mt-1 text-[17px] font-extrabold text-white">
                     {activeWorkout.name}
                   </Text>
+
+                  {active?.syncStatus !== "SYNCED" ? (
+                    <Text className="mt-1 text-[10px] text-white/25">
+                      Saved on device
+                    </Text>
+                  ) : null}
                 </View>
 
                 <View className="h-9 w-9 items-center justify-center rounded-full bg-brand">
@@ -88,6 +134,7 @@ export default function TrainScreen() {
               <View className="mt-5 flex-row">
                 <View className="flex-1">
                   <Text className="text-[10px] text-white/25">Exercises</Text>
+
                   <Text className="mt-1 text-[13px] font-bold text-white/65">
                     {activeWorkout.exercises.length}
                   </Text>
@@ -95,6 +142,7 @@ export default function TrainScreen() {
 
                 <View className="flex-1">
                   <Text className="text-[10px] text-white/25">Sets</Text>
+
                   <Text className="mt-1 text-[13px] font-bold text-white/65">
                     {activeWorkout.completed_set_count}
                   </Text>
@@ -104,11 +152,15 @@ export default function TrainScreen() {
           </Pressable>
         ) : (
           <Pressable
-            disabled={startMutation.isPending}
-            onPress={startEmpty}
+            disabled={starter.isPending}
+            onPress={() => {
+              void starter.startEmpty();
+            }}
             className="mt-8 overflow-hidden rounded-[26px] bg-brand p-6"
             style={({ pressed }) => ({
               backgroundColor: pressed ? "#1D4ED8" : "#2563EB",
+
+              opacity: starter.isPending ? 0.65 : 1,
 
               transform: [
                 {
@@ -118,7 +170,7 @@ export default function TrainScreen() {
             })}
           >
             <View className="h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-              {startMutation.isPending ? (
+              {starter.isPending ? (
                 <ActivityIndicator color="#FFFFFF" />
               ) : (
                 <Ionicons name="play" size={22} color="#FFFFFF" />
@@ -151,7 +203,7 @@ export default function TrainScreen() {
             </Text>
 
             <Text className="text-white/32 mt-1 text-[12px]">
-              {templates.data?.items.length ?? 0} saved
+              {templates.items.length} saved
             </Text>
           </Pressable>
 
@@ -176,9 +228,17 @@ export default function TrainScreen() {
         </View>
 
         <View className="mt-9 flex-row items-center justify-between">
-          <Text className="text-[19px] font-extrabold text-white">
-            Templates
-          </Text>
+          <View>
+            <Text className="text-[19px] font-extrabold text-white">
+              Templates
+            </Text>
+
+            {templates.isOfflineFallback ? (
+              <Text className="mt-1 text-[10px] text-white/25">
+                Offline cache
+              </Text>
+            ) : null}
+          </View>
 
           <Pressable
             onPress={() => {
@@ -191,63 +251,67 @@ export default function TrainScreen() {
           </Pressable>
         </View>
 
-        <View className="mt-4 gap-3">
-          {templates.data?.items.slice(0, 4).map((template) => (
-            <View
-              key={template.id}
-              className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-            >
-              <View className="flex-row items-center">
-                <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
-                  <Ionicons name="barbell" size={18} color="#60A5FA" />
+        {templates.isLoading ? (
+          <View className="mt-5 items-center py-8">
+            <ActivityIndicator color="#3B82F6" />
+          </View>
+        ) : (
+          <View className="mt-4 gap-3">
+            {templates.items.slice(0, 4).map((template) => (
+              <View
+                key={template.id}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+              >
+                <View className="flex-row items-center">
+                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
+                    <Ionicons name="barbell" size={18} color="#60A5FA" />
+                  </View>
+
+                  <View className="ml-3 flex-1">
+                    <Text className="text-[15px] font-bold text-white">
+                      {template.name}
+                    </Text>
+
+                    <Text
+                      numberOfLines={1}
+                      className="mt-1 text-[11px] text-white/30"
+                    >
+                      {template.exercise_names.join(" · ")}
+                    </Text>
+                  </View>
                 </View>
 
-                <View className="ml-3 flex-1">
-                  <Text className="text-[15px] font-bold text-white">
-                    {template.name}
-                  </Text>
-
-                  <Text
-                    numberOfLines={1}
-                    className="mt-1 text-[11px] text-white/30"
+                <View className="mt-4 flex-row gap-2">
+                  <Pressable
+                    onPress={() => {
+                      router.push(`/workout-templates/${template.id}`);
+                    }}
+                    className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-white/[0.05]"
                   >
-                    {template.exercise_names.join(" · ")}
-                  </Text>
+                    <Text className="text-[12px] font-bold text-white/65">
+                      Edit
+                    </Text>
+                  </Pressable>
+
+                  <Pressable
+                    disabled={Boolean(activeWorkout) || starter.isPending}
+                    onPress={() => {
+                      void starter.startTemplate(template.id);
+                    }}
+                    className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-brand"
+                    style={{
+                      opacity: activeWorkout ? 0.35 : 1,
+                    }}
+                  >
+                    <Text className="text-[12px] font-extrabold text-white">
+                      Start
+                    </Text>
+                  </Pressable>
                 </View>
               </View>
-
-              <View className="mt-4 flex-row gap-2">
-                <Pressable
-                  onPress={() => {
-                    router.push(`/workout-templates/${template.id}`);
-                  }}
-                  className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-white/[0.05]"
-                >
-                  <Text className="text-[12px] font-bold text-white/65">
-                    Edit
-                  </Text>
-                </Pressable>
-
-                <Pressable
-                  disabled={Boolean(activeWorkout) || startMutation.isPending}
-                  onPress={() => {
-                    startMutation.mutate({
-                      template_id: template.id,
-                    });
-                  }}
-                  className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-brand"
-                  style={{
-                    opacity: activeWorkout ? 0.35 : 1,
-                  }}
-                >
-                  <Text className="text-[12px] font-extrabold text-white">
-                    Start
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          ))}
-        </View>
+            ))}
+          </View>
+        )}
 
         <Pressable
           onPress={() => {

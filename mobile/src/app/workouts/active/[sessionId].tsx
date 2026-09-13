@@ -39,7 +39,7 @@ export default function ActiveWorkoutScreen() {
   const controller = useActiveWorkoutController(sessionId);
 
   const {
-    workoutQuery,
+    isLoading,
 
     draft,
 
@@ -53,12 +53,13 @@ export default function ActiveWorkoutScreen() {
     setOptionsIndex,
 
     rest,
-    setRest,
 
     actionLoading,
     error,
 
-    autosave,
+    localSaveStatus,
+    syncStatus,
+    online,
 
     completedSets,
     previousMap,
@@ -79,6 +80,9 @@ export default function ActiveWorkoutScreen() {
     cancelCurrentWorkout,
 
     completeSet,
+
+    updateRestEndsAt,
+    stopRest,
 
     elapsedLabel,
     volumeLabel,
@@ -112,7 +116,7 @@ export default function ActiveWorkoutScreen() {
     Alert.alert(
       "Discard workout?",
 
-      "This workout will be marked as cancelled.",
+      "This workout will be discarded.",
 
       [
         {
@@ -134,10 +138,29 @@ export default function ActiveWorkoutScreen() {
     );
   }
 
-  if (workoutQuery.isLoading || !draft) {
+  if (isLoading) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator color="#3B82F6" />
+      </SafeAreaView>
+    );
+  }
+
+  if (!draft) {
+    return (
+      <SafeAreaView className="flex-1 items-center justify-center bg-background px-8">
+        <Text className="text-center text-white/40">
+          Workout isn&apos;t available on this device.
+        </Text>
+
+        <Pressable
+          onPress={() => {
+            router.replace("/train");
+          }}
+          className="mt-5 rounded-xl bg-brand px-5 py-3"
+        >
+          <Text className="font-bold text-white">Back to Train</Text>
+        </Pressable>
       </SafeAreaView>
     );
   }
@@ -157,7 +180,6 @@ export default function ActiveWorkoutScreen() {
       />
 
       <ScrollView
-        pointerEvents={actionLoading ? "none" : "auto"}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
@@ -176,8 +198,12 @@ export default function ActiveWorkoutScreen() {
             className="text-[23px] font-extrabold tracking-[-0.7px] text-white"
           />
 
-          <View className="mt-1 flex-row items-center">
-            <SaveIndicator status={autosave.status} />
+          <View className="mt-1">
+            <SaveIndicator
+              localStatus={localSaveStatus}
+              syncStatus={syncStatus}
+              online={online}
+            />
           </View>
 
           {error ? (
@@ -208,11 +234,8 @@ export default function ActiveWorkoutScreen() {
                   onCompletedSet={(seconds, exerciseName, updatedExercise) => {
                     completeSet(
                       exercise,
-
                       updatedExercise,
-
                       seconds,
-
                       exerciseName,
                     );
                   }}
@@ -252,11 +275,13 @@ export default function ActiveWorkoutScreen() {
 
       {rest ? (
         <RestTimer
-          key={`${rest.exerciseName}-${rest.seconds}`}
-          seconds={rest.seconds}
+          restEndsAt={rest.restEndsAt}
           exerciseName={rest.exerciseName}
+          onAdjust={(next) => {
+            void updateRestEndsAt(next);
+          }}
           onClose={() => {
-            setRest(null);
+            void stopRest();
           }}
         />
       ) : null}

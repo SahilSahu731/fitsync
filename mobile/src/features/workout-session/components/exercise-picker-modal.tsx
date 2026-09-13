@@ -1,8 +1,9 @@
 import { Ionicons } from "@expo/vector-icons";
 
-import { useMemo, useState } from "react";
+import { useState } from "react";
 
 import {
+  ActivityIndicator,
   FlatList,
   Modal,
   Pressable,
@@ -15,7 +16,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 
 import { useDebouncedValue } from "@/features/exercises/hooks";
 
-import { useExercises } from "@/features/exercises/queries";
+import { useOfflineExercises } from "@/features/exercises/use-offline-exercises";
 
 import type { Exercise } from "@/features/exercises/types";
 
@@ -34,14 +35,9 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
 
   const debounced = useDebouncedValue(search, 300);
 
-  const query = useExercises({
-    q: debounced || undefined,
+  const library = useOfflineExercises({
+    search: debounced,
   });
-
-  const exercises = useMemo(
-    () => query.data?.pages.flatMap((page) => page.items) ?? [],
-    [query.data],
-  );
 
   function toggle(exercise: Exercise) {
     setSelected((current) => {
@@ -69,11 +65,14 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
     onClose();
   }
 
+  const selectedCount = Object.keys(selected).length;
+
   return (
     <Modal
       visible={visible}
       animationType="slide"
       presentationStyle="fullScreen"
+      onRequestClose={onClose}
     >
       <SafeAreaView className="flex-1 bg-background">
         <View className="flex-row items-center px-5 pt-3">
@@ -84,20 +83,28 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
             <Ionicons name="close" size={21} color="#FFFFFF" />
           </Pressable>
 
-          <Text className="ml-4 flex-1 text-[22px] font-extrabold text-white">
-            Add exercises
-          </Text>
+          <View className="ml-4 flex-1">
+            <Text className="text-[22px] font-extrabold text-white">
+              Add exercises
+            </Text>
+
+            {library.isOfflineFallback ? (
+              <Text className="mt-0.5 text-[10px] text-white/30">
+                Offline exercise library
+              </Text>
+            ) : null}
+          </View>
 
           <Pressable
-            disabled={Object.keys(selected).length === 0}
+            disabled={selectedCount === 0}
             onPress={add}
             className="rounded-xl bg-brand px-4 py-3"
             style={{
-              opacity: Object.keys(selected).length === 0 ? 0.4 : 1,
+              opacity: selectedCount === 0 ? 0.4 : 1,
             }}
           >
             <Text className="text-[13px] font-bold text-white">
-              Add {Object.keys(selected).length || ""}
+              Add {selectedCount || ""}
             </Text>
           </Pressable>
         </View>
@@ -115,55 +122,67 @@ export function ExercisePickerModal({ visible, onClose, onAdd }: Props) {
           />
         </View>
 
-        <FlatList
-          data={exercises}
-          keyExtractor={(item) => item.id}
-          className="mt-4"
-          renderItem={({ item }) => {
-            const active = Boolean(selected[item.id]);
+        {library.isLoading ? (
+          <View className="flex-1 items-center justify-center">
+            <ActivityIndicator color="#3B82F6" />
+          </View>
+        ) : (
+          <FlatList
+            data={library.items}
+            keyExtractor={(item) => item.id}
+            className="mt-4"
+            onEndReached={() => {
+              if (library.hasNextPage && !library.isFetchingNextPage) {
+                void library.fetchNextPage();
+              }
+            }}
+            onEndReachedThreshold={0.5}
+            renderItem={({ item }) => {
+              const active = Boolean(selected[item.id]);
 
-            return (
-              <Pressable
-                onPress={() => {
-                  toggle(item);
-                }}
-                className="mx-5 mb-2 flex-row items-center rounded-2xl border p-4"
-                style={{
-                  borderColor: active
-                    ? "rgba(59,130,246,.55)"
-                    : "rgba(255,255,255,.08)",
-
-                  backgroundColor: active
-                    ? "rgba(37,99,235,.12)"
-                    : "rgba(255,255,255,.025)",
-                }}
-              >
-                <View className="flex-1">
-                  <Text className="text-[15px] font-bold text-white">
-                    {item.name}
-                  </Text>
-
-                  <Text className="mt-1 text-[11px] text-white/35">
-                    {item.primary_muscles.join(" · ")}
-                  </Text>
-                </View>
-
-                <View
-                  className="h-6 w-6 items-center justify-center rounded-full border"
+              return (
+                <Pressable
+                  onPress={() => {
+                    toggle(item);
+                  }}
+                  className="mx-5 mb-2 flex-row items-center rounded-2xl border p-4"
                   style={{
-                    borderColor: active ? "#3B82F6" : "rgba(255,255,255,.2)",
+                    borderColor: active
+                      ? "rgba(59,130,246,.55)"
+                      : "rgba(255,255,255,.08)",
 
-                    backgroundColor: active ? "#3B82F6" : "transparent",
+                    backgroundColor: active
+                      ? "rgba(37,99,235,.12)"
+                      : "rgba(255,255,255,.025)",
                   }}
                 >
-                  {active ? (
-                    <Ionicons name="checkmark" size={15} color="#FFFFFF" />
-                  ) : null}
-                </View>
-              </Pressable>
-            );
-          }}
-        />
+                  <View className="flex-1">
+                    <Text className="text-[15px] font-bold text-white">
+                      {item.name}
+                    </Text>
+
+                    <Text className="mt-1 text-[11px] text-white/35">
+                      {item.primary_muscles.join(" · ")}
+                    </Text>
+                  </View>
+
+                  <View
+                    className="h-6 w-6 items-center justify-center rounded-full border"
+                    style={{
+                      borderColor: active ? "#3B82F6" : "rgba(255,255,255,.2)",
+
+                      backgroundColor: active ? "#3B82F6" : "transparent",
+                    }}
+                  >
+                    {active ? (
+                      <Ionicons name="checkmark" size={15} color="#FFFFFF" />
+                    ) : null}
+                  </View>
+                </Pressable>
+              );
+            }}
+          />
+        )}
       </SafeAreaView>
     </Modal>
   );

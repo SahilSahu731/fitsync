@@ -1,133 +1,68 @@
-import * as SecureStore
-  from "expo-secure-store";
+import * as SecureStore from "expo-secure-store";
 
-import * as z
-  from "zod";
+import * as z from "zod";
 
-import type {
-  User,
-} from "./types";
+import type { User } from "./types";
 
+const USER_STORAGE_KEY = "fitsync.auth.user.v1";
 
-const USER_STORAGE_KEY =
-  "fitsync.auth.user.v1";
+const cachedUserSchema = z.object({
+  id: z.string(),
 
+  email: z.string(),
 
-const cachedUserSchema =
-  z.object({
-    id:
-      z.string(),
+  display_name: z.string().nullable(),
 
-    email:
-      z.string(),
+  username: z.string().nullable(),
 
-    display_name:
-      z.string()
-        .nullable(),
+  avatar_url: z.string().nullable(),
 
-    username:
-      z.string()
-        .nullable(),
+  email_verified: z.boolean(),
 
-    avatar_url:
-      z.string()
-        .nullable(),
+  onboarding_complete: z.boolean(),
 
-    email_verified:
-      z.boolean(),
+  fitness_goal: z.string().nullable(),
 
-    onboarding_complete:
-      z.boolean(),
+  experience_level: z.string().nullable(),
 
-    fitness_goal:
-      z
-        .string()
-        .nullable(),
+  weight_unit: z.enum(["KG", "LB"]),
 
-    experience_level:
-      z
-        .string()
-        .nullable(),
+  weekly_workout_target: z.number(),
 
-    weight_unit:
-      z.enum([
-        "KG",
-        "LB",
-      ]),
+  created_at: z.string(),
+});
 
-    weekly_workout_target:
-      z.number(),
+export async function saveCachedUser(user: User): Promise<void> {
+  await SecureStore.setItemAsync(
+    USER_STORAGE_KEY,
 
-    created_at:
-      z.string(),
-  });
-
-
-export async function saveCachedUser(
-  user:
-    User,
-): Promise<void> {
-  await SecureStore
-    .setItemAsync(
-      USER_STORAGE_KEY,
-
-      JSON.stringify(
-        user
-      ),
-    );
+    JSON.stringify(user),
+  );
 }
 
-
-export async function getCachedUser():
-  Promise<
-    User | null
-  > {
-  let raw:
-    | string
-    | null;
-
+export async function getCachedUser(): Promise<User | null> {
+  let raw: string | null;
 
   try {
-    raw =
-      await SecureStore
-        .getItemAsync(
-          USER_STORAGE_KEY
-        );
-
+    raw = await SecureStore.getItemAsync(USER_STORAGE_KEY);
   } catch {
     return null;
   }
-
 
   if (!raw) {
     return null;
   }
 
-
   try {
-    const parsed =
-      cachedUserSchema
-        .safeParse(
-          JSON.parse(
-            raw
-          )
-        );
+    const parsed = cachedUserSchema.safeParse(JSON.parse(raw));
 
-
-    if (
-      !parsed.success
-    ) {
+    if (!parsed.success) {
       await clearCachedUser();
 
       return null;
     }
 
-
-    return (
-      parsed.data as
-        User
-    );
-
+    return parsed.data as User;
   } catch {
     await clearCachedUser();
 
@@ -135,15 +70,9 @@ export async function getCachedUser():
   }
 }
 
-
-export async function clearCachedUser():
-  Promise<void> {
+export async function clearCachedUser(): Promise<void> {
   try {
-    await SecureStore
-      .deleteItemAsync(
-        USER_STORAGE_KEY
-      );
-
+    await SecureStore.deleteItemAsync(USER_STORAGE_KEY);
   } catch {
     // Best effort.
   }

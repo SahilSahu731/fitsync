@@ -4,27 +4,18 @@ import { router } from "expo-router";
 
 import { useEffect, useMemo, useState } from "react";
 
-import { useQueryClient } from "@tanstack/react-query";
+import { useSQLiteContext } from "expo-sqlite";
 
 import { useAuthStore } from "@/features/auth/store";
 
 import type { Exercise } from "@/features/exercises/types";
 
-import { workoutSessionKeys } from "@/features/workouts/keys";
-
-import {
-  usePreviousPerformance,
-  useWorkoutSession,
-} from "@/features/workouts/queries";
+import { usePreviousPerformance } from "@/features/workouts/queries";
 
 import type {
   WorkoutExercise,
   WorkoutSession,
 } from "@/features/workouts/types";
-
-import { parseApiError } from "@/lib/api/errors";
-
-import { addWorkoutExercises, cancelWorkout, completeWorkout } from "../api";
 
 import {
   formatVolume,
@@ -40,18 +31,50 @@ import {
   replaceWorkoutExercise,
 } from "../store/workout-draft-store";
 
-import type { RestState } from "../types";
+import { buildWorkoutExercise } from "../local/workout-exercise-builder";
 
-import { useWorkoutAutosave } from "./use-workout-autosave";
+import {
+  completeLocalWorkout,
+  deleteLocalWorkout,
+  getLocalWorkoutByAnyId,
+  cancelLocalWorkout,
+} from "../local/local-workout-repository";
+
+import { useLocalWorkoutWriter } from "../local/use-local-workout-writer";
+
+import { useLocalWorkoutPersistence } from "../local/use-local-workout-persistence";
+
+import { requestWorkoutSync } from "@/features/sync/sync-manager";
+
+import { useNetworkStatus } from "@/features/sync/use-network-status";
+
+import {
+  clearRestRuntime,
+  getRestRuntime,
+  saveRestRuntime,
+  type RestRuntime,
+} from "../rest/rest-runtime-repository";
+
+import { createRestEndsAt } from "../rest/rest-time";
 
 export function useActiveWorkoutController(sessionId: string) {
-  const queryClient = useQueryClient();
+  const database = useSQLiteContext();
 
   const user = useAuthStore((state) => state.user);
 
-  const workoutQuery = useWorkoutSession(sessionId);
+  const online = useNetworkStatus();
 
-  const [localDraft, setDraft] = useState<WorkoutSession | null>(null);
+  const writer = useLocalWorkoutWriter();
+
+  const [localId, setLocalId] = useState<string | null>(null);
+
+  const [draft, setDraft] = useState<WorkoutSession | null>(null);
+
+  const [syncStatus, setSyncStatus] = useState<
+    "LOCAL_ONLY" | "DIRTY" | "SYNCING" | "SYNCED" | "CONFLICT" | "ERROR" | null
+  >(null);
+
+  const [loading, setLoading] = useState(true);
 
   const [selectedExpandedId, setExpandedId] = useState<
     string | null | undefined
@@ -61,7 +84,7 @@ export function useActiveWorkoutController(sessionId: string) {
 
   const [optionsIndex, setOptionsIndex] = useState<number | null>(null);
 
-  const [rest, setRest] = useState<RestState | null>(null);
+  const [rest, setRest] = useState<RestRuntime | null>(null);
 
   const [elapsed, setElapsed] = useState(0);
 
@@ -70,34 +93,76 @@ export function useActiveWorkoutController(sessionId: string) {
   const [error, setError] = useState<string | null>(null);
 
   /*
-   * Until the first local edit we can render
-   * directly from React Query.
-   *
-   * Once localDraft exists, refetches must not
-   * overwrite edits currently being autosaved.
+   * -------------------------------------------------
+   * INITIAL LOCAL LOAD
+   * -------------------------------------------------
    */
-  const draft =
-    localDraft?.id === sessionId ? localDraft : (workoutQuery.data ?? null);
+  useEffect(() => {
+    let cancelled = false;
 
-  const initialExpandedId =
-    workoutQuery.data?.exercises.find((exercise) =>
-      exercise.sets.some((workoutSet) => !workoutSet.completed),
-    )?.id ??
-    workoutQuery.data?.exercises[0]?.id ??
-    null;
+    async function load() {
+      if (!user?.id || !sessionId) {
+        setLoading(false);
+
+        return;
+      }
+
+      setLoading(true);
+
+      try {
+        const record = await getLocalWorkoutByAnyId(database, {
+          workoutId: sessionId,
+
+          userId: user.id,
+        });
+
+        if (cancelled) {
+          return;
+        }
+
+        if (!record) {
+          setError("Workout could not be found on this device.");
+
+          return;
+        }
+
+        setLocalId(record.localId);
+
+        setDraft(record.workout);
+
+        setSyncStatus(record.syncStatus);
+
+        const runtime = await getRestRuntime(database, record.localId);
+
+        if (!cancelled) {
+          setRest(runtime);
+        }
+      } catch (requestError) {
+        if (!cancelled) {
+          setError(
+            requestError instanceof Error
+              ? requestError.message
+              : "Unable to load workout.",
+          );
+        }
+      } finally {
+        if (!cancelled) {
+          setLoading(false);
+        }
+      }
+    }
+
+    void load();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [database, user?.id, sessionId]);
 
   /*
-   * undefined = user has not touched expansion.
-   * null = user explicitly collapsed everything.
-   */
-  const expandedId =
-    selectedExpandedId === undefined ? initialExpandedId : selectedExpandedId;
-
-  /*
-   * Workout duration.
-   *
-   * Phase 2 will improve lifecycle/background
-   * handling further.
+   * -------------------------------------------------
+   * DURATION
+   * -------------------------------------------------
    */
   useEffect(() => {
     if (!draft?.started_at) {
@@ -114,9 +179,50 @@ export function useActiveWorkoutController(sessionId: string) {
 
     const interval = setInterval(tick, 1000);
 
-    return () => clearInterval(interval);
+    return () => {
+      clearInterval(interval);
+    };
   }, [draft?.started_at]);
 
+  /*
+   * -------------------------------------------------
+   * LOCAL PERSISTENCE
+   * -------------------------------------------------
+   */
+  const localPersistence = useLocalWorkoutPersistence({
+    localId,
+
+    userId: user?.id ?? null,
+
+    workout: draft,
+
+    writer,
+
+    onSaved: () => {
+      setSyncStatus((current) => (current === "CONFLICT" ? current : "DIRTY"));
+
+      if (user?.id) {
+        requestWorkoutSync(database, user.id);
+      }
+    },
+  });
+
+  /*
+   * Flush local data when leaving this controller.
+   */
+  useEffect(() => {
+    return () => {
+      if (localId) {
+        void writer.flush(localId);
+      }
+    };
+  }, [writer, localId]);
+
+  /*
+   * -------------------------------------------------
+   * PREVIOUS PERFORMANCE
+   * -------------------------------------------------
+   */
   const exerciseIds = useMemo(
     () => draft?.exercises.map((exercise) => exercise.exercise_id) ?? [],
     [draft?.exercises],
@@ -135,56 +241,74 @@ export function useActiveWorkoutController(sessionId: string) {
     [previousQuery.data],
   );
 
-  /*
-   * Keep the Phase 0 autosave implementation
-   * exactly as our source of persistence.
-   */
-  const autosave = useWorkoutAutosave({
-    workout: draft,
+  const initialExpandedId =
+    draft?.exercises.find((exercise) =>
+      exercise.sets.some((workoutSet) => !workoutSet.completed),
+    )?.id ??
+    draft?.exercises[0]?.id ??
+    null;
 
-    enabled: Boolean(draft && draft.status === "IN_PROGRESS"),
-
-    onSaved: (saved) => {
-      queryClient.setQueryData(workoutSessionKeys.detail(saved.id), saved);
-
-      queryClient.setQueryData(workoutSessionKeys.active(), {
-        workout: saved,
-      });
-    },
-  });
+  const expandedId =
+    selectedExpandedId === undefined ? initialExpandedId : selectedExpandedId;
 
   const completedSets = useMemo(
     () =>
       draft?.exercises.reduce(
         (total, exercise) =>
-          total +
-          exercise.sets.filter((workoutSet) => workoutSet.completed).length,
+          total + exercise.sets.filter((set) => set.completed).length,
+        0,
+      ) ?? 0,
+    [draft],
+  );
+
+  const totalSets = useMemo(
+    () =>
+      draft?.exercises.reduce(
+        (total, exercise) => total + exercise.sets.length,
         0,
       ) ?? 0,
     [draft],
   );
 
   const volume = useMemo(
-    () =>
-      draft
-        ? workoutVolume(
-            draft,
-
-            user?.weight_unit ?? "KG",
-          )
-        : 0,
+    () => (draft ? workoutVolume(draft, user?.weight_unit ?? "KG") : 0),
     [draft, user?.weight_unit],
   );
 
   const activeOptionsExercise =
     optionsIndex !== null ? (draft?.exercises[optionsIndex] ?? null) : null;
 
+  function replaceDraft(next: WorkoutSession) {
+    /*
+     * Recalculate derived response-style counts
+     * because the local device has no server serializer.
+     */
+    const completed = next.exercises.reduce(
+      (total, exercise) =>
+        total + exercise.sets.filter((set) => set.completed).length,
+      0,
+    );
+
+    const total = next.exercises.reduce(
+      (count, exercise) => count + exercise.sets.length,
+      0,
+    );
+
+    setDraft({
+      ...next,
+
+      completed_set_count: completed,
+
+      total_set_count: total,
+    });
+  }
+
   function updateDraft(patch: Partial<Pick<WorkoutSession, "name" | "notes">>) {
     if (!draft) {
       return;
     }
 
-    setDraft({
+    replaceDraft({
       ...draft,
       ...patch,
     });
@@ -195,15 +319,19 @@ export function useActiveWorkoutController(sessionId: string) {
       return;
     }
 
-    setDraft(replaceWorkoutExercise(draft, updated));
+    replaceDraft(replaceWorkoutExercise(draft, updated));
   }
 
-  function moveExercise(index: number, direction: -1 | 1) {
+  function moveExercise(
+    index: number,
+
+    direction: -1 | 1,
+  ) {
     if (!draft) {
       return;
     }
 
-    setDraft(moveWorkoutExercise(draft, index, direction));
+    replaceDraft(moveWorkoutExercise(draft, index, direction));
   }
 
   function removeExercise(index: number) {
@@ -225,7 +353,7 @@ export function useActiveWorkoutController(sessionId: string) {
       );
     }
 
-    setDraft(next);
+    replaceDraft(next);
   }
 
   function createSuperset(index: number) {
@@ -233,7 +361,7 @@ export function useActiveWorkoutController(sessionId: string) {
       return;
     }
 
-    setDraft(createWorkoutSuperset(draft, index));
+    replaceDraft(createWorkoutSuperset(draft, index));
   }
 
   function removeSuperset(groupId: string) {
@@ -241,148 +369,107 @@ export function useActiveWorkoutController(sessionId: string) {
       return;
     }
 
-    setDraft(removeWorkoutSuperset(draft, groupId));
+    replaceDraft(removeWorkoutSuperset(draft, groupId));
   }
 
+  /*
+   * -------------------------------------------------
+   * OFFLINE ADD EXERCISE
+   * -------------------------------------------------
+   */
   async function addExercises(exercises: Exercise[]) {
-    if (!draft || exercises.length === 0) {
+    if (!draft || !user || exercises.length === 0) {
       return;
     }
 
-    setActionLoading(true);
+    const existing = new Set(
+      draft.exercises.map((exercise) => exercise.exercise_id),
+    );
 
-    setError(null);
-
-    try {
-      /*
-       * Preserve Phase 0 rule:
-       * flush before structural server mutation.
-       */
-      const savedBeforeAdd = await autosave.saveNow();
-
-      const updated = await addWorkoutExercises(
-        draft.id,
-
-        exercises.map((exercise) => exercise.id),
-
-        savedBeforeAdd?.revision ?? draft.revision,
+    const added = exercises
+      .filter((exercise) => !existing.has(exercise.id))
+      .map((exercise, index) =>
+        buildWorkoutExercise(
+          exercise,
+          draft.exercises.length + index,
+          user.weight_unit,
+        ),
       );
 
-      /*
-       * Adding exercises incremented revision,
-       * so autosave needs the returned snapshot.
-       */
-      autosave.adoptServerSnapshot(updated);
-
-      setDraft(updated);
-
-      const newlyAdded = updated.exercises.find((exercise) =>
-        exercises.some((selected) => selected.id === exercise.exercise_id),
-      );
-
-      if (newlyAdded) {
-        setExpandedId(newlyAdded.id);
-      }
-
-      await queryClient.invalidateQueries({
-        queryKey: workoutSessionKeys.all,
-      });
-    } catch (requestError) {
-      const parsed = parseApiError(requestError, "Unable to add exercises.");
-
-      setError(
-        parsed.code === "WORKOUT_REVISION_CONFLICT"
-          ? "This workout changed somewhere else. " +
-              "Leave and reopen it before continuing."
-          : parsed.message,
-      );
-    } finally {
-      setActionLoading(false);
+    if (added.length === 0) {
+      return;
     }
+
+    const next = {
+      ...draft,
+
+      exercises: [...draft.exercises, ...added],
+    };
+
+    replaceDraft(next);
+
+    setExpandedId(added[0]?.id ?? null);
+
+    void Haptics.selectionAsync();
   }
 
-  async function finishWorkout() {
-    if (!draft) {
+  /*
+   * -------------------------------------------------
+   * REST TIMER
+   * -------------------------------------------------
+   */
+  async function startRest(
+    seconds: number,
+
+    exerciseId: string,
+
+    exerciseName: string,
+  ) {
+    if (!localId) {
       return;
     }
 
-    setActionLoading(true);
+    const runtime: RestRuntime = {
+      workoutLocalId: localId,
 
-    setError(null);
+      restEndsAt: createRestEndsAt(seconds),
 
-    try {
-      /*
-       * Preserve Phase 0 reliability:
-       * completion waits for newest draft.
-       */
-      const saved = await autosave.saveNow();
+      exerciseId,
 
-      const completed = await completeWorkout(
-        draft.id,
+      exerciseName,
 
-        saved?.revision ?? draft.revision,
-      );
+      notificationId: null,
+    };
 
-      queryClient.setQueryData(
-        workoutSessionKeys.detail(completed.id),
-        completed,
-      );
+    await saveRestRuntime(database, runtime);
 
-      queryClient.setQueryData(workoutSessionKeys.active(), {
-        workout: null,
-      });
-
-      await queryClient.invalidateQueries({
-        queryKey: workoutSessionKeys.all,
-      });
-
-      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
-
-      router.replace({
-        pathname: "/workout-summary/[sessionId]",
-
-        params: {
-          sessionId: completed.id,
-        },
-      });
-    } catch (requestError) {
-      const parsed = parseApiError(requestError, "Unable to finish workout.");
-
-      setError(
-        parsed.code === "WORKOUT_REVISION_CONFLICT"
-          ? "This workout changed somewhere else. " +
-              "Leave and reopen it before finishing."
-          : parsed.message,
-      );
-    } finally {
-      setActionLoading(false);
-    }
+    setRest(runtime);
   }
 
-  async function cancelCurrentWorkout() {
-    if (!draft) {
+  async function updateRestEndsAt(restEndsAt: string) {
+    if (!rest || !localId) {
       return;
     }
 
-    setActionLoading(true);
+    const next = {
+      ...rest,
 
-    setError(null);
+      restEndsAt,
+    };
 
-    try {
-      await cancelWorkout(draft.id);
+    await saveRestRuntime(database, next);
 
-      await queryClient.invalidateQueries({
-        queryKey: workoutSessionKeys.all,
-      });
+    setRest(next);
+  }
 
-      router.replace("/train");
-    } catch (requestError) {
-      setError(
-        parseApiError(requestError, "Unable to discard workout.").message,
-      );
-    } finally {
-      setActionLoading(false);
+  async function stopRest() {
+    if (!localId) {
+      return;
     }
+
+    await clearRestRuntime(database, localId);
+
+    setRest(null);
   }
 
   function completeSet(
@@ -394,74 +481,269 @@ export function useActiveWorkoutController(sessionId: string) {
 
     exerciseName: string,
   ) {
-    updateExercise(updated);
+    /*
+     * Stamp completed_at locally.
+     */
+    const oldById = new Map(original.sets.map((set) => [set.id, set]));
 
-    const completedIndex = updated.sets.findIndex(
-      (workoutSet) =>
-        workoutSet.completed &&
-        !original.sets.find(
-          (oldSet) => oldSet.id === workoutSet.id && oldSet.completed,
-        ),
+    const now = new Date().toISOString();
+
+    const normalized: WorkoutExercise = {
+      ...updated,
+
+      sets: updated.sets.map((set) => {
+        const old = oldById.get(set.id);
+
+        if (set.completed && !old?.completed && !set.completed_at) {
+          return {
+            ...set,
+
+            completed_at: now,
+          };
+        }
+
+        if (!set.completed) {
+          return {
+            ...set,
+
+            completed_at: null,
+          };
+        }
+
+        return set;
+      }),
+    };
+
+    updateExercise(normalized);
+
+    const completedIndex = normalized.sets.findIndex(
+      (set) => set.completed && !oldById.get(set.id)?.completed,
     );
 
     if (completedIndex < 0) {
       return;
     }
 
-    const nextSet = updated.sets[completedIndex + 1];
+    const nextSet = normalized.sets[completedIndex + 1];
 
     if (nextSet?.type !== "DROP") {
-      setRest({
-        seconds,
-        exerciseName,
-      });
+      void startRest(seconds, normalized.exercise_id, exerciseName);
     }
 
     void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
   }
 
+  /*
+   * -------------------------------------------------
+   * OFFLINE FINISH
+   * -------------------------------------------------
+   */
+  async function finishWorkout() {
+    if (!draft || !user || !localId) {
+      return;
+    }
+
+    setActionLoading(true);
+
+    setError(null);
+
+    try {
+      /*
+       * Flush newest draft first.
+       */
+      await localPersistence.saveNow();
+
+      const now = new Date();
+
+      const started = new Date(draft.started_at);
+
+      const duration = Math.max(
+        0,
+        Math.floor((now.getTime() - started.getTime()) / 1000),
+      );
+
+      const completedWorkout: WorkoutSession = {
+        ...draft,
+
+        status: "COMPLETED",
+
+        completed_at: now.toISOString(),
+
+        duration_seconds: duration,
+
+        completed_set_count: completedSets,
+
+        total_set_count: totalSets,
+      };
+
+      /*
+       * This SQL write is the moment Finish succeeds.
+       *
+       * No internet required.
+       */
+      await completeLocalWorkout(database, {
+        localId,
+
+        userId: user.id,
+
+        workout: completedWorkout,
+      });
+
+      await stopRest();
+
+      /*
+       * Cloud sync is best effort after local finish.
+       */
+      requestWorkoutSync(database, user.id, 0);
+
+      await Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+
+      router.replace({
+        pathname: "/workout-summary/[sessionId]",
+
+        params: {
+          sessionId: localId,
+        },
+      });
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to finish workout.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
+  /*
+   * -------------------------------------------------
+   * CANCEL
+   * -------------------------------------------------
+   */
+  async function cancelCurrentWorkout() {
+    if (!draft || !user || !localId) {
+      return;
+    }
+
+    setActionLoading(true);
+
+    try {
+      await localPersistence.saveNow();
+
+      const record = await getLocalWorkoutByAnyId(database, {
+        workoutId: localId,
+
+        userId: user.id,
+      });
+
+      if (!record) {
+        router.replace("/train");
+
+        return;
+      }
+
+      await stopRest();
+
+      if (!record.serverId) {
+        /*
+         * Never existed in cloud.
+         */
+        await deleteLocalWorkout(database, {
+          localId,
+
+          userId: user.id,
+        });
+      } else {
+        const cancelled: WorkoutSession = {
+          ...draft,
+
+          status: "CANCELLED",
+
+          cancelled_at: new Date().toISOString(),
+        };
+
+        await cancelLocalWorkout(database, {
+          localId,
+
+          userId: user.id,
+
+          workout: cancelled,
+        });
+
+        requestWorkoutSync(database, user.id, 0);
+      }
+
+      router.replace("/train");
+    } catch (requestError) {
+      setError(
+        requestError instanceof Error
+          ? requestError.message
+          : "Unable to discard workout.",
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  }
+
   return {
-    workoutQuery,
+    isLoading: loading,
 
     draft,
-    setDraft,
 
     expandedId,
+
     setExpandedId,
 
     pickerOpen,
+
     setPickerOpen,
 
     optionsIndex,
+
     setOptionsIndex,
 
     rest,
-    setRest,
 
     actionLoading,
+
     error,
 
-    autosave,
+    localSaveStatus: localPersistence.status,
+
+    syncStatus,
+
+    online,
 
     completedSets,
+
     previousMap,
 
     activeOptionsExercise,
 
     updateDraft,
+
     updateExercise,
 
     moveExercise,
+
     removeExercise,
 
     createSuperset,
+
     removeSuperset,
 
     addExercises,
+
     finishWorkout,
+
     cancelCurrentWorkout,
 
     completeSet,
+
+    updateRestEndsAt,
+
+    stopRest,
 
     elapsedLabel: formatWorkoutClock(elapsed),
 

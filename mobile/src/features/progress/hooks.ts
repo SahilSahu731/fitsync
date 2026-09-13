@@ -37,8 +37,10 @@ export function useSyncProgressTimezone() {
     },
   });
 
+  const { isPending, mutate } = mutation;
+
   useEffect(() => {
-    if (!preferences.data || mutation.isPending) {
+    if (!preferences.data || isPending) {
       return;
     }
 
@@ -48,20 +50,20 @@ export function useSyncProgressTimezone() {
       return;
     }
 
-    mutation.mutate({
+    mutate({
       timezone,
     });
-  }, [preferences.data, mutation.isPending]);
+  }, [preferences.data, isPending, mutate]);
 
   return {
     preferences,
 
     updateTarget: (target: number) => {
-      mutation.mutate({
+      mutate({
         weekly_workout_target: target,
       });
     },
 
-    updating: mutation.isPending,
+    updating: isPending,
   };
 }

@@ -4,15 +4,15 @@ import { router, useLocalSearchParams } from "expo-router";
 
 import {
   ActivityIndicator,
+  Pressable,
   ScrollView,
   Text,
-  Pressable,
   View,
 } from "react-native";
 
 import { SafeAreaView } from "react-native-safe-area-context";
 
-import { useWorkoutSession } from "@/features/workouts/queries";
+import { useResolvedWorkout } from "@/features/workout-session/hooks/use-resolved-workout";
 
 import { formatDuration } from "@/features/workouts/utils";
 
@@ -29,12 +29,12 @@ export default function WorkoutHistoryDetailScreen() {
     sessionId?: string;
   }>();
 
-  const sessionId =
+  const workoutKey =
     typeof params.sessionId === "string" ? params.sessionId : "";
 
-  const query = useWorkoutSession(sessionId);
+  const resolved = useResolvedWorkout(workoutKey);
 
-  if (query.isLoading) {
+  if (resolved.isLoading) {
     return (
       <SafeAreaView className="flex-1 items-center justify-center bg-background">
         <ActivityIndicator color="#3B82F6" />
@@ -42,7 +42,7 @@ export default function WorkoutHistoryDetailScreen() {
     );
   }
 
-  const workout = query.data;
+  const workout = resolved.workout;
 
   if (!workout) {
     return (
@@ -70,6 +70,14 @@ export default function WorkoutHistoryDetailScreen() {
           <Text className="mt-1 text-[20px] font-extrabold text-white">
             {workout.name}
           </Text>
+
+          {resolved.syncStatus && resolved.syncStatus !== "SYNCED" ? (
+            <Text className="mt-1 text-[10px] font-semibold text-white/30">
+              {resolved.syncStatus === "SYNCING"
+                ? "Syncing…"
+                : "Saved on device"}
+            </Text>
+          ) : null}
         </View>
       </View>
 
@@ -82,35 +90,14 @@ export default function WorkoutHistoryDetailScreen() {
         }}
       >
         <View className="flex-row rounded-[22px] border border-white/10 bg-white/[0.03] p-5">
-          <View className="flex-1">
-            <Text className="text-[10px] font-bold uppercase tracking-[1px] text-white/25">
-              Duration
-            </Text>
+          <Stat
+            label="Duration"
+            value={formatDuration(workout.duration_seconds ?? 0)}
+          />
 
-            <Text className="mt-2 text-[16px] font-extrabold text-white">
-              {formatDuration(workout.duration_seconds ?? 0)}
-            </Text>
-          </View>
+          <Stat label="Exercises" value={String(workout.exercises.length)} />
 
-          <View className="flex-1">
-            <Text className="text-[10px] font-bold uppercase tracking-[1px] text-white/25">
-              Exercises
-            </Text>
-
-            <Text className="mt-2 text-[16px] font-extrabold text-white">
-              {workout.exercises.length}
-            </Text>
-          </View>
-
-          <View className="flex-1">
-            <Text className="text-[10px] font-bold uppercase tracking-[1px] text-white/25">
-              Sets
-            </Text>
-
-            <Text className="mt-2 text-[16px] font-extrabold text-white">
-              {workout.completed_set_count}
-            </Text>
-          </View>
+          <Stat label="Sets" value={String(workout.completed_set_count)} />
         </View>
 
         <View className="mt-7 gap-4">
@@ -209,5 +196,26 @@ export default function WorkoutHistoryDetailScreen() {
         ) : null}
       </ScrollView>
     </SafeAreaView>
+  );
+}
+
+function Stat({
+  label,
+  value,
+}: {
+  label: string;
+
+  value: string;
+}) {
+  return (
+    <View className="flex-1">
+      <Text className="text-[10px] font-bold uppercase tracking-[1px] text-white/25">
+        {label}
+      </Text>
+
+      <Text className="mt-2 text-[16px] font-extrabold text-white">
+        {value}
+      </Text>
+    </View>
   );
 }
