@@ -4,6 +4,8 @@ import type { Exercise } from "./types";
 
 import { normalizeExercise } from "./normalization";
 
+import { runSerializedTransaction } from "@/lib/database/transaction";
+
 interface ExerciseCacheRow {
   payload_json: string;
 }
@@ -56,7 +58,7 @@ export async function cacheExercises(
     return;
   }
 
-  await database.withTransactionAsync(async () => {
+  await runSerializedTransaction(database, async () => {
     for (const exercise of exercises) {
       await cacheExercise(database, userId, exercise);
     }

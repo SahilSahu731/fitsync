@@ -2,6 +2,7 @@ import * as Crypto from "expo-crypto";
 import type { SQLiteDatabase } from "expo-sqlite";
 import type { TemplateFolder } from "@/features/workouts/types";
 import type { LocalFolderRecord, RoutineSyncStatus } from "./types";
+import { runSerializedTransaction } from "@/lib/database/transaction";
 
 interface FolderRow {
   local_id: string;
@@ -114,7 +115,7 @@ export async function saveLocalFolder(
   const name = patch.name ?? record.name;
   const position = patch.position ?? record.position;
   const archived = patch.archived ?? record.archived;
-  await database.withTransactionAsync(async () => {
+  await runSerializedTransaction(database, async () => {
     await database.runAsync(
       `UPDATE template_folders SET name=?,position=?,archived=?,dirty=1,local_version=local_version+1,sync_status=CASE WHEN sync_status='CONFLICT' THEN 'CONFLICT' WHEN server_id IS NULL THEN 'LOCAL_ONLY' ELSE 'DIRTY' END,last_sync_error=NULL,next_retry_at=NULL,updated_at=? WHERE local_id=? AND user_id=?`,
       name,

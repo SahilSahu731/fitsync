@@ -4,6 +4,8 @@ import type { WorkoutTemplate } from "@/features/workouts/types";
 
 import { normalizeWorkoutTemplate } from "@/features/workout-session/normalization";
 
+import { runSerializedTransaction } from "@/lib/database/transaction";
+
 interface TemplateCacheRow {
   payload_json: string;
 }
@@ -54,7 +56,7 @@ export async function cacheWorkoutTemplates(
 
   templates: WorkoutTemplate[],
 ): Promise<void> {
-  await database.withTransactionAsync(async () => {
+  await runSerializedTransaction(database, async () => {
     for (const template of templates) {
       await cacheWorkoutTemplate(database, userId, template);
     }

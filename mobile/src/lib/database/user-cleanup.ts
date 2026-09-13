@@ -1,11 +1,13 @@
 import type { SQLiteDatabase } from "expo-sqlite";
 
+import { runSerializedTransaction } from "./transaction";
+
 export async function deleteLocalUserData(
   database: SQLiteDatabase,
 
   userId: string,
 ): Promise<void> {
-  await database.withTransactionAsync(async () => {
+  await runSerializedTransaction(database, async () => {
     await database.runAsync(
       `
             DELETE FROM workout_runtime

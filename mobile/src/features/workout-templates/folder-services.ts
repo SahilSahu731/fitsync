@@ -47,8 +47,6 @@ export async function moveRoutineFolder(
   const other = folders[index + direction];
   const current = folders[index];
   if (!current || !other) return;
-  await database.withTransactionAsync(async () => {
-    await saveLocalFolder(database, current, { position: other.position });
-    await saveLocalFolder(database, other, { position: current.position });
-  });
+  await saveLocalFolder(database, current, { position: other.position });
+  await saveLocalFolder(database, other, { position: current.position });
 }

@@ -5,6 +5,7 @@ import {
   CREATE_V1_SCHEMA,
   DATABASE_VERSION,
 } from "./schema";
+import { runSerializedTransaction } from "./transaction";
 
 interface UserVersionRow {
   user_version: number;
@@ -50,7 +51,7 @@ export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
   }
 
   if (currentVersion === 0) {
-    await database.withTransactionAsync(async () => {
+    await runSerializedTransaction(database, async () => {
       await database.execAsync(CREATE_V1_SCHEMA);
 
       await database.execAsync(CREATE_PHASE_5_SCHEMA);
@@ -62,7 +63,7 @@ export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
   }
 
   if (currentVersion < 2) {
-    await database.withTransactionAsync(async () => {
+    await runSerializedTransaction(database, async () => {
       const exists = await hasColumn(
         database,
         "local_workouts",
@@ -89,7 +90,7 @@ export async function migrateDatabase(database: SQLiteDatabase): Promise<void> {
   }
 
   if (currentVersion < 3) {
-    await database.withTransactionAsync(async () => {
+    await runSerializedTransaction(database, async () => {
       await database.execAsync(CREATE_PHASE_5_SCHEMA);
 
       await database.execAsync(`
