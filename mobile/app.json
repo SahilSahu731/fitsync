@@ -1,54 +1,42 @@
+
 {
   "expo": {
     "name": "FitSync",
     "slug": "fitsync",
+    "scheme": "fitsync",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/fitsync-icon.png",
-    "scheme": "fitsync",
     "userInterfaceStyle": "dark",
-    "ios": {
-      "icon": "./assets/images/fitsync-icon.png",
-      "bundleIdentifier": "com.sahilsahu.fitsync"
-    },
+    "newArchEnabled": true,
+    "icon": "./assets/images/icon.png",
+    "platforms": ["android"],
     "android": {
-      "package": "com.sahilsahu.fitsync",
+      "package": "com.sahil.fitsync",
+      "edgeToEdgeEnabled": true,
       "adaptiveIcon": {
-        "backgroundColor": "#08090B",
-        "foregroundImage": "./assets/images/fitsync-mark.png",
-        "monochromeImage": "./assets/images/fitsync-monochrome.png"
-      },
-      "predictiveBackGestureEnabled": false
-    },
-    "web": {
-      "output": "static",
-      "bundler": "metro",
-      "favicon": "./assets/images/fitsync-favicon.png"
+        "foregroundImage": "./assets/images/adaptive-foreground.png",
+        "backgroundColor": "#101011"
+      }
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "backgroundColor": "#08090B",
-          "image": "./assets/images/fitsync-splash.png",
-          "imageWidth": 190,
-          "resizeMode": "contain"
+          "backgroundColor": "#101011",
+          "image": "./assets/images/splash-icon.png",
+          "imageWidth": 180
         }
       ],
-      "expo-secure-store",
-      "expo-video",
-      "expo-localization",
-      "expo-font",
-      "expo-image",
-      "expo-web-browser",
-      "expo-sqlite",
-      "expo-background-task",
-      "expo-notifications"
+      [
+        "@react-native-google-signin/google-signin",
+        {
+          "iosUrlScheme": "com.googleusercontent.apps.androidonly"
+        }
+      ]
     ],
     "experiments": {
-      "typedRoutes": true,
-      "reactCompiler": true
+      "typedRoutes": true
     }
   }
 }

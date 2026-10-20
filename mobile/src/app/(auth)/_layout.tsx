@@ -1,36 +1,26 @@
-import { Stack } from "expo-router";
+
+import React from "react";
+import { Redirect, Stack } from "expo-router";
+import { useSession } from "@/src/context/session";
 
 export default function AuthLayout() {
+  const { ready, user, profile } = useSession();
+
+  if (!ready) return null;
+
+  if (user) {
+    return (
+      <Redirect
+        href={profile ? "/(tabs)" : "/onboarding"}
+      />
+    );
+  }
+
   return (
     <Stack
       screenOptions={{
-        headerShown: false,
-
-        contentStyle: {
-          backgroundColor: "#080808",
-        },
+        headerShown: false
       }}
-    >
-      <Stack.Screen
-        name="index"
-        options={{
-          animation: "fade",
-        }}
-      />
-
-      <Stack.Screen
-        name="email"
-        options={{
-          animation: "slide_from_right",
-        }}
-      />
-
-      <Stack.Screen
-        name="verify"
-        options={{
-          animation: "slide_from_right",
-        }}
-      />
-    </Stack>
+    />
   );
 }

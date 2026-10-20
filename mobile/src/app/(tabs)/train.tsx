@@ -1,388 +1,117 @@
-import { Ionicons } from "@expo/vector-icons";
 
-import { router, useFocusEffect } from "expo-router";
-
-import { useCallback, useMemo, useState } from "react";
-
+import React from "react";
 import {
-  ActivityIndicator,
   Pressable,
   ScrollView,
-  Text,
-  View,
+  View
 } from "react-native";
 
-import { SafeAreaView } from "react-native-safe-area-context";
+import { useRouter } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import { useSQLiteContext } from "expo-sqlite";
-
-import { useAuthStore } from "@/features/auth/store";
-
-import { resolveActiveWorkout } from "@/features/workout-session/local/active-workout-service";
-
-import type { LocalWorkoutRecord } from "@/features/workout-session/local/types";
-
-import { useStartLocalWorkout } from "@/features/workout-session/hooks/use-start-local-workout";
-
-import { useLocalRoutines } from "@/features/workout-templates/hooks/use-local-routines";
-
-import { requestRoutineSync } from "@/features/workout-templates/sync-manager";
-
-import { startLocalWorkout } from "@/features/workout-session/local/start-local-workout";
+import { C } from "@/src/constants/theme";
+import { demoPlans } from "@/data/sample";
+import { Txt } from "@/src/components/ui";
 
 export default function TrainScreen() {
-  const database = useSQLiteContext();
-
-  const user = useAuthStore((state) => state.user);
-
-  const routines = useLocalRoutines();
-
-  const reloadRoutines = routines.reload;
-
-  const starter = useStartLocalWorkout();
-
-  const [active, setActive] = useState<LocalWorkoutRecord | null>(null);
-
-  const [loadingActive, setLoadingActive] = useState(true);
-
-  const loadActive = useCallback(async () => {
-    if (!user?.id) {
-      setActive(null);
-
-      setLoadingActive(false);
-
-      return;
-    }
-
-    setLoadingActive(true);
-
-    try {
-      const result = await resolveActiveWorkout(database, user.id);
-
-      setActive(result);
-    } finally {
-      setLoadingActive(false);
-    }
-  }, [database, user?.id]);
-
-  useFocusEffect(
-    useCallback(() => {
-      void loadActive();
-
-      void reloadRoutines();
-
-      if (user?.id) {
-        requestRoutineSync(database, user.id);
-      }
-
-      return undefined;
-    }, [database, loadActive, reloadRoutines, user]),
-  );
-
-  const activeWorkout = active?.workout ?? null;
-
-  const mostRecentRoutine = useMemo(
-    () =>
-      [...routines.items]
-        .filter((record) => record.template.last_performed_at)
-        .sort(
-          (a, b) =>
-            new Date(b.template.last_performed_at!).getTime() -
-            new Date(a.template.last_performed_at!).getTime(),
-        )[0] ?? null,
-    [routines.items],
-  );
+  const router = useRouter();
 
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          padding: 20,
-
-          paddingBottom: 100,
-        }}
+    <ScrollView
+      className="flex-1 bg-bg"
+      contentContainerStyle={{
+        padding: 22,
+        paddingBottom: 50
+      }}
+    >
+      <Txt
+        weight="medium"
+        className="text-xs tracking-[2px] text-brand"
       >
-        <Text className="text-[34px] font-extrabold tracking-[-1.4px] text-white">
-          Train
-        </Text>
+        TRAINING HQ
+      </Txt>
 
-        <Text className="text-white/38 mt-2 text-[14px]">
-          Log your workout. Keep moving.
-        </Text>
+      <Txt
+        weight="extra"
+        className="mt-1 text-[37px] tracking-tight"
+      >
+        LET'S GET TO WORK.
+      </Txt>
 
-        {starter.error ? (
-          <Text className="mt-4 text-[12px] text-red-300">{starter.error}</Text>
-        ) : null}
+      <Txt className="mb-7 mt-2 text-sm leading-6 text-muted">
+        Pick a session and go. Personalized training
+        will be added in the next phase.
+      </Txt>
 
-        {loadingActive ? (
-          <View className="mt-8 h-28 items-center justify-center rounded-[24px] bg-white/[0.03]">
-            <ActivityIndicator color="#3B82F6" />
-          </View>
-        ) : activeWorkout ? (
-          <Pressable
-            onPress={() => {
-              router.push(`/workouts/active/${active!.localId}`);
-            }}
-            className="mt-7 overflow-hidden rounded-[24px] border border-brand-bright/20 bg-[#101725]"
-          >
-            <View className="h-[3px] bg-brand" />
-
-            <View className="p-5">
-              <View className="flex-row items-center">
-                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-brand/15">
-                  <Ionicons name="barbell" size={19} color="#60A5FA" />
-                </View>
-
-                <View className="ml-3 flex-1">
-                  <Text className="text-[10px] font-bold uppercase tracking-[1.4px] text-brand-bright">
-                    Workout in progress
-                  </Text>
-
-                  <Text className="mt-1 text-[17px] font-extrabold text-white">
-                    {activeWorkout.name}
-                  </Text>
-
-                  {active?.syncStatus !== "SYNCED" ? (
-                    <Text className="mt-1 text-[10px] text-white/25">
-                      Saved on device
-                    </Text>
-                  ) : null}
-                </View>
-
-                <View className="h-9 w-9 items-center justify-center rounded-full bg-brand">
-                  <Ionicons name="play" size={16} color="#FFFFFF" />
-                </View>
-              </View>
-
-              <View className="mt-5 flex-row">
-                <View className="flex-1">
-                  <Text className="text-[10px] text-white/25">Exercises</Text>
-
-                  <Text className="mt-1 text-[13px] font-bold text-white/65">
-                    {activeWorkout.exercises.length}
-                  </Text>
-                </View>
-
-                <View className="flex-1">
-                  <Text className="text-[10px] text-white/25">Sets</Text>
-
-                  <Text className="mt-1 text-[13px] font-bold text-white/65">
-                    {activeWorkout.completed_set_count}
-                  </Text>
-                </View>
-              </View>
-            </View>
-          </Pressable>
-        ) : (
-          <Pressable
-            disabled={starter.isPending}
-            onPress={() => {
-              void starter.startEmpty();
-            }}
-            className="mt-8 overflow-hidden rounded-[26px] bg-brand p-6"
-            style={({ pressed }) => ({
-              backgroundColor: pressed ? "#1D4ED8" : "#2563EB",
-
-              opacity: starter.isPending ? 0.65 : 1,
-
-              transform: [
-                {
-                  scale: pressed ? 0.985 : 1,
-                },
-              ],
-            })}
-          >
-            <View className="h-12 w-12 items-center justify-center rounded-2xl bg-white/15">
-              {starter.isPending ? (
-                <ActivityIndicator color="#FFFFFF" />
-              ) : (
-                <Ionicons name="play" size={22} color="#FFFFFF" />
-              )}
-            </View>
-
-            <Text className="mt-6 text-[23px] font-extrabold text-white">
-              Start empty workout
-            </Text>
-
-            <Text className="mt-2 text-[13px] leading-5 text-white/70">
-              Add exercises as you train.
-            </Text>
-          </Pressable>
-        )}
-
-        <View className="mt-7 flex-row gap-3">
-          <Pressable
-            onPress={() => {
-              router.push("/workout-templates");
-            }}
-            className="flex-1 rounded-[22px] border border-white/10 bg-white/[0.035] p-5"
-          >
-            <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
-              <Ionicons name="albums-outline" size={20} color="#60A5FA" />
-            </View>
-
-            <Text className="mt-5 text-[15px] font-bold text-white">
-              Templates
-            </Text>
-
-            <Text className="text-white/32 mt-1 text-[12px]">
-              {routines.items.length} saved
-            </Text>
-          </Pressable>
-
-          <Pressable
-            onPress={() => {
-              router.push("/exercises");
-            }}
-            className="flex-1 rounded-[22px] border border-white/10 bg-white/[0.035] p-5"
-          >
-            <View className="h-10 w-10 items-center justify-center rounded-xl bg-white/[0.06]">
-              <Ionicons name="barbell-outline" size={20} color="#FFFFFF" />
-            </View>
-
-            <Text className="mt-5 text-[15px] font-bold text-white">
-              Exercises
-            </Text>
-
-            <Text className="text-white/32 mt-1 text-[12px]">
-              Browse library
-            </Text>
-          </Pressable>
-        </View>
-
-        {mostRecentRoutine ? (
-          <Pressable
-            onPress={() =>
-              router.push(`/workout-templates/${mostRecentRoutine.localId}`)
-            }
-            className="mt-6 rounded-2xl border border-white/[0.07] bg-white/[0.025] p-4"
-          >
-            <Text className="text-[9px] font-bold uppercase text-white/20">
-              Last routine
-            </Text>
-            <Text className="mt-2 text-[15px] font-extrabold text-white">
-              {mostRecentRoutine.template.name}
-            </Text>
-          </Pressable>
-        ) : null}
-
-        <View className="mt-9 flex-row items-center justify-between">
-          <View>
-            <Text className="text-[19px] font-extrabold text-white">
-              Templates
-            </Text>
-
-            <Text className="mt-1 text-[10px] text-white/25">
-              Available offline
-            </Text>
-          </View>
-
-          <Pressable
-            onPress={() => {
-              router.push("/workout-templates");
-            }}
-          >
-            <Text className="text-[12px] font-bold text-brand-bright">
-              Manage
-            </Text>
-          </Pressable>
-        </View>
-
-        {routines.loading ? (
-          <View className="mt-5 items-center py-8">
-            <ActivityIndicator color="#3B82F6" />
-          </View>
-        ) : (
-          <View className="mt-4 gap-3">
-            {routines.items.slice(0, 4).map((record) => (
-              <View
-                key={record.localId}
-                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
-              >
-                <View className="flex-row items-center">
-                  <View className="h-10 w-10 items-center justify-center rounded-xl bg-brand-muted">
-                    <Ionicons name="barbell" size={18} color="#60A5FA" />
-                  </View>
-
-                  <View className="ml-3 flex-1">
-                    <Text className="text-[15px] font-bold text-white">
-                      {record.template.name}
-                    </Text>
-
-                    <Text
-                      numberOfLines={1}
-                      className="mt-1 text-[11px] text-white/30"
-                    >
-                      {record.template.exercises
-                        .map((exercise) => exercise.exercise_name)
-                        .join(" · ")}
-                    </Text>
-                  </View>
-                </View>
-
-                <View className="mt-4 flex-row gap-2">
-                  <Pressable
-                    onPress={() => {
-                      router.push(`/workout-templates/${record.localId}`);
-                    }}
-                    className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-white/[0.05]"
-                  >
-                    <Text className="text-[12px] font-bold text-white/65">
-                      Edit
-                    </Text>
-                  </Pressable>
-
-                  <Pressable
-                    disabled={Boolean(activeWorkout) || starter.isPending}
-                    onPress={() => {
-                      if (!user) return;
-                      void startLocalWorkout(database, user, {
-                        template: record.template,
-                      }).then((id) => router.push(`/workouts/active/${id}`));
-                    }}
-                    className="min-h-[44px] flex-1 items-center justify-center rounded-xl bg-brand"
-                    style={{
-                      opacity: activeWorkout ? 0.35 : 1,
-                    }}
-                  >
-                    <Text className="text-[12px] font-extrabold text-white">
-                      Start
-                    </Text>
-                  </Pressable>
-                </View>
-              </View>
-            ))}
-          </View>
-        )}
-
+      {demoPlans.map((plan, index) => (
         <Pressable
+          key={plan.id}
           onPress={() => {
-            router.push("/workout-history");
+            router.push(`/workout?plan=${plan.id}`);
           }}
-          className="mt-8 flex-row items-center rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+          className="mb-4 overflow-hidden rounded-[28px] border border-border bg-panel p-5"
         >
-          <View className="h-10 w-10 items-center justify-center rounded-xl bg-white/[0.05]">
-            <Ionicons name="time-outline" size={19} color="#FFFFFF" />
+          <View className="mb-7 flex-row items-center justify-between">
+            <Txt
+              weight="extra"
+              className="text-[10px] tracking-[2px] text-brand"
+            >
+              {plan.tag}
+            </Txt>
+
+            <MaterialCommunityIcons
+              name={
+                index === 0
+                  ? "arm-flex"
+                  : index === 1
+                    ? "run-fast"
+                    : "dumbbell"
+              }
+              color={C.brand}
+              size={29}
+            />
           </View>
 
-          <View className="ml-3 flex-1">
-            <Text className="text-[15px] font-bold text-white">
-              Workout history
-            </Text>
+          <Txt
+            weight="extra"
+            className="text-[29px] tracking-tight"
+          >
+            {plan.name.toUpperCase()}
+          </Txt>
 
-            <Text className="mt-1 text-[11px] text-white/30">
-              Review your previous sessions
-            </Text>
+          <Txt className="mt-1 text-sm text-muted">
+            {plan.subtitle}
+          </Txt>
+
+          <View className="mt-5 flex-row items-center justify-between">
+            <Txt
+              weight="medium"
+              className="text-xs text-muted"
+            >
+              {plan.minutes} MIN · {plan.count} EXERCISES
+            </Txt>
+
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-brand">
+              <MaterialCommunityIcons
+                name="arrow-top-right"
+                color={C.bg}
+                size={22}
+              />
+            </View>
           </View>
-
-          <Ionicons
-            name="chevron-forward"
-            size={18}
-            color="rgba(255,255,255,.2)"
-          />
         </Pressable>
-      </ScrollView>
-    </SafeAreaView>
+      ))}
+
+      <View className="mt-2 rounded-2xl border border-border bg-elevated p-5">
+        <Txt weight="bold" className="text-base">
+          COMING NEXT
+        </Txt>
+
+        <Txt className="mt-1 text-sm leading-6 text-muted">
+          Personalized plans, exercise history, weight
+          and rep logging, and exercise substitutions.
+        </Txt>
+      </View>
+    </ScrollView>
   );
 }

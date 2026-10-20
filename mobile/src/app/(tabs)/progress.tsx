@@ -1,202 +1,169 @@
-import { Ionicons } from "@expo/vector-icons";
 
-import { router } from "expo-router";
-
-import { useState } from "react";
-
+import React from "react";
 import {
-  ActivityIndicator,
-  Pressable,
   ScrollView,
-  Text,
-  View,
+  View
 } from "react-native";
 
-import { SafeAreaView } from "react-native-safe-area-context";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 
-import { ActivityCalendar } from "@/features/progress/components/activity-calendar";
+import { C } from "@/src/constants/theme";
+import { Card, Txt } from "@/src/components/ui";
 
-import { MuscleBars } from "@/features/progress/components/muscle-bars";
-
-import { RangeSelector } from "@/features/progress/components/range-selector";
-
-import { RecentPRs } from "@/features/progress/components/recent-prs";
-
-import { StrengthList } from "@/features/progress/components/strength-list";
-
-import { SummaryStats } from "@/features/progress/components/summary-stats";
-
-import { VolumeChart } from "@/features/progress/components/volume-chart";
-
-import { WeeklyGoalCard } from "@/features/progress/components/weekly-goal-card";
-
-import { useSyncProgressTimezone } from "@/features/progress/hooks";
-
-import {
-  useActivityCalendar,
-  useProgressOverview,
-} from "@/features/progress/queries";
-
-import type { ProgressRange } from "@/features/progress/types";
+const bars = [42, 66, 38, 76, 53, 95, 63];
+const days = ["M", "T", "W", "T", "F", "S", "S"];
 
 export default function ProgressScreen() {
-  const [range, setRange] = useState<ProgressRange>("12W");
-
-  const overview = useProgressOverview(range);
-
-  const calendar = useActivityCalendar(3);
-
-  const timezone = useSyncProgressTimezone();
-
-  if (overview.isLoading) {
-    return (
-      <SafeAreaView className="flex-1 items-center justify-center bg-background">
-        <ActivityIndicator color="#3B82F6" />
-      </SafeAreaView>
-    );
-  }
-
-  if (overview.isError || !overview.data) {
-    return (
-      <SafeAreaView className="flex-1 bg-background">
-        <View className="flex-1 items-center justify-center px-8">
-          <Ionicons name="stats-chart-outline" size={32} color="#525252" />
-
-          <Text className="mt-4 text-[17px] font-bold text-white">
-            Couldn&apos;t load progress
-          </Text>
-
-          <Pressable
-            onPress={() => {
-              void overview.refetch();
-            }}
-            className="mt-5 rounded-2xl bg-brand px-5 py-3"
-          >
-            <Text className="font-bold text-white">Try again</Text>
-          </Pressable>
-        </View>
-      </SafeAreaView>
-    );
-  }
-
-  const data = overview.data;
-
-  const hasTraining = data.totals.workouts > 0;
-
   return (
-    <SafeAreaView className="flex-1 bg-background">
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{
-          padding: 20,
-
-          paddingBottom: 110,
-        }}
+    <ScrollView
+      className="flex-1 bg-bg"
+      contentContainerStyle={{
+        padding: 23,
+        paddingBottom: 55
+      }}
+    >
+      <Txt
+        weight="medium"
+        className="text-xs tracking-[2px] text-brand"
       >
-        <View className="flex-row items-center">
-          <View className="flex-1">
-            <Text className="text-[34px] font-extrabold tracking-[-1.4px] text-white">
-              Progress
-            </Text>
+        TRACK THE WORK
+      </Txt>
 
-            <Text className="text-white/32 mt-2 text-[13px]">
-              See what your training is actually doing.
-            </Text>
-          </View>
+      <Txt weight="extra" className="mt-1 text-[38px]">
+        GET BETTER.
+      </Txt>
 
-          <Pressable
-            onPress={() => {
-              router.push("/progress/personal-records");
-            }}
-            className="h-11 w-11 items-center justify-center rounded-2xl bg-white/[0.045]"
+      <Txt className="mb-7 mt-2 text-sm text-muted">
+        Consistency adds up. Here's what your progress
+        dashboard will look like.
+      </Txt>
+
+      {/* Statistics */}
+
+      <View className="mb-3 flex-row gap-3">
+        <Card className="flex-1">
+          <MaterialCommunityIcons
+            name="calendar-check"
+            color={C.brand}
+            size={24}
+          />
+
+          <Txt weight="extra" className="mt-4 text-4xl">
+            12
+          </Txt>
+
+          <Txt className="mt-1 text-xs text-muted">
+            Workouts logged
+          </Txt>
+        </Card>
+
+        <Card className="flex-1">
+          <MaterialCommunityIcons
+            name="trophy-outline"
+            color={C.brand}
+            size={24}
+          />
+
+          <Txt weight="extra" className="mt-4 text-4xl">
+            04
+          </Txt>
+
+          <Txt className="mt-1 text-xs text-muted">
+            Personal records
+          </Txt>
+        </Card>
+      </View>
+
+      {/* Chart */}
+
+      <Card className="mt-2">
+        <View className="flex-row items-center justify-between">
+          <Txt weight="bold" className="text-lg">
+            Weekly activity
+          </Txt>
+
+          <Txt weight="bold" className="text-xs text-brand">
+            THIS WEEK
+          </Txt>
+        </View>
+
+        <View
+          className="mt-6 flex-row items-end justify-between"
+          style={{ height: 142 }}
+        >
+          {bars.map((height, index) => (
+            <View key={index} className="items-center">
+              <View
+                style={{
+                  height: height * 1.25,
+                  width: 24,
+                  backgroundColor:
+                    index === 5 ? C.brand : "#3A3633",
+                  borderRadius: 8
+                }}
+              />
+
+              <Txt className="mt-3 text-[11px] text-muted">
+                {days[index]}
+              </Txt>
+            </View>
+          ))}
+        </View>
+      </Card>
+
+      {/* Personal bests */}
+
+      <View className="mt-7">
+        <Txt weight="extra" className="mb-4 text-[21px]">
+          PERSONAL BESTS
+        </Txt>
+
+        {[
+          ["Bench Press", "60 kg × 8"],
+          ["Back Squat", "80 kg × 5"],
+          ["Lat Pulldown", "45 kg × 12"]
+        ].map(([name, record]) => (
+          <View
+            key={name}
+            className="mb-2.5 flex-row items-center rounded-2xl border border-border bg-panel p-4"
           >
-            <Ionicons name="trophy-outline" size={19} color="#FFFFFF" />
-          </Pressable>
-        </View>
-
-        <View className="mt-7">
-          <RangeSelector value={range} onChange={setRange} />
-        </View>
-
-        {!hasTraining ? (
-          <View className="mt-14 items-center px-7">
-            <View className="h-20 w-20 items-center justify-center rounded-[28px] bg-brand-muted">
-              <Ionicons name="trending-up" size={32} color="#60A5FA" />
+            <View className="mr-4 h-11 w-11 items-center justify-center rounded-xl bg-elevated">
+              <MaterialCommunityIcons
+                name="trophy"
+                color={C.brand}
+                size={22}
+              />
             </View>
 
-            <Text className="mt-7 text-center text-[23px] font-extrabold tracking-[-0.6px] text-white">
-              Your progress starts with your first workout.
-            </Text>
+            <View className="flex-1">
+              <Txt weight="bold">{name}</Txt>
 
-            <Text className="mt-3 text-center text-[13px] leading-6 text-white/35">
-              Strength trends, PRs, volume and consistency will appear here as
-              you train.
-            </Text>
+              <Txt className="text-xs text-muted">
+                Example record
+              </Txt>
+            </View>
 
-            <Pressable
-              onPress={() => {
-                router.push("/train");
-              }}
-              className="mt-7 min-h-[54px] items-center justify-center rounded-2xl bg-brand px-7"
+            <Txt
+              weight="extra"
+              className="text-sm text-brand"
             >
-              <Text className="text-[14px] font-extrabold text-white">
-                Start Workout
-              </Text>
-            </Pressable>
+              {record}
+            </Txt>
           </View>
-        ) : (
-          <>
-            <View className="mt-7">
-              <WeeklyGoalCard
-                goal={data.weekly_goal}
-                updating={timezone.updating}
-                onChangeTarget={timezone.updateTarget}
-              />
-            </View>
+        ))}
+      </View>
 
-            <View className="mt-4">
-              <SummaryStats totals={data.totals} unit={data.weight_unit} />
-            </View>
+      <View className="mt-5 rounded-2xl border border-brand bg-[#271F1B] p-5">
+        <Txt weight="extra" className="text-sm text-brand">
+          DEMO DASHBOARD
+        </Txt>
 
-            <View className="mt-9">
-              <RecentPRs
-                records={data.recent_prs}
-                onPressExercise={(exerciseId) => {
-                  router.push(`/progress/exercises/${exerciseId}`);
-                }}
-                onViewAll={() => {
-                  router.push("/progress/personal-records");
-                }}
-              />
-            </View>
-
-            <View className="mt-9">
-              <StrengthList
-                items={data.top_exercises}
-                unit={data.weight_unit}
-                onPress={(exerciseId) => {
-                  router.push(`/progress/exercises/${exerciseId}`);
-                }}
-              />
-            </View>
-
-            <View className="mt-9">
-              <VolumeChart
-                points={data.weekly_volume}
-                unit={data.weight_unit}
-              />
-            </View>
-
-            <View className="mt-9">
-              <MuscleBars items={data.muscle_groups} />
-            </View>
-
-            <View className="mt-10">
-              <ActivityCalendar items={calendar.data?.items ?? []} />
-            </View>
-          </>
-        )}
-      </ScrollView>
-    </SafeAreaView>
+        <Txt className="mt-2 text-sm leading-6 text-muted">
+          Every number on this screen is placeholder data.
+          Real charts and personal records will use workout
+          history in a later phase.
+        </Txt>
+      </View>
+    </ScrollView>
   );
 }

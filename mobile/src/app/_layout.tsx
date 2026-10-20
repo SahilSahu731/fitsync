@@ -1,132 +1,113 @@
-import "../../global.css";
 
-import { registerWorkoutBackgroundSync } from "@/features/sync/background-task";
+import "../global.css";
 
-import { SyncLifecycle } from "@/features/sync/sync-lifecycle";
+import React, {
+  useCallback,
+  useEffect,
+  useState
+} from "react";
 
-import { configureRestNotifications } from "@/features/workout-session/rest/rest-notifications";
+import { View } from "react-native";
+import {
+  SafeAreaProvider,
+  SafeAreaView
+} from "react-native-safe-area-context";
 
 import { Stack } from "expo-router";
-
+import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 
-import { StatusBar } from "expo-status-bar";
+import {
+  useFonts,
+  Outfit_400Regular,
+  Outfit_500Medium,
+  Outfit_600SemiBold,
+  Outfit_700Bold,
+  Outfit_800ExtraBold
+} from "@expo-google-fonts/outfit";
 
-import { useEffect } from "react";
+import {
+  SessionProvider,
+  useSession
+} from "@/src/context/session";
 
-import { subscribeToAuthInvalidation } from "@/features/auth/auth-events";
+import { BrandReveal } from "@/src/components/brand-reveal";
+import { C } from "@/src/constants/theme";
 
-import { BootstrapError } from "@/features/auth/components/bootstrap-error";
+SplashScreen.preventAutoHideAsync();
 
-import { useAuthStore } from "@/features/auth/store";
+SplashScreen.setOptions({
+  fade: true,
+  duration: 250
+});
 
-import { DatabaseProvider } from "@/lib/database/database-provider";
+function Navigator() {
+  const { ready } = useSession();
 
-import { AppProvider } from "@/providers/app-provider";
+  const [fontsReady] = useFonts({
+    Outfit_400Regular,
+    Outfit_500Medium,
+    Outfit_600SemiBold,
+    Outfit_700Bold,
+    Outfit_800ExtraBold
+  });
 
-void SplashScreen.preventAutoHideAsync();
-
-function RootNavigator() {
-  const status = useAuthStore((state) => state.status);
-
-  const user = useAuthStore((state) => state.user);
-
-  const bootstrap = useAuthStore((state) => state.bootstrap);
-
-  const invalidateSession = useAuthStore((state) => state.invalidateSession);
-
-  useEffect(() => {
-    void configureRestNotifications();
-  }, []);
-
-  useEffect(() => {
-    void registerWorkoutBackgroundSync();
-  }, []);
-
-  useEffect(() => {
-    const unsubscribe = subscribeToAuthInvalidation(invalidateSession);
-
-    void bootstrap();
-
-    return unsubscribe;
-  }, [bootstrap, invalidateSession]);
+  const [showReveal, setShowReveal] = useState(true);
 
   useEffect(() => {
-    if (status !== "booting") {
-      SplashScreen.hide();
+    if (ready && fontsReady) {
+      SplashScreen.hideAsync();
     }
-  }, [status]);
+  }, [ready, fontsReady]);
 
-  if (status === "booting") {
-    return null;
-  }
+  const finishReveal = useCallback(() => {
+    setShowReveal(false);
+  }, []);
 
-  if (status === "offline" && !user) {
+  if (!ready || !fontsReady) {
     return (
-      <BootstrapError
-        onRetry={() => {
-          void bootstrap();
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: C.bg
         }}
       />
     );
   }
 
-  const authenticated =
-    status === "authenticated" || (status === "offline" && Boolean(user));
-
-  const needsOnboarding = authenticated && user?.onboarding_complete === false;
-
-  const appReady = authenticated && user?.onboarding_complete === true;
-
   return (
-    <>
-      <StatusBar style="light" />
-
-      {appReady ? <SyncLifecycle /> : null}
+    <SafeAreaView
+      edges={["top"]}
+      style={{
+        flex: 1,
+        backgroundColor: C.bg
+      }}
+    >
+      <StatusBar style="light" backgroundColor={C.bg} />
 
       <Stack
         screenOptions={{
           headerShown: false,
-
           contentStyle: {
-            backgroundColor: "#080808",
+            backgroundColor: C.bg
           },
+          animation: "fade_from_bottom"
         }}
-      >
-        <Stack.Protected guard={!authenticated}>
-          <Stack.Screen name="(auth)" />
-        </Stack.Protected>
+      />
 
-        <Stack.Protected guard={needsOnboarding}>
-          <Stack.Screen name="(onboarding)" />
-        </Stack.Protected>
-
-        <Stack.Protected guard={appReady}>
-          <Stack.Screen name="(tabs)" />
-
-          <Stack.Screen name="exercises" />
-
-          <Stack.Screen name="workout-templates" />
-
-          <Stack.Screen name="workouts" />
-
-          <Stack.Screen name="workout-history" />
-
-          <Stack.Screen name="workout-summary" />
-
-          <Stack.Screen name="progress" />
-        </Stack.Protected>
-      </Stack>
-    </>
+      {showReveal ? (
+        <BrandReveal onDone={finishReveal} />
+      ) : null}
+    </SafeAreaView>
   );
 }
 
 export default function RootLayout() {
   return (
-    <DatabaseProvider>
-      <AppProvider>
-        <RootNavigator />
-      </AppProvider>
-    </DatabaseProvider>
+    <SafeAreaProvider>
+      <SessionProvider>
+        <Navigator />
+      </SessionProvider>
+    </SafeAreaProvider>
   );
 }

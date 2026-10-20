@@ -1,99 +1,99 @@
-import { Ionicons } from "@expo/vector-icons";
 
-import { Tabs } from "expo-router";
+import React from "react";
+import { Redirect, Tabs } from "expo-router";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
+
+import { useSession } from "@/src/context/session";
+import { C } from "@/src/constants/theme";
+
+const ICONS = {
+  index: ["home-variant-outline", "home-variant"],
+  train: ["dumbbell", "dumbbell"],
+  library: ["bookshelf", "bookshelf"],
+  progress: ["chart-areaspline", "chart-areaspline"],
+  profile: ["account-circle-outline", "account-circle"]
+} as const;
 
 export default function TabsLayout() {
+  const { ready, user, profile } = useSession();
+  const insets = useSafeAreaInsets();
+
+  if (!ready) return null;
+
+  if (!user) {
+    return <Redirect href="/(auth)/sign-in" />;
+  }
+
+  if (!profile) {
+    return <Redirect href="/onboarding" />;
+  }
+
   return (
     <Tabs
       screenOptions={{
         headerShown: false,
-
-        tabBarActiveTintColor: "#3B82F6",
-
-        tabBarInactiveTintColor: "#737373",
-
-        tabBarHideOnKeyboard: true,
-
-        tabBarStyle: {
-          height: 72,
-
-          paddingTop: 8,
-
-          paddingBottom: 8,
-
-          backgroundColor: "#080808",
-
-          borderTopColor: "#202020",
-
-          borderTopWidth: 1,
-        },
+        tabBarActiveTintColor: C.brand,
+        tabBarInactiveTintColor: "#85858B",
 
         tabBarLabelStyle: {
+          fontFamily: "Outfit_600SemiBold",
           fontSize: 10,
-
-          fontWeight: "700",
+          marginTop: 3
         },
+
+        tabBarStyle: {
+          backgroundColor: C.bg,
+          borderTopColor: C.border,
+          borderTopWidth: 1,
+          height: 64 + insets.bottom,
+          paddingTop: 8,
+          paddingBottom: Math.max(insets.bottom, 9)
+        },
+
+        tabBarIconStyle: {
+          marginTop: 1
+        },
+
+        sceneStyle: {
+          backgroundColor: C.bg
+        }
       }}
     >
-      <Tabs.Screen
-        name="index"
-        options={{
-          title: "Home",
+      {(
+        [
+          "index",
+          "train",
+          "library",
+          "progress",
+          "profile"
+        ] as const
+      ).map(id => (
+        <Tabs.Screen
+          key={id}
+          name={id}
+          options={{
+            title:
+              id === "index"
+                ? "Home"
+                : id === "train"
+                  ? "Train"
+                  : id === "library"
+                    ? "Exercises"
+                    : id === "progress"
+                      ? "Progress"
+                      : "Me",
 
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "home" : "home-outline"}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="train"
-        options={{
-          title: "Train",
-
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "barbell" : "barbell-outline"}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="progress"
-        options={{
-          title: "Progress",
-
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "stats-chart" : "stats-chart-outline"}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
-
-      <Tabs.Screen
-        name="profile"
-        options={{
-          title: "You",
-
-          tabBarIcon: ({ color, size, focused }) => (
-            <Ionicons
-              name={focused ? "person" : "person-outline"}
-              size={size}
-              color={color}
-            />
-          ),
-        }}
-      />
+            tabBarIcon: ({ color, focused }) => (
+              <MaterialCommunityIcons
+                name={ICONS[id][focused ? 1 : 0]}
+                size={24}
+                color={color}
+              />
+            )
+          }}
+        />
+      ))}
     </Tabs>
   );
 }
