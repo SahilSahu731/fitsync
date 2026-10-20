@@ -1,55 +1,36 @@
-
 import sharp from "sharp";
 import fs from "node:fs/promises";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
-const output = path.resolve("assets/images");
+const root = fileURLToPath(new URL("../", import.meta.url));
+const output = path.join(root, "assets/images");
+const source = await fs.readFile(path.join(root, "assets/brand/mark.svg"), "utf8");
+const artwork = source.replace(/<svg[^>]*>/, "").replace("</svg>", "");
 await fs.mkdir(output, { recursive: true });
 
-const symbol = `
-  <g fill="#FF7838">
-    <rect x="70" y="207" width="20" height="98" rx="4"/>
-    <rect x="96" y="173" width="38" height="166" rx="10"/>
-    <rect x="142" y="203" width="24" height="106" rx="5"/>
+function svg(size, { background = false, scale = 1, monochrome = false } = {}) {
+  const mark = monochrome
+    ? artwork.replace('fill="url(#energy)"', 'fill="#FFFFFF"').replace('fill="#F8F7F4"', 'fill="#FFFFFF"')
+    : artwork;
 
-    <rect x="346" y="203" width="24" height="106" rx="5"/>
-    <rect x="378" y="173" width="38" height="166" rx="10"/>
-    <rect x="422" y="207" width="20" height="98" rx="4"/>
-
-    <path d="
-      M314 55
-      L171 256
-      H247
-      L194 453
-      L366 235
-      H285
-      Z
-    "/>
-  </g>
-`;
-
-function svg(size, background = false) {
-  return `
-  <svg xmlns="http://www.w3.org/2000/svg"
-       width="${size}" height="${size}"
-       viewBox="0 0 512 512">
-    ${background
-      ? '<rect width="512" height="512" fill="#101011"/>'
-      : ""}
-    ${symbol}
+  return `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}" viewBox="0 0 512 512">
+    ${background ? '<rect width="512" height="512" fill="#101011"/>' : ""}
+    <g transform="translate(256 256) scale(${scale}) translate(-244 -256)">${mark}</g>
   </svg>`;
 }
 
-await sharp(Buffer.from(svg(1024, true)))
-  .png()
-  .toFile(path.join(output, "icon.png"));
+// Adaptive artwork stays inside Android's central 66/108 safe circle.
+const assets = [
+  ["icon.png", 1024, { background: true, scale: 1.25 }],
+  ["adaptive-foreground.png", 1024, { scale: 0.9 }],
+  ["android-icon-monochrome.png", 1024, { scale: 0.9, monochrome: true }],
+  ["splash-icon.png", 1024, { scale: 1.25 }],
+  ["favicon.png", 64, { background: true, scale: 1.25 }]
+];
 
-await sharp(Buffer.from(svg(1024, false)))
-  .png()
-  .toFile(path.join(output, "adaptive-foreground.png"));
+for (const [name, size, options] of assets) {
+  await sharp(Buffer.from(svg(size, options))).png().toFile(path.join(output, name));
+}
 
-await sharp(Buffer.from(svg(1024, false)))
-  .png()
-  .toFile(path.join(output, "splash-icon.png"));
-
-console.log("FitSync branding assets generated successfully.");
+console.log("Generated FitSync app, adaptive, monochrome, splash and favicon assets.");

@@ -1,52 +1,48 @@
-
 import React, {
   createContext,
   useCallback,
   useContext,
   useEffect,
   useMemo,
-  useState
+  useState,
 } from "react";
 
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import {
   GoogleSignin,
-  isSuccessResponse
+  isSuccessResponse,
 } from "@react-native-google-signin/google-signin";
 
-const USER_KEY = "@fitsync/ui-only-google-user";
-const profileKey = (id: string) => `@fitsync/onboarding/${id}`;
+import {
+  apiRequest,
+  clearSessionTokens,
+  googleBackendLogin,
+  restoreBackendSession,
+  storeSessionTokens,
+} from "@/src/services/api";
 
-export type Gender =
-  | "male"
-  | "female"
-  | "prefer_not_to_say";
+export type Gender = "male" | "female" | "prefer_not_to_say";
 
-export type Goal =
-  | "muscle"
-  | "strength"
-  | "fitness"
-  | "fat_loss";
+export type Goal = "muscle" | "strength" | "fat_loss" | "fitness";
 
-export type Experience =
-  | "beginner"
-  | "intermediate"
-  | "advanced";
+export type Experience = "beginner" | "intermediate" | "advanced";
 
-export type Equipment =
-  | "gym"
-  | "dumbbells"
-  | "bodyweight";
+export type Equipment = "gym" | "dumbbells" | "bodyweight";
+
+export type BodyType = "slim" | "medium" | "broad";
 
 export type Profile = {
   goal: Goal;
   experience: Experience;
-  weightKg: number;
-  heightCm: number;
   gender: Gender;
+
+  heightCm: number;
+  weightKg: number;
+  bodyType: BodyType | null;
+
   trainingDays: number;
   minutesPerWorkout: 30 | 45 | 60;
   equipment: Equipment;
+
   completedAt: string;
 };
 
@@ -54,228 +50,319 @@ export type AuthUser = {
   id: string;
   email: string;
   name: string;
-  photo?: string | null;
-  demo?: boolean;
+  bio: string;
+  avatarUrl: string | null;
+  hasCustomAvatar: boolean;
+  createdAt: string;
+};
+
+export type UserSettings = {
+  weightUnit: "kg" | "lb";
+  restSeconds: 30 | 60 | 90 | 120 | 180;
+  workoutReminders: boolean;
+};
+
+export type MeResponse = {
+  user: AuthUser;
+  profile: Profile | null;
+  settings: UserSettings;
 };
 
 type SessionContextType = {
   ready: boolean;
+
   user: AuthUser | null;
   profile: Profile | null;
+  settings: UserSettings | null;
 
   signInGoogle: () => Promise<boolean>;
-  previewDevelopment: () => Promise<void>;
-  saveProfile: (profile: Profile) => Promise<void>;
+  reloadMe: () => Promise<void>;
+
+  saveProfile: (value: Profile) => Promise<void>;
+
+  updateAccount: (
+    value: Partial<Pick<AuthUser, "name" | "bio">>,
+  ) => Promise<void>;
+
+  updateFitness: (
+    value: Partial<Omit<Profile, "completedAt">>,
+  ) => Promise<void>;
+
+  updateSettings: (value: Partial<UserSettings>) => Promise<void>;
+
+  uploadAvatar: (uri: string, mimeType?: string) => Promise<void>;
+  removeAvatar: () => Promise<void>;
+
   redoOnboarding: () => Promise<void>;
-  deleteLocalProfile: () => Promise<void>;
+
   signOut: () => Promise<void>;
+  deleteAccount: () => Promise<void>;
 };
 
-const SessionContext =
-  createContext<SessionContextType | null>(null);
+const SessionContext = createContext<SessionContextType | null>(null);
 
-function toUser(user: {
-  id: string;
-  email: string;
-  name: string | null;
-  photo: string | null;
-}): AuthUser {
-  return {
-    id: user.id,
-    email: user.email,
-    name: user.name || user.email.split("@")[0],
-    photo: user.photo
-  };
-}
+GoogleSignin.configure({
+  webClientId: process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID,
+  offlineAccess: false,
+});
 
-export function SessionProvider({
-  children
-}: {
-  children: React.ReactNode;
-}) {
+export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
+
   const [user, setUser] = useState<AuthUser | null>(null);
+
   const [profile, setProfile] = useState<Profile | null>(null);
 
-  const applyUser = useCallback(
-    async (nextUser: AuthUser | null) => {
-      setUser(nextUser);
+  const [settings, setSettings] = useState<UserSettings | null>(null);
 
-      if (!nextUser) {
-        setProfile(null);
-        await AsyncStorage.removeItem(USER_KEY);
-        return;
-      }
+  const applyMe = useCallback((data: MeResponse) => {
+    setUser(data.user);
+    setProfile(data.profile);
+    setSettings(data.settings);
+  }, []);
 
-      await AsyncStorage.setItem(
-        USER_KEY,
-        JSON.stringify(nextUser)
-      );
+  const resetState = useCallback(() => {
+    setUser(null);
+    setProfile(null);
+    setSettings(null);
+  }, []);
 
-      const storedProfile = await AsyncStorage.getItem(
-        profileKey(nextUser.id)
-      );
+  const reloadMe = useCallback(async () => {
+    const data = await apiRequest<MeResponse>("/me");
+    applyMe(data);
+  }, [applyMe]);
 
-      setProfile(
-        storedProfile
-          ? (JSON.parse(storedProfile) as Profile)
-          : null
-      );
-    },
-    []
-  );
+  // Restore backend session after reopening the app.
 
   useEffect(() => {
     let mounted = true;
 
-    const restoreSession = async () => {
+    async function restore() {
       try {
-        GoogleSignin.configure({
-          webClientId:
-            process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID ||
-            undefined
-        });
+        const exists = await restoreBackendSession();
 
-        const cachedUser = await AsyncStorage.getItem(USER_KEY);
+        if (exists && mounted) {
+          const data = await apiRequest<MeResponse>("/me");
 
-        if (cachedUser) {
-          const restored = JSON.parse(cachedUser) as AuthUser;
-
-          if (!restored.demo || __DEV__) {
-            if (mounted) await applyUser(restored);
-          } else {
-            await AsyncStorage.removeItem(USER_KEY);
-          }
-        } else {
-          try {
-            const result = await GoogleSignin.signInSilently();
-
-            if (mounted && isSuccessResponse(result)) {
-              await applyUser(toUser(result.data.user));
-            }
-          } catch {
-            // Offline or no Google session.
+          if (mounted) {
+            applyMe(data);
           }
         }
       } catch (error) {
-        console.warn("Session restoration failed", error);
+        console.warn("Could not restore backend session:", error);
       } finally {
         if (mounted) setReady(true);
       }
-    };
+    }
 
-    restoreSession();
+    restore();
 
     return () => {
       mounted = false;
     };
-  }, [applyUser]);
+  }, [applyMe]);
 
   const signInGoogle = useCallback(async () => {
-    const webClientId =
-      process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID;
-
-    if (!webClientId || webClientId.includes("YOUR_WEB")) {
-      throw new Error(
-        "Add EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID to mobile/.env"
-      );
-    }
-
     await GoogleSignin.hasPlayServices({
-      showPlayServicesUpdateDialog: true
+      showPlayServicesUpdateDialog: true,
     });
 
-    const result = await GoogleSignin.signIn();
+    const response = await GoogleSignin.signIn();
 
-    if (!isSuccessResponse(result)) {
+    if (!isSuccessResponse(response)) {
       return false;
     }
 
-    await applyUser(toUser(result.data.user));
+    let idToken = response.data.idToken;
+
+    if (!idToken) {
+      const tokens = await GoogleSignin.getTokens();
+      idToken = tokens.idToken;
+    }
+
+    if (!idToken) {
+      throw new Error("Google did not provide an ID token.");
+    }
+
+    // Verify the identity on our Express backend.
+
+    const result = await googleBackendLogin(idToken);
+
+    await storeSessionTokens({
+      accessToken: result.accessToken,
+      refreshToken: result.refreshToken,
+    });
+
+    const data = result as unknown as MeResponse;
+    applyMe(data);
 
     return true;
-  }, [applyUser]);
-
-  const previewDevelopment = useCallback(async () => {
-    if (!__DEV__) return;
-
-    await applyUser({
-      id: "preview-local",
-      email: "preview@local.test",
-      name: "Demo Athlete",
-      demo: true
-    });
-  }, [applyUser]);
+  }, [applyMe]);
 
   const saveProfile = useCallback(
     async (value: Profile) => {
-      if (!user) throw new Error("Please sign in first");
+      const { completedAt, ...input } = value;
 
-      await AsyncStorage.setItem(
-        profileKey(user.id),
-        JSON.stringify(value)
-      );
+      const response = await apiRequest<MeResponse>("/me/profile", {
+        method: "PUT",
+        json: input,
+      });
 
-      setProfile(value);
+      applyMe(response);
     },
-    [user]
+    [applyMe],
   );
 
+  const updateAccount = useCallback(
+    async (value: { name?: string; bio?: string }) => {
+      const response = await apiRequest<MeResponse>("/me", {
+        method: "PATCH",
+        json: value,
+      });
+
+      applyMe(response);
+    },
+    [applyMe],
+  );
+
+  const updateFitness = useCallback(
+    async (value: Partial<Omit<Profile, "completedAt">>) => {
+      const response = await apiRequest<MeResponse>("/me/profile", {
+        method: "PATCH",
+        json: value,
+      });
+
+      applyMe(response);
+    },
+    [applyMe],
+  );
+
+  const updateSettings = useCallback(
+    async (value: Partial<UserSettings>) => {
+      const response = await apiRequest<MeResponse>("/me/settings", {
+        method: "PATCH",
+        json: value,
+      });
+
+      applyMe(response);
+    },
+    [applyMe],
+  );
+
+  const uploadAvatar = useCallback(
+    async (uri: string, mimeType = "image/jpeg") => {
+      const form = new FormData();
+
+      form.append("avatar", {
+        uri,
+        name: "fitsync-avatar.jpg",
+        type: mimeType,
+      } as any);
+
+      const response = await apiRequest<MeResponse>("/me/avatar", {
+        method: "POST",
+        form,
+      });
+
+      applyMe(response);
+    },
+    [applyMe],
+  );
+
+  const removeAvatar = useCallback(async () => {
+    const response = await apiRequest<MeResponse>("/me/avatar", {
+      method: "DELETE",
+    });
+
+    applyMe(response);
+  }, [applyMe]);
+
   const redoOnboarding = useCallback(async () => {
-    if (!user) return;
+    const response = await apiRequest<MeResponse>("/me/profile", {
+      method: "DELETE",
+    });
 
-    await AsyncStorage.removeItem(profileKey(user.id));
-    setProfile(null);
-  }, [user]);
-
-  const deleteLocalProfile = useCallback(async () => {
-    if (!user) return;
-
-    await AsyncStorage.removeItem(profileKey(user.id));
-    setProfile(null);
-  }, [user]);
+    applyMe(response);
+  }, [applyMe]);
 
   const signOut = useCallback(async () => {
     try {
-      if (user && !user.demo) {
-        await GoogleSignin.signOut();
-      }
+      await apiRequest("/auth/logout", {
+        method: "POST",
+      });
     } catch (error) {
-      console.warn("Google sign-out failed", error);
+      console.warn("Server logout failed:", error);
     }
 
-    await applyUser(null);
-  }, [user, applyUser]);
+    await clearSessionTokens();
 
-  const contextValue = useMemo(
+    try {
+      await GoogleSignin.signOut();
+    } catch {
+      // Clear the local FitSync session regardless.
+    }
+
+    resetState();
+  }, [resetState]);
+
+  const deleteAccount = useCallback(async () => {
+    await apiRequest("/me", {
+      method: "DELETE",
+      json: {
+        confirmation: "DELETE",
+      },
+    });
+
+    await clearSessionTokens();
+
+    try {
+      await GoogleSignin.signOut();
+    } catch {
+      // Google account itself is not deleted.
+    }
+
+    resetState();
+  }, [resetState]);
+
+  const value = useMemo(
     () => ({
       ready,
       user,
       profile,
+      settings,
       signInGoogle,
-      previewDevelopment,
+      reloadMe,
       saveProfile,
+      updateAccount,
+      updateFitness,
+      updateSettings,
+      uploadAvatar,
+      removeAvatar,
       redoOnboarding,
-      deleteLocalProfile,
-      signOut
+      signOut,
+      deleteAccount,
     }),
     [
       ready,
       user,
       profile,
+      settings,
       signInGoogle,
-      previewDevelopment,
+      reloadMe,
       saveProfile,
+      updateAccount,
+      updateFitness,
+      updateSettings,
+      uploadAvatar,
+      removeAvatar,
       redoOnboarding,
-      deleteLocalProfile,
-      signOut
-    ]
+      signOut,
+      deleteAccount,
+    ],
   );
 
   return (
-    <SessionContext.Provider value={contextValue}>
-      {children}
-    </SessionContext.Provider>
+    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
   );
 }
 
@@ -283,9 +370,7 @@ export function useSession() {
   const context = useContext(SessionContext);
 
   if (!context) {
-    throw new Error(
-      "useSession must be used inside SessionProvider"
-    );
+    throw new Error("useSession must be called inside SessionProvider");
   }
 
   return context;

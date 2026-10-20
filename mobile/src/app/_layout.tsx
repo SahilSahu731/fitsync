@@ -3,7 +3,6 @@ import "../global.css";
 
 import React, {
   useCallback,
-  useEffect,
   useState
 } from "react";
 
@@ -32,19 +31,21 @@ import {
 } from "@/src/context/session";
 
 import { BrandReveal } from "@/src/components/brand-reveal";
+import { NativeBuildRequired } from "@/src/components/native-build-required";
+import { getMissingNativeModules } from "@/src/services/native-modules";
 import { C } from "@/src/constants/theme";
 
-SplashScreen.preventAutoHideAsync();
+void SplashScreen.preventAutoHideAsync().catch(console.warn);
 
 SplashScreen.setOptions({
   fade: true,
-  duration: 250
+  duration: 200
 });
 
 function Navigator() {
   const { ready } = useSession();
 
-  const [fontsReady] = useFonts({
+  const [fontsReady, fontError] = useFonts({
     Outfit_400Regular,
     Outfit_500Medium,
     Outfit_600SemiBold,
@@ -54,17 +55,15 @@ function Navigator() {
 
   const [showReveal, setShowReveal] = useState(true);
 
-  useEffect(() => {
-    if (ready && fontsReady) {
-      SplashScreen.hideAsync();
-    }
-  }, [ready, fontsReady]);
+  const hideNativeSplash = useCallback(async () => {
+    await SplashScreen.hideAsync().catch(console.warn);
+  }, []);
 
   const finishReveal = useCallback(() => {
     setShowReveal(false);
   }, []);
 
-  if (!ready || !fontsReady) {
+  if (!ready || (!fontsReady && !fontError)) {
     return (
       <View
         style={{
@@ -76,38 +75,45 @@ function Navigator() {
   }
 
   return (
-    <SafeAreaView
-      edges={["top"]}
+    <View
       style={{
         flex: 1,
         backgroundColor: C.bg
       }}
     >
-      <StatusBar style="light" backgroundColor={C.bg} />
+      <StatusBar style="light" />
 
-      <Stack
-        screenOptions={{
-          headerShown: false,
-          contentStyle: {
-            backgroundColor: C.bg
-          },
-          animation: "fade_from_bottom"
-        }}
-      />
+      <SafeAreaView edges={["top"]} style={{ flex: 1 }}>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+            contentStyle: {
+              backgroundColor: C.bg
+            },
+            animation: "fade_from_bottom"
+          }}
+        />
+      </SafeAreaView>
 
       {showReveal ? (
-        <BrandReveal onDone={finishReveal} />
+        <BrandReveal onReady={hideNativeSplash} onDone={finishReveal} />
       ) : null}
-    </SafeAreaView>
+    </View>
   );
 }
 
 export default function RootLayout() {
+  const [missingNativeModules] = useState(getMissingNativeModules);
+
   return (
     <SafeAreaProvider>
-      <SessionProvider>
-        <Navigator />
-      </SessionProvider>
+      {missingNativeModules.length ? (
+        <NativeBuildRequired missing={missingNativeModules} />
+      ) : (
+        <SessionProvider>
+          <Navigator />
+        </SessionProvider>
+      )}
     </SafeAreaProvider>
   );
 }

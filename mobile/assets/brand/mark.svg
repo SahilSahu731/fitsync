@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="512" height="512" viewBox="0 0 512 512">
+  <defs>
+    <linearGradient id="energy" x1="160" y1="142" x2="320" y2="370" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#FFA466"/>
+      <stop offset="0.5" stop-color="#FF7838"/>
+      <stop offset="1" stop-color="#F05223"/>
+    </linearGradient>
+  </defs>
+  <!-- Forward-leaning F, with a separate repetition / motion stroke. -->
+  <path fill="url(#energy)" d="M192 142H374L354 200H234L220 242H324L306 296H202L176 370H114Z"/>
+  <path fill="#F8F7F4" d="M258 316H316L298 370H240Z"/>
+</svg>

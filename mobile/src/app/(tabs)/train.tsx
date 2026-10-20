@@ -35,7 +35,7 @@ export default function TrainScreen() {
         weight="extra"
         className="mt-1 text-[37px] tracking-tight"
       >
-        LET'S GET TO WORK.
+        LET&apos;S GET TO WORK.
       </Txt>
 
       <Txt className="mb-7 mt-2 text-sm leading-6 text-muted">

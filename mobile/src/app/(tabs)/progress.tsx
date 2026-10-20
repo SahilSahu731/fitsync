@@ -34,7 +34,7 @@ export default function ProgressScreen() {
       </Txt>
 
       <Txt className="mb-7 mt-2 text-sm text-muted">
-        Consistency adds up. Here's what your progress
+        Consistency adds up. Here&apos;s what your progress
         dashboard will look like.
       </Txt>
 
