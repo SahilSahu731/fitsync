@@ -20,7 +20,21 @@ export async function loginWithGoogle(idToken: string) {
     });
 
     payload = ticket.getPayload();
-  } catch {
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "";
+    // Google library errors can contain the token or its payload. Log only
+    // an allowlisted reason, never the original error or authentication data.
+    let reason = "TOKEN_VERIFICATION_FAILED";
+    if (message.includes("Wrong recipient")) {
+      reason = "CLIENT_ID_MISMATCH";
+    } else if (message.includes("Failed to retrieve verification certificates")) {
+      reason = "GOOGLE_CERTIFICATES_UNAVAILABLE";
+    } else if (message.includes("Token used too late")) {
+      reason = "TOKEN_EXPIRED_OR_SERVER_CLOCK_AHEAD";
+    } else if (message.includes("Token used too early")) {
+      reason = "TOKEN_NOT_YET_VALID_OR_SERVER_CLOCK_BEHIND";
+    }
+    console.error("[AUTH] Google token verification failed:", reason);
     throw new ApiError(401, "Google authentication failed.");
   }
 

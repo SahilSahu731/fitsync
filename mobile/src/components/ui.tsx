@@ -15,16 +15,15 @@ type TxtProps = TextProps & {
 };
 
 const fonts = {
-  regular: "Outfit_400Regular",
-  medium: "Outfit_500Medium",
-  semibold: "Outfit_600SemiBold",
-  bold: "Outfit_700Bold",
-  extra: "Outfit_800ExtraBold"
+  regular: "font-outfit-regular",
+  medium: "font-outfit-medium",
+  semibold: "font-outfit-semibold",
+  bold: "font-outfit-bold",
+  extra: "font-outfit-extra"
 };
 
 export function Txt({
   weight = "regular",
-  style,
   className = "",
   ...props
 }: TxtProps) {
@@ -34,8 +33,7 @@ export function Txt({
   return (
     <Text
       {...props}
-      className={hasColor ? className : `text-ink ${className}`}
-      style={[{ fontFamily: fonts[weight] }, style]}
+      className={`${fonts[weight]} ${hasColor ? "" : "text-ink"} ${className}`}
     />
   );
 }
@@ -70,8 +68,7 @@ export function Pill({
     >
       <Txt
         weight="semibold"
-        className="text-sm"
-        style={{ color: active ? C.bg : C.ink }}
+        className={`text-sm ${active ? "text-bg" : "text-ink"}`}
       >
         {label}
       </Txt>
@@ -96,15 +93,22 @@ export function PrimaryButton({
     <Pressable
       onPress={onPress}
       disabled={disabled || loading}
-      className={`h-14 flex-row items-center justify-center rounded-2xl ${dark ? "bg-ink" : "bg-brand"} ${disabled || loading ? "opacity-50" : ""}`}
+      accessibilityRole="button"
+      accessibilityState={{ disabled: disabled || loading, busy: loading }}
+      className={`h-14 flex-row items-center justify-center rounded-2xl border active:scale-[0.98] ${
+        disabled && !loading
+          ? "border-[#626267] bg-border"
+          : dark
+            ? "border-transparent bg-ink active:bg-[#DEDEDB]"
+            : "border-transparent bg-brand active:bg-[#E8682C]"
+      }`}
     >
       {loading ? (
         <ActivityIndicator color={C.bg} />
       ) : (
         <Txt
           weight="bold"
-          className="text-base"
-          style={{ color: C.bg }}
+          className={`text-base ${disabled ? "text-ink" : "text-bg"}`}
         >
           {title}
         </Txt>
