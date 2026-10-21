@@ -23,10 +23,13 @@ function assertNativeModule(packageName: keyof typeof modules) {
 // Load them only after checking the binary, so Expo Router can load every route.
 export async function loadSecureStore() {
   assertNativeModule("expo-secure-store");
-  return import("expo-secure-store");
+  // Keep startup local: dynamic import triggers a second Metro request in dev.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("expo-secure-store") as typeof import("expo-secure-store");
 }
 
 export async function loadImagePicker() {
   assertNativeModule("expo-image-picker");
-  return import("expo-image-picker");
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  return require("expo-image-picker") as typeof import("expo-image-picker");
 }

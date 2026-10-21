@@ -1,161 +1,331 @@
 
-import React from "react";
-
+import React, { useCallback, useState } from "react";
 import {
+  ActivityIndicator,
+  Linking,
   Pressable,
   ScrollView,
   View
 } from "react-native";
 
+import { Image } from "expo-image";
 import {
+  useFocusEffect,
   useLocalSearchParams,
   useRouter
 } from "expo-router";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { VideoView, useVideoPlayer } from "expo-video";
 
 import { C } from "@/src/constants/theme";
-import { exercises } from "@/data/sample";
+import { Txt } from "@/src/components/ui";
+
 import {
-  PrimaryButton,
-  Txt
-} from "@/src/components/ui";
+  Exercise,
+  getExercise,
+  getExercisePermissions,
+  pretty
+} from "@/src/features/exercises/api";
+
+function DemoVideo({ url }: { url: string }) {
+  const player = useVideoPlayer(url, player => {
+    player.loop = true;
+  });
+
+  return (
+    <VideoView
+      player={player}
+      style={{ width: "100%", height: 260 }}
+      nativeControls
+      contentFit="contain"
+    />
+  );
+}
+
+function GuideSection({
+  title,
+  items
+}: {
+  title: string;
+  items: string[];
+}) {
+  if (items.length === 0) return null;
+
+  return (
+    <View className="mt-8">
+      <Txt weight="extra" className="text-xl">
+        {title}
+      </Txt>
+
+      {items.map((item, index) => (
+        <View
+          key={`${title}-${index}`}
+          className="mt-3 flex-row rounded-2xl border border-border bg-panel p-4"
+        >
+          <Txt weight="extra" className="mr-3 text-sm text-brand">
+            {String(index + 1).padStart(2, "0")}
+          </Txt>
+
+          <Txt className="flex-1 text-sm leading-6">
+            {item}
+          </Txt>
+        </View>
+      ))}
+    </View>
+  );
+}
 
 export default function ExerciseDetails() {
   const router = useRouter();
+  const { id } = useLocalSearchParams<{ id: string }>();
 
-  const { id } =
-    useLocalSearchParams<{ id: string }>();
+  const [exercise, setExercise] = useState<Exercise | null>(null);
+  const [admin, setAdmin] = useState(false);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState("");
 
-  const exercise = exercises.find(
-    item => item.id === id
+  useFocusEffect(
+    useCallback(() => {
+      let active = true;
+
+      setLoading(true);
+      setError("");
+
+      Promise.all([
+        getExercise(id),
+        getExercisePermissions()
+      ])
+        .then(([result, permissions]) => {
+          if (!active) return;
+
+          setExercise(result);
+          setAdmin(permissions.canManageExercises);
+        })
+        .catch(error => {
+          if (active) setError(error.message);
+        })
+        .finally(() => {
+          if (active) setLoading(false);
+        });
+
+      return () => {
+        active = false;
+      };
+    }, [id])
   );
 
-  if (!exercise) {
-    return (
-      <View className="flex-1 items-center justify-center bg-bg">
-        <Txt>Exercise not found.</Txt>
+  const images = exercise?.media.filter(
+    media => media.kind === "image"
+  ) ?? [];
 
-        <Pressable onPress={() => router.back()}>
-          <Txt className="mt-4 text-brand">
-            Go back
-          </Txt>
-        </Pressable>
-      </View>
-    );
-  }
+  const video = exercise?.media.find(
+    media => media.kind === "video"
+  );
 
   return (
     <ScrollView
       className="flex-1 bg-bg"
-      contentContainerStyle={{
-        padding: 24,
-        paddingBottom: 45
-      }}
+      contentContainerStyle={{ padding: 24, paddingBottom: 60 }}
     >
-      <Pressable
-        onPress={() => router.back()}
-        className="mb-7 h-11 w-11 items-center justify-center rounded-full border border-border"
-      >
-        <MaterialCommunityIcons
-          name="arrow-left"
-          color={C.ink}
-          size={22}
-        />
-      </Pressable>
-
-      <Txt
-        weight="medium"
-        className="text-xs tracking-[2px] text-brand"
-      >
-        EXERCISE GUIDE / {exercise.muscle.toUpperCase()}
-      </Txt>
-
-      <Txt
-        weight="extra"
-        className="mt-2 text-[34px] leading-[37px]"
-      >
-        {exercise.name.toUpperCase()}
-      </Txt>
-
-      {/* Exercise visual placeholder */}
-
-      <View className="mt-7 h-56 items-center justify-center rounded-[29px] border border-border bg-panel">
-        <MaterialCommunityIcons
-          name="weight-lifter"
-          color={C.brand}
-          size={86}
-        />
-
-        <Txt
-          weight="semibold"
-          className="mt-3 text-xs tracking-[2px] text-muted"
+      <View className="flex-row items-center justify-between">
+        <Pressable
+          onPress={() => router.back()}
+          className="h-11 w-11 items-center justify-center rounded-full border border-border"
         >
-          ILLUSTRATION COMING SOON
-        </Txt>
-      </View>
+          <MaterialCommunityIcons
+            name="arrow-left"
+            size={22}
+            color={C.ink}
+          />
+        </Pressable>
 
-      {/* Muscle and equipment */}
-
-      <View className="mt-5 flex-row gap-2">
-        {[exercise.muscle, exercise.equipment].map(value => (
-          <View
-            key={value}
-            className="rounded-full border border-border bg-elevated px-4 py-2"
+        {admin && exercise && (
+          <Pressable
+            onPress={() => router.push({
+              pathname: "/admin/exercises/[id]",
+              params: { id: exercise.id }
+            })}
+            className="rounded-xl bg-brand px-4 py-3"
           >
-            <Txt
-              weight="semibold"
-              className="text-xs"
-            >
-              {value}
+            <Txt weight="semibold" className="text-bg">
+              EDIT EXERCISE
             </Txt>
-          </View>
-        ))}
+          </Pressable>
+        )}
       </View>
 
-      <Txt weight="extra" className="mt-8 text-xl">
-        TARGET AREA
-      </Txt>
-
-      <Txt className="mt-2 text-sm text-muted">
-        {exercise.focus}
-      </Txt>
-
-      <Txt weight="extra" className="mt-8 text-xl">
-        TECHNIQUE NOTES
-      </Txt>
-
-      {exercise.tips.map((tip, index) => (
-        <View
-          key={tip}
-          className="mt-3 flex-row rounded-2xl border border-border bg-panel p-4"
-        >
-          <Txt
-            weight="extra"
-            className="mr-3 text-sm text-brand"
-          >
-            0{index + 1}
-          </Txt>
-
-          <Txt className="flex-1 text-sm leading-5 text-ink">
-            {tip}
-          </Txt>
-        </View>
-      ))}
-
-      <View className="mt-8">
-        <PrimaryButton
-          title="VIEW SAMPLE WORKOUT →"
-          onPress={() =>
-            router.push("/workout?plan=upper")
-          }
+      {loading && (
+        <ActivityIndicator
+          className="mt-20"
+          color={C.brand}
         />
-      </View>
+      )}
 
-      <Txt className="mt-4 text-center text-xs text-muted">
-        Sample exercise guide. Licensed illustrations
-        will be connected later.
-      </Txt>
+      {!!error && (
+        <Txt className="mt-8">{error}</Txt>
+      )}
+
+      {exercise && !loading && (
+        <>
+          <Txt weight="medium" className="mt-7 text-xs tracking-[2px] text-brand">
+            {exercise.categoryLabel.toUpperCase()} / {exercise.regionLabel.toUpperCase()}
+          </Txt>
+
+          <Txt weight="extra" className="mt-2 text-[30px] leading-[37px]">
+            {exercise.name.toUpperCase()}
+          </Txt>
+
+          {exercise.status !== "published" && (
+            <Txt className="mt-2 text-brand">
+              {pretty(exercise.status)} · Admin preview
+            </Txt>
+          )}
+
+          {images.length > 0 ? (
+            <ScrollView
+              horizontal
+              showsHorizontalScrollIndicator={false}
+              className="mt-6"
+              contentContainerStyle={{ gap: 10 }}
+            >
+              {images.map(image => (
+                <Image
+                  key={image.id}
+                  source={{ uri: image.url }}
+                  style={{
+                    width: 290,
+                    height: 250,
+                    borderRadius: 22,
+                    backgroundColor: C.panel
+                  }}
+                  contentFit="contain"
+                />
+              ))}
+            </ScrollView>
+          ) : (
+            <View className="mt-6 h-56 items-center justify-center rounded-3xl border border-border bg-panel">
+              <MaterialCommunityIcons
+                name="dumbbell"
+                size={60}
+                color={C.brand}
+              />
+            </View>
+          )}
+
+          {video && (
+            <View className="mt-4 overflow-hidden rounded-3xl border border-border bg-panel">
+              <DemoVideo url={video.url} />
+            </View>
+          )}
+
+          <View className="mt-5 flex-row flex-wrap gap-2">
+            {[
+              exercise.activityLabel,
+              exercise.regionLabel,
+              pretty(exercise.difficulty),
+              ...exercise.equipment.map(pretty)
+            ].map((label, index) => (
+              <View
+                key={index}
+                className="rounded-full border border-border bg-elevated px-3 py-2"
+              >
+                <Txt weight="semibold" className="text-xs">
+                  {label}
+                </Txt>
+              </View>
+            ))}
+          </View>
+
+          {!!exercise.description && (
+            <Txt className="mt-6 text-sm leading-6 text-muted">
+              {exercise.description}
+            </Txt>
+          )}
+
+          <Txt weight="extra" className="mt-8 text-xl">
+            TARGET MUSCLES
+          </Txt>
+
+          <Txt className="mt-2 text-sm">
+            Primary: {exercise.primaryMuscles.map(pretty).join(", ") || "Not applicable"}
+          </Txt>
+
+          {exercise.secondaryMuscles.length > 0 && (
+            <Txt className="mt-2 text-sm text-muted">
+              Secondary: {exercise.secondaryMuscles.map(pretty).join(", ")}
+            </Txt>
+          )}
+
+          <GuideSection
+            title="HOW TO PERFORM"
+            items={exercise.instructions}
+          />
+
+          <GuideSection
+            title="TECHNIQUE TIPS"
+            items={exercise.tips}
+          />
+
+          <GuideSection
+            title="COMMON MISTAKES"
+            items={exercise.mistakes}
+          />
+
+          <GuideSection
+            title="SAFETY NOTES"
+            items={exercise.safetyNotes}
+          />
+
+          {!!exercise.breathingTip && (
+            <View className="mt-8 rounded-2xl border border-border bg-panel p-4">
+              <Txt weight="extra" className="text-lg">
+                BREATHING
+              </Txt>
+
+              <Txt className="mt-2 leading-6 text-muted">
+                {exercise.breathingTip}
+              </Txt>
+            </View>
+          )}
+
+          {exercise.media.some(media => media.credit || media.license || media.sourceUrl) && (
+            <View className="mt-8">
+              <Txt weight="extra" className="text-lg">
+                MEDIA CREDITS
+              </Txt>
+
+              {exercise.media.map(media => (
+                <View key={media.id} className="mt-3 rounded-xl border border-border bg-panel p-4">
+                  <Txt weight="semibold">
+                    {pretty(media.kind)}
+                  </Txt>
+
+                  {!!media.credit && (
+                    <Txt className="mt-1 text-xs text-muted">
+                      Creator: {media.credit}
+                    </Txt>
+                  )}
+
+                  {!!media.license && (
+                    <Txt className="mt-1 text-xs text-muted">
+                      Usage rights: {media.license}
+                    </Txt>
+                  )}
+
+                  {!!media.sourceUrl && (
+                    <Pressable onPress={() => Linking.openURL(media.sourceUrl)}>
+                      <Txt className="mt-2 text-xs text-brand">
+                        VIEW ORIGINAL SOURCE ↗
+                      </Txt>
+                    </Pressable>
+                  )}
+                </View>
+              ))}
+            </View>
+          )}
+        </>
+      )}
     </ScrollView>
   );
 }
