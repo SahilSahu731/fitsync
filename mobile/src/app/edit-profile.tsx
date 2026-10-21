@@ -1,7 +1,8 @@
-import React, { useState } from "react";
+import { useAppAlert } from "@/src/components/app-dialog";
+import React, { useEffect, useState } from "react";
 
 import {
-  Alert,
+  ActivityIndicator,
   Image,
   KeyboardAvoidingView,
   Platform,
@@ -202,14 +203,14 @@ function InputField({
   return (
     <View className="mb-5">
       <Txt
-        weight="bold"
+        weight="medium"
         className="mb-2 text-xs tracking-[1px] text-muted"
       >
         {label}
       </Txt>
 
       <View
-        className={`flex-row rounded-2xl border border-border bg-panel px-4 ${
+        className={`flex-row rounded-2xl bg-panel px-4 ${
           multiline
             ? "min-h-[110px] py-3"
             : "h-14 items-center"
@@ -258,7 +259,7 @@ function ChoiceField({
   return (
     <View className="mb-6">
       <Txt
-        weight="bold"
+        weight="medium"
         className="mb-3 text-xs tracking-[1px] text-muted"
       >
         {title}
@@ -309,6 +310,7 @@ function InfoRow({
 // ======================================================
 
 export default function EditProfileScreen() {
+  const Alert = useAppAlert();
   const router = useRouter();
 
   const {
@@ -393,6 +395,13 @@ export default function EditProfileScreen() {
   const [uploading, setUploading] =
     useState(false);
 
+  const [slowOperation, setSlowOperation] = useState(false);
+  useEffect(() => {
+    if (!saving && !uploading) return;
+    const timer = setTimeout(() => setSlowOperation(true), 8000);
+    return () => clearTimeout(timer);
+  }, [saving, uploading]);
+
   // ====================================================
   // AUTH / PROFILE GUARD
   // ====================================================
@@ -466,6 +475,7 @@ export default function EditProfileScreen() {
         return;
       }
 
+      setSlowOperation(false);
       setUploading(true);
 
       await uploadAvatar(
@@ -473,13 +483,13 @@ export default function EditProfileScreen() {
         mimeType
       );
 
-      await Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success
-      );
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
       Alert.alert(
         "Photo updated",
-        "Your new profile picture has been saved."
+        "Your new profile picture has been saved.",
+        undefined,
+        "success"
       );
     } catch (error) {
       Alert.alert(
@@ -512,14 +522,13 @@ export default function EditProfileScreen() {
           text: "Remove photo",
           style: "destructive",
           onPress: async () => {
+            setSlowOperation(false);
             setUploading(true);
 
             try {
               await removeAvatar();
 
-              await Haptics.notificationAsync(
-                Haptics.NotificationFeedbackType.Success
-              );
+              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
             } catch (error) {
               Alert.alert(
                 "Could not remove photo",
@@ -541,7 +550,7 @@ export default function EditProfileScreen() {
   // ====================================================
 
   async function saveChanges() {
-    if (saving || uploading) return;
+    if (saving || uploading || !user || !profile) return;
 
     const trimmedName = name.trim();
     const trimmedBio = bio.trim();
@@ -625,35 +634,28 @@ export default function EditProfileScreen() {
     // SEND UPDATES TO EXPRESS
     // ------------------------------------
 
+    setSlowOperation(false);
     setSaving(true);
 
     let accountSaved = false;
 
     try {
-      // PATCH /api/me
-      await updateAccount({
-        name: trimmedName,
-        bio: trimmedBio
-      });
-
-      accountSaved = true;
-
-      // PATCH /api/me/profile
-      await updateFitness({
-        heightCm,
-        weightKg: roundedKg,
-        gender,
-        bodyType,
-        goal,
-        experience,
-        trainingDays,
-        minutesPerWorkout: minutes,
-        equipment
-      });
-
-      await Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success
+      const accountChanged = trimmedName !== user.name || trimmedBio !== (user.bio ?? "");
+      const fitnessUpdate = {
+        heightCm, weightKg: roundedKg, gender, bodyType, goal, experience,
+        trainingDays, minutesPerWorkout: minutes, equipment
+      };
+      const fitnessChanged = Object.entries(fitnessUpdate).some(
+        ([key, value]) => value !== profile[key as keyof typeof fitnessUpdate]
       );
+
+      if (accountChanged) {
+        await updateAccount({ name: trimmedName, bio: trimmedBio });
+        accountSaved = true;
+      }
+      if (fitnessChanged) await updateFitness(fitnessUpdate);
+
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
       Alert.alert(
         "Profile updated",
@@ -663,7 +665,8 @@ export default function EditProfileScreen() {
             text: "Done",
             onPress: () => router.back()
           }
-        ]
+        ],
+        "success"
       );
     } catch (error) {
       Alert.alert(
@@ -698,7 +701,7 @@ export default function EditProfileScreen() {
         <Pressable
           onPress={() => router.back()}
           disabled={saving || uploading}
-          className="h-11 w-11 items-center justify-center rounded-full border border-border bg-panel"
+          className="h-11 w-11 items-center justify-center"
         >
           <MaterialCommunityIcons
             name="arrow-left"
@@ -709,14 +712,14 @@ export default function EditProfileScreen() {
 
         <Txt
           weight="extra"
-          className="text-lg tracking-tight"
+          className="text-xl tracking-tight"
         >
-          EDIT PROFILE
+          Edit Profile
         </Txt>
 
         <MaterialCommunityIcons
-          name="account-edit-outline"
-          color={C.brand}
+          name="account-edit"
+          color={"white"}
           size={24}
         />
       </View>
@@ -730,22 +733,6 @@ export default function EditProfileScreen() {
           paddingBottom: 35
         }}
       >
-        {/* Intro */}
-
-        <Txt
-          weight="bold"
-          className="mt-8 text-xs tracking-[2px] text-brand"
-        >
-          YOUR PROFILE / YOUR RULES
-        </Txt>
-
-        <Txt
-          weight="extra"
-          className="mt-2 text-[36px] leading-[39px] tracking-tight"
-        >
-          MAKE IT YOURS.
-        </Txt>
-
         <Txt className="mt-3 text-sm leading-6 text-muted">
           Your information, training preferences,
           and goals—all in one place.
@@ -755,13 +742,13 @@ export default function EditProfileScreen() {
             PROFILE IMAGE
         ================================== */}
 
-        <View className="mt-7 items-center rounded-[28px] border border-border bg-panel px-5 py-7">
+        <View className="mt-7 items-center rounded-[28px]">
           <Pressable
             disabled={uploading || saving}
             onPress={choosePhoto}
             className="relative"
           >
-            <View className="h-28 w-28 overflow-hidden rounded-[32px] bg-brand">
+            <View className="h-36 w-36 overflow-hidden rounded-full bg-brand">
               {user.avatarUrl ? (
                 <Image
                   source={{
@@ -784,7 +771,7 @@ export default function EditProfileScreen() {
               )}
             </View>
 
-            <View className="absolute -bottom-2 -right-2 h-11 w-11 items-center justify-center rounded-full border-4 border-panel bg-brand">
+            <View className="absolute -bottom-1 -right-1 h-11 w-11 items-center justify-center rounded-full border-4 border-panel bg-brand">
               <MaterialCommunityIcons
                 name="camera-plus"
                 color={C.bg}
@@ -833,12 +820,12 @@ export default function EditProfileScreen() {
         ================================== */}
 
         <SectionTitle
-          title="PERSONAL INFORMATION"
-          subtitle="The basics people can recognize you by."
+          title="Personal Information"
+          subtitle=""
         />
 
         <InputField
-          label="DISPLAY NAME"
+          label="Name"
           value={name}
           onChangeText={setName}
           placeholder="Your name"
@@ -846,7 +833,7 @@ export default function EditProfileScreen() {
         />
 
         <InputField
-          label="BIO"
+          label="Bio"
           value={bio}
           onChangeText={setBio}
           placeholder="Something about you..."
@@ -854,7 +841,7 @@ export default function EditProfileScreen() {
           maxLength={250}
         />
 
-        <View className="mb-3 rounded-2xl border border-border bg-panel p-4">
+        <View className="mb-3 rounded-2xl bg-panel p-4">
           <Txt
             weight="bold"
             className="text-xs text-muted"
@@ -880,14 +867,14 @@ export default function EditProfileScreen() {
         ================================== */}
 
         <SectionTitle
-          title="BODY INFORMATION"
-          subtitle="Your current baseline measurements."
+          title="Body Information"
+          subtitle=""
         />
 
         <View className="flex-row gap-3">
           <View className="flex-1">
             <InputField
-              label="HEIGHT"
+              label="Height"
               value={height}
               onChangeText={setHeight}
               keyboardType="decimal-pad"
@@ -898,7 +885,7 @@ export default function EditProfileScreen() {
 
           <View className="flex-1">
             <InputField
-              label="WEIGHT"
+              label="Weight"
               value={weight}
               onChangeText={setWeight}
               keyboardType="decimal-pad"
@@ -915,7 +902,7 @@ export default function EditProfileScreen() {
 
         <View className="mt-6">
           <ChoiceField
-            title="GENDER (OPTIONAL)"
+            title="Gender (Optional)"
             options={GENDER}
             value={gender}
             onChange={value =>
@@ -925,7 +912,7 @@ export default function EditProfileScreen() {
         </View>
 
         <ChoiceField
-          title="BODY BUILD (OPTIONAL)"
+          title="Body Build (Optional)"
           options={BODY_TYPES}
           value={bodyType ?? "none"}
           onChange={value =>
@@ -949,12 +936,12 @@ export default function EditProfileScreen() {
         ================================== */}
 
         <SectionTitle
-          title="YOUR FITNESS GOAL"
-          subtitle="What you're currently training toward."
+          title="Your Fitness Goal"
+          subtitle=""
         />
 
         <ChoiceField
-          title="MAIN FITNESS GOAL"
+          title="Main Goal"
           options={GOALS}
           value={goal}
           onChange={value =>
@@ -963,7 +950,7 @@ export default function EditProfileScreen() {
         />
 
         <ChoiceField
-          title="TRAINING EXPERIENCE"
+          title="Training Experience"
           options={EXPERIENCE}
           value={experience}
           onChange={value =>
@@ -978,15 +965,15 @@ export default function EditProfileScreen() {
         ================================== */}
 
         <SectionTitle
-          title="YOUR TRAINING ROUTINE"
-          subtitle="Keep your training schedule realistic and sustainable."
+          title="Training Schedule"
+          subtitle=""
         />
 
         <Txt
-          weight="bold"
+          weight="medium"
           className="mb-3 text-xs tracking-[1px] text-muted"
         >
-          TRAINING DAYS PER WEEK
+          Training days per week
         </Txt>
 
         <View className="mb-6 flex-row gap-2">
@@ -1024,7 +1011,7 @@ export default function EditProfileScreen() {
         </View>
 
         <ChoiceField
-          title="WORKOUT DURATION"
+          title="Workout Duration"
           options={DURATION}
           value={String(minutes)}
           onChange={value =>
@@ -1035,7 +1022,7 @@ export default function EditProfileScreen() {
         />
 
         <ChoiceField
-          title="AVAILABLE EQUIPMENT"
+          title="Equipments"
           options={EQUIPMENT}
           value={equipment}
           onChange={value =>
@@ -1054,7 +1041,7 @@ export default function EditProfileScreen() {
             weight="extra"
             className="text-lg text-brand"
           >
-            YOUR NEXT REP STARTS HERE.
+            Your Journey Starts here.
           </Txt>
 
           <Txt className="mt-2 text-sm leading-6 text-muted">
@@ -1068,6 +1055,17 @@ export default function EditProfileScreen() {
       {/* Sticky save button */}
 
       <View className="border-t border-border bg-bg px-6 pb-6 pt-4">
+        {(saving || uploading) && (
+          <View accessibilityLiveRegion="polite" className="mb-3.5 flex-row items-center gap-3">
+            <ActivityIndicator size="small" color={C.brand} />
+            <View style={{ flex: 1 }}>
+              <Txt weight="semibold">{uploading ? "Updating your photo…" : "Saving your changes…"}</Txt>
+              <Txt className="mt-[3px] text-[13px] text-muted">
+                {slowOperation ? "This is taking longer than usual. Still waiting for the server…" : "We'll confirm as soon as it's saved."}
+              </Txt>
+            </View>
+          </View>
+        )}
         <PrimaryButton
           title={
             saving

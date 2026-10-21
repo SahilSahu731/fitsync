@@ -1,7 +1,7 @@
+import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Image,
   ImageBackground,
   Pressable,
@@ -17,6 +17,7 @@ import { useSession } from "@/src/context/session";
 cssInterop(LinearGradient, { className: "style" });
 
 export default function SignInScreen() {
+  const Alert = useAppAlert();
   const { signInGoogle } = useSession();
   const [loading, setLoading] = useState(false);
   const inFlight = useRef(false);

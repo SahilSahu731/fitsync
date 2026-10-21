@@ -1,7 +1,7 @@
+import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   BackHandler,
   Keyboard,
   View,
@@ -25,6 +25,7 @@ import { useOnboardingDraft } from "@/src/components/onboarding/use-onboarding-d
 import { STEPS, type Draft } from "@/src/components/onboarding/config";
 
 export default function OnboardingScreen() {
+  const Alert = useAppAlert();
   const router = useRouter();
   const { user, settings, saveProfile } = useSession();
   const { draft, setDraft, loaded, clearDraft } = useOnboardingDraft(user?.id);

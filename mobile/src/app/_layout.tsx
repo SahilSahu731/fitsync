@@ -30,6 +30,7 @@ import {
   useSession
 } from "@/src/context/session";
 
+import { AppDialogProvider } from "@/src/components/app-dialog";
 import { BrandReveal } from "@/src/components/brand-reveal";
 import { NativeBuildRequired } from "@/src/components/native-build-required";
 import { getMissingNativeModules } from "@/src/services/native-modules";
@@ -111,7 +112,9 @@ export default function RootLayout() {
         <NativeBuildRequired missing={missingNativeModules} />
       ) : (
         <SessionProvider>
-          <Navigator />
+          <AppDialogProvider>
+            <Navigator />
+          </AppDialogProvider>
         </SessionProvider>
       )}
     </SafeAreaProvider>

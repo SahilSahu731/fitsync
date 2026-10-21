@@ -1,8 +1,8 @@
+import { useAppAlert } from "@/src/components/app-dialog";
 
 import React, { useState } from "react";
 
 import {
-  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -23,6 +23,7 @@ import { Txt } from "@/src/components/ui";
 import { useSession } from "@/src/context/session";
 
 export default function DeleteAccountScreen() {
+  const Alert = useAppAlert();
   const router = useRouter();
 
   const { user, deleteAccount } = useSession();

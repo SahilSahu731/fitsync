@@ -1,8 +1,8 @@
+import { useAppAlert } from "@/src/components/app-dialog";
 
 import React, { useState } from "react";
 
 import {
-  Alert,
   Image,
   Pressable,
   ScrollView,
@@ -30,13 +30,13 @@ function SettingRow({
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 flex-row items-center rounded-2xl border border-border bg-panel p-4"
+      className="mb-3 flex-row items-center rounded-2xl bg-panel p-4"
     >
-      <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-elevated">
+      <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl">
         <MaterialCommunityIcons
           name={icon}
           size={23}
-          color={C.brand}
+          color={"white"}
         />
       </View>
 
@@ -60,6 +60,7 @@ function SettingRow({
 }
 
 export default function ProfileScreen() {
+  const Alert = useAppAlert();
   const router = useRouter();
   const { user, profile, signOut } = useSession();
 
@@ -110,26 +111,19 @@ export default function ProfileScreen() {
       <View className="flex-row items-center justify-between">
         <View>
           <Txt
-            weight="medium"
-            className="text-xs tracking-[2px] text-brand"
-          >
-            YOUR SPACE
-          </Txt>
-
-          <Txt
             weight="extra"
-            className="mt-1 text-[36px]"
+            className="mt-1 text-[26px]"
           >
-            PROFILE.
+            My Profile
           </Txt>
         </View>
 
         <Pressable
           onPress={() => router.push("/settings")}
-          className="h-12 w-12 items-center justify-center rounded-full border border-border bg-panel"
+          className="h-12 w-12 items-center justify-center"
         >
           <MaterialCommunityIcons
-            name="cog-outline"
+            name="cog"
             size={25}
             color={C.ink}
           />
@@ -138,9 +132,9 @@ export default function ProfileScreen() {
 
       {/* Profile card */}
 
-      <View className="mt-7 rounded-[30px] border border-border bg-panel p-5">
+      <View className="mt-7 rounded-[30px] bg-panel p-6">
         <View className="flex-row items-center">
-          <View className="h-[76px] w-[76px] overflow-hidden rounded-3xl bg-brand">
+          <View className="h-[86px] w-[86px] overflow-hidden rounded-full bg-brand">
             {user?.avatarUrl ? (
               <Image
                 source={{ uri: user.avatarUrl }}
@@ -162,9 +156,12 @@ export default function ProfileScreen() {
           <View className="ml-4 flex-1">
             <Txt
               weight="extra"
-              className="text-[23px]"
+              className="text-[25px]"
             >
               {user?.name || "Athlete"}
+              {/* <View className="ml-3 flex items-center justify-center px-3 py-0.5 rounded-full bg-[#e6b516]">
+                <Txt className="text-sm ">Basic</Txt>
+              </View> */}
             </Txt>
 
             <Txt
@@ -194,7 +191,7 @@ export default function ProfileScreen() {
           className="mt-5 flex-row items-center justify-center rounded-xl border border-brand py-3"
         >
           <MaterialCommunityIcons
-            name="pencil-outline"
+            name="pencil"
             size={18}
             color={C.brand}
           />
@@ -214,7 +211,7 @@ export default function ProfileScreen() {
         weight="extra"
         className="mb-4 mt-8 text-xl"
       >
-        YOUR BASELINE
+        Your Stats
       </Txt>
 
       <View className="flex-row gap-3">
@@ -234,7 +231,7 @@ export default function ProfileScreen() {
         ].map(([value, label]) => (
           <View
             key={label}
-            className="flex-1 rounded-2xl border border-border bg-panel p-3"
+            className="flex-1 rounded-2xl bg-panel p-3"
           >
             <Txt
               weight="extra"
@@ -284,14 +281,14 @@ export default function ProfileScreen() {
       </Txt>
 
       <SettingRow
-        icon="account-edit-outline"
+        icon="account-edit"
         title="Personal information"
         subtitle="Name, photo, body details, goals"
         onPress={() => router.push("/edit-profile")}
       />
 
       <SettingRow
-        icon="cog-outline"
+        icon="cog"
         title="Settings"
         subtitle="Training preferences and account management"
         onPress={() => router.push("/settings")}
@@ -300,17 +297,17 @@ export default function ProfileScreen() {
       <Pressable
         disabled={busy}
         onPress={logout}
-        className="mt-3 flex-row items-center justify-center rounded-2xl border border-[#693C35] bg-[#291B1B] py-4"
+        className="mt-3 flex-row items-center justify-center rounded-2xl border border-[#693C35] bg-[#f03434] py-4"
       >
         <MaterialCommunityIcons
           name="logout"
           size={20}
-          color="#FF9B89"
+          color="#FFFFFF"
         />
 
         <Txt
           weight="bold"
-          className="ml-3 text-[#FF9B89]"
+          className="ml-3 text-[#FFFFFF]"
         >
           SIGN OUT
         </Txt>

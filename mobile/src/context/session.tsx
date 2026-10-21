@@ -11,6 +11,7 @@ import {
   GoogleSignin,
   isSuccessResponse,
 } from "@react-native-google-signin/google-signin";
+import { createAvatarForm } from "@/src/services/avatar-upload";
 
 import {
   apiRequest,
@@ -251,13 +252,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const uploadAvatar = useCallback(
     async (uri: string, mimeType = "image/jpeg") => {
-      const form = new FormData();
-
-      form.append("avatar", {
-        uri,
-        name: "fitsync-avatar.jpg",
-        type: mimeType,
-      } as any);
+      const form = await createAvatarForm(uri, mimeType);
 
       const response = await apiRequest<MeResponse>("/me/avatar", {
         method: "POST",
