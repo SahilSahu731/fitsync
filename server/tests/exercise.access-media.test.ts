@@ -84,3 +84,16 @@ test("legacy Supabase images can still be deleted", async t => {
   await deleteStoredExerciseMedia({ provider: "supabase", path: "old/image.webp", kind: "image" });
   assert.equal(bucket, "exercise-images"); assert.deepEqual(paths, ["old/image.webp"]);
 });
+
+test("an unmigrated image constraint reports the required migration and cleans up the upload", async t => {
+  const { addExerciseMedia } = await import("../src/modules/exercises/exercise.service.js");
+  t.mock.method(db, "from", () => ({ insert: async () => ({ error: {
+    code: "23514", message: 'new row violates check constraint "correct_media_provider"'
+  } }) }));
+  const cleanup = t.mock.method(cloudinary.uploader, "destroy", async () => ({ result: "ok" }));
+  await assert.rejects(
+    addExerciseMedia("exercise", { provider: "cloudinary", kind: "image", path: "test/image", url: "https://res.cloudinary.com/test/image.webp" }, { license: "Original content", altText: "", credit: "", sourceUrl: "" }),
+    (error: unknown) => error instanceof ApiError && error.status === 503 && error.message.includes("005_cloudinary_exercise_images.sql")
+  );
+  assert.equal(cleanup.mock.callCount(), 1);
+});

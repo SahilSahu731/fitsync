@@ -6,3 +6,6 @@ dist/
 !.env.example
 *.log
 .DS_Store
+
+# Private catalog snapshots and resumable import checkpoints
+.exercise-imports/

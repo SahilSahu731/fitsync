@@ -385,6 +385,13 @@ export async function addExerciseMedia(
       console.error("[MEDIA CLEANUP]", cleanupError);
     }
 
+    if (error.code === "23514" && error.message.includes("correct_media_provider")) {
+      throw new ApiError(
+        503,
+        "The database does not allow Cloudinary images yet. Apply server/sql/005_cloudinary_exercise_images.sql in Supabase, then retry this upload."
+      );
+    }
+
     checkDbError(error, "insert exercise media");
   }
 

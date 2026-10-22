@@ -48,17 +48,26 @@ export function ExerciseEditor({ id }: { id?: string }) {
     if (!value.instructions.some(line => line.trim().length >= 2)) { setError("Add at least one instruction."); return; }
     if (value.status === "published" && !saved?.media.length && !image && !animation) { setError("Add at least one image before publishing. An animation is optional."); return; }
     setBusy(true); let current = saved;
+    let detailsSaved = false;
+    let stage = "Saving exercise details";
     try {
       // Save a new exercise as a draft first; media needs its persisted ID.
       const payload = { ...value, instructions: value.instructions.map(x => x.trim()).filter(Boolean), status: (!current || !current.media.length) && value.status === "published" ? "draft" : value.status };
       current = await api<Exercise>(current ? `/exercises/${current.id}` : "/exercises", { method: current ? "PATCH" : "POST", json: payload });
       setSaved(current);
+      detailsSaved = true;
+      stage = "Uploading exercise image";
       if (image) { current = await upload(current, image); setSaved(current); setImage(null); if (imageInput.current) imageInput.current.value = ""; }
+      stage = "Uploading animation";
       if (animation) { current = await upload(current, animation); setSaved(current); setAnimation(null); if (animationInput.current) animationInput.current.value = ""; }
+      stage = "Updating publication status";
       if (current.status !== value.status) { current = await api<Exercise>(`/exercises/${current.id}`, { method: "PATCH", json: { status: value.status } }); setSaved(current); }
       setValue(current); setDirty(false); setMessage(current.status === "published" ? "Exercise published. It’s now available on web and mobile." : `Exercise saved as ${current.status}. You can add more media anytime.`);
       if (!id) window.history.replaceState(null, "", `/admin/exercises/${current.id}/edit`);
-    } catch (e) { setError(`${e instanceof Error ? e.message : "Could not save exercise."}${current ? " Your exercise has been saved; any unfinished media upload or publishing step can be retried." : ""}`); }
+    } catch (e) {
+      const detail = e instanceof Error ? e.message : "Please try again.";
+      setError(`${stage} failed. ${detail}${detailsSaved ? " Your exercise details were saved. Keep this editor open and retry the unfinished step after resolving the error." : " Your latest changes were not confirmed as saved."}`);
+    }
     finally { setBusy(false); }
   }
   async function removeMedia() {
