@@ -1,5 +1,4 @@
 
-import { randomUUID } from "node:crypto";
 import multer from "multer";
 import sharp from "sharp";
 
@@ -31,6 +30,7 @@ export const exerciseUpload = multer({
       "image/jpeg",
       "image/png",
       "image/webp",
+      "image/gif",
       "video/mp4"
     ];
 
@@ -38,7 +38,7 @@ export const exerciseUpload = multer({
       callback(
         new ApiError(
           400,
-          "Upload a JPEG, PNG, WebP image or an MP4 video."
+          "Upload a JPEG, PNG, WebP, GIF image or an MP4 video."
         )
       );
       return;
@@ -56,12 +56,13 @@ async function uploadImage(
 
   try {
     const image = sharp(file.buffer, {
-      limitInputPixels: 25_000_000
+      limitInputPixels: 25_000_000,
+      animated: true
     });
 
     const info = await image.metadata();
 
-    if (!["jpeg", "png", "webp"].includes(info.format || "")) {
+    if (!["jpeg", "png", "webp", "gif"].includes(info.format || "")) {
       throw new Error("Unsupported image");
     }
 
@@ -83,30 +84,30 @@ async function uploadImage(
     throw new ApiError(413, "Processed image is too large.");
   }
 
-  const path = `${exerciseId}/${randomUUID()}.webp`;
+  return uploadToCloudinary(exerciseId, buffer, "image");
+}
 
-  const { error } = await db.storage
-    .from(IMAGE_BUCKET)
-    .upload(path, buffer, {
-      contentType: "image/webp",
-      cacheControl: "31536000",
-      upsert: false
-    });
-
-  if (error) {
-    throw new ApiError(502, "Supabase image upload failed.");
-  }
-
-  const { data } = db.storage
-    .from(IMAGE_BUCKET)
-    .getPublicUrl(path);
-
-  return {
-    kind: "image",
-    provider: "supabase",
-    path,
-    url: data.publicUrl
-  };
+async function uploadToCloudinary(
+  exerciseId: string,
+  buffer: Buffer,
+  kind: "image" | "video"
+): Promise<StoredExerciseMedia> {
+  const result = await new Promise<{ public_id: string; secure_url: string }>((resolve, reject) => {
+    const stream = cloudinary.uploader.upload_stream(
+      { resource_type: kind, folder: `fitsync/exercises/${exerciseId}`, overwrite: false },
+      (error, uploaded) => {
+        if (error || !uploaded) {
+          reject(error ?? new Error("Cloudinary returned no upload."));
+          return;
+        }
+        resolve(uploaded);
+      }
+    );
+    stream.end(buffer);
+  }).catch(() => {
+    throw new ApiError(502, "Cloudinary media upload failed. Please try again.");
+  });
+  return { kind, provider: "cloudinary", path: result.public_id, url: result.secure_url };
 }
 
 async function uploadVideo(
@@ -121,47 +122,7 @@ async function uploadVideo(
     throw new ApiError(400, "Invalid MP4 video.");
   }
 
-  const result = await new Promise<{
-    public_id: string;
-    secure_url: string;
-  }>((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        resource_type: "video",
-        folder: `fitsync/exercises/${exerciseId}`,
-        overwrite: false
-      },
-
-      (error, uploaded) => {
-        if (error) {
-          reject(error);
-          return;
-        }
-
-        if (!uploaded) {
-          reject(new Error("Cloudinary returned no upload."));
-          return;
-        }
-
-        resolve({
-          public_id: uploaded.public_id,
-          secure_url: uploaded.secure_url
-        });
-      }
-    );
-
-    stream.end(file.buffer);
-  }).catch(error => {
-    console.error("[CLOUDINARY UPLOAD]", error);
-    throw new ApiError(502, "Cloudinary video upload failed.");
-  });
-
-  return {
-    kind: "video",
-    provider: "cloudinary",
-    path: result.public_id,
-    url: result.secure_url
-  };
+  return uploadToCloudinary(exerciseId, file.buffer, "video");
 }
 
 export async function uploadExerciseAsset(
@@ -178,14 +139,14 @@ export async function uploadExerciseAsset(
 export async function deleteStoredExerciseMedia(
   media: Pick<
     StoredExerciseMedia,
-    "provider" | "path"
+    "provider" | "path" | "kind"
   >
 ) {
   if (media.provider === "cloudinary") {
     const result = await cloudinary.uploader.destroy(
       media.path,
       {
-        resource_type: "video",
+        resource_type: media.kind,
         invalidate: true
       }
     );

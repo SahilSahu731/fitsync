@@ -24,7 +24,6 @@ import { Txt } from "@/src/components/ui";
 import {
   Exercise,
   getExercise,
-  getExercisePermissions,
   pretty
 } from "@/src/features/exercises/api";
 
@@ -81,7 +80,6 @@ export default function ExerciseDetails() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
   const [exercise, setExercise] = useState<Exercise | null>(null);
-  const [admin, setAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
@@ -92,15 +90,11 @@ export default function ExerciseDetails() {
       setLoading(true);
       setError("");
 
-      Promise.all([
-        getExercise(id),
-        getExercisePermissions()
-      ])
-        .then(([result, permissions]) => {
+      getExercise(id)
+        .then(result => {
           if (!active) return;
 
           setExercise(result);
-          setAdmin(permissions.canManageExercises);
         })
         .catch(error => {
           if (active) setError(error.message);
@@ -140,19 +134,6 @@ export default function ExerciseDetails() {
           />
         </Pressable>
 
-        {admin && exercise && (
-          <Pressable
-            onPress={() => router.push({
-              pathname: "/admin/exercises/[id]",
-              params: { id: exercise.id }
-            })}
-            className="rounded-xl bg-brand px-4 py-3"
-          >
-            <Txt weight="semibold" className="text-bg">
-              EDIT EXERCISE
-            </Txt>
-          </Pressable>
-        )}
       </View>
 
       {loading && (

@@ -1,0 +1,12 @@
+"use client";
+import Link from "next/link";
+import { useEffect, useState } from "react";
+import { api } from "@/lib/api";
+import type { ExercisePage } from "@/lib/types";
+import { Icon } from "./icon";
+import { useSession } from "./session";
+export function AdminOverview() {
+  const { account } = useSession(); const [counts, setCounts] = useState<number[]>([]); const [error, setError] = useState(""); const [retry, setRetry] = useState(0);
+  useEffect(() => { let active = true; setError(""); Promise.all(["", "published", "draft", "archived"].map(status => api<ExercisePage>(`/exercises?includeDrafts=true&pageSize=1${status ? `&status=${status}` : ""}`))).then(results => { if (active) setCounts(results.map(item => item.total)); }).catch(e => { if (active) setError(e.message); }); return () => { active = false; }; }, [retry]);
+  return <><div className="page-heading"><div><p className="eyebrow">Admin overview</p><h1>Welcome back, {account?.user.name.split(" ")[0]}.</h1><p>A stronger library starts with the details. Let’s make them count.</p></div><Link href="/admin/exercises/new" className="button"><Icon name="plus" size={18} />Add exercise</Link></div>{error && <div className="notice error" role="alert">{error}<button className="text-link" onClick={() => setRetry(retry + 1)}>Try again</button></div>}<div className="stats-grid">{["Total exercises", "Published", "Drafts", "Archived"].map((label, i) => <div key={label} className="panel stat-card"><span>{label}</span><strong>{counts[i] ?? "—"}</strong><Icon name={["dumbbell", "check", "edit", "book"][i]} size={23} /></div>)}</div><div className="overview-banner"><span className="icon-tile"><Icon name="dumbbell" size={32} /></span><h2>One library. Every athlete.</h2><p>Manage exercise instructions, images, and optional animations in one place. Publish when it’s ready, and your mobile and web athletes see the same movement.</p><Link href="/admin/exercises" className="button">Manage exercises<Icon name="arrow" size={18} /></Link></div><div className="guide-grid">{[["01", "Create the movement", "Add the name, muscle groups, equipment, and clear instructions."], ["02", "Show the technique", "Upload an image. Add a GIF or MP4 now or later."], ["03", "Make it available", "Publish to the library, or keep a draft until it’s ready."]].map(([n, title, text]) => <div className="panel guide-card" key={n}><span className="eyebrow">{n}</span><h3>{title}</h3><p>{text}</p></div>)}</div></>;
+}

@@ -178,6 +178,10 @@ export async function listExercises(
     );
   }
 
+  if (admin && input.status) {
+    query = query.eq("status", input.status);
+  }
+
   if (input.q) {
     const search = input.q.replace(/[\\%_]/g, "\\$&");
 
@@ -393,7 +397,7 @@ export async function removeExerciseMedia(
 ) {
   const { data, error } = await db
     .from("exercise_media")
-    .select("provider,storage_path")
+    .select("provider,storage_path,kind")
     .eq("exercise_id", exerciseId)
     .eq("id", mediaId)
     .maybeSingle();
@@ -416,6 +420,17 @@ export async function removeExerciseMedia(
     );
   }
 
+  // Delete the provider asset first, so a failed cleanup can be retried.
+  try {
+    await deleteStoredExerciseMedia({
+      provider: data.provider as "supabase" | "cloudinary",
+      path: data.storage_path,
+      kind: data.kind as "image" | "video"
+    });
+  } catch {
+    throw new ApiError(502, "Could not remove the media file. Please retry.");
+  }
+
   const deleted = await db
     .from("exercise_media")
     .delete()
@@ -424,14 +439,22 @@ export async function removeExerciseMedia(
 
   checkDbError(deleted.error, "delete exercise media");
 
-  try {
-    await deleteStoredExerciseMedia({
-      provider: data.provider as "supabase" | "cloudinary",
-      path: data.storage_path
-    });
-  } catch (cleanupError) {
-    console.error("[MEDIA CLEANUP]", cleanupError);
-  }
-
   return getExercise(exerciseId, true);
+}
+
+// Delete only after the admin explicitly chooses permanent deletion.
+export async function deleteExercise(id: string) {
+  await getExercise(id, true);
+  const media = await db.from("exercise_media").select("provider,storage_path,kind").eq("exercise_id", id);
+  checkDbError(media.error, "load exercise media");
+  // Keep failed assets and their database references retryable.
+  for (const asset of media.data ?? []) {
+    try {
+      await deleteStoredExerciseMedia({ provider: asset.provider, path: asset.storage_path, kind: asset.kind });
+    } catch {
+      throw new ApiError(502, "Could not remove a media file. Please retry deletion.");
+    }
+  }
+  const result = await db.from("exercises").delete().eq("id", id);
+  checkDbError(result.error, "delete exercise");
 }

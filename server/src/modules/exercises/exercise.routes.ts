@@ -3,7 +3,6 @@ import { Router } from "express";
 import { z } from "zod";
 import { rateLimit } from "express-rate-limit";
 
-import { db } from "../../config/supabase.js";
 import { asyncHandler } from "../../common/async-handler.js";
 import { ApiError } from "../../common/errors.js";
 
@@ -24,7 +23,8 @@ import {
   saveExercise,
   patchExercise,
   addExerciseMedia,
-  removeExerciseMedia
+  removeExerciseMedia,
+  deleteExercise
 } from "./exercise.service.js";
 
 import {
@@ -181,5 +181,10 @@ router.delete(
     );
   })
 );
+
+router.delete("/:id", requireAdmin, asyncHandler(async (req, res) => {
+  await deleteExercise(uuid.parse(req.params.id));
+  res.status(204).end();
+}));
 
 export default router;

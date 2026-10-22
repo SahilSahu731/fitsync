@@ -17,7 +17,7 @@ export const notFound: RequestHandler = (_req, res) => {
 
 export const errorHandler: ErrorRequestHandler = (
   error: unknown,
-  _req,
+  req,
   res,
   _next
 ) => {
@@ -35,7 +35,7 @@ export const errorHandler: ErrorRequestHandler = (
   if (error instanceof multer.MulterError) {
     res.status(error.code === "LIMIT_FILE_SIZE" ? 413 : 400).json({
       message: error.code === "LIMIT_FILE_SIZE"
-        ? "Image exceeds the 3 MB limit."
+        ? (req.originalUrl.startsWith("/api/exercises") ? "Media exceeds the 25 MB limit." : "Image exceeds the 3 MB limit.")
         : "Invalid file upload."
     });
     return;

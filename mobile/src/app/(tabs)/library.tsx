@@ -1,5 +1,5 @@
 
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
   Pressable,
@@ -18,7 +18,6 @@ import { Txt } from "@/src/components/ui";
 import {
   Exercise,
   ExerciseTaxonomies,
-  getExercisePermissions,
   getExercises,
   getTaxonomies,
   pretty
@@ -133,7 +132,6 @@ export default function LibraryScreen() {
   const router = useRouter();
 
   const [tax, setTax] = useState<ExerciseTaxonomies | null>(null);
-  const [admin, setAdmin] = useState(false);
 
   const [query, setQuery] = useState("");
   const [category, setCategory] = useState("");
@@ -141,7 +139,6 @@ export default function LibraryScreen() {
   const [equipment, setEquipment] = useState("");
   const [bodyRegion, setBodyRegion] = useState("");
 
-  const [includeDrafts, setIncludeDrafts] = useState(false);
   const [page, setPage] = useState(1);
 
   const [items, setItems] = useState<Exercise[]>([]);
@@ -155,14 +152,10 @@ export default function LibraryScreen() {
     useCallback(() => {
       let active = true;
 
-      Promise.all([
-        getTaxonomies(),
-        getExercisePermissions()
-      ])
-        .then(([taxonomies, permissions]) => {
+      getTaxonomies()
+        .then(taxonomies => {
           if (!active) return;
           setTax(taxonomies);
-          setAdmin(permissions.canManageExercises);
         })
         .catch(error => {
           if (active) {
@@ -180,6 +173,8 @@ export default function LibraryScreen() {
     useCallback(() => {
       let active = true;
 
+      // Changing refreshKey intentionally retries the request after an error.
+      void refreshKey;
       setLoading(true);
       setError("");
 
@@ -190,8 +185,7 @@ export default function LibraryScreen() {
         equipment,
         bodyRegion,
         page,
-        pageSize: 20,
-        includeDrafts: includeDrafts && admin
+        pageSize: 20
       })
         .then(response => {
           if (!active) return;
@@ -219,7 +213,7 @@ export default function LibraryScreen() {
       return () => {
         active = false;
       };
-    }, [query, category, muscle, equipment, bodyRegion, page, includeDrafts, admin])
+    }, [query, category, muscle, equipment, bodyRegion, page, refreshKey])
   );
 
   function changeFilter(
@@ -248,38 +242,12 @@ export default function LibraryScreen() {
               </Txt>
             </View>
 
-            {admin && (
-              <Pressable
-                onPress={() => router.push("/admin/exercises/new")}
-                accessibilityLabel="Add exercise"
-                className="h-12 w-12 items-center justify-center rounded-2xl bg-brand"
-              >
-                <MaterialCommunityIcons
-                  name="plus"
-                  size={28}
-                  color={C.bg}
-                />
-              </Pressable>
-            )}
           </View>
 
           <Txt className="mt-2 text-xs text-muted">
             {total} exercises · Strength, movement and mindfulness
           </Txt>
 
-          {admin && (
-            <Pressable
-              onPress={() => {
-                setIncludeDrafts(value => !value);
-                setPage(1);
-              }}
-              className="mt-4 self-start rounded-xl border border-brand px-4 py-2.5"
-            >
-              <Txt weight="semibold" className="text-xs text-brand">
-                {includeDrafts ? "SHOW PUBLISHED ONLY" : "ADMIN · SHOW ALL EXERCISES"}
-              </Txt>
-            </Pressable>
-          )}
 
           <View className="mt-5 flex-row items-center rounded-2xl border border-border bg-panel px-4">
             <MaterialCommunityIcons

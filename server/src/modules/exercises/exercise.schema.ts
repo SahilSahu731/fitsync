@@ -118,6 +118,8 @@ export const exerciseListSchema = z.object({
     "advanced"
   ]).optional(),
 
+  status: z.enum(["draft", "published", "archived"]).optional(),
+
   includeDrafts: z.enum(["true", "false"]).optional(),
 
   page: z.coerce.number().int().min(1).default(1),
