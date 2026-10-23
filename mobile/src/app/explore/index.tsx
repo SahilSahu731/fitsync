@@ -31,14 +31,14 @@ import { ProgramCard } from "@/src/features/training-catalog/components/program-
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
-const LEVELS: Array<{ label: string; value?: Level }> = [
+const LEVELS: { label: string; value?: Level }[] = [
   { label: "All" },
   { label: "Beginner", value: "beginner" },
   { label: "Intermediate", value: "intermediate" },
   { label: "Advanced", value: "advanced" },
 ];
 
-const GOALS: Array<{ label: string; value?: Goal }> = [
+const GOALS: { label: string; value?: Goal }[] = [
   { label: "All" },
   { label: "Muscle", value: "muscle" },
   { label: "Strength", value: "strength" },
@@ -47,7 +47,7 @@ const GOALS: Array<{ label: string; value?: Goal }> = [
   { label: "General", value: "general" },
 ];
 
-const EQUIPMENT: Array<{ label: string; value?: Equipment }> = [
+const EQUIPMENT: { label: string; value?: Equipment }[] = [
   { label: "All" },
   { label: "Gym", value: "gym" },
   { label: "Dumbbells", value: "dumbbells" },
@@ -67,7 +67,7 @@ function FilterRow<T extends string>({
 }: {
   icon: IconName;
   label: string;
-  options: Array<{ label: string; value?: T }>;
+  options: { label: string; value?: T }[];
   value?: T;
   onChange: (value?: T) => void;
 }) {
@@ -123,6 +123,7 @@ function FilterDrawer({
 
   // Every time the drawer opens, start from the filters currently applied
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     if (visible) setDraft(filters);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [visible]);
@@ -287,36 +288,43 @@ function CategoryTile({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Open ${category.name}`}
-      className="mb-3 w-[48.5%] overflow-hidden rounded-[22px] bg-panel"
-      style={{ height: 150 }}
+      android_ripple={{ color: "rgba(255,255,255,0.06)" }}
+      className="mb-3 w-[48.5%] flex-row items-center overflow-hidden rounded-[22px] bg-panel p-2.5 active:opacity-80"
+      style={{ minHeight: 80 }}
     >
-      {showImage ? (
-        <Image
-          source={{ uri: category.image_url as string }}
-          resizeMode="cover"
-          style={{ position: "absolute", width: "100%", height: "100%" }}
-          onError={() => setFailed(true)}
-        />
-      ) : (
-        <View className="absolute inset-0 items-center justify-center bg-elevated">
+      {/* Image on the left */}
+      <View
+        className="items-center justify-center overflow-hidden rounded-xl bg-elevated"
+        style={{ width: 56, height: 56 }}
+      >
+        {showImage ? (
+          <Image
+            source={{ uri: category.image_url as string }}
+            resizeMode="cover"
+            style={{ width: "100%", height: "100%" }}
+            onError={() => setFailed(true)}
+          />
+        ) : (
           <MaterialCommunityIcons
             name="dumbbell"
-            size={56}
+            size={26}
             color={C.brand}
-            style={{ opacity: 0.3 }}
+            style={{ opacity: 0.5 }}
           />
-        </View>
-      )}
+        )}
+      </View>
 
-      {/* Darker towards the bottom so the text is always readable */}
-      <View className="absolute inset-0 bg-black/35" />
-      <View className="absolute inset-x-0 bottom-0 h-20 bg-black/45" />
-      <View className="absolute inset-x-3 bottom-3">
-        <Txt weight="bold" className="text-[15px] text-white" numberOfLines={1}>
+      {/* Name + description on the right */}
+      <View className="ml-2.5 min-w-0 flex-1">
+        <Txt
+          weight="bold"
+          className="text-[14px] leading-[18px] text-ink"
+          numberOfLines={2}
+        >
           {category.name}
         </Txt>
         {category.description ? (
-          <Txt className="mt-0.5 text-[11px] text-white/75" numberOfLines={1}>
+          <Txt className="mt-0.5 text-[11px] text-muted" numberOfLines={1}>
             {category.description}
           </Txt>
         ) : null}
@@ -367,6 +375,7 @@ export default function ExploreTrainingScreen() {
   }, [filters.level, filters.goal, filters.equipment]);
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     void load();
   }, [load]);
 

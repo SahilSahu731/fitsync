@@ -30,7 +30,7 @@ import {
   WorkoutDrawer,
 } from "@/src/features/workouts/components/workout-controls";
 import { SetTypePicker } from "@/src/features/workouts/components/set-type-picker";
-import { setAppearance } from "@/src/features/workouts/set-types";
+// import { setAppearance } from "@/src/features/workouts/set-types";
 import {
   ReorderTraining,
   TrainActions,

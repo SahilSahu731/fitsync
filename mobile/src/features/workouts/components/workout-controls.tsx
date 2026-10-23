@@ -3,7 +3,6 @@ import {
   KeyboardAvoidingView,
   Modal,
   PanResponder,
-  Platform,
   Pressable,
   ScrollView,
   TextInput,

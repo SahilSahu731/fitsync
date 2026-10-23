@@ -1,5 +1,5 @@
-import React from "react";
-import { Pressable, Text, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Image, Pressable, Text, View } from "react-native";
 import Animated, { LinearTransition } from "react-native-reanimated";
 import { Redirect, Tabs } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -35,8 +35,84 @@ type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tab
 // one short, smooth resize when the active tab changes (no bounce)
 const TRANSITION = LinearTransition.duration(200);
 
+/* -------------------------------------------------------------------------- */
+/*  Avatar lookup                                                              */
+/* -------------------------------------------------------------------------- */
+
+const AVATAR_KEYS = [
+  "avatarUrl",
+  "avatar_url",
+  "avatar",
+  "photoURL",
+  "photoUrl",
+  "photo_url",
+  "photo",
+  "profilePicture",
+  "profile_picture",
+  "profilePic",
+  "profileImage",
+  "profile_image",
+  "imageUrl",
+  "image_url",
+  "image",
+  "picture",
+  "pfp"
+];
+
+function pickUrl(value: unknown): string | null {
+  if (typeof value === "string" && value.trim()) return value.trim();
+  if (value && typeof value === "object") {
+    const v = value as Record<string, unknown>;
+    return pickUrl(v.url) ?? pickUrl(v.uri) ?? pickUrl(v.publicUrl);
+  }
+  return null;
+}
+
+// Looks through the profile, then the auth user, for any common avatar field.
+function resolveAvatar(...sources: unknown[]): string | null {
+  for (const source of sources) {
+    if (!source || typeof source !== "object") continue;
+    const obj = source as Record<string, unknown>;
+    for (const key of AVATAR_KEYS) {
+      const url = pickUrl(obj[key]);
+      if (url) return url;
+    }
+  }
+  return null;
+}
+
+/* -------------------------------------------------------------------------- */
+/*  Tab bar                                                                    */
+/* -------------------------------------------------------------------------- */
+
 function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
+  const { profile, user } = useSession();
+  const [avatarFailed, setAvatarFailed] = useState(false);
+
+  const avatarUrl = resolveAvatar(
+    profile,
+    user,
+    (user as { user_metadata?: unknown } | null)?.user_metadata
+  );
+
+  // if the picture changes, give the new one a fresh chance
+  useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setAvatarFailed(false);
+  }, [avatarUrl]);
+
+  // Dev helper: if no picture shows up, this lists the fields to pick from.
+  useEffect(() => {
+    if (__DEV__ && !avatarUrl) {
+      console.log(
+        "[tabs] no avatar field found. profile keys:",
+        profile ? Object.keys(profile) : null,
+        "user keys:",
+        user ? Object.keys(user) : null
+      );
+    }
+  }, [avatarUrl, profile, user]);
 
   return (
     <View
@@ -46,7 +122,7 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
     >
       <ActiveWorkoutBar inline />
       <View
-        className="h-18 flex-row items-center gap-1 rounded-full border border-border bg-panel p-2"
+        className="h-18 flex-row items-center gap-1 rounded-full border bg-black p-2"
         // shadows are the one thing set in style: they need platform-specific props
         style={{
           shadowColor: "#000",
@@ -61,6 +137,7 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
           if (!(id in ICONS)) return null;
 
           const focused = state.index === index;
+          const showAvatar = id === "profile" && !!avatarUrl && !avatarFailed;
 
           const onPress = () => {
             const event = navigation.emit({
@@ -90,11 +167,30 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
                 }
                 className="h-full flex-row items-center justify-center"
               >
-                <MaterialCommunityIcons
-                  name={ICONS[id][focused ? 1 : 0]}
-                  size={24}
-                  color={focused ? C.bg : "white"}
-                />
+                {showAvatar ? (
+                  <View
+                    className="overflow-hidden rounded-full"
+                    style={{
+                      width: 28,
+                      height: 28,
+                      // borderWidth: 1,
+                      // borderColor: focused ? C.bg : "rgba(255,255,255,0.4)"
+                    }}
+                  >
+                    <Image
+                      source={{ uri: avatarUrl! }}
+                      onError={() => setAvatarFailed(true)}
+                      style={{ width: "100%", height: "100%" }}
+                      resizeMode="cover"
+                    />
+                  </View>
+                ) : (
+                  <MaterialCommunityIcons
+                    name={ICONS[id][focused ? 1 : 0]}
+                    size={24}
+                    color={focused ? C.bg : "white"}
+                  />
+                )}
 
                 {focused && (
                   <Text

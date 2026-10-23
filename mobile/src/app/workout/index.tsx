@@ -219,7 +219,7 @@ export default function LiveWorkoutScreen() {
             {session.name}
           </Txt>
         </View>
-        <Txt weight="semibold" className="text-green-400">
+        <Txt weight="semibold" className="text-green-500">
           {formatTime(Math.max(0, elapsed))}
         </Txt>
 
