@@ -84,6 +84,7 @@ export type TemplateInput = {
       setType: SetType;
       targetReps: number | null;
       targetWeight: number | null;
+      targetDurationSeconds?: number | null;
     }[];
   }[];
 };

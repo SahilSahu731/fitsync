@@ -81,7 +81,8 @@ router.get(
 
 router.get("/picker", asyncHandler(async (req, res) => {
   const page = z.coerce.number().int().min(1).max(1000).default(1).parse(req.query.page);
-  res.json(await listExercisePicker(page));
+  const q = z.string().trim().max(120).default("").parse(req.query.q);
+  res.json(await listExercisePicker(page, q));
 }));
 
 // Full exercise details.

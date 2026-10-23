@@ -208,12 +208,16 @@ export async function listExercises(
 
 // Small, paginated index for instant client-side workout search.
 // Avoid loading instructions and other detail-only fields for every keystroke.
-export async function listExercisePicker(page: number) {
-  const pageSize = 500;
-  const { data, error } = await db.from("exercise_catalog")
+export async function listExercisePicker(page: number, search = "") {
+  const pageSize = 15;
+  let query = db.from("exercise_catalog")
     .select("id,name,tracking_type,region_label,equipment,primary_muscles,secondary_muscles,media")
-    .eq("status", "published")
-    .order("name").order("id")
+    .eq("status", "published");
+  const tokens = search.toLowerCase().replace(/[^a-z0-9-]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  for (const token of tokens) {
+    query = query.or(`name.ilike.%${token}%,primary_muscles.cs.{${token}},secondary_muscles.cs.{${token}},equipment.cs.{${token}}`);
+  }
+  const { data, error } = await query.order("name").order("id")
     .range((page - 1) * pageSize, page * pageSize - 1);
   checkDbError(error, "load exercise picker");
   return {

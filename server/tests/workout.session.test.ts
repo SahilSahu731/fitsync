@@ -18,7 +18,7 @@ test("active workouts load relational muscle tags without querying nonexistent e
   const session = {
     id: "session", user_id: "owner", status: "active", notes: "Leg day",
     workout_session_exercises: [
-      { id: "tagged", workout_logged_sets: sets, exercises: { exercise_muscles: [
+      { id: "tagged", workout_logged_sets: sets, exercises: { exercise_media: [{ kind: "image", provider: "cloudinary", delivery_url: "https://example.com/demo.jpg", sort_order: 0 }], exercise_muscles: [
         { role: "primary", exercise_muscle_groups: { code: "quads" } },
         { role: "secondary", exercise_muscle_groups: { code: "glutes" } },
         { role: "primary", exercise_muscle_groups: null }
@@ -37,7 +37,7 @@ test("active workouts load relational muscle tags without querying nonexistent e
         eq(key: string, value: string) { query.filters[key] = value; return builder; },
         async maybeSingle() { return { data: session, error: null }; },
         async single() {
-          assert.match(columns, /exercises\(exercise_muscles\(role,exercise_muscle_groups\(code\)\)\)/);
+          assert.match(columns, /exercises\(exercise_muscles\(role,exercise_muscle_groups\(code\)\)/);
           assert.doesNotMatch(columns, /primary_muscles|secondary_muscles/);
           return { data: session, error: null };
         }
@@ -49,6 +49,8 @@ test("active workouts load relational muscle tags without querying nonexistent e
   for (const result of [await getSession("owner", "session"), await getActiveSession("owner")]) {
     assert.ok(result);
     assert.equal(result.notes, "Leg day");
+    assert.equal(result.workout_session_exercises[0].image_url, "https://example.com/demo.jpg");
+    assert.equal(result.workout_session_exercises[1].image_url, null);
     assert.deepEqual(result.workout_session_exercises.map(e => e.exercises), [
       { primary_muscles: ["quads"], secondary_muscles: ["glutes"] },
       { primary_muscles: [], secondary_muscles: [] },

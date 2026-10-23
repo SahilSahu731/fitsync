@@ -50,31 +50,105 @@ test("number responder survives rerenders and preserves its drag origin", () => 
   render(true); assert.equal(pan.onMoveShouldSetPanResponderCapture(null, { dy: -20, dx: 1 }), false);
 });
 
-test("picker prefetch and opening share one request; repeated searches need no requests", async () => {
-  let calls = 0; let fail = false;
-  const rows = [{ id: "one", name: "Incline Bench Press (Dumbbell)", equipment: ["dumbbell"], primaryMuscles: ["chest"], secondaryMuscles: ["triceps"] }];
-  const picker = load("../src/features/exercises/picker-cache.ts", { "@/src/services/api": { apiRequest: async () => {
-    calls++; if (fail) throw Error("offline"); return { items: rows, hasMore: false };
-  } } });
-  await Promise.all([picker.loadExercisePicker(), picker.loadExercisePicker()]);
-  assert.equal(calls, 1);
-  await picker.loadExercisePicker(); assert.equal(calls, 1);
-  const { matchesExercise } = load("../src/features/exercises/picker-search.ts");
-  for (const query of ["dumbbell incline", "chest", "bench press", "triceps"]) assert.equal(matchesExercise(rows[0], query), true);
-  assert.equal(matchesExercise(rows[0], "squat"), false);
-  assert.equal(calls, 1);
-  fail = true; await assert.rejects(picker.loadExercisePicker(true), /offline/);
-  assert.equal(picker.cachedExercisePicker()[0].id, "one");
-});
-
-test("picker retrieves every page so local search never silently excludes later exercises", async () => {
+test("picker shares cached requests and loads later pages only on demand", async () => {
   const paths = [];
   const picker = load("../src/features/exercises/picker-cache.ts", { "@/src/services/api": { apiRequest: async path => {
     paths.push(path);
-    return path.endsWith("=1") ? { items: [{ id: "first" }], hasMore: true } : { items: [{ id: "last" }], hasMore: false };
+    const page = Number(new URL(`http://test${path}`).searchParams.get("page"));
+    return { items: Array.from({ length: 15 }, (_, index) => ({ id: String((page - 1) * 15 + index) })), hasMore: true };
   } } });
-  const rows = await picker.loadExercisePicker();
-  assert.equal(rows.length, 2);
-  assert.equal(rows[1].id, "last");
-  assert.deepEqual(paths, ["/exercises/picker?page=1", "/exercises/picker?page=2"]);
+  await Promise.all([picker.loadExercisePicker(), picker.loadExercisePicker()]);
+  assert.equal(paths.length, 1);
+  const first = await picker.loadPickerPage("", 1);
+  assert.equal(first.items.length, 15);
+  assert.equal(paths.length, 1);
+  const second = await picker.loadPickerPage("", 2);
+  assert.equal(second.items[0].id, "15");
+  assert.equal(paths.length, 2);
+  await picker.loadPickerPage("squat", 1);
+  assert.equal(paths.length, 3);
+});
+
+test("failed picker pages can be retried without discarding cached pages", async () => {
+  let fail = false;
+  const picker = load("../src/features/exercises/picker-cache.ts", { "@/src/services/api": { apiRequest: async () => {
+    if (fail) throw Error("offline");
+    return { items: [{ id: "one" }], hasMore: true };
+  } } });
+  await picker.loadPickerPage("", 1);
+  fail = true; await assert.rejects(picker.loadPickerPage("", 2), /offline/);
+  assert.equal(picker.cachedPickerPage("", 1).items[0].id, "one");
+  fail = false; assert.equal((await picker.loadPickerPage("", 2)).items.length, 1);
+});
+
+test("reordering preserves all rows and accounts for scroll offset in both directions", () => {
+  const { moveItem, dragPosition, edgeScroll } = load("../src/features/workouts/reorder.ts");
+  const rows = [{ id: "a" }, { id: "b" }, { id: "c" }];
+  assert.equal(moveItem(rows, "a", 0), rows);
+  assert.equal(moveItem(rows, "missing", 1), rows);
+  assert.equal(moveItem(rows, "a", 2).map(row => row.id).join(","), "b,c,a");
+  assert.equal(moveItem(rows, "c", -5).map(row => row.id).join(","), "c,a,b");
+  assert.equal(rows.map(row => row.id).join(","), "a,b,c");
+  assert.equal(dragPosition(1, 40, 40, 3, 80), 160);
+  assert.equal(dragPosition(1, -40, -40, 3, 80), 0);
+  assert.equal(dragPosition(0, 5000, 0, 3, 80), 160);
+  assert.ok(edgeScroll(10, 0, 400) < 0);
+  assert.ok(edgeScroll(390, 0, 400) > 0);
+  assert.equal(edgeScroll(200, 0, 400), 0);
+});
+
+test("routine targets preserve types and time targets and reject invalid input", () => {
+  const { newDraftExercise, routineInput } = load("../src/features/workouts/routine-draft.ts");
+  const strength = newDraftExercise({ id: "a", name: "Squat", trackingType: "reps_weight" });
+  const timed = newDraftExercise({ id: "b", name: "Plank", trackingType: "duration" });
+  strength.sets[0].type = "warmup";
+  const input = routineInput(" Leg day ", "Goals", [strength, timed]);
+  assert.equal(input.name, "Leg day");
+  assert.equal(input.exercises[0].sets[0].setType, "warmup");
+  assert.equal(input.exercises[1].sets[0].targetDurationSeconds, 30);
+  assert.equal(input.exercises[1].sets[0].targetReps, null);
+  assert.equal(new Set(strength.sets.map(set => set.id)).size, 3);
+  strength.sets[0].reps = "2.5";
+  assert.throws(() => routineInput("Leg day", "", [strength]), /whole number/);
+  strength.sets[0].reps = "";
+  assert.throws(() => routineInput("Leg day", "", [strength]), /whole number/);
+  assert.throws(() => routineInput("", "", [timed]), /name/);
+  assert.throws(() => routineInput("A", "", []), /Choose/);
+});
+
+test("set badges have unique letters and colors for every supported type", () => {
+  const { SET_TYPES } = load("../src/features/workouts/set-types.ts");
+  assert.equal(new Set(SET_TYPES.map(item => item.letter)).size, 5);
+  assert.equal(new Set(SET_TYPES.map(item => item.color)).size, 5);
+});
+
+test("reorder handle keeps its responder when its index changes mid-drag", () => {
+  const slots = []; let cursor = 0; const responders = [];
+  const React = {
+    useRef(value) { const index = cursor++; return slots[index] ??= { current: value }; },
+    useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial; return [slots[index], () => {}]; },
+    useLayoutEffect(callback) { callback(); }
+  };
+  const { ReorderRow } = load("../src/features/workouts/components/reorder-training.tsx", {
+    react: React, "react/jsx-runtime": { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) },
+    "react-native": { PanResponder: { create(config) { responders.push(config); return { panHandlers: {} }; } } },
+    "react-native-reanimated": { useAnimatedStyle: () => ({}), withTiming: value => value },
+    "react-native-safe-area-context": {}, "@expo/vector-icons": {}, "@/src/constants/theme": { C: {} },
+    "@/src/components/ui": {}, "../reorder": {}, "./exercise-image": {}
+  });
+  const moves = []; let ended = 0;
+  const render = index => {
+    cursor = 0;
+    ReorderRow({ item: { id: "a", name: "Bench press" }, index, count: 3, disabled: false,
+      active: { get: () => "a" }, dragY: { get: () => 80 }, onStart: () => {},
+      onMove: (dy, y) => moves.push([index, dy, y]), onEnd: () => { ended = index + 1; }, onAdjust: () => {} });
+  };
+  render(0);
+  responders[0].onPanResponderMove(null, { dy: 30, moveY: 200 });
+  render(2);
+  responders[0].onPanResponderMove(null, { dy: 170, moveY: 340 });
+  responders[0].onPanResponderRelease();
+  assert.equal(responders.length, 1);
+  assert.deepEqual(moves, [[0, 30, 200], [2, 170, 340]]);
+  assert.equal(ended, 3);
 });

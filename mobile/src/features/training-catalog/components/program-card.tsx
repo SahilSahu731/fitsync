@@ -16,7 +16,7 @@ export function ProgramCard({
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 overflow-hidden rounded-[24px] border border-border bg-panel"
+      className="mb-3 overflow-hidden rounded-[24px] bg-panel"
     >
       {program.cover_url ? (
         <Image

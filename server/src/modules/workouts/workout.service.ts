@@ -284,7 +284,8 @@ export async function startWorkout(
         .insert({
             user_id: userId,
             template_id: templateId ?? null,
-            name: template?.name ?? "Quick Workout"
+            name: template?.name ?? "Quick Workout",
+            notes: template?.description ?? ""
         })
         .select()
         .single();
@@ -308,7 +309,8 @@ export async function startWorkout(
                     item.rest_seconds,
                     [...item.workout_template_sets]
                         .sort((a, b) => a.position - b.position),
-                    false
+                    false,
+                    item.notes
                 );
             }
         }
@@ -419,7 +421,8 @@ export async function addSessionExercise(
         target_reps: number | null;
         target_duration_seconds: number | null;
     }>,
-    hydrate = true
+    hydrate = true,
+    notes = ""
 ) {
     await assertActive(userId, sessionId);
 
@@ -454,7 +457,8 @@ export async function addSessionExercise(
             exercise_name: exercise?.name,
             tracking_type: exercise?.tracking_type,
             position,
-            rest_seconds: restSeconds
+            rest_seconds: restSeconds,
+            notes
         })
         .select()
         .single();

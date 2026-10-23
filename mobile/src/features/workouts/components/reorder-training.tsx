@@ -89,7 +89,7 @@ export function ReorderTraining({ title, items, onClose, onSave, hint = "Your or
           <View style={{ height: initial.length * HEIGHT }}>
             {initial.map(item => {
               const index = order.findIndex(row => row.id === item.id);
-              return <DragRow key={item.id} item={item} index={index} count={order.length} disabled={busy} active={active} dragY={dragY}
+              return <ReorderRow key={item.id} item={item} index={index} count={order.length} disabled={busy} active={active} dragY={dragY}
                 onStart={y => {
                   if (saving.current || live.current) return;
                   measure();
@@ -117,7 +117,7 @@ type DragRowProps = {
   onStart: (y: number) => void; onMove: (dy: number, y: number) => void;
   onEnd: () => void; onAdjust: (direction: number) => void;
 };
-function DragRow(props: DragRowProps) {
+export function ReorderRow(props: DragRowProps) {
   const { item, index, count, disabled, active, dragY, onAdjust } = props;
   const live = useRef(props);
   useLayoutEffect(() => { live.current = props; }, [props]);

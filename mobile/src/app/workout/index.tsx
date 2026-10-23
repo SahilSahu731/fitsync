@@ -371,10 +371,10 @@ export default function LiveWorkoutScreen() {
                     name={exercise.exercise_name}
                   />
                   <View className="ml-3 flex-1">
-                    <Txt weight="bold" className="text-base" numberOfLines={2}>
+                    <Txt weight="bold" className="text-lg" numberOfLines={2}>
                       {exercise.exercise_name}
                     </Txt>
-                    <Txt className="mt-1 text-xs text-muted">
+                    <Txt className="mt-1 text-sm text-muted">
                       {sets.length} sets ·{" "}
                       {exercise.tracking_type === "reps"
                         ? "Bodyweight + optional load"
@@ -389,8 +389,8 @@ export default function LiveWorkoutScreen() {
                         ? "chevron-down"
                         : "chevron-up"
                     }
-                    size={20}
-                    color={C.muted}
+                    size={26}
+                    color={"white"}
                   />
                 </Pressable>
                 <Pressable
@@ -400,11 +400,11 @@ export default function LiveWorkoutScreen() {
                     setExerciseMenu(exercise);
                   }}
                   accessibilityLabel={`Options for ${exercise.exercise_name}`}
-                  className="ml-1 h-11 w-11 items-center justify-center rounded-full bg-elevated"
+                  className="ml-1 h-11 w-11 items-center justify-center"
                 >
                   <MaterialCommunityIcons
-                    name="dots-vertical"
-                    size={23}
+                    name="dots-horizontal"
+                    size={26}
                     color={C.ink}
                   />
                 </Pressable>
@@ -413,6 +413,7 @@ export default function LiveWorkoutScreen() {
               {!collapsed.includes(exercise.id) && (
                 <>
                   <View className="px-3">
+                    {!!exercise.notes && <Txt className="mb-3 px-1 text-sm text-muted">{exercise.notes}</Txt>}
                     {sets.map((set, setIndex) => (
                       <SetRow
                         key={set.id}
