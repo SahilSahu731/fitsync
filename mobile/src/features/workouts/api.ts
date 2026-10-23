@@ -42,13 +42,32 @@ export type WorkoutSession = {
   workout_session_exercises: SessionExercise[];
 };
 
+export type TemplateSet = {
+  id?: string;
+  position?: number;
+  set_type?: SetType;
+  target_reps: number | null;
+  target_weight?: number | null;
+  target_duration_seconds: number | null;
+};
+
+export type TemplateExercise = {
+  id: string;
+  position: number;
+  notes?: string;
+  rest_seconds?: number;
+  exercises?: { name: string };
+  workout_template_sets?: TemplateSet[];
+};
+
 export type WorkoutTemplate = {
   can_rename?: boolean;
   id: string;
   name: string;
   description: string;
+  image_url?: string | null;
   created_at: string;
-  workout_template_exercises: { id: string; position: number; exercises?: { name: string }; workout_template_sets?: { target_reps: number | null; target_duration_seconds: number | null }[] }[];
+  workout_template_exercises: TemplateExercise[];
 };
 
 export type TemplateInput = {

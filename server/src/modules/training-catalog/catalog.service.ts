@@ -291,7 +291,7 @@ export async function myPrograms(userId: string) {
         .select(`
       id,
       saved_at,
-      training_programs(id,name,level,goal,equipment,days_per_week),
+      training_programs(id,name,tagline,cover_url,level,goal,equipment,days_per_week,duration_weeks),
       user_saved_program_routines(
         source_routine_id,
         template_id

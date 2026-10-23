@@ -38,6 +38,7 @@ import {
   ReorderTraining,
 } from "@/src/features/workouts/components/train-actions";
 import { Image } from "expo-image";
+import { RoutineCard } from "@/src/features/workouts/components/routine-card";
 
 function ordered<T extends { id: string }>(rows: T[], ids: string[]) {
   const rank = new Map(ids.map((id, index) => [id, index]));
@@ -334,66 +335,6 @@ function ProgramCard({
   );
 }
 
-function TemplateCard({
-  template,
-  onStart,
-  onOptions,
-  disabled,
-}: {
-  template: WorkoutTemplate;
-  onStart: () => void;
-  onOptions: () => void;
-  disabled: boolean;
-}) {
-  const count = template.workout_template_exercises?.length ?? 0;
-
-  return (
-    <View className="mb-3 flex-row items-center rounded-[22px] border border-border bg-panel p-4">
-      <View className="h-12 w-12 items-center justify-center rounded-2xl bg-elevated">
-        <MaterialCommunityIcons name="dumbbell" size={23} color={C.brand} />
-      </View>
-
-      <View className="ml-3 flex-1">
-        <Txt weight="bold" className="text-base" numberOfLines={1}>
-          {template.name}
-        </Txt>
-
-        <Txt className="mt-0.5 text-xs text-muted">
-          {count} {count === 1 ? "exercise" : "exercises"}
-        </Txt>
-      </View>
-
-      <Pressable
-        onPress={onOptions}
-        hitSlop={10}
-        accessibilityLabel="Routine options"
-        className="mr-2 h-10 w-10 items-center justify-center"
-      >
-        <MaterialCommunityIcons
-          name="dots-horizontal"
-          size={22}
-          color={C.muted}
-        />
-      </Pressable>
-
-      <Pressable
-        onPress={onStart}
-        disabled={disabled}
-        accessibilityLabel={`Start ${template.name}`}
-        className={`h-11 w-11 items-center justify-center rounded-full ${
-          disabled ? "bg-elevated" : "bg-brand"
-        }`}
-      >
-        <MaterialCommunityIcons
-          name="play"
-          size={22}
-          color={disabled ? C.muted : C.bg}
-        />
-      </Pressable>
-    </View>
-  );
-}
-
 function HistoryCard({
   item,
   onPress,
@@ -406,14 +347,14 @@ function HistoryCard({
   return (
     <Pressable
       onPress={onPress}
-      className="mb-3 flex-row items-center rounded-[22px] border border-border bg-panel p-4"
+      className="mb-3 flex-row items-center rounded-[22px] bg-panel p-4"
     >
       <View className="h-14 w-14 items-center justify-center rounded-2xl bg-elevated">
-        <Txt weight="extra" className="text-lg leading-[22px]">
+        <Txt weight="extra" className="text-lg text-red-500 leading-[22px]">
           {date.getDate()}
         </Txt>
 
-        <Txt className="text-[11px] text-muted">
+        <Txt className="text-[11px] text-red-400">
           {date.toLocaleDateString(undefined, { month: "short" })}
         </Txt>
       </View>
@@ -886,7 +827,7 @@ export default function TrainScreen() {
                 />
               ) : (
                 templates.map((template) => (
-                  <TemplateCard
+                  <RoutineCard
                     key={template.id}
                     template={template}
                     onStart={() => void handleStart(template.id)}

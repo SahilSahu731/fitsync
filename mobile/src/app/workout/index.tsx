@@ -151,31 +151,31 @@ export default function LiveWorkoutScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <View className="flex-row items-center justify-between px-5 pb-4 pt-5">
+      <View className="flex-row items-center justify-between px-5 pb-4 pt-3">
         <Pressable
           onPress={() => router.back()}
-          className="h-11 w-11 items-center justify-center rounded-full border border-border"
+          className="h-11 w-11 items-center justify-center rounded-full"
         >
-          <MaterialCommunityIcons name="chevron-down" size={28} color={C.ink} />
+          <MaterialCommunityIcons name="chevron-down" size={28} color={"white"} />
         </Pressable>
 
         <View className="items-center">
-          <Txt weight="bold" className="text-[17px]">
+          <Txt weight="bold" className="text-[20px]">
             {session.name}
           </Txt>
 
-          <Txt weight="semibold" className="text-sm text-brand">
+        </View>
+          <Txt weight="semibold" className="text-green-400">
             {formatTime(Math.max(0, elapsed))}
           </Txt>
-        </View>
 
         <Pressable
           onPress={handleFinish}
           disabled={busy}
-          className="rounded-full bg-brand px-4 py-3"
+          className="rounded-xl bg-white px-2 py-1"
         >
-          <Txt weight="bold" className="text-xs text-bg">
-            FINISH
+          <Txt weight="bold" className="text-lg text-bg">
+            Finish
           </Txt>
         </Pressable>
       </View>
@@ -186,14 +186,14 @@ export default function LiveWorkoutScreen() {
             WORKOUT PROGRESS
           </Txt>
 
-          <Txt weight="bold" className="text-brand">
+          <Txt weight="bold" className="text-green-500">
             {completedSets}/{totalSets}
           </Txt>
         </View>
 
         <View className="mt-3 h-2 overflow-hidden rounded-full bg-elevated">
           <View
-            className="h-full rounded-full bg-brand"
+            className="h-full rounded-full bg-green-500"
             style={{
               width: `${totalSets ? (completedSets / totalSets) * 100 : 0}%`,
             }}
@@ -202,16 +202,16 @@ export default function LiveWorkoutScreen() {
       </View>
 
       {restRemaining > 0 && (
-        <View className="mx-5 mb-4 flex-row items-center rounded-2xl border border-brand/30 bg-brand/10 p-4">
+        <View className="mx-5 mb-4 flex-row items-center rounded-2xl bg-brand/10 p-4">
           <MaterialCommunityIcons
             name="timer-outline"
             size={28}
-            color={C.brand}
+            color={"red"}
           />
 
           <View className="ml-3 flex-1">
-            <Txt weight="semibold">REST TIMER</Txt>
-            <Txt weight="extra" className="text-[26px] text-brand">
+            <Txt weight="semibold">Rest Timer</Txt>
+            <Txt weight="extra" className="text-[26px] text-red-600">
               {formatTime(restRemaining)}
             </Txt>
           </View>
@@ -242,7 +242,7 @@ export default function LiveWorkoutScreen() {
           return (
             <View
               key={exercise.id}
-              className="mb-5 overflow-hidden rounded-[26px] border border-border bg-panel"
+              className="mb-5 overflow-hidden rounded-[26px] bg-panel"
             >
               <View className="flex-row items-center px-4 pb-3 pt-5">
                 <View className="h-11 w-11 items-center justify-center rounded-2xl bg-brand/10">

@@ -32,17 +32,59 @@ async function assertActive(userId: string, sessionId: string) {
     return session;
 }
 
+type MediaRow = { kind: string; delivery_url: string | null; sort_order: number };
+
+// Cover image: catalog routine image if it came from Explore/program,
+// otherwise the first exercise's demo image.
+function templateImage(row: any): string | null {
+    const catalog =
+        row.user_saved_routines?.[0]?.training_routines?.image_url ??
+        row.user_saved_program_routines?.[0]?.training_routines?.image_url;
+    if (catalog) return catalog;
+
+    const exercises = [...(row.workout_template_exercises ?? [])].sort(
+        (a: any, b: any) => a.position - b.position
+    );
+    for (const item of exercises) {
+        const media: MediaRow[] = [...(item.exercises?.exercise_media ?? [])]
+            .filter(m => m.kind === "image" && m.delivery_url)
+            .sort((a, b) => a.sort_order - b.sort_order);
+        if (media[0]?.delivery_url) return media[0].delivery_url;
+    }
+    return null;
+}
+
 export async function listTemplates(userId: string) {
     const { data, error } = await db
         .from("workout_templates")
-        .select("*, workout_template_exercises(id), user_saved_routines(routine_id), user_saved_program_routines(id)")
+        .select(`
+      *,
+      workout_template_exercises(
+        id,
+        position,
+        exercises(name, exercise_media(kind, delivery_url, sort_order))
+      ),
+      user_saved_routines(routine_id, training_routines(image_url)),
+      user_saved_program_routines(id, training_routines(image_url))
+    `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false });
 
     checkDbError(error, "list workout templates");
-    return (data ?? []).map(row => ({ ...row, can_rename: !row.user_saved_routines?.length && !row.user_saved_program_routines?.length }));
+    return (data ?? []).map(row => {
+        const { user_saved_routines, user_saved_program_routines, ...rest } = row as any;
+        return {
+            ...rest,
+            workout_template_exercises: (row.workout_template_exercises ?? []).map((e: any) => ({
+                id: e.id,
+                position: e.position,
+                exercises: { name: e.exercises?.name }
+            })),
+            image_url: templateImage(row),
+            can_rename: !user_saved_routines?.length && !user_saved_program_routines?.length
+        };
+    });
 }
-
 export async function getTemplate(userId: string, id: string) {
     const { data, error } = await db
         .from("workout_templates")
