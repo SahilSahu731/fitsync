@@ -8,6 +8,7 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
+import { ProgramProvider, ProgramNotificationLinks } from "@/src/features/program-follow/program-context";
 import { WorkoutProvider } from "@/src/features/workouts/workout-context";
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 
@@ -88,6 +89,7 @@ function Navigator() {
         />
       </SafeAreaView>
 
+      <ProgramNotificationLinks />
       <ActiveWorkoutBar />
 
       {showReveal ? (
@@ -108,7 +110,7 @@ export default function RootLayout() {
         <SessionProvider>
           <AppDialogProvider>
             <WorkoutProvider>
-              <Navigator />
+              <ProgramProvider><Navigator /></ProgramProvider>
             </WorkoutProvider>
           </AppDialogProvider>
         </SessionProvider>

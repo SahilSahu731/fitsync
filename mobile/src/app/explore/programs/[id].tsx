@@ -1,5 +1,7 @@
+import { ProgramSetup } from "@/src/features/program-follow/program-setup";
+import { useProgram } from "@/src/features/program-follow/program-context";
 import { useAppAlert } from "@/src/components/app-dialog";
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
 
 import {
   ActivityIndicator,
@@ -9,7 +11,7 @@ import {
   View,
 } from "react-native";
 
-import { useLocalSearchParams, useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -98,6 +100,8 @@ export default function ProgramDetailScreen() {
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
 
+  const { active: following } = useProgram();
+  const [followOpen, setFollowOpen] = useState(false);
   const [program, setProgram] = useState<ProgramDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -138,7 +142,7 @@ export default function ProgramDetailScreen() {
     };
   }, [id]);
 
-  useEffect(() => load(), [load]);
+  useFocusEffect(load);
 
   const handleSave = async () => {
     if (!program || saving || saved) return;
@@ -151,7 +155,7 @@ export default function ProgramDetailScreen() {
 
       Alert.alert(
         "Program saved!",
-        "Your program and its routines are saved in Train. Choose a routine there to start a workout.",
+        "Saved to your library. Follow this program to get a schedule and track your progress.",
         [
           { text: "Stay here" },
           {
@@ -231,7 +235,7 @@ export default function ProgramDetailScreen() {
     <View className="flex-1 bg-bg">
       <ScrollView
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 140 + insets.bottom }}
+        contentContainerStyle={{ paddingBottom: 200 + insets.bottom }}
       >
         {/* Hero */}
         <View style={{ height: 280 }} className="bg-panel">
@@ -522,19 +526,20 @@ export default function ProgramDetailScreen() {
         </View>
       </ScrollView>
 
-      {/* Sticky save bar */}
+      {followOpen && <ProgramSetup program={program} onClose={() => setFollowOpen(false)} onSaved={result => { setFollowOpen(false); setSaved(true); router.push({ pathname: "/programs/[id]", params: { id: result.enrollment.id } }); }} />}
+
+      {/* Follow the plan, or bookmark it for later. */}
       <View
         className="absolute bottom-0 left-0 right-0 border-t border-border bg-bg px-5 pt-4"
         style={{ paddingBottom: Math.max(insets.bottom, 16) }}
       >
+        <Pressable accessibilityRole="button" onPress={() => following?.enrollment.program_id === program.id ? router.push({ pathname: "/programs/[id]", params: { id: following.enrollment.id } }) : setFollowOpen(true)} className="mb-2 h-14 flex-row items-center justify-center rounded-full bg-brand"><MaterialCommunityIcons name="calendar-check-outline" size={22} color={C.bg} /><Txt weight="bold" className="ml-2 text-base text-bg">{following?.enrollment.program_id === program.id ? "View my progress" : "Follow program"}</Txt></Pressable>
         <Pressable
           onPress={() => void handleSave()}
           disabled={saving || saved}
           accessibilityRole="button"
           accessibilityLabel={saved ? "Program saved" : "Save program"}
-          className={`h-14 flex-row items-center justify-center rounded-full ${
-            saved ? "bg-green-500/15" : "bg-brand"
-          }`}
+          className="h-11 flex-row items-center justify-center rounded-full bg-panel"
         >
           {saving ? (
             <ActivityIndicator color={C.bg} />
@@ -543,14 +548,14 @@ export default function ProgramDetailScreen() {
               <MaterialCommunityIcons
                 name={saved ? "check-circle" : "bookmark-plus-outline"}
                 size={22}
-                color={saved ? GREEN : C.bg}
+                color={saved ? GREEN : C.muted}
               />
               <Txt
                 weight="bold"
                 className="ml-2 text-base"
-                style={{ color: saved ? GREEN : C.bg }}
+                style={{ color: saved ? GREEN : C.muted }}
               >
-                {saved ? "Saved to Train" : "Save program"}
+                {saved ? "Saved to library" : "Save for later"}
               </Txt>
             </>
           )}

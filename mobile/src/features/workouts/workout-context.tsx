@@ -34,7 +34,7 @@ type WorkoutContextType = {
   restTimer: RestTimer | null;
 
   refresh: () => Promise<void>;
-  start: (templateId?: string) => Promise<void>;
+  start: (templateId?: string, programSlotId?: string) => Promise<void>;
   addExercise: (exerciseId: string) => Promise<void>;
   addExercises: (exerciseIds: string[]) => Promise<void>;
   removeExercise: (exerciseItemId: string) => Promise<void>;
@@ -136,8 +136,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     [],
   );
 
-  const start = async (templateId?: string) => {
-    await run(() => workoutApi.start(templateId));
+  const start = async (templateId?: string, programSlotId?: string) => {
+    await run(() => workoutApi.start(templateId, programSlotId));
     failedWrites.current.clear();
     setSyncError(false);
   };

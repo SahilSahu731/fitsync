@@ -35,25 +35,25 @@ function SettingRow({
       <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl">
         <MaterialCommunityIcons
           name={icon}
-          size={23}
+          size={28}
           color={"white"}
         />
       </View>
 
       <View className="flex-1">
-        <Txt weight="bold" className="text-[15px]">
+        <Txt weight="semibold" className="text-[18px]">
           {title}
         </Txt>
 
-        <Txt className="mt-1 text-xs text-muted">
+        <Txt className="mt-1 text-sm text-muted">
           {subtitle}
         </Txt>
       </View>
 
       <MaterialCommunityIcons
         name="chevron-right"
-        size={24}
-        color={C.muted}
+        size={26}
+        color={"white"}
       />
     </Pressable>
   );
@@ -259,9 +259,9 @@ export default function ProfileScreen() {
         <View className="ml-4 flex-1">
           <Txt
             weight="medium"
-            className="text-xs text-bg"
+            className="text-sm text-bg"
           >
-            CURRENT FITNESS GOAL
+            Current Fitness Goal
           </Txt>
 
           <Txt
@@ -277,7 +277,7 @@ export default function ProfileScreen() {
         weight="extra"
         className="mb-4 mt-8 text-xl"
       >
-        ACCOUNT
+        Account
       </Txt>
 
       <SettingRow
@@ -297,7 +297,7 @@ export default function ProfileScreen() {
       <Pressable
         disabled={busy}
         onPress={logout}
-        className="mt-3 flex-row items-center justify-center rounded-2xl border border-[#693C35] bg-[#f03434] py-4"
+        className="mt-3 flex-row mb-8 items-center justify-center rounded-2xl border border-[#693C35] bg-[#f03434] py-4"
       >
         <MaterialCommunityIcons
           name="logout"

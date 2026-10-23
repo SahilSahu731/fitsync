@@ -1,3 +1,4 @@
+import { programError } from "../program-follow/program.service.js";
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
 
@@ -318,7 +319,7 @@ export async function deleteSavedProgram(userId: string, id: string) {
     const ids = data.user_saved_program_routines.map(row => row.template_id);
     if (ids.length) {
         const { error: deleteError } = await db.from("workout_templates").delete().in("id", ids).eq("user_id", userId);
-        checkDbError(deleteError, "remove program routines");
+        programError(deleteError, "remove program routines");
     }
     const { error: removeError } = await db.from("user_saved_programs").delete().eq("id", id).eq("user_id", userId);
     checkDbError(removeError, "remove saved program");

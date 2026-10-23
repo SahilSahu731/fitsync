@@ -7,6 +7,7 @@ import accountRoutes from "./modules/account/account.routes.js";
 import exerciseRoutes from "./modules/exercises/exercise.routes.js";
 import workoutRoutes from "./modules/workouts/workout.routes.js";
 import catalogAdminRoutes from "./modules/training-catalog/catalog.admin.routes.js";
+import programFollowRoutes from "./modules/program-follow/program.routes.js";
 import catalogRoutes from "./modules/training-catalog/catalog.routes.js";
 
 import {
@@ -32,6 +33,7 @@ app.use("/api/me", profileRoutes);
 app.use("/api/me", accountRoutes);
 app.use("/api/exercises", exerciseRoutes);
 app.use("/api/workouts", workoutRoutes);
+app.use("/api/program-follow", programFollowRoutes);
 app.use("/api/catalog/admin", catalogAdminRoutes);
 app.use("/api/catalog", catalogRoutes);
 

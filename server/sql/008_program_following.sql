@@ -114,6 +114,7 @@ BEGIN
     JOIN public.training_routines r ON r.id=d.routine_id
     JOIN public.user_saved_program_routines l ON l.saved_program_id=saved_id AND l.source_routine_id=r.id;
   INSERT INTO public.program_events(enrollment_id,event_type) VALUES(enrollment_id,'started');
+  UPDATE public.user_settings SET workout_reminders=p_reminder_enabled WHERE user_id=p_user_id;
   RETURN enrollment_id;
 END $$;
 
@@ -127,6 +128,21 @@ BEGIN
   UPDATE public.program_enrollments SET status='stopped',ended_at=now() WHERE id=p_enrollment_id AND user_id=p_user_id AND status='active';
   IF NOT FOUND THEN RAISE EXCEPTION 'Active program not found' USING ERRCODE='P0002'; END IF;
   INSERT INTO public.program_events(enrollment_id,event_type) VALUES(p_enrollment_id,'stopped');
+END $$;
+
+CREATE FUNCTION public.update_fitsync_program_reminders(p_user_id uuid,p_enrollment_id uuid,p_timezone text,p_enabled boolean,p_hour integer,p_minute integer)
+RETURNS void LANGUAGE plpgsql SET search_path='' AS $$
+BEGIN
+  PERFORM 1 FROM public.app_users WHERE id=p_user_id FOR UPDATE;
+  IF NOT EXISTS(SELECT 1 FROM pg_catalog.pg_timezone_names WHERE name=p_timezone) THEN
+    RAISE EXCEPTION 'Invalid timezone' USING ERRCODE='22023';
+  END IF;
+  UPDATE public.program_enrollments SET timezone=p_timezone,reminder_enabled=p_enabled,reminder_hour=p_hour,reminder_minute=p_minute
+    WHERE id=p_enrollment_id AND user_id=p_user_id AND status='active';
+  IF NOT FOUND THEN RAISE EXCEPTION 'Active program not found' USING ERRCODE='P0002'; END IF;
+  UPDATE public.user_settings SET workout_reminders=p_enabled WHERE user_id=p_user_id;
+  INSERT INTO public.program_events(enrollment_id,event_type,details) VALUES(p_enrollment_id,'reminders_updated',
+    jsonb_build_object('enabled',p_enabled,'hour',p_hour,'minute',p_minute,'timezone',p_timezone));
 END $$;
 
 CREATE FUNCTION public.guard_fitsync_program_workout() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
@@ -147,13 +163,13 @@ END $$;
 CREATE TRIGGER guard_program_workout BEFORE INSERT OR UPDATE OF status ON public.workout_sessions FOR EACH ROW EXECUTE FUNCTION public.guard_fitsync_program_workout();
 
 CREATE FUNCTION public.complete_fitsync_program() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
-DECLARE enrollment_id uuid;
+DECLARE v_enrollment_id uuid;
 BEGIN
   IF NEW.program_slot_id IS NULL OR NEW.status<>'completed' THEN RETURN NEW; END IF;
-  SELECT s.enrollment_id INTO enrollment_id FROM public.program_workout_slots s WHERE s.id=NEW.program_slot_id;
-  IF NOT EXISTS(SELECT 1 FROM public.program_workout_slots s WHERE s.enrollment_id=enrollment_id AND NOT EXISTS(SELECT 1 FROM public.workout_sessions w WHERE w.program_slot_id=s.id AND w.status='completed')) THEN
-    UPDATE public.program_enrollments SET status='completed',ended_at=now() WHERE id=enrollment_id AND status='active';
-    IF FOUND THEN INSERT INTO public.program_events(enrollment_id,event_type) VALUES(enrollment_id,'completed'); END IF;
+  SELECT s.enrollment_id INTO v_enrollment_id FROM public.program_workout_slots s WHERE s.id=NEW.program_slot_id;
+  IF NOT EXISTS(SELECT 1 FROM public.program_workout_slots s WHERE s.enrollment_id=v_enrollment_id AND NOT EXISTS(SELECT 1 FROM public.workout_sessions w WHERE w.program_slot_id=s.id AND w.status='completed')) THEN
+    UPDATE public.program_enrollments SET status='completed',ended_at=now() WHERE id=v_enrollment_id AND status='active';
+    IF FOUND THEN INSERT INTO public.program_events(enrollment_id,event_type) VALUES(v_enrollment_id,'completed'); END IF;
   END IF;
   RETURN NEW;
 END $$;
@@ -161,7 +177,7 @@ CREATE TRIGGER complete_program AFTER UPDATE OF status ON public.workout_session
 
 CREATE FUNCTION public.guard_followed_template_delete() RETURNS trigger LANGUAGE plpgsql SET search_path='' AS $$
 BEGIN
-  IF EXISTS(SELECT 1 FROM public.program_workout_slots s JOIN public.program_enrollments e ON e.id=s.enrollment_id WHERE s.template_id=OLD.id AND e.status='active') THEN
+  IF EXISTS(SELECT 1 FROM public.app_users WHERE id=OLD.user_id) AND EXISTS(SELECT 1 FROM public.program_workout_slots s JOIN public.program_enrollments e ON e.id=s.enrollment_id WHERE s.template_id=OLD.id AND e.status='active') THEN
     RAISE EXCEPTION 'Stop following this program before deleting its routines.' USING ERRCODE='23514';
   END IF;
   RETURN OLD;
@@ -170,14 +186,15 @@ CREATE TRIGGER protect_followed_routine BEFORE DELETE ON public.workout_template
 
 CREATE TABLE public.program_push_devices (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL REFERENCES public.app_users(id) ON DELETE CASCADE,
+  session_id uuid NOT NULL REFERENCES public.auth_sessions(id) ON DELETE CASCADE,
   token text NOT NULL UNIQUE, enabled boolean NOT NULL DEFAULT true, updated_at timestamptz NOT NULL DEFAULT now()
 );
 CREATE TABLE public.program_reminder_jobs (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(), enrollment_id uuid NOT NULL REFERENCES public.program_enrollments(id) ON DELETE CASCADE,
   device_id uuid NOT NULL REFERENCES public.program_push_devices(id) ON DELETE CASCADE,
-  local_date date NOT NULL, status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','sending','accepted','delivered','failed','cancelled')),
+  local_date date NOT NULL, status text NOT NULL DEFAULT 'pending' CHECK(status IN ('pending','sending','accepted','sent','failed','cancelled')),
   created_at timestamptz NOT NULL DEFAULT now(), attempted_at timestamptz, ticket_id text, error_code text,
-  UNIQUE(enrollment_id,device_id,local_date)
+  UNIQUE(device_id,local_date)
 );
 CREATE INDEX program_pending_reminders ON public.program_reminder_jobs(created_at) WHERE status='pending';
 CREATE FUNCTION public.queue_fitsync_program_reminders(p_now timestamptz DEFAULT now()) RETURNS integer LANGUAGE plpgsql SET search_path='' AS $$
@@ -187,11 +204,13 @@ BEGIN
     SELECT e.id,d.id,(p_now AT TIME ZONE e.timezone)::date
     FROM public.program_enrollments e JOIN public.program_push_devices d ON d.user_id=e.user_id AND d.enabled
     WHERE e.status='active' AND e.reminder_enabled
+    AND EXISTS(SELECT 1 FROM public.auth_sessions auth WHERE auth.id=d.session_id AND auth.user_id=e.user_id AND auth.revoked_at IS NULL AND auth.expires_at>p_now)
+    AND EXISTS(SELECT 1 FROM public.user_settings us WHERE us.user_id=e.user_id AND us.workout_reminders)
     AND (p_now AT TIME ZONE e.timezone)::date>=e.start_date
     AND (p_now AT TIME ZONE e.timezone)::time>=make_time(e.reminder_hour,e.reminder_minute,0)
     AND p_now-(((p_now AT TIME ZONE e.timezone)::date+make_time(e.reminder_hour,e.reminder_minute,0)) AT TIME ZONE e.timezone)<interval '6 hours'
     AND NOT EXISTS(SELECT 1 FROM public.workout_sessions w JOIN public.program_workout_slots s ON s.id=w.program_slot_id WHERE s.enrollment_id=e.id AND w.status='completed' AND (w.finished_at AT TIME ZONE e.timezone)::date=(p_now AT TIME ZONE e.timezone)::date)
-    ON CONFLICT(enrollment_id,device_id,local_date) DO NOTHING;
+    ON CONFLICT(device_id,local_date) DO NOTHING;
   GET DIAGNOSTICS queued=ROW_COUNT;
   RETURN queued;
 END $$;
@@ -207,7 +226,7 @@ DO $$ DECLARE t text; BEGIN
     EXECUTE format('GRANT ALL ON public.%I TO service_role',t);
   END LOOP;
 END $$;
-REVOKE ALL ON FUNCTION public.follow_fitsync_program(uuid,uuid,date,text,boolean,integer,integer,uuid), public.stop_fitsync_program(uuid,uuid), public.queue_fitsync_program_reminders(timestamptz), public.claim_fitsync_program_reminders(integer), public.guard_fitsync_program_workout(), public.complete_fitsync_program(), public.guard_followed_template_delete() FROM PUBLIC,anon,authenticated;
-GRANT EXECUTE ON FUNCTION public.follow_fitsync_program(uuid,uuid,date,text,boolean,integer,integer,uuid), public.stop_fitsync_program(uuid,uuid), public.queue_fitsync_program_reminders(timestamptz), public.claim_fitsync_program_reminders(integer) TO service_role;
+REVOKE ALL ON FUNCTION public.follow_fitsync_program(uuid,uuid,date,text,boolean,integer,integer,uuid), public.stop_fitsync_program(uuid,uuid), public.update_fitsync_program_reminders(uuid,uuid,text,boolean,integer,integer), public.queue_fitsync_program_reminders(timestamptz), public.claim_fitsync_program_reminders(integer), public.guard_fitsync_program_workout(), public.complete_fitsync_program(), public.guard_followed_template_delete() FROM PUBLIC,anon,authenticated;
+GRANT EXECUTE ON FUNCTION public.follow_fitsync_program(uuid,uuid,date,text,boolean,integer,integer,uuid), public.stop_fitsync_program(uuid,uuid), public.update_fitsync_program_reminders(uuid,uuid,text,boolean,integer,integer), public.queue_fitsync_program_reminders(timestamptz), public.claim_fitsync_program_reminders(integer) TO service_role;
 COMMIT;
 NOTIFY pgrst,'reload schema';

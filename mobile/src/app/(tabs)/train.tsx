@@ -1,3 +1,4 @@
+import { ActiveProgramCard } from "@/src/features/program-follow/active-program-card";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useCallback, useState } from "react";
 
@@ -637,6 +638,8 @@ export default function TrainScreen() {
             Train
           </Txt>
         </View>
+
+        <ActiveProgramCard />
 
         {/* Hero: resume or start */}
 

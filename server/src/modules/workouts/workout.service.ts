@@ -1,6 +1,7 @@
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
 import type { CreateTemplateInput } from "./workout.schema.js";
+import { resolveProgramSlot, programError } from "../program-follow/program.service.js";
 import { planPositionChanges } from "./workout.order.js";
 
 function ensure<T>(
@@ -201,7 +202,7 @@ export async function deleteTemplate(userId: string, id: string) {
         .eq("id", id)
         .eq("user_id", userId);
 
-    checkDbError(error, "delete workout template");
+    programError(error, "delete workout template");
 }
 
 export async function getSession(userId: string, id: string) {
@@ -267,7 +268,8 @@ export async function getActiveSession(userId: string) {
 
 export async function startWorkout(
     userId: string,
-    templateId?: string
+    templateId?: string,
+    programSlotId?: string
 ) {
     const active = await getActiveSession(userId);
 
@@ -275,15 +277,16 @@ export async function startWorkout(
         throw new ApiError(409, "Finish or discard your current workout.");
     }
 
-    const template = templateId
-        ? await getTemplate(userId, templateId)
-        : null;
+    const programSlot = await resolveProgramSlot(userId, templateId, programSlotId);
+    const resolvedTemplateId = programSlot?.template_id ?? templateId;
+    const template = resolvedTemplateId ? await getTemplate(userId, resolvedTemplateId) : null;
 
     const { data: session, error } = await db
         .from("workout_sessions")
         .insert({
             user_id: userId,
-            template_id: templateId ?? null,
+            template_id: resolvedTemplateId ?? null,
+            ...(programSlot ? { program_slot_id: programSlot.id } : {}),
             name: template?.name ?? "Quick Workout",
             notes: template?.description ?? ""
         })
@@ -294,7 +297,7 @@ export async function startWorkout(
         throw new ApiError(409, "You already have an active workout.");
     }
 
-    checkDbError(error, "start workout");
+    programError(error, "start workout");
 
     try {
         if (template) {
@@ -639,7 +642,7 @@ export async function finishWorkout(
         .eq("user_id", userId)
         .eq("status", "active");
 
-    checkDbError(error, "finish workout");
+    programError(error, "finish workout");
 
     return getSession(userId, sessionId);
 }

@@ -1,3 +1,4 @@
+import { unregisterProgramNotifications } from "@/src/features/program-follow/notifications";
 import React, {
   createContext,
   useCallback,
@@ -281,6 +282,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [applyMe]);
 
   const signOut = useCallback(async () => {
+    await unregisterProgramNotifications().catch(() => console.warn("Could not unregister program reminders on this device."));
     try {
       await apiRequest("/auth/logout", {
         method: "POST",

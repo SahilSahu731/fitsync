@@ -1,3 +1,5 @@
+import { useProgram } from "@/src/features/program-follow/program-context";
+import { ProgramSetup } from "@/src/features/program-follow/program-setup";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useState } from "react";
 
@@ -27,6 +29,8 @@ export default function SettingsScreen() {
   const { user, settings, updateSettings, redoOnboarding, signOut } =
     useSession();
 
+  const { active: program } = useProgram();
+  const [remindersOpen, setRemindersOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   if (!user) {
@@ -179,18 +183,18 @@ export default function SettingsScreen() {
           </Txt>
 
           <Txt className="mt-1 text-xs leading-4 text-muted">
-            Save your reminder preference.
+            Daily nudges for the program you follow.
           </Txt>
         </View>
 
         <Switch
           disabled={busy}
-          value={settings.workoutReminders}
-          onValueChange={(value) =>
-            saveSettings({
-              workoutReminders: value,
-            })
-          }
+          value={settings.workoutReminders && !!program?.enrollment.reminder_enabled}
+          onValueChange={(value) => {
+            if (!value) void saveSettings({ workoutReminders: false });
+            else if (program) setRemindersOpen(true);
+            else router.push("/explore/programs");
+          }}
           trackColor={{
             false: C.border,
             true: C.brand,
@@ -200,10 +204,12 @@ export default function SettingsScreen() {
       </View>
 
       <Txt className="mt-2 text-xs leading-5 text-muted">
-        Actual scheduled notifications will be added with the workout-reminder
-        engine in a later phase. This toggle currently saves your preference
-        only.
+        Choose the time in your program's reminder settings. Turning this off
+        silences daily program reminders on all your devices.
       </Txt>
+
+      {program && <Pressable onPress={() => setRemindersOpen(true)} className="self-start py-3"><Txt className="text-sm text-brand">Change reminder time</Txt></Pressable>}
+      {remindersOpen && program && <ProgramSetup enrollment={program.enrollment} onClose={() => setRemindersOpen(false)} onSaved={() => setRemindersOpen(false)} />}
 
       {/* Personal setup */}
 

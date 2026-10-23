@@ -123,10 +123,10 @@ export const workoutApi = {
   active: () =>
     apiRequest<WorkoutSession | null>("/workouts/active"),
 
-  start: (templateId?: string) =>
+  start: (templateId?: string, programSlotId?: string) =>
     apiRequest<WorkoutSession>("/workouts/start", {
       method: "POST",
-      json: templateId ? { templateId } : {}
+      json: { templateId, programSlotId }
     }),
 
   session: (id: string) =>

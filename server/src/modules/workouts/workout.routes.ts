@@ -65,13 +65,15 @@ router.get("/history", asyncHandler(async (req, res) => {
 
 router.post("/start", asyncHandler(async (req, res) => {
     const input = z.object({
-        templateId: z.uuid().optional()
+        templateId: z.uuid().optional(),
+        programSlotId: z.uuid().optional()
     }).parse(req.body);
 
     res.status(201).json(
         await service.startWorkout(
             getAuth(req).userId,
-            input.templateId
+            input.templateId,
+            input.programSlotId
         )
     );
 }));
