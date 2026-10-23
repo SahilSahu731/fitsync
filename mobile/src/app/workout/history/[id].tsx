@@ -85,10 +85,9 @@ export default function WorkoutHistoryDetail() {
   useEffect(() => {
     if (!id) return;
 
-    setError(false);
     workoutApi
       .session(id)
-      .then(setSession)
+      .then(value => { setError(false); setSession(value); })
       .catch((e) => {
         console.warn(e);
         setError(true);
@@ -261,6 +260,7 @@ export default function WorkoutHistoryDetail() {
         />
       </View>
 
+      {!!session.notes && <View className="mb-5 rounded-2xl bg-panel p-4"><Txt weight="bold">Workout notes</Txt><Txt className="mt-2 text-muted">{session.notes}</Txt></View>}
       {/* Exercises */}
       <View className="mb-3 mt-3 flex-row items-center justify-between">
         <Txt weight="bold" className="text-[20px]">
@@ -310,7 +310,7 @@ export default function WorkoutHistoryDetail() {
                   SET
                 </Txt>
                 <Txt className="flex-1 text-right text-[10px] tracking-wider text-muted">
-                  WEIGHT × REPS
+                  LOGGED PERFORMANCE
                 </Txt>
               </View>
 
@@ -362,12 +362,7 @@ export default function WorkoutHistoryDetail() {
                         />
                       ) : null}
 
-                      <Txt weight="semibold" className="text-[15px]">
-                        {set.weight_kg ?? "—"}
-                        <Txt className="text-xs text-muted"> kg </Txt>
-                        <Txt className="text-muted">× </Txt>
-                        {set.reps ?? "—"}
-                      </Txt>
+                      <View className="flex-1 items-end"><Txt weight="semibold" className="text-[15px]">{exercise.tracking_type === "duration" ? `${set.duration_seconds ?? "—"} sec` : exercise.tracking_type === "distance_duration" ? `${set.distance_meters ?? "—"} m · ${set.duration_seconds ?? "—"} sec` : exercise.tracking_type === "reps" ? `${set.reps ?? "—"} reps${set.weight_kg ? ` · +${set.weight_kg} kg` : ""}` : `${set.weight_kg ?? "—"} kg × ${set.reps ?? "—"}`}</Txt>{(set.rpe !== null || set.rir !== null) && <Txt className="mt-1 text-xs text-muted">{set.rpe !== null ? `RPE ${set.rpe}` : ""}{set.rir !== null ? ` · RIR ${set.rir}` : ""}</Txt>}{!!set.notes && <Txt className="mt-2 text-right text-xs text-muted">{set.notes}</Txt>}</View>
                     </View>
                   </View>
                 );

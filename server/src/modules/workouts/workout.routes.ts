@@ -8,6 +8,7 @@ import {
     createTemplateSchema,
     updateSetSchema,
     addSessionExerciseSchema,
+    addSessionExercisesSchema,
     addSessionSetSchema,
     finishWorkoutSchema
 } from "./workout.schema.js";
@@ -75,6 +76,11 @@ router.post("/start", asyncHandler(async (req, res) => {
     );
 }));
 
+router.patch("/sessions/:id", asyncHandler(async (req, res) => {
+    const { notes } = z.object({ notes: z.string().max(2000) }).parse(req.body);
+    res.json(await service.updateSessionNotes(getAuth(req).userId, idSchema.parse(req.params.id), notes));
+}));
+
 router.get("/sessions/:id", asyncHandler(async (req, res) => {
     res.json(
         await service.getSession(
@@ -82,6 +88,13 @@ router.get("/sessions/:id", asyncHandler(async (req, res) => {
             idSchema.parse(req.params.id)
         )
     );
+}));
+
+router.post("/sessions/:id/exercises/batch", asyncHandler(async (req, res) => {
+    const input = addSessionExercisesSchema.parse(req.body);
+    res.status(201).json(await service.addSessionExercises(
+        getAuth(req).userId, idSchema.parse(req.params.id), input.exerciseIds, input.restSeconds
+    ));
 }));
 
 router.post("/sessions/:id/exercises", asyncHandler(async (req, res) => {
@@ -123,7 +136,8 @@ router.patch(
                 getAuth(req).userId,
                 idSchema.parse(req.params.id),
                 idSchema.parse(req.params.setId),
-                input
+                input,
+                req.query.compact === "true"
             )
         );
     })

@@ -22,6 +22,7 @@ export type WorkoutSet = {
 };
 
 export type SessionExercise = {
+  exercises?: { primary_muscles: string[]; secondary_muscles: string[] };
   id: string;
   exercise_id: string;
   exercise_name: string;
@@ -33,6 +34,7 @@ export type SessionExercise = {
 };
 
 export type WorkoutSession = {
+  notes: string;
   id: string;
   name: string;
   status: "active" | "completed" | "discarded";
@@ -143,6 +145,11 @@ export const workoutApi = {
       }
     ),
 
+  addExercises: (sessionId: string, exerciseIds: string[]) =>
+    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/batch`, {
+      method: "POST", json: { exerciseIds }
+    }),
+
   addSet: (
     sessionId: string,
     exerciseItemId: string,
@@ -171,20 +178,22 @@ export const workoutApi = {
       notes?: string;
     }
   ) =>
-    apiRequest<WorkoutSession>(
-      `/workouts/sessions/${sessionId}/sets/${setId}`,
+    apiRequest<WorkoutSet>(
+      `/workouts/sessions/${sessionId}/sets/${setId}?compact=true`,
       {
         method: "PATCH",
         json: data
       }
     ),
 
-  finish: (id: string, elapsedSeconds?: number) =>
+  updateNotes: (id: string, notes: string) => apiRequest<{ notes: string }>(`/workouts/sessions/${id}`, { method: "PATCH", json: { notes } }),
+
+  finish: (id: string, elapsedSeconds?: number, notes = "") =>
     apiRequest<WorkoutSession>(
       `/workouts/sessions/${id}/finish`,
       {
         method: "POST",
-        json: { elapsedSeconds }
+        json: { elapsedSeconds, notes }
       }
     ),
 

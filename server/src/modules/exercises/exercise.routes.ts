@@ -19,6 +19,7 @@ import {
 import {
   getTaxonomies,
   listExercises,
+  listExercisePicker,
   getExercise,
   saveExercise,
   patchExercise,
@@ -77,6 +78,11 @@ router.get(
     res.json(await listExercises(filters, admin));
   })
 );
+
+router.get("/picker", asyncHandler(async (req, res) => {
+  const page = z.coerce.number().int().min(1).max(1000).default(1).parse(req.query.page);
+  res.json(await listExercisePicker(page));
+}));
 
 // Full exercise details.
 router.get(

@@ -47,6 +47,12 @@ export const addSessionExerciseSchema = z.object({
     restSeconds: z.number().int().min(0).max(900).default(90)
 });
 
+export const addSessionExercisesSchema = z.object({
+    exerciseIds: z.array(uuidSchema).min(1).max(50)
+        .refine(ids => new Set(ids).size === ids.length, "Select each exercise only once."),
+    restSeconds: z.number().int().min(0).max(900).default(90)
+});
+
 export const addSessionSetSchema = z.object({
     setType: setTypeSchema.default("normal"),
     weightKg: z.number().min(0).nullable().default(null),

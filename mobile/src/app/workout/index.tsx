@@ -6,6 +6,7 @@ import {
   Pressable,
   ScrollView,
   View,
+  TextInput,
 } from "react-native";
 
 import { useRouter } from "expo-router";
@@ -15,6 +16,8 @@ import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 
 import { useWorkout } from "@/src/features/workouts/workout-context";
+import { MuscleFocus } from "@/src/features/workouts/components/muscle-focus";
+import { WorkoutDrawer } from "@/src/features/workouts/components/workout-controls";
 import { SetRow } from "@/src/features/workouts/components/set-row";
 
 function formatTime(seconds: number) {
@@ -37,10 +40,16 @@ export default function LiveWorkoutScreen() {
     finish,
     discard,
     stopRest,
+    startRest,
+    pendingSaves,
+    syncError,
+    updateNotes,
   } = useWorkout();
 
-  // eslint-disable-next-line react-hooks/purity
-  const [now, setNow] = useState(Date.now());
+  const [now, setNow] = useState(() => Date.now());
+  const [focusedExercise, setFocusedExercise] = useState<string>();
+  const [notesOpen, setNotesOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState<string[]>([]);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -89,8 +98,8 @@ export default function LiveWorkoutScreen() {
             try {
               await finish();
               router.replace("/(tabs)/train");
-            } catch {
-              Alert.alert("Error", "Could not finish your workout.");
+            } catch (error) {
+              Alert.alert("Could not finish", error instanceof Error ? error.message : "Please try again.");
             }
           },
         },
@@ -171,7 +180,7 @@ export default function LiveWorkoutScreen() {
 
         <Pressable
           onPress={handleFinish}
-          disabled={busy}
+          disabled={busy || pendingSaves > 0}
           className="rounded-xl bg-white px-2 py-1"
         >
           <Txt weight="bold" className="text-lg text-bg">
@@ -180,26 +189,11 @@ export default function LiveWorkoutScreen() {
         </Pressable>
       </View>
 
-      <View className="mx-5 mb-4 rounded-2xl bg-panel p-4">
-        <View className="flex-row justify-between">
-          <Txt weight="semibold" className="text-sm">
-            WORKOUT PROGRESS
-          </Txt>
-
-          <Txt weight="bold" className="text-green-500">
-            {completedSets}/{totalSets}
-          </Txt>
-        </View>
-
-        <View className="mt-3 h-2 overflow-hidden rounded-full bg-elevated">
-          <View
-            className="h-full rounded-full bg-green-500"
-            style={{
-              width: `${totalSets ? (completedSets / totalSets) * 100 : 0}%`,
-            }}
-          />
-        </View>
+      <View className="mx-5 mb-3 flex-row items-center rounded-2xl bg-panel p-4">
+        <View className="flex-1"><View className="flex-row justify-between"><Txt weight="semibold" className="text-xs text-muted">SESSION PROGRESS</Txt><Txt weight="bold" className="text-green-400">{completedSets}/{totalSets}</Txt></View><View className="mt-3 h-2 overflow-hidden rounded-full bg-elevated"><View className="h-full rounded-full bg-green-400" style={{ width: `${totalSets ? completedSets / totalSets * 100 : 0}%` }} /></View><Txt className="mt-3 text-xs text-muted">{exercises.length} exercises · {Math.round(exercises.reduce((total, e) => total + e.workout_logged_sets.reduce((sum, s) => sum + (s.completed_at ? (s.weight_kg ?? 0) * (s.reps ?? 0) : 0), 0), 0)).toLocaleString()} kg volume</Txt><Txt className="mt-1 text-[10px] text-muted">{pendingSaves ? `Saving ${pendingSaves} update${pendingSaves > 1 ? "s" : ""}…` : syncError ? "Some updates failed · retry the marked sets" : "Updates saved"}</Txt></View>
+        <MuscleFocus exercises={exercises} currentId={focusedExercise} />
       </View>
+      <Pressable onPress={() => setNotesOpen(true)} className="mx-5 mb-4 flex-row items-center gap-2 rounded-xl bg-panel px-4 py-3"><MaterialCommunityIcons name="note-text-outline" color={C.muted} size={20} /><Txt className="flex-1 text-sm text-muted" numberOfLines={1}>{session.notes || "Add workout notes · energy, goals, how you feel"}</Txt><MaterialCommunityIcons name="chevron-right" size={20} color={C.muted} /></Pressable>
 
       {restRemaining > 0 && (
         <View className="mx-5 mb-4 flex-row items-center rounded-2xl bg-brand/10 p-4">
@@ -216,6 +210,7 @@ export default function LiveWorkoutScreen() {
             </Txt>
           </View>
 
+          <Pressable accessibilityLabel="Add thirty seconds rest" onPress={() => startRest(restRemaining + 30)} className="mr-2 rounded-xl bg-panel px-3 py-3"><Txt>+30s</Txt></Pressable>
           <Pressable
             onPress={stopRest}
             className="rounded-xl bg-panel px-4 py-3"
@@ -229,11 +224,13 @@ export default function LiveWorkoutScreen() {
 
       <ScrollView
         className="flex-1"
+        keyboardShouldPersistTaps="handled"
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingBottom: 120,
         }}
       >
+        <Txt className="mb-4 text-xs text-muted">Values are prefilled targets. Adjust to what you performed, then tap Log set to save. New sets reuse the previous set’s values.</Txt>
         {exercises.map((exercise, index) => {
           const sets = [...exercise.workout_logged_sets].sort(
             (a, b) => a.position - b.position,
@@ -244,7 +241,7 @@ export default function LiveWorkoutScreen() {
               key={exercise.id}
               className="mb-5 overflow-hidden rounded-[26px] bg-panel"
             >
-              <View className="flex-row items-center px-4 pb-3 pt-5">
+              <Pressable onPress={() => { setFocusedExercise(exercise.id); setCollapsed(rows => rows.includes(exercise.id) ? rows.filter(id => id !== exercise.id) : [...rows, exercise.id]); }} accessibilityLabel={`Expand or collapse ${exercise.exercise_name}`} className="flex-row items-center px-4 pb-3 pt-5">
                 <View className="h-11 w-11 items-center justify-center rounded-2xl bg-brand/10">
                   <MaterialCommunityIcons
                     name="dumbbell"
@@ -262,9 +259,10 @@ export default function LiveWorkoutScreen() {
                     EXERCISE {index + 1} · {sets.length} SETS
                   </Txt>
                 </View>
-              </View>
+                <MaterialCommunityIcons name={collapsed.includes(exercise.id) ? "chevron-down" : "chevron-up"} size={22} color={C.muted} />
+              </Pressable>
 
-              <View className="px-3">
+              {!collapsed.includes(exercise.id) && <><View className="px-3">
                 {sets.map((set, setIndex) => (
                   <SetRow
                     key={set.id}
@@ -272,12 +270,14 @@ export default function LiveWorkoutScreen() {
                     number={setIndex + 1}
                     restSeconds={exercise.rest_seconds}
                     trackingType={exercise.tracking_type}
+                    exerciseId={exercise.id}
+                    onFocus={setFocusedExercise}
                   />
                 ))}
               </View>
 
               <Pressable
-                onPress={() => void addSet(exercise.id)}
+                onPress={() => { setFocusedExercise(exercise.id); void addSet(exercise.id).catch(error => Alert.alert("Could not add set", error.message)); }}
                 disabled={busy}
                 className="mx-3 mb-4 mt-2 flex-row items-center justify-center rounded-xl border border-dashed border-border py-4"
               >
@@ -286,7 +286,7 @@ export default function LiveWorkoutScreen() {
                 <Txt weight="semibold" className="ml-2 text-brand">
                   ADD SET
                 </Txt>
-              </Pressable>
+              </Pressable></>}
             </View>
           );
         })}
@@ -308,6 +308,12 @@ export default function LiveWorkoutScreen() {
           </Txt>
         </Pressable>
       </ScrollView>
+      {notesOpen && <WorkoutNotes initial={session.notes ?? ""} onSave={updateNotes} onClose={() => setNotesOpen(false)} />}
     </View>
   );
+}
+
+function WorkoutNotes({ initial, onSave, onClose }: { initial: string; onSave: (notes: string) => Promise<void>; onClose: () => void }) {
+  const [notes, setNotes] = useState(initial); const [saving, setSaving] = useState(false); const [error, setError] = useState("");
+  return <WorkoutDrawer title="Workout notes" onClose={() => { if (!saving) onClose(); }}><Txt className="mb-3 text-muted">Keep context for your whole session. These notes are saved with your workout.</Txt><TextInput autoFocus multiline maxLength={2000} value={notes} onChangeText={setNotes} editable={!saving} placeholder="Energy, sleep, goals, technique reminders…" placeholderTextColor={C.muted} className="min-h-[150px] rounded-2xl bg-bg p-4 text-ink" />{!!error && <Txt className="mt-3 text-red-300">{error}</Txt>}<Pressable disabled={saving} onPress={async () => { setSaving(true); try { await onSave(notes); onClose(); } catch (e) { setError(e instanceof Error ? e.message : "Could not save notes."); } finally { setSaving(false); } }} className="mt-5 items-center rounded-2xl bg-brand p-4"><Txt weight="bold" className="text-bg">{saving ? "Saving…" : "Save workout notes"}</Txt></Pressable></WorkoutDrawer>;
 }

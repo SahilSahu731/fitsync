@@ -18,6 +18,8 @@ import { AppState } from "react-native";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 
+import { optimisticSet, replaceSet } from "./set-state";
+import { loadExercisePicker } from "../exercises/picker-cache";
 import { workoutApi, type WorkoutSession, type SetType } from "./api";
 
 type RestTimer = {
@@ -34,11 +36,15 @@ type WorkoutContextType = {
   refresh: () => Promise<void>;
   start: (templateId?: string) => Promise<void>;
   addExercise: (exerciseId: string) => Promise<void>;
+  addExercises: (exerciseIds: string[]) => Promise<void>;
   addSet: (exerciseItemId: string, type?: SetType) => Promise<void>;
   updateSet: (
     setId: string,
     data: Parameters<typeof workoutApi.updateSet>[2],
   ) => Promise<void>;
+  pendingSaves: number;
+  syncError: boolean;
+  updateNotes: (notes: string) => Promise<void>;
   finish: () => Promise<void>;
   discard: () => Promise<void>;
   startRest: (seconds: number) => void;
@@ -54,6 +60,17 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  const [pendingSaves, setPendingSaves] = useState(0);
+  const pending = useRef(new Map<string, Promise<void>>());
+  const failedWrites = useRef(new Set<string>());
+  const [syncError, setSyncError] = useState(false);
+
+  // Warm the small search index while the user is training, before opening Add.
+  const activeSessionId = session?.id;
+  useEffect(() => {
+    if (activeSessionId) void loadExercisePicker().catch(() => {});
+  }, [activeSessionId]);
+
 
   const [restTimer, setRestTimer] = useState<RestTimer | null>(null);
 
@@ -65,7 +82,9 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const refresh = useCallback(async () => {
     try {
+      await Promise.allSettled([...pending.current.values()]);
       const result = await workoutApi.active();
+      if (pending.current.size) return;
       setSession(result);
     } finally {
       setLoading(false);
@@ -105,6 +124,7 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
       setBusy(true);
 
       try {
+        await Promise.all([...pending.current.values()]);
         const result = await operation();
         setSession(result);
       } finally {
@@ -116,6 +136,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const start = async (templateId?: string) => {
     await run(() => workoutApi.start(templateId));
+    failedWrites.current.clear();
+    setSyncError(false);
   };
 
   const addExercise = async (exerciseId: string) => {
@@ -124,19 +146,60 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     await run(() => workoutApi.addExercise(session.id, exerciseId));
   };
 
+  const addExercises = async (exerciseIds: string[]) => {
+    if (!session) throw new Error("No active workout.");
+    await run(() => workoutApi.addExercises(session.id, exerciseIds));
+  };
+
   const addSet = async (exerciseItemId: string, type: SetType = "normal") => {
     if (!session) return;
 
     await run(() => workoutApi.addSet(session.id, exerciseItemId, type));
   };
 
-  const updateSet = async (
-    setId: string,
-    data: Parameters<typeof workoutApi.updateSet>[2],
-  ) => {
-    if (!session) return;
+  const updateSet = async (setId: string, data: Parameters<typeof workoutApi.updateSet>[2]) => {
+    if (!session) throw new Error("No active workout.");
+    const sessionId = session.id;
+    const previous = session.workout_session_exercises.flatMap(e => e.workout_logged_sets).find(row => row.id === setId);
+    if (!previous) throw new Error("Set no longer exists.");
+    setSession(current => current?.id === sessionId ? replaceSet(current, setId, optimisticSet(previous, data)) : current);
+    setPendingSaves(value => value + 1);
+    const operation = (pending.current.get(setId) ?? Promise.resolve()).catch(() => {}).then(async () => {
+      try {
+        const saved = await workoutApi.updateSet(sessionId, setId, data);
+        if (pending.current.get(setId) === operation) {
+          failedWrites.current.delete(setId);
+          setSyncError(failedWrites.current.size > 0);
+          setSession(current => current?.id === sessionId ? replaceSet(current, setId, saved) : current);
+        }
+      } catch (error) {
+        if (pending.current.get(setId) === operation) {
+          failedWrites.current.add(setId);
+          setSyncError(true);
+          setSession(current => current?.id === sessionId ? replaceSet(current, setId, previous) : current);
+        }
+        throw error;
+      }
+    });
+    pending.current.set(setId, operation);
+    try { await operation; } finally {
+      if (pending.current.get(setId) === operation) pending.current.delete(setId);
+      setPendingSaves(value => value - 1);
+    }
+  };
 
-    await run(() => workoutApi.updateSet(session.id, setId, data));
+  const updateNotes = async (notes: string) => {
+    if (!session) return;
+    const sessionId = session.id;
+    const operation = workoutApi.updateNotes(sessionId, notes).then(() => {
+      setSession(current => current?.id === sessionId ? { ...current, notes } : current);
+    });
+    pending.current.set("notes", operation);
+    setPendingSaves(value => value + 1);
+    try { await operation; } finally {
+      if (pending.current.get("notes") === operation) pending.current.delete("notes");
+      setPendingSaves(value => value - 1);
+    }
   };
 
   const startRest = (seconds: number) => {
@@ -164,13 +227,15 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
 
   const finish = async () => {
     if (!session) return;
+    await Promise.all([...pending.current.values()]);
+    if (failedWrites.current.size) throw new Error("Some sets were not saved. Retry their updates before finishing.");
 
     const elapsed = Math.floor(
       (Date.now() - new Date(session.started_at).getTime()) / 1000,
     );
 
     await run(async () => {
-      await workoutApi.finish(session.id, elapsed);
+      await workoutApi.finish(session.id, elapsed, session.notes);
       return null;
     });
 
@@ -194,10 +259,14 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         session,
         loading,
         busy,
+        pendingSaves,
+        syncError,
+        updateNotes,
         restTimer,
         refresh,
         start,
         addExercise,
+        addExercises,
         addSet,
         updateSet,
         finish,

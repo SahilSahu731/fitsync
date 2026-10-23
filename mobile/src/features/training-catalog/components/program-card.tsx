@@ -36,25 +36,19 @@ export function ProgramCard({
 
       <View className="p-4">
         <View className="flex-row items-center justify-between">
-          <Txt weight="bold" className="flex-1 text-[19px]">
+          <Txt weight="bold" className="flex-1 text-[24px]">
             {program.name}
           </Txt>
-
-          <MaterialCommunityIcons
-            name="arrow-top-right"
-            size={22}
-            color={C.brand}
-          />
         </View>
 
-        <Txt className="mt-1 text-sm text-muted">
+        <Txt className="mt-1 text-sm text-white">
           {program.tagline}
         </Txt>
 
-        <View className="mt-4 flex-row flex-wrap gap-2">
+        <View className="mt-4 flex-row flex-wrap gap-1">
           {[
             program.level,
-            `${program.days_per_week} days/week`,
+            `${program.days_per_week} days`,
             program.equipment,
             `${program.duration_weeks} weeks`
           ].map(label => (

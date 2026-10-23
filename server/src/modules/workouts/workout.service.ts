@@ -33,6 +33,15 @@ async function assertActive(userId: string, sessionId: string) {
 }
 
 type MediaRow = { kind: string; delivery_url: string | null; sort_order: number };
+type SessionExerciseWithMuscles = {
+    [key: string]: unknown;
+    exercises: {
+        exercise_muscles: {
+            role: string;
+            exercise_muscle_groups: { code: string } | null;
+        }[];
+    } | null;
+};
 
 // Cover image: catalog routine image if it came from Explore/program,
 // otherwise the first exercise's demo image.
@@ -202,6 +211,7 @@ export async function getSession(userId: string, id: string) {
       *,
       workout_session_exercises(
         *,
+        exercises(exercise_muscles(role,exercise_muscle_groups(code))),
         workout_logged_sets(*)
       )
     `)
@@ -210,7 +220,27 @@ export async function getSession(userId: string, id: string) {
         .single();
 
     checkDbError(error, "load workout session");
-    return data;
+    return {
+        ...data,
+        workout_session_exercises: (data.workout_session_exercises ?? []).map((item: SessionExerciseWithMuscles) => {
+            // Muscle arrays belong to exercise_catalog, not the exercises table.
+            // Keep the mobile response shape while reading the underlying relations.
+            const muscles = item.exercises?.exercise_muscles ?? [];
+            const codesFor = (role: string) => muscles
+                .filter(muscle => muscle.role === role)
+                .flatMap(muscle => muscle.exercise_muscle_groups?.code
+                    ? [muscle.exercise_muscle_groups.code]
+                    : []);
+
+            return {
+                ...item,
+                exercises: {
+                    primary_muscles: codesFor("primary"),
+                    secondary_muscles: codesFor("secondary")
+                }
+            };
+        })
+    };
 }
 
 export async function getActiveSession(userId: string) {
@@ -269,7 +299,8 @@ export async function startWorkout(
                     item.exercise_id,
                     item.rest_seconds,
                     [...item.workout_template_sets]
-                        .sort((a, b) => a.position - b.position)
+                        .sort((a, b) => a.position - b.position),
+                    false
                 );
             }
         }
@@ -286,6 +317,44 @@ export async function startWorkout(
     return getSession(userId, session.id);
 }
 
+export async function addSessionExercises(
+    userId: string, sessionId: string, exerciseIds: string[], restSeconds = 90
+) {
+    await assertActive(userId, sessionId);
+    const [catalog, existing] = await Promise.all([
+        db.from("exercises").select("id,name,tracking_type").in("id", exerciseIds).eq("status", "published"),
+        db.from("workout_session_exercises").select("exercise_id,position").eq("session_id", sessionId)
+    ]);
+    checkDbError(catalog.error, "validate selected exercises");
+    checkDbError(existing.error, "load workout exercises");
+    const available = catalog.data ?? [];
+    if (available.length !== exerciseIds.length) throw new ApiError(400, "Some selected exercises are unavailable. Refresh the list and try again.");
+    const alreadyAdded = new Set((existing.data ?? []).map(row => row.exercise_id));
+    const ids = exerciseIds.filter(id => !alreadyAdded.has(id));
+    // Retrying after a lost response must not duplicate the selected exercises.
+    if (!ids.length) return getSession(userId, sessionId);
+    const firstPosition = Math.max(-1, ...(existing.data ?? []).map(row => row.position)) + 1;
+    const rows = ids.map((id, index) => {
+        const exercise = available.find(row => row.id === id)!;
+        return {
+            session_id: sessionId, exercise_id: id, exercise_name: exercise.name,
+            tracking_type: exercise.tracking_type, position: firstPosition + index, rest_seconds: restSeconds
+        };
+    });
+    const inserted = await db.from("workout_session_exercises").insert(rows).select("id");
+    checkDbError(inserted.error, "add selected exercises");
+    const itemIds = (inserted.data ?? []).map(row => row.id);
+    const sets = await db.from("workout_logged_sets").insert(itemIds.map(id => ({
+        session_exercise_id: id, position: 0, set_type: "normal"
+    })));
+    if (sets.error) {
+        const cleanup = await db.from("workout_session_exercises").delete().eq("session_id", sessionId).in("id", itemIds);
+        checkDbError(cleanup.error, "remove incomplete exercise additions");
+        checkDbError(sets.error, "create selected exercise sets");
+    }
+    return getSession(userId, sessionId);
+}
+
 export async function addSessionExercise(
     userId: string,
     sessionId: string,
@@ -296,7 +365,8 @@ export async function addSessionExercise(
         target_weight: number | null;
         target_reps: number | null;
         target_duration_seconds: number | null;
-    }>
+    }>,
+    hydrate = true
 ) {
     await assertActive(userId, sessionId);
 
@@ -366,7 +436,7 @@ export async function addSessionExercise(
         checkDbError(setError, "create exercise sets");
     }
 
-    return getSession(userId, sessionId);
+    return hydrate ? getSession(userId, sessionId) : null;
 }
 
 export async function addSet(
@@ -393,7 +463,7 @@ export async function addSet(
 
     const { data: sets, error: setsError } = await db
         .from("workout_logged_sets")
-        .select("position")
+        .select("position,weight_kg,reps,duration_seconds,distance_meters")
         .eq("session_exercise_id", exerciseItemId)
         .order("position", { ascending: false })
         .limit(1);
@@ -408,8 +478,10 @@ export async function addSet(
             session_exercise_id: exerciseItemId,
             position,
             set_type: input.setType,
-            weight_kg: input.weightKg,
-            reps: input.reps
+            weight_kg: input.weightKg ?? sets?.[0]?.weight_kg ?? null,
+            reps: input.reps ?? sets?.[0]?.reps ?? null,
+            duration_seconds: sets?.[0]?.duration_seconds ?? null,
+            distance_meters: sets?.[0]?.distance_meters ?? null
         });
 
     checkDbError(insertError, "add workout set");
@@ -421,7 +493,8 @@ export async function updateSet(
     userId: string,
     sessionId: string,
     setId: string,
-    input: Record<string, unknown>
+    input: Record<string, unknown>,
+    compact = false
 ) {
     await assertActive(userId, sessionId);
 
@@ -470,14 +543,14 @@ export async function updateSet(
             : null;
     }
 
-    const { error } = await db
+    const { data: savedSet, error } = await db
         .from("workout_logged_sets")
         .update(update)
-        .eq("id", setId);
+        .eq("id", setId).select("*").single();
 
     checkDbError(error, "update workout set");
 
-    return getSession(userId, sessionId);
+    return compact ? savedSet : getSession(userId, sessionId);
 }
 
 export async function finishWorkout(
@@ -534,4 +607,11 @@ export async function renameTemplate(userId: string, id: string, name: string) {
     const { error } = await db.from("workout_templates").update({ name }).eq("id", id).eq("user_id", userId);
     checkDbError(error, "rename routine");
     return { id, name };
+}
+
+export async function updateSessionNotes(userId: string, id: string, notes: string) {
+    await assertActive(userId, id);
+    const { error } = await db.from("workout_sessions").update({ notes }).eq("id", id).eq("user_id", userId).eq("status", "active");
+    checkDbError(error, "save workout notes");
+    return { notes };
 }

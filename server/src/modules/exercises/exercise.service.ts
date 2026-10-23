@@ -206,6 +206,33 @@ export async function listExercises(
   };
 }
 
+// Small, paginated index for instant client-side workout search.
+// Avoid loading instructions and other detail-only fields for every keystroke.
+export async function listExercisePicker(page: number) {
+  const pageSize = 500;
+  const { data, error } = await db.from("exercise_catalog")
+    .select("id,name,tracking_type,region_label,equipment,primary_muscles,secondary_muscles,media")
+    .eq("status", "published")
+    .order("name").order("id")
+    .range((page - 1) * pageSize, page * pageSize - 1);
+  checkDbError(error, "load exercise picker");
+  return {
+    items: (data ?? []).map(row => {
+      const media = (row.media ?? []) as CatalogMedia[];
+      const image = media.find(item => item.kind === "image");
+      return {
+        id: row.id, name: row.name, trackingType: row.tracking_type,
+        regionLabel: row.region_label, equipment: row.equipment ?? [],
+        primaryMuscles: row.primary_muscles ?? [], secondaryMuscles: row.secondary_muscles ?? [],
+        imageUrl: image ? (image.provider === "supabase"
+          ? db.storage.from(IMAGE_BUCKET).getPublicUrl(image.path).data.publicUrl
+          : image.url) : null
+      };
+    }),
+    hasMore: data?.length === pageSize
+  };
+}
+
 export async function getExercise(
   idOrSlug: string,
   admin = false
