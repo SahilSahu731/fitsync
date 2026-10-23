@@ -37,6 +37,8 @@ type WorkoutContextType = {
   start: (templateId?: string) => Promise<void>;
   addExercise: (exerciseId: string) => Promise<void>;
   addExercises: (exerciseIds: string[]) => Promise<void>;
+  removeExercise: (exerciseItemId: string) => Promise<void>;
+  reorderExercises: (exerciseItemIds: string[]) => Promise<void>;
   addSet: (exerciseItemId: string, type?: SetType) => Promise<void>;
   updateSet: (
     setId: string,
@@ -157,6 +159,24 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
     await run(() => workoutApi.addSet(session.id, exerciseItemId, type));
   };
 
+  const removeExercise = async (exerciseItemId: string) => {
+    if (!session) throw new Error("No active workout.");
+    const setIds = session.workout_session_exercises.find(item => item.id === exerciseItemId)?.workout_logged_sets.map(set => set.id) ?? [];
+    await run(() => workoutApi.removeExercise(session.id, exerciseItemId));
+    setIds.forEach(id => failedWrites.current.delete(id));
+    setSyncError(failedWrites.current.size > 0);
+  };
+
+  const reorderExercises = async (exerciseItemIds: string[]) => {
+    if (!session) throw new Error("No active workout.");
+    try { await run(() => workoutApi.reorderExercises(session.id, exerciseItemIds)); }
+    catch (error) {
+      // Re-read actual positions after a rejected/stale order or a network error.
+      await refresh().catch(() => {});
+      throw error;
+    }
+  };
+
   const updateSet = async (setId: string, data: Parameters<typeof workoutApi.updateSet>[2]) => {
     if (!session) throw new Error("No active workout.");
     const sessionId = session.id;
@@ -267,6 +287,8 @@ export function WorkoutProvider({ children }: { children: React.ReactNode }) {
         start,
         addExercise,
         addExercises,
+        removeExercise,
+        reorderExercises,
         addSet,
         updateSet,
         finish,

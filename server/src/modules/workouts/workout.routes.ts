@@ -90,6 +90,15 @@ router.get("/sessions/:id", asyncHandler(async (req, res) => {
     );
 }));
 
+router.patch("/sessions/:id/exercises/order", asyncHandler(async (req, res) => {
+    const { exerciseIds } = z.object({ exerciseIds: z.array(z.uuid()).max(500) }).parse(req.body);
+    res.json(await service.reorderSessionExercises(getAuth(req).userId, idSchema.parse(req.params.id), exerciseIds));
+}));
+
+router.delete("/sessions/:id/exercises/:exerciseItemId", asyncHandler(async (req, res) => {
+    res.json(await service.removeSessionExercise(getAuth(req).userId, idSchema.parse(req.params.id), idSchema.parse(req.params.exerciseItemId)));
+}));
+
 router.post("/sessions/:id/exercises/batch", asyncHandler(async (req, res) => {
     const input = addSessionExercisesSchema.parse(req.body);
     res.status(201).json(await service.addSessionExercises(

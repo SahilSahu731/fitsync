@@ -22,6 +22,7 @@ export type WorkoutSet = {
 };
 
 export type SessionExercise = {
+  image_url?: string | null;
   exercises?: { primary_muscles: string[]; secondary_muscles: string[] };
   id: string;
   exercise_id: string;
@@ -149,6 +150,12 @@ export const workoutApi = {
     apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/batch`, {
       method: "POST", json: { exerciseIds }
     }),
+
+  removeExercise: (sessionId: string, exerciseItemId: string) =>
+    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/${exerciseItemId}`, { method: "DELETE" }),
+
+  reorderExercises: (sessionId: string, exerciseIds: string[]) =>
+    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/order`, { method: "PATCH", json: { exerciseIds } }),
 
   addSet: (
     sessionId: string,

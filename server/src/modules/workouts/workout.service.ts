@@ -1,6 +1,7 @@
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
 import type { CreateTemplateInput } from "./workout.schema.js";
+import { planPositionChanges } from "./workout.order.js";
 
 function ensure<T>(
     data: T | null,
@@ -36,6 +37,7 @@ type MediaRow = { kind: string; delivery_url: string | null; sort_order: number 
 type SessionExerciseWithMuscles = {
     [key: string]: unknown;
     exercises: {
+        exercise_media?: { kind: string; provider: string; storage_path: string; delivery_url: string | null; sort_order: number }[];
         exercise_muscles: {
             role: string;
             exercise_muscle_groups: { code: string } | null;
@@ -211,7 +213,7 @@ export async function getSession(userId: string, id: string) {
       *,
       workout_session_exercises(
         *,
-        exercises(exercise_muscles(role,exercise_muscle_groups(code))),
+        exercises(exercise_muscles(role,exercise_muscle_groups(code)),exercise_media(kind,provider,storage_path,delivery_url,sort_order)),
         workout_logged_sets(*)
       )
     `)
@@ -226,6 +228,9 @@ export async function getSession(userId: string, id: string) {
             // Muscle arrays belong to exercise_catalog, not the exercises table.
             // Keep the mobile response shape while reading the underlying relations.
             const muscles = item.exercises?.exercise_muscles ?? [];
+            const image = [...(item.exercises?.exercise_media ?? [])]
+                .filter(media => media.kind === "image")
+                .sort((a, b) => a.sort_order - b.sort_order)[0];
             const codesFor = (role: string) => muscles
                 .filter(muscle => muscle.role === role)
                 .flatMap(muscle => muscle.exercise_muscle_groups?.code
@@ -234,6 +239,9 @@ export async function getSession(userId: string, id: string) {
 
             return {
                 ...item,
+                image_url: image ? (image.provider === "supabase"
+                    ? db.storage.from("exercise-images").getPublicUrl(image.storage_path).data.publicUrl
+                    : image.delivery_url) : null,
                 exercises: {
                     primary_muscles: codesFor("primary"),
                     secondary_muscles: codesFor("secondary")
@@ -315,6 +323,51 @@ export async function startWorkout(
     }
 
     return getSession(userId, session.id);
+}
+
+export async function removeSessionExercise(userId: string, sessionId: string, exerciseItemId: string) {
+    await assertActive(userId, sessionId);
+    const { data, error } = await db.from("workout_session_exercises").delete()
+        .eq("session_id", sessionId).eq("id", exerciseItemId).select("id");
+    checkDbError(error, "remove workout exercise");
+    if (!data?.length) throw new ApiError(404, "Exercise not found in this workout.");
+    return getSession(userId, sessionId);
+}
+
+// Serialize reorder requests within this server; conditional writes also reject
+// stale positions from other instances instead of silently overwriting them.
+const ordering = new Set<string>();
+export async function reorderSessionExercises(userId: string, sessionId: string, ids: string[]) {
+    await assertActive(userId, sessionId);
+    if (ordering.has(sessionId)) throw new ApiError(409, "An order update is already in progress. Try again.");
+    ordering.add(sessionId);
+    try {
+        const rows = await db.from("workout_session_exercises").select("id,position").eq("session_id", sessionId);
+        checkDbError(rows.error, "load exercise order");
+        let changes: ReturnType<typeof planPositionChanges>;
+        try { changes = planPositionChanges(rows.data ?? [], ids); }
+        catch { throw new ApiError(409, "Exercise list changed. Reload the workout and try again."); }
+        const attempted: typeof changes = [];
+        try {
+            for (const change of changes) {
+                attempted.push(change);
+                const result = await db.from("workout_session_exercises").update({ position: change.to })
+                    .eq("session_id", sessionId).eq("id", change.id).eq("position", change.from).select("id");
+                checkDbError(result.error, "save exercise order");
+                if (!result.data?.length) throw new ApiError(409, "Exercise order changed. Reload the workout and try again.");
+            }
+        } catch (error) {
+            // Undo in reverse order, including an uncertain network response.
+            // The position condition avoids overwriting unrelated concurrent edits.
+            for (const change of attempted.reverse()) {
+                const rollback = await db.from("workout_session_exercises").update({ position: change.from })
+                    .eq("session_id", sessionId).eq("id", change.id).eq("position", change.to);
+                if (rollback.error) console.error("[DATABASE] restore exercise order:", rollback.error.message);
+            }
+            throw error;
+        }
+        return getSession(userId, sessionId);
+    } finally { ordering.delete(sessionId); }
 }
 
 export async function addSessionExercises(

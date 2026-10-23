@@ -148,19 +148,19 @@ export default function CreateWorkoutScreen() {
         </Pressable>
 
         <Txt weight="bold" className="text-lg">
-          CREATE ROUTINE
+          Create Routine
         </Txt>
 
         <Pressable onPress={() => void save()} disabled={loading}>
-          <Txt weight="bold" className="text-brand">
-            SAVE
+          <Txt weight="medium" className="text-brand">
+            Save
           </Txt>
         </Pressable>
       </View>
 
-      <ScrollView contentContainerStyle={{ padding: 20, paddingBottom: 100 }}>
-        <Txt weight="extra" className="text-[34px]">
-          BUILD YOUR SESSION.
+      <ScrollView contentContainerStyle={{ padding: 18, paddingBottom: 100 }}>
+        <Txt weight="bold" className="text-[34px]">
+          Build Your Session.
         </Txt>
 
         <Txt className="mb-6 mt-2 text-muted">
@@ -176,7 +176,7 @@ export default function CreateWorkoutScreen() {
           onChangeText={setName}
           placeholder="e.g. Push Day"
           placeholderTextColor={C.muted}
-          className="mb-4 h-14 rounded-2xl border border-border bg-panel px-4 text-ink"
+          className="mb-4 h-14 rounded-2xl bg-panel px-4 text-ink"
         />
 
         <Txt weight="semibold" className="mb-2">
@@ -188,17 +188,17 @@ export default function CreateWorkoutScreen() {
           onChangeText={setDescription}
           placeholder="Optional description"
           placeholderTextColor={C.muted}
-          className="mb-7 min-h-16 rounded-2xl border border-border bg-panel px-4 py-3 text-ink"
+          className="mb-7 min-h-16 rounded-2xl bg-panel px-4 py-3 text-ink"
           multiline
         />
 
         {exercises.map((exercise, index) => (
           <View
             key={`${exercise.exerciseId}-${index}`}
-            className="mb-4 rounded-[24px] border border-border bg-panel p-4"
+            className="mb-4 rounded-[24px] bg-panel p-4"
           >
             <View className="mb-4 flex-row items-center justify-between">
-              <Txt weight="bold" className="flex-1 text-lg">
+              <Txt weight="semibold" className="flex-1 text-lg">
                 {exercise.name}
               </Txt>
 
