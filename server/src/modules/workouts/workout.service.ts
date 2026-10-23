@@ -1,0 +1,495 @@
+import { db } from "../../config/supabase.js";
+import { ApiError, checkDbError } from "../../common/errors.js";
+import type { CreateTemplateInput } from "./workout.schema.js";
+
+function ensure<T>(
+    data: T | null,
+    message = "Resource not found."
+): T {
+    if (!data) throw new ApiError(404, message);
+    return data;
+}
+
+async function getOwnedSession(userId: string, sessionId: string) {
+    const { data, error } = await db
+        .from("workout_sessions")
+        .select("*")
+        .eq("id", sessionId)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+    checkDbError(error, "get workout session");
+    return ensure(data);
+}
+
+async function assertActive(userId: string, sessionId: string) {
+    const session = await getOwnedSession(userId, sessionId);
+
+    if (session.status !== "active") {
+        throw new ApiError(409, "Workout is no longer active.");
+    }
+
+    return session;
+}
+
+export async function listTemplates(userId: string) {
+    const { data, error } = await db
+        .from("workout_templates")
+        .select("*, workout_template_exercises(id), user_saved_routines(routine_id), user_saved_program_routines(id)")
+        .eq("user_id", userId)
+        .order("created_at", { ascending: false });
+
+    checkDbError(error, "list workout templates");
+    return (data ?? []).map(row => ({ ...row, can_rename: !row.user_saved_routines?.length && !row.user_saved_program_routines?.length }));
+}
+
+export async function getTemplate(userId: string, id: string) {
+    const { data, error } = await db
+        .from("workout_templates")
+        .select(`
+      *,
+      workout_template_exercises(
+        *,
+        exercises(name),
+        workout_template_sets(*)
+      )
+    `)
+        .eq("id", id)
+        .eq("user_id", userId)
+        .maybeSingle();
+
+    checkDbError(error, "get workout template");
+    return ensure(data);
+}
+
+export async function createTemplate(
+    userId: string,
+    input: CreateTemplateInput
+) {
+    const exerciseIds = [
+        ...new Set(input.exercises.map(e => e.exerciseId))
+    ];
+
+    const { data: validExercises, error: exerciseError } = await db
+        .from("exercises")
+        .select("id")
+        .in("id", exerciseIds)
+        .eq("status", "published");
+
+    checkDbError(exerciseError, "validate exercises");
+
+    if ((validExercises ?? []).length !== exerciseIds.length) {
+        throw new ApiError(400, "Some exercises are unavailable.");
+    }
+
+    const { data: template, error } = await db
+        .from("workout_templates")
+        .insert({
+            user_id: userId,
+            name: input.name,
+            description: input.description
+        })
+        .select()
+        .single();
+
+    checkDbError(error, "create workout template");
+
+    try {
+        for (const [position, item] of input.exercises.entries()) {
+            const { data: exercise, error: insertError } = await db
+                .from("workout_template_exercises")
+                .insert({
+                    template_id: template.id,
+                    exercise_id: item.exerciseId,
+                    position,
+                    notes: item.notes,
+                    rest_seconds: item.restSeconds
+                })
+                .select()
+                .single();
+
+            checkDbError(insertError, "insert template exercise");
+
+            const { error: setError } = await db
+                .from("workout_template_sets")
+                .insert(
+                    item.sets.map((set, index) => ({
+                        template_exercise_id: exercise.id,
+                        position: index,
+                        set_type: set.setType,
+                        target_reps: set.targetReps ?? null,
+                        target_weight: set.targetWeight ?? null,
+                        target_duration_seconds:
+                            set.targetDurationSeconds ?? null
+                    }))
+                );
+
+            checkDbError(setError, "insert template sets");
+        }
+    } catch (error) {
+        await db
+            .from("workout_templates")
+            .delete()
+            .eq("id", template.id)
+            .eq("user_id", userId);
+
+        throw error;
+    }
+
+    return getTemplate(userId, template.id);
+}
+
+export async function deleteTemplate(userId: string, id: string) {
+    await getTemplate(userId, id);
+
+    const { error } = await db
+        .from("workout_templates")
+        .delete()
+        .eq("id", id)
+        .eq("user_id", userId);
+
+    checkDbError(error, "delete workout template");
+}
+
+export async function getSession(userId: string, id: string) {
+    await getOwnedSession(userId, id);
+
+    const { data, error } = await db
+        .from("workout_sessions")
+        .select(`
+      *,
+      workout_session_exercises(
+        *,
+        workout_logged_sets(*)
+      )
+    `)
+        .eq("id", id)
+        .eq("user_id", userId)
+        .single();
+
+    checkDbError(error, "load workout session");
+    return data;
+}
+
+export async function getActiveSession(userId: string) {
+    const { data, error } = await db
+        .from("workout_sessions")
+        .select("id")
+        .eq("user_id", userId)
+        .eq("status", "active")
+        .maybeSingle();
+
+    checkDbError(error, "find active workout");
+
+    if (!data) return null;
+    return getSession(userId, data.id);
+}
+
+export async function startWorkout(
+    userId: string,
+    templateId?: string
+) {
+    const active = await getActiveSession(userId);
+
+    if (active) {
+        throw new ApiError(409, "Finish or discard your current workout.");
+    }
+
+    const template = templateId
+        ? await getTemplate(userId, templateId)
+        : null;
+
+    const { data: session, error } = await db
+        .from("workout_sessions")
+        .insert({
+            user_id: userId,
+            template_id: templateId ?? null,
+            name: template?.name ?? "Quick Workout"
+        })
+        .select()
+        .single();
+
+    if (error?.code === "23505") {
+        throw new ApiError(409, "You already have an active workout.");
+    }
+
+    checkDbError(error, "start workout");
+
+    try {
+        if (template) {
+            const items = [...template.workout_template_exercises]
+                .sort((a, b) => a.position - b.position);
+
+            for (const item of items) {
+                await addSessionExercise(
+                    userId,
+                    session.id,
+                    item.exercise_id,
+                    item.rest_seconds,
+                    [...item.workout_template_sets]
+                        .sort((a, b) => a.position - b.position)
+                );
+            }
+        }
+    } catch (error) {
+        await db
+            .from("workout_sessions")
+            .delete()
+            .eq("id", session.id)
+            .eq("user_id", userId);
+
+        throw error;
+    }
+
+    return getSession(userId, session.id);
+}
+
+export async function addSessionExercise(
+    userId: string,
+    sessionId: string,
+    exerciseId: string,
+    restSeconds = 90,
+    plannedSets?: Array<{
+        set_type: string;
+        target_weight: number | null;
+        target_reps: number | null;
+        target_duration_seconds: number | null;
+    }>
+) {
+    await assertActive(userId, sessionId);
+
+    const { data: exercise, error: exerciseError } = await db
+        .from("exercises")
+        .select("id, name, tracking_type")
+        .eq("id", exerciseId)
+        .eq("status", "published")
+        .maybeSingle();
+
+    checkDbError(exerciseError, "find exercise");
+    ensure(exercise, "Exercise not found.");
+
+    const { data: existing, error: listError } = await db
+        .from("workout_session_exercises")
+        .select("position")
+        .eq("session_id", sessionId)
+        .order("position", { ascending: false })
+        .limit(1);
+
+    checkDbError(listError, "find next exercise position");
+
+    const position = existing?.length
+        ? existing[0].position + 1
+        : 0;
+
+    const { data: item, error } = await db
+        .from("workout_session_exercises")
+        .insert({
+            session_id: sessionId,
+            exercise_id: exercise?.id,
+            exercise_name: exercise?.name,
+            tracking_type: exercise?.tracking_type,
+            position,
+            rest_seconds: restSeconds
+        })
+        .select()
+        .single();
+
+    checkDbError(error, "add workout exercise");
+
+    const sets = plannedSets?.length
+        ? plannedSets.map((set, index) => ({
+            session_exercise_id: item.id,
+            position: index,
+            set_type: set.set_type,
+            weight_kg: set.target_weight,
+            reps: set.target_reps,
+            duration_seconds: set.target_duration_seconds
+        }))
+        : [{
+            session_exercise_id: item.id,
+            position: 0,
+            set_type: "normal"
+        }];
+
+    const { error: setError } = await db
+        .from("workout_logged_sets")
+        .insert(sets);
+
+    if (setError) {
+        await db
+            .from("workout_session_exercises")
+            .delete()
+            .eq("id", item.id);
+
+        checkDbError(setError, "create exercise sets");
+    }
+
+    return getSession(userId, sessionId);
+}
+
+export async function addSet(
+    userId: string,
+    sessionId: string,
+    exerciseItemId: string,
+    input: {
+        setType: string;
+        weightKg: number | null;
+        reps: number | null;
+    }
+) {
+    await assertActive(userId, sessionId);
+
+    const { data: exercise, error } = await db
+        .from("workout_session_exercises")
+        .select("id")
+        .eq("id", exerciseItemId)
+        .eq("session_id", sessionId)
+        .maybeSingle();
+
+    checkDbError(error, "find session exercise");
+    ensure(exercise);
+
+    const { data: sets, error: setsError } = await db
+        .from("workout_logged_sets")
+        .select("position")
+        .eq("session_exercise_id", exerciseItemId)
+        .order("position", { ascending: false })
+        .limit(1);
+
+    checkDbError(setsError, "find next set");
+
+    const position = sets?.length ? sets[0].position + 1 : 0;
+
+    const { error: insertError } = await db
+        .from("workout_logged_sets")
+        .insert({
+            session_exercise_id: exerciseItemId,
+            position,
+            set_type: input.setType,
+            weight_kg: input.weightKg,
+            reps: input.reps
+        });
+
+    checkDbError(insertError, "add workout set");
+
+    return getSession(userId, sessionId);
+}
+
+export async function updateSet(
+    userId: string,
+    sessionId: string,
+    setId: string,
+    input: Record<string, unknown>
+) {
+    await assertActive(userId, sessionId);
+
+    const { data: exercises, error: exerciseError } = await db
+        .from("workout_session_exercises")
+        .select("id")
+        .eq("session_id", sessionId);
+
+    checkDbError(exerciseError, "find workout exercises");
+
+    const ids = (exercises ?? []).map(e => e.id);
+    if (!ids.length) throw new ApiError(404, "Set not found.");
+
+    const { data: set, error: lookupError } = await db
+        .from("workout_logged_sets")
+        .select("id")
+        .eq("id", setId)
+        .in("session_exercise_id", ids)
+        .maybeSingle();
+
+    checkDbError(lookupError, "find workout set");
+    ensure(set);
+
+    const columns: Record<string, string> = {
+        setType: "set_type",
+        weightKg: "weight_kg",
+        reps: "reps",
+        durationSeconds: "duration_seconds",
+        distanceMeters: "distance_meters",
+        rpe: "rpe",
+        rir: "rir",
+        notes: "notes"
+    };
+
+    const update: Record<string, unknown> = {};
+
+    for (const [key, column] of Object.entries(columns)) {
+        if (input[key] !== undefined) {
+            update[column] = input[key];
+        }
+    }
+
+    if (input.completed !== undefined) {
+        update.completed_at = input.completed
+            ? new Date().toISOString()
+            : null;
+    }
+
+    const { error } = await db
+        .from("workout_logged_sets")
+        .update(update)
+        .eq("id", setId);
+
+    checkDbError(error, "update workout set");
+
+    return getSession(userId, sessionId);
+}
+
+export async function finishWorkout(
+    userId: string,
+    sessionId: string,
+    status: "completed" | "discarded",
+    notes = "",
+    elapsedSeconds?: number
+) {
+    const session = await assertActive(userId, sessionId);
+
+    const finishedAt = new Date();
+    const elapsed = elapsedSeconds ??
+        Math.floor(
+            (finishedAt.getTime() -
+                new Date(session.started_at).getTime()) / 1000
+        );
+
+    const { error } = await db
+        .from("workout_sessions")
+        .update({
+            status,
+            notes,
+            finished_at: finishedAt.toISOString(),
+            elapsed_seconds: elapsed,
+            updated_at: finishedAt.toISOString()
+        })
+        .eq("id", sessionId)
+        .eq("user_id", userId)
+        .eq("status", "active");
+
+    checkDbError(error, "finish workout");
+
+    return getSession(userId, sessionId);
+}
+
+export async function listHistory(userId: string) {
+    const { data, error } = await db
+        .from("workout_sessions")
+        .select("id, name, started_at, finished_at, elapsed_seconds")
+        .eq("user_id", userId)
+        .eq("status", "completed")
+        .order("started_at", { ascending: false })
+        .limit(100);
+
+    checkDbError(error, "list workout history");
+    return data ?? [];
+}
+export async function renameTemplate(userId: string, id: string, name: string) {
+    const templates = await listTemplates(userId);
+    const template = templates.find(row => row.id === id);
+    if (!template) throw new ApiError(404, "Routine not found.");
+    if (!template.can_rename) throw new ApiError(403, "Only routines you created can be renamed.");
+    const { error } = await db.from("workout_templates").update({ name }).eq("id", id).eq("user_id", userId);
+    checkDbError(error, "rename routine");
+    return { id, name };
+}

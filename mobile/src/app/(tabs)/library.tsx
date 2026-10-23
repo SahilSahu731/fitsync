@@ -1,4 +1,4 @@
-import React, { useCallback, useEffect, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -72,7 +72,7 @@ const DROPDOWNS: {
   },
 ];
 
-const PAGE_SIZE = 20;
+const PAGE_SIZE = 15;
 const SIDE = 24;
 const GAP = 12;
 
@@ -125,6 +125,7 @@ function PickerSheet({
           </Txt>
 
           <ScrollView
+            showsVerticalScrollIndicator={false}
             contentContainerStyle={{
               paddingBottom: Math.max(insets.bottom, 16) + 8,
             }}
@@ -238,7 +239,7 @@ function ExerciseCard({
           <LevelBars difficulty={exercise.difficulty} />
         </View>
 
-        <View
+        {/* <View
           className="absolute bottom-2.5 left-2.5 rounded-full px-2.5 py-1"
           style={{ backgroundColor: "rgba(0,0,0,0.55)" }}
         >
@@ -249,7 +250,7 @@ function ExerciseCard({
           >
             {exercise.categoryLabel}
           </Txt>
-        </View>
+        </View> */}
       </View>
 
       <View className="px-3 pb-3 pt-2.5">
@@ -293,9 +294,16 @@ export default function LibraryScreen() {
   const [page, setPage] = useState(1);
   const [items, setItems] = useState<Exercise[]>([]);
   const [total, setTotal] = useState(0);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
   const [refreshKey, setRefreshKey] = useState(0);
+
+  const pending = useRef(false);
+  const loadedPage = useRef(0);
+  const lastQuery = useRef("");
+  const list = useRef<FlatList<Exercise>>(null);
+  const [hasMore, setHasMore] = useState(false);
+  const queryKey = JSON.stringify([query, filters, sort]);
 
   /* taxonomies (once) */
   useEffect(() => {
@@ -311,11 +319,7 @@ export default function LibraryScreen() {
   /* debounce typing */
   useEffect(() => {
     const id = setTimeout(() => {
-      setQuery((prev) => {
-        const next = search.trim();
-        if (prev !== next) setPage(1);
-        return next;
-      });
+      setQuery(search.trim());
     }, 350);
     return () => clearTimeout(id);
   }, [search]);
@@ -323,7 +327,16 @@ export default function LibraryScreen() {
   /* results */
   useEffect(() => {
     let active = true;
+    pending.current = true;
+    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoading(true);
+    if (lastQuery.current !== queryKey) {
+      lastQuery.current = queryKey;
+      loadedPage.current = 0;
+      setItems([]); setTotal(0); setHasMore(false);
+      list.current?.scrollToOffset({ offset: 0, animated: false });
+      if (page !== 1) { setPage(1); return; }
+    }
     setError("");
 
     // `sort` is sent to the API. The backend must support it (see notes).
@@ -347,15 +360,17 @@ export default function LibraryScreen() {
           const seen = new Set(prev.map((i) => i.id));
           return [...prev, ...res.items.filter((i) => !seen.has(i.id))];
         });
+        loadedPage.current = page;
         setTotal(res.total);
+        setHasMore(res.items.length > 0 && res.page * res.pageSize < res.total);
       })
       .catch((e) => active && setError(e.message))
-      .finally(() => active && setLoading(false));
+      .finally(() => { if (active) { pending.current = false; setLoading(false); } });
 
     return () => {
       active = false;
     };
-  }, [query, filters, sort, page, refreshKey]);
+  }, [query, filters, sort, page, refreshKey, queryKey]);
 
   const setFilter = useCallback((key: FilterKey, code: string) => {
     setFilters((f) => ({ ...f, [key]: code }));
@@ -377,7 +392,9 @@ export default function LibraryScreen() {
   };
 
   const loadMore = () => {
-    if (!loading && !error && items.length < total) setPage((p) => p + 1);
+    if (pending.current || loading || error || !hasMore || loadedPage.current !== page || lastQuery.current !== queryKey) return;
+    pending.current = true;
+    setPage((p) => p + 1);
   };
 
   const sortLabel =
@@ -491,6 +508,11 @@ export default function LibraryScreen() {
   const footer = (
     <View className="items-center pb-14 pt-2">
       {loading && <ActivityIndicator className="my-6" color={C.brand} />}
+      {!loading && !error && items.length > 0 && (
+        <Txt className="text-sm text-muted">
+          {hasMore ? `Showing ${items.length} of ${total}` : "All exercises loaded"}
+        </Txt>
+      )}
 
       {error ? (
         <View
@@ -532,11 +554,13 @@ export default function LibraryScreen() {
     ) : null;
 
   return (
-    <View className="flex-1 bg-bg">
+    <View className="flex-1 bg-bg mb-10">
       <FlatList
+        ref={list}
         data={items}
         keyExtractor={(item) => item.id}
         numColumns={2}
+        showsVerticalScrollIndicator={false}
         columnWrapperStyle={{ paddingHorizontal: SIDE, gap: GAP }}
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -544,7 +568,7 @@ export default function LibraryScreen() {
         ListFooterComponent={footer}
         ListEmptyComponent={empty}
         onEndReached={loadMore}
-        onEndReachedThreshold={0.6}
+        onEndReachedThreshold={0.1}
         renderItem={({ item }) => (
           <ExerciseCard
             exercise={item}

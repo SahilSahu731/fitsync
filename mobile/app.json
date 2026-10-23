@@ -19,7 +19,17 @@
     },
     "plugins": [
       "expo-router",
-      "expo-notifications",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/images/android-icon-monochrome.png",
+          "color": "#FF7838",
+          "defaultChannel": "workout-rest-v2",
+          "sounds": [
+            "./assets/sound/rest_complete.wav"
+          ]
+        }
+      ],
       [
         "expo-splash-screen",
         {

@@ -1,257 +1,312 @@
-
-import React, {
-  useEffect,
-  useMemo,
-  useState
-} from "react";
+import { useAppAlert } from "@/src/components/app-dialog";
+import React, { useEffect, useMemo, useState } from "react";
 
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
-  View
+  View,
 } from "react-native";
 
-import {
-  useLocalSearchParams,
-  useRouter
-} from "expo-router";
-
+import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import * as Haptics from "expo-haptics";
 
-import { C } from "@/src/constants/theme";
 import { Txt } from "@/src/components/ui";
-import { demoPlans, exercises } from "@/data/sample";
+import { C } from "@/src/constants/theme";
 
-export default function WorkoutPreview() {
+import { useWorkout } from "@/src/features/workouts/workout-context";
+import { SetRow } from "@/src/features/workouts/components/set-row";
+
+function formatTime(seconds: number) {
+  const m = Math.floor(seconds / 60);
+  const s = seconds % 60;
+
+  return `${String(m).padStart(2, "0")}:${String(s).padStart(2, "0")}`;
+}
+
+export default function LiveWorkoutScreen() {
+  const Alert = useAppAlert();
   const router = useRouter();
 
-  const { plan: planId } =
-    useLocalSearchParams<{ plan?: string }>();
+  const {
+    session,
+    loading,
+    busy,
+    restTimer,
+    addSet,
+    finish,
+    discard,
+    stopRest,
+  } = useWorkout();
 
-  const plan = useMemo(() => {
-    return (
-      demoPlans.find(item => item.id === planId) ||
-      demoPlans[0]
-    );
-  }, [planId]);
-
-  const items = plan.exerciseIds
-    .map(id => exercises.find(item => item.id === id))
-    .filter(
-      (item): item is (typeof exercises)[number] =>
-        item !== undefined
-    );
-
-  const [completed, setCompleted] =
-    useState<string[]>([]);
-
-  const [seconds, setSeconds] = useState(90);
-  const [running, setRunning] = useState(false);
+  // eslint-disable-next-line react-hooks/purity
+  const [now, setNow] = useState(Date.now());
 
   useEffect(() => {
-    if (!running) return;
-
     const interval = setInterval(() => {
-      setSeconds(value => {
-        if (value <= 1) {
-          setRunning(false);
-          return 0;
-        }
-
-        return value - 1;
-      });
+      setNow(Date.now());
     }, 1000);
 
     return () => clearInterval(interval);
-  }, [running]);
+  }, []);
 
-  const toggleExercise = (id: string) => {
-    setCompleted(previous =>
-      previous.includes(id)
-        ? previous.filter(item => item !== id)
-        : [...previous, id]
+  const exercises = useMemo(() => {
+    return [...(session?.workout_session_exercises ?? [])].sort(
+      (a, b) => a.position - b.position,
     );
+  }, [session]);
 
-    Haptics.selectionAsync();
+  const elapsed = session
+    ? Math.floor((now - new Date(session.started_at).getTime()) / 1000)
+    : 0;
+
+  const restRemaining = restTimer
+    ? Math.max(0, Math.ceil((restTimer.endsAt - now) / 1000))
+    : 0;
+
+  const completedSets = exercises.reduce(
+    (total, item) =>
+      total +
+      item.workout_logged_sets.filter((set) => set.completed_at !== null)
+        .length,
+    0,
+  );
+
+  const totalSets = exercises.reduce(
+    (total, item) => total + item.workout_logged_sets.length,
+    0,
+  );
+
+  const handleFinish = () => {
+    Alert.alert(
+      "Finish workout?",
+      "Your completed sets will be saved to your history.",
+      [
+        { text: "Keep training", style: "cancel" },
+        {
+          text: "Finish",
+          onPress: async () => {
+            try {
+              await finish();
+              router.replace("/(tabs)/train");
+            } catch {
+              Alert.alert("Error", "Could not finish your workout.");
+            }
+          },
+        },
+      ],
+    );
   };
 
-  const toggleTimer = () => {
-    if (seconds === 0) {
-      setSeconds(90);
-    }
-
-    setRunning(value => !value);
+  const handleDiscard = () => {
+    Alert.alert(
+      "Discard workout?",
+      "This workout will not appear in your completed history.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: async () => {
+            try {
+              await discard();
+              router.replace("/(tabs)/train");
+            } catch {
+              Alert.alert("Error", "Could not discard the workout.");
+            }
+          },
+        },
+      ],
+    );
   };
 
-  const resetTimer = () => {
-    setRunning(false);
-    setSeconds(90);
-  };
+  if (loading) {
+    return (
+      <View className="flex-1 items-center justify-center bg-bg">
+        <ActivityIndicator color={C.brand} />
+      </View>
+    );
+  }
 
-  const displayTime =
-    `${String(Math.floor(seconds / 60)).padStart(2, "0")}:` +
-    `${String(seconds % 60).padStart(2, "0")}`;
+  if (!session) {
+    return (
+      <View className="flex-1 items-center justify-center bg-bg px-6">
+        <MaterialCommunityIcons name="dumbbell" size={50} color={C.brand} />
+
+        <Txt weight="bold" className="mt-5 text-2xl">
+          No active workout
+        </Txt>
+
+        <Pressable
+          onPress={() => router.replace("/(tabs)/train")}
+          className="mt-6 rounded-2xl bg-brand px-8 py-4"
+        >
+          <Txt weight="bold" className="text-bg">
+            GO TO WORKOUTS
+          </Txt>
+        </Pressable>
+      </View>
+    );
+  }
 
   return (
     <View className="flex-1 bg-bg">
-      {/* Header */}
-
-      <View className="flex-row items-center justify-between px-6 pb-4 pt-6">
+      <View className="flex-row items-center justify-between px-5 pb-4 pt-5">
         <Pressable
           onPress={() => router.back()}
           className="h-11 w-11 items-center justify-center rounded-full border border-border"
         >
-          <MaterialCommunityIcons
-            name="arrow-left"
-            color={C.ink}
-            size={22}
-          />
+          <MaterialCommunityIcons name="chevron-down" size={28} color={C.ink} />
         </Pressable>
 
-        <Txt
-          weight="bold"
-          className="text-xs tracking-[2px] text-brand"
-        >
-          SESSION PREVIEW
-        </Txt>
+        <View className="items-center">
+          <Txt weight="bold" className="text-[17px]">
+            {session.name}
+          </Txt>
 
-        <MaterialCommunityIcons
-          name="dumbbell"
-          size={23}
-          color={C.ink}
-        />
+          <Txt weight="semibold" className="text-sm text-brand">
+            {formatTime(Math.max(0, elapsed))}
+          </Txt>
+        </View>
+
+        <Pressable
+          onPress={handleFinish}
+          disabled={busy}
+          className="rounded-full bg-brand px-4 py-3"
+        >
+          <Txt weight="bold" className="text-xs text-bg">
+            FINISH
+          </Txt>
+        </Pressable>
       </View>
+
+      <View className="mx-5 mb-4 rounded-2xl bg-panel p-4">
+        <View className="flex-row justify-between">
+          <Txt weight="semibold" className="text-sm">
+            WORKOUT PROGRESS
+          </Txt>
+
+          <Txt weight="bold" className="text-brand">
+            {completedSets}/{totalSets}
+          </Txt>
+        </View>
+
+        <View className="mt-3 h-2 overflow-hidden rounded-full bg-elevated">
+          <View
+            className="h-full rounded-full bg-brand"
+            style={{
+              width: `${totalSets ? (completedSets / totalSets) * 100 : 0}%`,
+            }}
+          />
+        </View>
+      </View>
+
+      {restRemaining > 0 && (
+        <View className="mx-5 mb-4 flex-row items-center rounded-2xl border border-brand/30 bg-brand/10 p-4">
+          <MaterialCommunityIcons
+            name="timer-outline"
+            size={28}
+            color={C.brand}
+          />
+
+          <View className="ml-3 flex-1">
+            <Txt weight="semibold">REST TIMER</Txt>
+            <Txt weight="extra" className="text-[26px] text-brand">
+              {formatTime(restRemaining)}
+            </Txt>
+          </View>
+
+          <Pressable
+            onPress={stopRest}
+            className="rounded-xl bg-panel px-4 py-3"
+          >
+            <Txt weight="bold" className="text-xs">
+              SKIP
+            </Txt>
+          </Pressable>
+        </View>
+      )}
 
       <ScrollView
         className="flex-1"
         contentContainerStyle={{
-          paddingHorizontal: 24,
-          paddingBottom: 40
+          paddingHorizontal: 20,
+          paddingBottom: 120,
         }}
       >
-        <Txt
-          weight="extra"
-          className="mt-5 text-[39px] leading-[42px]"
-        >
-          {plan.name.toUpperCase()}.
-        </Txt>
-
-        <Txt className="mt-2 text-sm text-muted">
-          {plan.minutes} min · {items.length} exercises · Example plan
-        </Txt>
-
-        {/* Rest timer */}
-
-        <View className="mt-7 flex-row items-center justify-between rounded-3xl bg-brand p-5">
-          <View>
-            <Txt
-              weight="bold"
-              className="text-xs tracking-[2px] text-bg"
-            >
-              REST TIMER
-            </Txt>
-
-            <Txt
-              weight="extra"
-              className="mt-1 text-4xl text-bg"
-            >
-              {displayTime}
-            </Txt>
-          </View>
-
-          <View className="flex-row gap-2">
-            <Pressable
-              onPress={toggleTimer}
-              className="h-12 w-12 items-center justify-center rounded-full bg-bg"
-            >
-              <MaterialCommunityIcons
-                name={running ? "pause" : "play"}
-                color={C.ink}
-                size={24}
-              />
-            </Pressable>
-
-            <Pressable
-              onPress={resetTimer}
-              className="h-12 w-12 items-center justify-center rounded-full border border-bg"
-            >
-              <MaterialCommunityIcons
-                name="restart"
-                color={C.bg}
-                size={24}
-              />
-            </Pressable>
-          </View>
-        </View>
-
-        {/* Exercise list */}
-
-        <View className="mb-4 mt-8 flex-row items-center justify-between">
-          <Txt
-            weight="extra"
-            className="text-[22px]"
-          >
-            THE LINEUP
-          </Txt>
-
-          <Txt
-            weight="semibold"
-            className="text-xs text-brand"
-          >
-            {completed.length}/{items.length} DONE
-          </Txt>
-        </View>
-
-        {items.map((exercise, index) => {
-          const done = completed.includes(exercise.id);
+        {exercises.map((exercise, index) => {
+          const sets = [...exercise.workout_logged_sets].sort(
+            (a, b) => a.position - b.position,
+          );
 
           return (
-            <Pressable
+            <View
               key={exercise.id}
-              onPress={() => toggleExercise(exercise.id)}
-              className={`mb-3 flex-row items-center rounded-2xl border p-4 ${done ? "border-brand bg-[#252019]" : "border-border bg-panel"}`}
+              className="mb-5 overflow-hidden rounded-[26px] border border-border bg-panel"
             >
-              <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-elevated">
-                <Txt
-                  weight="extra"
-                  className="text-base text-brand"
-                >
-                  {String(index + 1).padStart(2, "0")}
-                </Txt>
+              <View className="flex-row items-center px-4 pb-3 pt-5">
+                <View className="h-11 w-11 items-center justify-center rounded-2xl bg-brand/10">
+                  <MaterialCommunityIcons
+                    name="dumbbell"
+                    size={23}
+                    color={C.brand}
+                  />
+                </View>
+
+                <View className="ml-3 flex-1">
+                  <Txt weight="bold" className="text-[18px]" numberOfLines={2}>
+                    {exercise.exercise_name}
+                  </Txt>
+
+                  <Txt className="mt-1 text-xs text-muted">
+                    EXERCISE {index + 1} · {sets.length} SETS
+                  </Txt>
+                </View>
               </View>
 
-              <View className="flex-1">
-                <Txt
-                  weight="bold"
-                  className="text-sm"
-                >
-                  {exercise.name}
-                </Txt>
-
-                <Txt className="mt-1 text-xs text-muted">
-                  {exercise.sets} · {exercise.equipment}
-                </Txt>
+              <View className="px-3">
+                {sets.map((set, setIndex) => (
+                  <SetRow
+                    key={set.id}
+                    set={set}
+                    number={setIndex + 1}
+                    restSeconds={exercise.rest_seconds}
+                    trackingType={exercise.tracking_type}
+                  />
+                ))}
               </View>
 
-              <MaterialCommunityIcons
-                name={
-                  done
-                    ? "check-circle"
-                    : "circle-outline"
-                }
-                size={27}
-                color={done ? C.brand : C.muted}
-              />
-            </Pressable>
+              <Pressable
+                onPress={() => void addSet(exercise.id)}
+                disabled={busy}
+                className="mx-3 mb-4 mt-2 flex-row items-center justify-center rounded-xl border border-dashed border-border py-4"
+              >
+                <MaterialCommunityIcons name="plus" size={20} color={C.brand} />
+
+                <Txt weight="semibold" className="ml-2 text-brand">
+                  ADD SET
+                </Txt>
+              </Pressable>
+            </View>
           );
         })}
 
-        <Txt className="mt-3 text-xs leading-5 text-muted">
-          Interactive preview only. Exercise checkmarks
-          and this foreground timer are not saved or
-          scheduled in the background.
-        </Txt>
+        <Pressable
+          onPress={() => router.push("/workout/add-exercise")}
+          className="mb-4 flex-row items-center justify-center rounded-2xl bg-brand py-5"
+        >
+          <MaterialCommunityIcons name="plus" size={22} color={C.bg} />
+
+          <Txt weight="bold" className="ml-2 text-bg">
+            ADD EXERCISE
+          </Txt>
+        </Pressable>
+
+        <Pressable onPress={handleDiscard} className="items-center py-5">
+          <Txt weight="semibold" className="text-red-400">
+            Discard workout
+          </Txt>
+        </Pressable>
       </ScrollView>
     </View>
   );

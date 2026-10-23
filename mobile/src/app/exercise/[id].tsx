@@ -108,8 +108,8 @@ function Hero({ images }: { images: Exercise["media"] }) {
           <View key={image.id} style={{ width }} className="bg-panel">
             <Image
               source={{ uri: image.url }}
-              style={{ width, height: 340 }}
-              contentFit="contain"
+              style={{ width: "100%", height: 180 }}
+              contentFit="cover"
               transition={200}
             />
           </View>
@@ -137,13 +137,15 @@ function Hero({ images }: { images: Exercise["media"] }) {
 function DemoVideo({ url }: { url: string }) {
   const player = useVideoPlayer(url, p => {
     p.loop = true;
+    p.muted = true;
+    p.play();
   });
 
   return (
     <VideoView
       player={player}
-      style={{ width: "100%", height: 240 }}
-      // nativeControls
+      style={{ width: "100%", height: 300, borderRadius: 50 }}
+      nativeControls={false}
       contentFit="contain"
     />
   );
@@ -301,7 +303,11 @@ function AboutTab({ exercise }: { exercise: Exercise }) {
         </Txt>
       )}
 
-      {/* {hasCredits && (
+      {/* {hasCredits && ({exercise.secondaryMuscles.length > 0 && (
+        <Txt className="mt-3 text-xs text-muted">
+          Filled chips are the main muscles worked. Outlined ones assist.
+        </Txt>
+      )}
         <View>
           <Heading>Media credits</Heading>
 
@@ -394,8 +400,8 @@ function EmptyState({
 }) {
   return (
     <View className="items-center px-6 py-14">
-      <View className="h-16 w-16 items-center justify-center rounded-full border border-border bg-panel">
-        <MaterialCommunityIcons name={icon} size={28} color={C.muted} />
+      <View className="h-16 w-16 items-center justify-center rounded-full bg-panel">
+        <MaterialCommunityIcons name={icon} size={28} color={"white"} />
       </View>
 
       <Txt weight="bold" className="mt-5 text-base">{title}</Txt>
@@ -430,10 +436,10 @@ function RecordsTab() {
         {RECORD_TILES.map(tile => (
           <View
             key={tile.label}
-            className="mb-3 w-[48.5%] rounded-2xl border border-border bg-panel p-4"
+            className="mb-3 w-[48.5%] rounded-2xl bg-panel p-4"
           >
-            <MaterialCommunityIcons name={tile.icon} size={20} color={C.muted} />
-            <Txt weight="extra" className="mt-3 text-2xl text-muted">
+            <MaterialCommunityIcons name={tile.icon} size={20} color={"white"} />
+            <Txt weight="extra" className="mt-3 text-2xl text-white">
               None
             </Txt>
             <Txt className="mt-0.5 text-xs text-muted">{tile.label}</Txt>
@@ -484,7 +490,7 @@ export default function ExerciseDetails() {
 
   return (
     <View className="flex-1 bg-bg">
-      <ScrollView contentContainerStyle={{ paddingBottom: 60 }}>
+      <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
         {loading && (
           <ActivityIndicator
             className="mt-40"

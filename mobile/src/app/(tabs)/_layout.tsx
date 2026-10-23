@@ -6,6 +6,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { useSession } from "@/src/context/session";
+import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 import { C } from "@/src/constants/theme";
 
 const ICONS = {
@@ -40,9 +41,10 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
   return (
     <View
       pointerEvents="box-none"
-      className="absolute inset-x-4"
+      className="absolute inset-x-4 gap-3"
       style={{ bottom: Math.max(insets.bottom, 12) }}
     >
+      <ActiveWorkoutBar inline />
       <View
         className="h-18 flex-row items-center gap-1 rounded-full border border-border bg-panel p-2"
         // shadows are the one thing set in style: they need platform-specific props

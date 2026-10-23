@@ -1,0 +1,5 @@
+export type TrainingExercise = { id: string; position: number; sets: number; min_reps: number; max_reps: number; rest_seconds: number; notes: string; exercises: { id: string; name: string; tracking_type: string } | null };
+export type Routine = { id: string; name: string; slug: string; description: string; level: string; goal: string; equipment: string; estimated_minutes: number; author: string; training_routine_categories?: { name: string; slug: string }; training_routine_exercises?: TrainingExercise[] };
+export type Program = Omit<Routine, "estimated_minutes"> & { tagline: string; duration_weeks: number; days_per_week: number; training_program_days?: { id: string; day_number: number; label: string; routine_id: string | null; training_routines: Routine | null }[] };
+export type Category = { id: string; slug: string; name: string };
+export const trainingLabels: Record<string, string> = { muscle: "Build muscle", strength: "Build strength", fat_loss: "Support fat loss", endurance: "Improve endurance", general: "General fitness", gym: "Gym", dumbbells: "Dumbbells", bodyweight: "Bodyweight", bands: "Resistance bands", mixed: "Mixed equipment" };

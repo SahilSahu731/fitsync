@@ -193,6 +193,7 @@ export async function listExercises(
 
   const { data, error, count } = await query
     .order("name")
+    .order("id")
     .range(from, to);
 
   checkDbError(error, "list exercises");

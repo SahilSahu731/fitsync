@@ -1,0 +1,3683 @@
+[
+  {
+    "slug": "incline-bench-press-dumbbell",
+    "name": "Incline Bench Press (Dumbbell)",
+    "description": "Incline Bench Press (Dumbbell) develops chest with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Set a bench to a low incline and plant your feet.",
+      "Bring the dumbbells beside your upper chest with straight wrists.",
+      "Press upward, then lower slowly to a comfortable depth."
+    ],
+    "tips": [
+      "Keep your shoulder blades supported."
+    ],
+    "mistakes": [
+      "Shrugging the shoulders or using a very steep incline."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "chest-fly-cable",
+    "name": "Chest Fly (Cable)",
+    "description": "Chest Fly (Cable) develops chest with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "front-delts"
+    ],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Set the handles around chest height and stand in a staggered stance.",
+      "Hold a slight elbow bend and open your arms comfortably.",
+      "Bring your hands together in front of your chest, then return slowly."
+    ],
+    "tips": [
+      "Keep the bend in your elbows consistent."
+    ],
+    "mistakes": [
+      "Reaching too far behind the torso."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "push-up",
+    "name": "Push Up",
+    "description": "Push Up develops chest with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts",
+      "abs"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Place your hands slightly wider than your shoulders and extend your legs.",
+      "Brace your trunk and lower your chest between your hands.",
+      "Press the floor away while keeping your body in one line."
+    ],
+    "tips": [
+      "Elevate your hands on a stable surface to make this easier."
+    ],
+    "mistakes": [
+      "Letting the hips sag or flaring the elbows sideways."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "incline-push-up",
+    "name": "Incline Push Up",
+    "description": "Incline Push Up develops chest with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts",
+      "abs"
+    ],
+    "equipment": [
+      "bodyweight",
+      "bench"
+    ],
+    "instructions": [
+      "Place your hands on a secure elevated bench and step back.",
+      "Keep your body straight as you lower your chest toward the edge.",
+      "Press back to the starting position without dropping your hips."
+    ],
+    "tips": [
+      "A higher surface reduces the difficulty."
+    ],
+    "mistakes": [
+      "Using a bench that can slide or tip."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "pull-up",
+    "name": "Pull Up",
+    "description": "Pull Up develops lats with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "upper-back",
+      "forearms"
+    ],
+    "equipment": [
+      "bodyweight",
+      "pull-up-bar"
+    ],
+    "instructions": [
+      "Take an overhand grip on a secure bar and hang with control.",
+      "Draw your elbows toward your ribs until your chin clears the bar.",
+      "Lower smoothly until your arms extend comfortably."
+    ],
+    "tips": [
+      "Use assistance if you cannot complete controlled repetitions."
+    ],
+    "mistakes": [
+      "Kicking the legs or craning the neck to reach the bar."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "chin-up",
+    "name": "Chin Up",
+    "description": "Chin Up develops lats, biceps with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "lats",
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "upper-back",
+      "forearms"
+    ],
+    "equipment": [
+      "bodyweight",
+      "pull-up-bar"
+    ],
+    "instructions": [
+      "Grip a secure bar with palms facing you at a comfortable width.",
+      "Pull your chest toward the bar while keeping your trunk steady.",
+      "Lower under control to comfortable arm extension."
+    ],
+    "tips": [
+      "Keep your wrists comfortable and use assistance when needed."
+    ],
+    "mistakes": [
+      "Swinging or dropping quickly into the bottom position."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "lat-pulldown-cable",
+    "name": "Lat Pulldown (Cable)",
+    "description": "Lat Pulldown (Cable) develops lats with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "upper-back"
+    ],
+    "equipment": [
+      "cable",
+      "machine"
+    ],
+    "instructions": [
+      "Secure your thighs under the pad and grasp the bar overhead.",
+      "Pull your elbows down until the bar approaches your upper chest.",
+      "Allow your arms to extend slowly without lifting off the seat."
+    ],
+    "tips": [
+      "Keep a small, steady backward lean."
+    ],
+    "mistakes": [
+      "Pulling behind the neck or rocking the torso."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "seated-row-cable",
+    "name": "Seated Row (Cable)",
+    "description": "Seated Row (Cable) develops upper back, lats with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "upper-back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "rear-delts"
+    ],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Sit with knees slightly bent and grasp the handle with a tall torso.",
+      "Pull the handle toward your lower ribs, bringing your elbows back.",
+      "Reach forward under control without rounding your lower back."
+    ],
+    "tips": [
+      "Keep your shoulders away from your ears."
+    ],
+    "mistakes": [
+      "Rocking backward to move a heavier load."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "bent-over-row-barbell",
+    "name": "Bent Over Row (Barbell)",
+    "description": "Bent Over Row (Barbell) develops upper back, lats with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "upper-back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "rear-delts",
+      "lower-back"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Hold the bar and hinge at your hips with softly bent knees.",
+      "Brace your torso and pull the bar toward your lower ribs.",
+      "Lower until your arms extend while maintaining the hinge."
+    ],
+    "tips": [
+      "Choose a load that lets your torso remain steady."
+    ],
+    "mistakes": [
+      "Jerking the bar or repeatedly standing upright."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "single-arm-row-dumbbell",
+    "name": "Single Arm Row (Dumbbell)",
+    "description": "Single Arm Row (Dumbbell) develops lats, upper back with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "lats",
+      "upper-back"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "rear-delts"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Support one hand on a bench and hinge with a stable back.",
+      "Draw the dumbbell toward your hip without twisting your torso.",
+      "Lower slowly and complete both sides."
+    ],
+    "tips": [
+      "Keep your hips and shoulders facing the floor."
+    ],
+    "mistakes": [
+      "Rotating the whole body to lift the weight."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "shoulder-press-dumbbell",
+    "name": "Shoulder Press (Dumbbell)",
+    "description": "Shoulder Press (Dumbbell) develops front delts, side delts with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "front-delts",
+      "side-delts"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Sit against an upright bench with dumbbells beside your shoulders.",
+      "Brace your abdomen and press the weights overhead.",
+      "Lower to a comfortable shoulder-height position."
+    ],
+    "tips": [
+      "Keep your forearms underneath the weights."
+    ],
+    "mistakes": [
+      "Arching the lower back to finish the press."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "lateral-raise-dumbbell",
+    "name": "Lateral Raise (Dumbbell)",
+    "description": "Lateral Raise (Dumbbell) develops side delts with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "side-delts"
+    ],
+    "secondaryMuscles": [
+      "front-delts"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Stand tall holding light dumbbells at your sides.",
+      "Raise your arms slightly forward of your sides to about shoulder height.",
+      "Lower slowly with softly bent elbows."
+    ],
+    "tips": [
+      "Lead with your elbows and keep your neck relaxed."
+    ],
+    "mistakes": [
+      "Swinging the torso or shrugging the weights upward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "reverse-fly-machine",
+    "name": "Reverse Fly (Machine)",
+    "description": "Reverse Fly (Machine) develops rear delts with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "rear-delts"
+    ],
+    "secondaryMuscles": [
+      "upper-back",
+      "traps"
+    ],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Adjust the seat so the handles align near shoulder height.",
+      "Keep your chest supported and open your arms outward.",
+      "Return slowly without letting the weight stack slam."
+    ],
+    "tips": [
+      "Maintain a small bend in your elbows."
+    ],
+    "mistakes": [
+      "Moving the torso off the support."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "face-pull",
+    "name": "Face Pull",
+    "description": "Face Pull develops rear delts, upper back with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "rear-delts",
+      "upper-back"
+    ],
+    "secondaryMuscles": [
+      "traps"
+    ],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Set a rope attachment near face height and step back.",
+      "Pull the rope toward your forehead with elbows comfortably out.",
+      "Separate your hands near your face, then return slowly."
+    ],
+    "tips": [
+      "Use a light load and keep your ribs down."
+    ],
+    "mistakes": [
+      "Leaning far backward or forcing the shoulder rotation."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "shrug-dumbbell",
+    "name": "Shrug (Dumbbell)",
+    "description": "Shrug (Dumbbell) develops traps with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "traps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Stand tall with dumbbells beside your thighs.",
+      "Lift your shoulders upward without bending your elbows.",
+      "Pause briefly and lower with control."
+    ],
+    "tips": [
+      "Keep your head aligned over your torso."
+    ],
+    "mistakes": [
+      "Rolling the shoulders or bouncing the weights."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "bicep-curl-barbell",
+    "name": "Bicep Curl (Barbell)",
+    "description": "Bicep Curl (Barbell) develops biceps with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Hold a bar with palms up and elbows near your sides.",
+      "Bend your elbows to bring the bar toward your chest.",
+      "Lower slowly to comfortable elbow extension."
+    ],
+    "tips": [
+      "Keep your upper arms still."
+    ],
+    "mistakes": [
+      "Leaning backward or swinging the bar."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "hammer-curl-dumbbell",
+    "name": "Hammer Curl (Dumbbell)",
+    "description": "Hammer Curl (Dumbbell) develops biceps, forearms with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "biceps",
+      "forearms"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Stand holding dumbbells with palms facing inward.",
+      "Curl the weights while keeping your elbows near your ribs.",
+      "Lower slowly without changing the grip."
+    ],
+    "tips": [
+      "Keep wrists in line with your forearms."
+    ],
+    "mistakes": [
+      "Throwing the weights upward with hip movement."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "preacher-curl-ez-bar",
+    "name": "Preacher Curl (EZ Bar)",
+    "description": "Preacher Curl (EZ Bar) develops biceps with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "ez-bar",
+      "bench"
+    ],
+    "instructions": [
+      "Adjust the preacher pad to support your upper arms.",
+      "Curl the bar while keeping your upper arms against the pad.",
+      "Lower smoothly without forcing the elbows straight."
+    ],
+    "tips": [
+      "Start with a light weight at the bottom."
+    ],
+    "mistakes": [
+      "Bouncing out of a stretched elbow position."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "triceps-pushdown-cable",
+    "name": "Triceps Pushdown (Cable)",
+    "description": "Triceps Pushdown (Cable) develops triceps with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Stand facing a high cable with elbows tucked near your sides.",
+      "Extend your elbows to move the handle toward your thighs.",
+      "Return slowly while keeping your upper arms steady."
+    ],
+    "tips": [
+      "Keep shoulders relaxed and wrists neutral."
+    ],
+    "mistakes": [
+      "Using the whole torso to push the weight down."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "triceps-extension-dumbbell",
+    "name": "Triceps Extension (Dumbbell)",
+    "description": "Triceps Extension (Dumbbell) develops triceps with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Sit upright holding one dumbbell securely overhead with both hands.",
+      "Bend your elbows to lower the weight behind your head comfortably.",
+      "Straighten your elbows without arching your back."
+    ],
+    "tips": [
+      "Use a manageable load and keep your ribs down."
+    ],
+    "mistakes": [
+      "Forcing a deep shoulder stretch or flaring excessively."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "triceps-dip",
+    "name": "Triceps Dip",
+    "description": "Triceps Dip develops triceps with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [
+      "chest",
+      "front-delts"
+    ],
+    "equipment": [
+      "bodyweight",
+      "other"
+    ],
+    "instructions": [
+      "Support yourself on secure parallel dip bars with shoulders controlled.",
+      "Bend your elbows and lower only as far as your shoulders tolerate.",
+      "Press through the bars to return to the top."
+    ],
+    "tips": [
+      "Use assistance when you cannot control the descent."
+    ],
+    "mistakes": [
+      "Dropping too deep or allowing the shoulders to roll forward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "wrist-curl-dumbbell",
+    "name": "Wrist Curl (Dumbbell)",
+    "description": "Wrist Curl (Dumbbell) develops forearms with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "forearms"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Sit with forearms supported and palms facing upward over the bench edge.",
+      "Curl your wrists upward through a comfortable range.",
+      "Lower slowly while keeping your forearms supported."
+    ],
+    "tips": [
+      "Use light weights and small controlled movements."
+    ],
+    "mistakes": [
+      "Moving the elbows or forcing the wrists beyond comfort."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "squat-barbell",
+    "name": "Squat (Barbell)",
+    "description": "Squat (Barbell) develops quads, glutes with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "adductors",
+      "abs",
+      "lower-back"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Set rack safeties and position the bar securely on your upper back.",
+      "Unrack, brace your torso, and bend your hips and knees together.",
+      "Descend to a controlled depth, then push through your whole foot to stand."
+    ],
+    "tips": [
+      "Let your knees track in the direction of your toes."
+    ],
+    "mistakes": [
+      "Losing balance onto the toes or collapsing the knees inward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain.",
+      "Set safety catches or use a competent spotter for challenging loads."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "goblet-squat",
+    "name": "Goblet Squat",
+    "description": "Goblet Squat develops quads, glutes with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "adductors",
+      "abs"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Hold a dumbbell close to your chest and stand comfortably.",
+      "Bend your hips and knees while keeping your feet planted.",
+      "Stand by pushing through your whole foot."
+    ],
+    "tips": [
+      "Keep the weight near your chest throughout."
+    ],
+    "mistakes": [
+      "Letting your heels lift or rounding your torso."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "leg-press-machine",
+    "name": "Leg Press (Machine)",
+    "description": "Leg Press (Machine) develops quads, glutes with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "adductors"
+    ],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Adjust the seat and place both feet securely on the platform.",
+      "Release the safety and bend your knees without lifting your pelvis.",
+      "Push the platform away without forcefully locking your knees."
+    ],
+    "tips": [
+      "Use a depth that keeps your lower back supported."
+    ],
+    "mistakes": [
+      "Lowering so far that your pelvis curls away from the pad."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "bulgarian-split-squat",
+    "name": "Bulgarian Split Squat",
+    "description": "Bulgarian Split Squat develops quads, glutes with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "lunge",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "adductors",
+      "abs"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Place the top of one foot on a low bench behind you.",
+      "Bend the front knee and hip while lowering your rear knee.",
+      "Push through the front foot to rise and repeat on both sides."
+    ],
+    "tips": [
+      "Start with bodyweight while finding your balance."
+    ],
+    "mistakes": [
+      "Pushing mainly with the rear leg or taking too narrow a stance."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "leg-extension-machine",
+    "name": "Leg Extension (Machine)",
+    "description": "Leg Extension (Machine) develops quads with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "quads"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Align your knees with the machine pivot and position the pad above your ankles.",
+      "Straighten your knees smoothly without lifting your hips.",
+      "Lower the pad slowly to the starting position."
+    ],
+    "tips": [
+      "Adjust the backrest so your thighs remain supported."
+    ],
+    "mistakes": [
+      "Kicking the pad or slamming into knee lockout."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "romanian-deadlift-barbell",
+    "name": "Romanian Deadlift (Barbell)",
+    "description": "Romanian Deadlift (Barbell) develops hamstrings, glutes with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "hamstrings",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "lower-back",
+      "forearms"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Stand with the bar at your thighs and knees slightly bent.",
+      "Move your hips backward while keeping the bar close to your legs.",
+      "Stop at a controlled hamstring stretch and drive your hips forward to stand."
+    ],
+    "tips": [
+      "Keep the knee bend nearly constant."
+    ],
+    "mistakes": [
+      "Rounding the back or lowering farther than your hip mobility allows."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "deadlift-barbell",
+    "name": "Deadlift (Barbell)",
+    "description": "Deadlift (Barbell) develops glutes, hamstrings with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "glutes",
+      "hamstrings"
+    ],
+    "secondaryMuscles": [
+      "quads",
+      "lower-back",
+      "traps",
+      "forearms"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Place the bar over your midfoot and grip just outside your legs.",
+      "Brace your torso, take slack out of the bar, and push the floor away.",
+      "Stand tall, then guide the bar down by moving hips back and bending knees."
+    ],
+    "tips": [
+      "Keep the bar close and reset your position between repetitions."
+    ],
+    "mistakes": [
+      "Jerking the bar off the floor or leaning back at the top."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "seated-leg-curl-machine",
+    "name": "Seated Leg Curl (Machine)",
+    "description": "Seated Leg Curl (Machine) develops hamstrings with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Align your knees with the pivot and secure the thigh pad.",
+      "Curl your heels down and back without lifting your hips.",
+      "Return slowly to comfortable knee extension."
+    ],
+    "tips": [
+      "Keep your pelvis against the seat."
+    ],
+    "mistakes": [
+      "Using momentum or allowing the hips to slide forward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "hip-thrust-barbell",
+    "name": "Hip Thrust (Barbell)",
+    "description": "Hip Thrust (Barbell) develops glutes with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "abs"
+    ],
+    "equipment": [
+      "barbell",
+      "bench"
+    ],
+    "instructions": [
+      "Support your upper back on a stable bench and pad the bar across your hips.",
+      "Plant your feet and lift your hips by pressing through them.",
+      "Finish with your torso and thighs aligned, then lower under control."
+    ],
+    "tips": [
+      "Keep your ribs down and chin gently tucked."
+    ],
+    "mistakes": [
+      "Overarching the lower back to lift the bar higher."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "standing-calf-raise",
+    "name": "Standing Calf Raise",
+    "description": "Standing Calf Raise develops calves with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "calves"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Position your forefeet securely on the platform and hold the support.",
+      "Rise onto the balls of your feet and pause briefly.",
+      "Lower your heels smoothly through a comfortable range."
+    ],
+    "tips": [
+      "Keep your knees softly extended."
+    ],
+    "mistakes": [
+      "Bouncing at the bottom or rolling onto the outside of the feet."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "hip-abduction-machine",
+    "name": "Hip Abduction (Machine)",
+    "description": "Hip Abduction (Machine) develops abductors, glutes with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "abductors",
+      "glutes"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Sit with your back supported and pads against the outer thighs.",
+      "Move your knees apart without shifting your pelvis.",
+      "Return slowly without letting the stack slam."
+    ],
+    "tips": [
+      "Keep the range controlled and comfortable."
+    ],
+    "mistakes": [
+      "Rocking the torso to move the pads."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "hip-adduction-machine",
+    "name": "Hip Adduction (Machine)",
+    "description": "Hip Adduction (Machine) develops adductors with controlled resistance.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "adductors"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Adjust the starting width comfortably and place pads inside your thighs.",
+      "Bring your legs together while keeping your pelvis steady.",
+      "Open slowly back to the starting width."
+    ],
+    "tips": [
+      "Start with a modest range and light resistance."
+    ],
+    "mistakes": [
+      "Forcing an excessive stretch at the start."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "plank",
+    "name": "Plank",
+    "description": "Plank develops abs with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "core",
+    "difficulty": "beginner",
+    "trackingType": "duration",
+    "movementPattern": "stillness",
+    "primaryMuscles": [
+      "abs"
+    ],
+    "secondaryMuscles": [
+      "obliques",
+      "glutes"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Place your forearms on the floor with elbows below shoulders.",
+      "Extend your legs and brace your abdomen to form a straight body line.",
+      "Hold while breathing normally, then lower your knees to finish."
+    ],
+    "tips": [
+      "Stop the hold when you cannot maintain your position."
+    ],
+    "mistakes": [
+      "Letting the lower back sag or holding your breath."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Breathe steadily throughout the hold.",
+    "status": "draft"
+  },
+  {
+    "slug": "side-plank",
+    "name": "Side Plank",
+    "description": "Side Plank develops obliques with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "core",
+    "difficulty": "beginner",
+    "trackingType": "duration",
+    "movementPattern": "stillness",
+    "primaryMuscles": [
+      "obliques"
+    ],
+    "secondaryMuscles": [
+      "abs",
+      "abductors"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lie on your side with your elbow below your shoulder.",
+      "Lift your hips and balance on your forearm and the side of your foot.",
+      "Hold with steady breathing, then lower and switch sides."
+    ],
+    "tips": [
+      "Bend your knees for an easier variation."
+    ],
+    "mistakes": [
+      "Letting the hips drop or rotating your chest toward the floor."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Breathe steadily throughout the hold.",
+    "status": "draft"
+  },
+  {
+    "slug": "crunch",
+    "name": "Crunch",
+    "description": "Crunch develops abs with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "core",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "abs"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lie on your back with knees bent and feet on the floor.",
+      "Curl your upper back off the floor by bringing your ribs toward your pelvis.",
+      "Lower your shoulders slowly without pulling your neck."
+    ],
+    "tips": [
+      "Use a small controlled movement."
+    ],
+    "mistakes": [
+      "Pulling the head forward or turning the movement into a full sit-up."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "hanging-knee-raise",
+    "name": "Hanging Knee Raise",
+    "description": "Hanging Knee Raise develops abs, hip flexors with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "core",
+    "difficulty": "intermediate",
+    "trackingType": "reps",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "abs",
+      "hip-flexors"
+    ],
+    "secondaryMuscles": [
+      "forearms",
+      "obliques"
+    ],
+    "equipment": [
+      "bodyweight",
+      "pull-up-bar"
+    ],
+    "instructions": [
+      "Hang from a secure bar with shoulders engaged.",
+      "Lift your knees toward your chest and gently curl your pelvis upward.",
+      "Lower your legs slowly without swinging."
+    ],
+    "tips": [
+      "Begin each repetition from a still position."
+    ],
+    "mistakes": [
+      "Kicking the legs or only bending at the hips."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "glute-bridge",
+    "name": "Glute Bridge",
+    "description": "Glute Bridge develops glutes with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "abs"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lie on your back with bent knees and feet flat near your hips.",
+      "Press through your feet and lift your pelvis until your thighs align with your torso.",
+      "Pause briefly, then lower your hips slowly."
+    ],
+    "tips": [
+      "Keep your ribs down throughout."
+    ],
+    "mistakes": [
+      "Lifting by arching the lower back."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "bodyweight-squat",
+    "name": "Bodyweight Squat",
+    "description": "Bodyweight Squat develops quads, glutes with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "adductors",
+      "abs"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Stand with feet at a comfortable width and arms forward for balance.",
+      "Bend your hips and knees while keeping your feet flat.",
+      "Stand smoothly from a depth you can control."
+    ],
+    "tips": [
+      "Use a stable support if you need help with balance."
+    ],
+    "mistakes": [
+      "Letting the heels rise or rushing the descent."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "back-extension",
+    "name": "Back Extension",
+    "description": "Back Extension develops lower back, glutes with controlled bodyweight movement.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "lower-back",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings"
+    ],
+    "equipment": [
+      "bodyweight",
+      "machine"
+    ],
+    "instructions": [
+      "Set the pad below your hips and secure your feet.",
+      "Hinge forward at the hips while keeping your back controlled.",
+      "Lift your torso until it lines up with your legs."
+    ],
+    "tips": [
+      "Use a comfortable range with no added load initially."
+    ],
+    "mistakes": [
+      "Hyperextending the lower back at the top."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "incline-bench-press-barbell",
+    "name": "Incline Bench Press (Barbell)",
+    "description": "Incline Bench Press (Barbell) trains chest.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts"
+    ],
+    "equipment": [
+      "barbell",
+      "bench"
+    ],
+    "instructions": [
+      "Lie back on an incline bench. Using a medium-width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
+      "As you breathe in, come down slowly until you feel the bar on you upper chest.",
+      "After a second pause, bring the bar back to the starting position as you breathe out and push the bar using your chest muscles. Lock your arms in the contracted position, squeeze your chest, hold for a second and then start coming down slowly again. Tip: it should take at least twice as long to go down than to come up.",
+      "Repeat the movement for the prescribed amount of repetitions.",
+      "When you are done, place the bar back in the rack."
+    ],
+    "tips": [
+      "Keep the bench at a moderate incline."
+    ],
+    "mistakes": [
+      "Bouncing the bar off your chest."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "chest-fly-dumbbell",
+    "name": "Chest Fly (Dumbbell)",
+    "description": "Chest Fly (Dumbbell) trains chest.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "front-delts"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Lie down on a flat bench with a dumbbell on each hand resting on top of your thighs. The palms of your hand will be facing each other.",
+      "Then using your thighs to help raise the dumbbells, lift the dumbbells one at a time so you can hold them in front of you at shoulder width with the palms of your hands facing each other. Raise the dumbbells up like you're pressing them, but stop and hold just before you lock out. This will be your starting position.",
+      "With a slight bend on your elbows in order to prevent stress at the biceps tendon, lower your arms out at both sides in a wide arc until you feel a stretch on your chest. Breathe in as you perform this portion of the movement. Tip: Keep in mind that throughout the movement, the arms should remain stationary; the movement should only occur at the shoulder joint.",
+      "Return your arms back to the starting position as you squeeze your chest muscles and breathe out. Tip: Make sure to use the same arc of motion used to lower the weights.",
+      "Hold for a second at the contracted position and repeat the movement for the prescribed amount of repetitions."
+    ],
+    "tips": [
+      "Maintain a soft bend in the elbows."
+    ],
+    "mistakes": [
+      "Lowering beyond a comfortable shoulder stretch."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "chest-press-machine",
+    "name": "Chest Press (Machine)",
+    "description": "Chest Press (Machine) trains chest.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts"
+    ],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Sit down on the Chest Press Machine and select the weight.",
+      "Step on the lever provided by the machine since it will help you to bring the handles forward so that you can grab the handles and fully extend the arms.",
+      "Grab the handles with a palms-down grip and lift your elbows so that your upper arms are parallel to the floor to the sides of your torso. Tip: Your forearms will be pointing forward since you are grabbing the handles. Once you bring the handles forward and extend the arms you will be at the starting position.",
+      "Now bring the handles back towards you as you breathe in.",
+      "Push the handles away from you as you flex your pecs and you breathe out. Hold the contraction for a second before going back to the starting position.",
+      "Repeat for the recommended amount of reps.",
+      "When finished step on the lever again and slowly get the handles back to their original place."
+    ],
+    "tips": [
+      "Adjust the seat so handles sit near mid-chest."
+    ],
+    "mistakes": [
+      "Letting the shoulders roll forward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "bench-press-close-grip-barbell",
+    "name": "Bench Press - Close Grip (Barbell)",
+    "description": "Bench Press - Close Grip (Barbell) trains triceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [
+      "chest",
+      "front-delts"
+    ],
+    "equipment": [
+      "barbell",
+      "bench"
+    ],
+    "instructions": [
+      "Lie back on a flat bench. Using a close grip (around shoulder width), lift the bar from the rack and hold it straight over you with your arms locked. This will be your starting position.",
+      "As you breathe in, come down slowly until you feel the bar on your middle chest. Tip: Make sure that - as opposed to a regular bench press - you keep the elbows close to the torso at all times in order to maximize triceps involvement.",
+      "After a second pause, bring the bar back to the starting position as you breathe out and push the bar using your triceps muscles. Lock your arms in the contracted position, hold for a second and then start coming down slowly again. Tip: It should take at least twice as long to go down than to come up.",
+      "Repeat the movement for the prescribed amount of repetitions.",
+      "When you are done, place the bar back in the rack."
+    ],
+    "tips": [
+      "Use a comfortable shoulder-width grip."
+    ],
+    "mistakes": [
+      "Placing the hands so close that wrists bend sideways."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "decline-bench-press-barbell",
+    "name": "Decline Bench Press (Barbell)",
+    "description": "Decline Bench Press (Barbell) trains chest.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts"
+    ],
+    "equipment": [
+      "barbell",
+      "bench"
+    ],
+    "instructions": [
+      "Secure your legs at the end of the decline bench and slowly lay down on the bench.",
+      "Using a medium width grip (a grip that creates a 90-degree angle in the middle of the movement between the forearms and the upper arms), lift the bar from the rack and hold it straight over you with your arms locked. The arms should be perpendicular to the floor. This will be your starting position. Tip: In order to protect your rotator cuff, it is best if you have a spotter help you lift the barbell off the rack.",
+      "As you breathe in, come down slowly until you feel the bar on your lower chest.",
+      "After a second pause, bring the bar back to the starting position as you breathe out and push the bar using your chest muscles. Lock your arms and squeeze your chest in the contracted position, hold for a second and then start coming down slowly again. Tip: It should take at least twice as long to go down than to come up).",
+      "Repeat the movement for the prescribed amount of repetitions.",
+      "When you are done, place the bar back in the rack."
+    ],
+    "tips": [
+      "Secure your legs and use a spotter for unracking."
+    ],
+    "mistakes": [
+      "Bouncing the bar or losing your foot support."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "floor-press-dumbbell",
+    "name": "Floor Press (Dumbbell)",
+    "description": "Floor Press (Dumbbell) trains chest.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Lay on the floor holding dumbbells in your hands. Your knees can be bent. Begin with the weights fully extended above you.",
+      "Lower the weights until your upper arm comes in contact with the floor. You can tuck your elbows to emphasize triceps size and strength, or to focus on your chest angle your arms to the side.",
+      "Pause at the bottom, and then bring the weight together at the top by extending through the elbows."
+    ],
+    "tips": [
+      "Pause gently when the upper arms reach the floor."
+    ],
+    "mistakes": [
+      "Slamming the elbows into the floor."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "pullover-dumbbell",
+    "name": "Pullover (Dumbbell)",
+    "description": "Pullover (Dumbbell) trains chest and lats.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "chest",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Place a dumbbell standing up on a flat bench.",
+      "Ensuring that the dumbbell stays securely placed at the top of the bench, lie perpendicular to the bench (torso across it as in forming a cross) with only your shoulders lying on the surface. Hips should be below the bench and legs bent with feet firmly on the floor. The head will be off the bench as well.",
+      "Grasp the dumbbell with both hands and hold it straight over your chest at arms length. Both palms should be pressing against the underside one of the sides of the dumbbell. This will be your starting position.\nCaution: Always ensure that the dumbbell used for this exercise is secure. Using a dumbbell with loose plates can result in the dumbbell falling apart and falling on your face.",
+      "While keeping your arms straight, lower the weight slowly in an arc behind your head while breathing in until you feel a stretch on the chest.",
+      "At that point, bring the dumbbell back to the starting position using the arc through which the weight was lowered and exhale as you perform this movement.",
+      "Hold the weight on the initial position for a second and repeat the motion for the prescribed number of repetitions."
+    ],
+    "tips": [
+      "Keep your ribs down and elbows softly bent."
+    ],
+    "mistakes": [
+      "Forcing the weight far behind your head."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "decline-push-up",
+    "name": "Decline Push Up",
+    "description": "Decline Push Up trains chest.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts",
+      "abs"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lie on the floor face down and place your hands about 36 inches apart while holding your torso up at arms length. Move your feet up to a box or bench. This will be your starting position.",
+      "Next, lower yourself downward until your chest almost touches the floor as you inhale.",
+      "Now breathe out and press your upper body back up to the starting position while squeezing your chest.",
+      "After a brief pause at the top contracted position, you can begin to lower yourself downward again for as many repetitions as needed."
+    ],
+    "tips": [
+      "Use a secure low platform for your feet."
+    ],
+    "mistakes": [
+      "Sagging through the lower back."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "diamond-push-up",
+    "name": "Diamond Push Up",
+    "description": "Diamond Push Up trains triceps.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [
+      "chest",
+      "front-delts",
+      "abs"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lie on the floor face down and place your hands closer than shoulder width for a close hand position. Make sure that you are holding your torso up at arms' length.",
+      "Lower yourself until your chest almost touches the floor as you inhale.",
+      "Using your triceps and some of your pectoral muscles, press your upper body back up to the starting position and squeeze your chest. Breathe out as you perform this step.",
+      "After a second pause at the contracted position, repeat the movement for the prescribed amount of repetitions."
+    ],
+    "tips": [
+      "Use a close hand position that feels comfortable on your wrists."
+    ],
+    "mistakes": [
+      "Flaring your elbows and dropping your hips."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "chest-dip",
+    "name": "Chest Dip",
+    "description": "Chest Dip trains chest.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "chest"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "front-delts"
+    ],
+    "equipment": [
+      "bodyweight",
+      "other"
+    ],
+    "instructions": [
+      "For this exercise you will need access to parallel bars. To get yourself into the starting position, hold your body at arms length (arms locked) above the bars.",
+      "While breathing in, lower yourself slowly with your torso leaning forward around 30 degrees or so and your elbows flared out slightly until you feel a slight stretch in the chest.",
+      "Once you feel the stretch, use your chest to bring your body back to the starting position as you breathe out. Tip: Remember to squeeze the chest at the top of the movement for a second.",
+      "Repeat the movement for the prescribed amount of repetitions."
+    ],
+    "tips": [
+      "Lean forward slightly and use a controlled depth."
+    ],
+    "mistakes": [
+      "Descending beyond your comfortable shoulder range."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "pull-up-assisted-band",
+    "name": "Pull Up (Assisted Band)",
+    "description": "Pull Up (Assisted Band) trains lats.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "upper-back"
+    ],
+    "equipment": [
+      "bodyweight",
+      "pull-up-bar",
+      "resistance-band"
+    ],
+    "instructions": [
+      "Choke the band around the center of the pullup bar. You can use different bands to provide varying levels of assistance.",
+      "Pull the end of the band down, and place one bent knee into the loop, ensuring it won't slip out. Take a medium to wide grip on the bar. This will be your starting position.",
+      "Pull yourself upward by contracting the lats as you flex the elbow. The elbow should be driven to your side. Pull to the front, attempting to get your chin over the bar. Avoid swinging or jerking movements.",
+      "After a brief pause, return to the starting position."
+    ],
+    "tips": [
+      "Check the band and its attachment before each set."
+    ],
+    "mistakes": [
+      "Letting the band snap back or swinging."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "inverted-row",
+    "name": "Inverted Row",
+    "description": "Inverted Row trains upper back and lats.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "upper-back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "rear-delts"
+    ],
+    "equipment": [
+      "bodyweight",
+      "barbell"
+    ],
+    "instructions": [
+      "Position a bar in a rack to about waist height. You can also use a smith machine.",
+      "Take a wider than shoulder width grip on the bar and position yourself hanging underneath the bar. Your body should be straight with your heels on the ground with your arms fully extended. This will be your starting position.",
+      "Begin by flexing the elbow, pulling your chest towards the bar. Retract your shoulder blades as you perform the movement.",
+      "Pause at the top of the motion, and return yourself to the start position.",
+      "Repeat for the desired number of repetitions."
+    ],
+    "tips": [
+      "Use a bar that cannot move and keep your trunk straight."
+    ],
+    "mistakes": [
+      "Raising your hips without bringing the chest toward the bar."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "t-bar-row",
+    "name": "T Bar Row",
+    "description": "T Bar Row trains upper back and lats.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "upper-back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "rear-delts"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Position a bar into a landmine or in a corner to keep it from moving. Load an appropriate weight onto your end.",
+      "Stand over the bar, and position a Double D row handle around the bar next to the collar. Using your hips and legs, rise to a standing position.",
+      "Assume a wide stance with your hips back and your chest up. Your arms should be extended. This will be your starting position.",
+      "Pull the weight to your upper abdomen by retracting the shoulder blades and flexing the elbows. Do not jerk the weight or cheat during the movement.",
+      "After a brief pause, return to the starting position."
+    ],
+    "tips": [
+      "Keep your torso stable and the bar anchor secure."
+    ],
+    "mistakes": [
+      "Jerking your torso upright."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "chest-supported-row-dumbbell",
+    "name": "Chest Supported Row (Dumbbell)",
+    "description": "Chest Supported Row (Dumbbell) trains upper back and lats.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "upper-back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "rear-delts"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Using a neutral grip, lean into an incline bench.",
+      "Take a dumbbell in each hand with a neutral grip, beginning with the arms straight. This will be your starting position.",
+      "Retract the shoulder blades and flex the elbows to row the dumbbells to your side.",
+      "Pause at the top of the motion, and then return to the starting position."
+    ],
+    "tips": [
+      "Keep your chest in contact with the bench."
+    ],
+    "mistakes": [
+      "Lifting your torso to create momentum."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "straight-arm-pulldown-cable",
+    "name": "Straight Arm Pulldown (Cable)",
+    "description": "Straight Arm Pulldown (Cable) trains lats.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "triceps",
+      "abs"
+    ],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "You will start by grabbing the wide bar from the top pulley of a pulldown machine and using a wider than shoulder-width pronated (palms down) grip. Step backwards two feet or so.",
+      "Bend your torso forward at the waist by around 30-degrees with your arms fully extended in front of you and a slight bend at the elbows. If your arms are not fully extended then you need to step a bit more backwards until they are. Once your arms are fully extended and your torso is slightly bent at the waist, tighten the lats and then you are ready to begin.",
+      "While keeping the arms straight, pull the bar down by contracting the lats until your hands are next to the side of the thighs. Breathe out as you perform this step.",
+      "While keeping the arms straight, go back to the starting position while breathing in.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Keep a slight elbow bend throughout."
+    ],
+    "mistakes": [
+      "Turning the movement into a triceps pushdown."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "single-arm-lat-pulldown",
+    "name": "Single Arm Lat Pulldown",
+    "description": "Single Arm Lat Pulldown trains lats.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "upper-back"
+    ],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Select an appropriate weight and adjust the knee pad to help keep you down. Grasp the handle with a pronated grip. This will be your starting position.",
+      "Pull the handle down, squeezing your elbow to your side as you flex the elbow.",
+      "Pause at the bottom of the motion, and then slowly return the handle to the starting position.",
+      "For multiple repetitions, avoid completely returning the weight to keep tension on the muscles being worked."
+    ],
+    "tips": [
+      "Pull your elbow toward the side of your torso."
+    ],
+    "mistakes": [
+      "Twisting your torso to move the weight."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "seated-row-machine",
+    "name": "Seated Row (Machine)",
+    "description": "Seated Row (Machine) trains upper back and lats.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "upper-back",
+      "lats"
+    ],
+    "secondaryMuscles": [
+      "biceps",
+      "rear-delts"
+    ],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Load an appropriate weight onto the pins and adjust the seat height so that the handles are at chest level. Grasp the handles with either a neutral or pronated grip. This will be your starting position.",
+      "Pull the handles towards your torso, retracting your shoulder blades as you flex the elbow.",
+      "Pause at the bottom of the motion, and then slowly return the handles to the starting position. For multiple repetitions, avoid completely returning the weight to the stops to keep tension on the muscles being worked."
+    ],
+    "tips": [
+      "Adjust the chest pad for a comfortable reach."
+    ],
+    "mistakes": [
+      "Lifting the chest away from the pad."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "shrug-barbell",
+    "name": "Shrug (Barbell)",
+    "description": "Shrug (Barbell) trains traps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "traps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Stand up straight with your feet at shoulder width as you hold a barbell with both hands in front of you using a pronated grip (palms facing the thighs). Tip: Your hands should be a little wider than shoulder width apart. You can use wrist wraps for this exercise for a better grip. This will be your starting position.",
+      "Raise your shoulders up as far as you can go as you breathe out and hold the contraction for a second. Tip: Refrain from trying to lift the barbell by using your biceps.",
+      "Slowly return to the starting position as you breathe in.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Lift the shoulders straight up, then lower slowly."
+    ],
+    "mistakes": [
+      "Rolling the shoulders under load."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "bicep-curl-dumbbell",
+    "name": "Bicep Curl (Dumbbell)",
+    "description": "Bicep Curl (Dumbbell) trains biceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Stand up straight with a dumbbell in each hand at arm's length. Keep your elbows close to your torso and rotate the palms of your hands until they are facing forward. This will be your starting position.",
+      "Now, keeping the upper arms stationary, exhale and curl the weights while contracting your biceps. Continue to raise the weights until your biceps are fully contracted and the dumbbells are at shoulder level. Hold the contracted position for a brief pause as you squeeze your biceps.",
+      "Then, inhale and slowly begin to lower the dumbbells back to the starting position.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Keep your elbows close to your sides."
+    ],
+    "mistakes": [
+      "Swinging the weights with your hips."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "ez-bar-biceps-curl",
+    "name": "EZ Bar Biceps Curl",
+    "description": "EZ Bar Biceps Curl trains biceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "ez-bar"
+    ],
+    "instructions": [
+      "Stand up straight while holding an EZ curl bar at the wide outer handle. The palms of your hands should be facing forward and slightly tilted inward due to the shape of the bar. Keep your elbows close to your torso. This will be your starting position.",
+      "Now, while keeping your upper arms stationary, exhale and curl the weights forward while contracting the biceps. Focus on only moving your forearms.",
+      "Continue to raise the weight until your biceps are fully contracted and the bar is at shoulder level. Hold the top contracted position for a moment and squeeze the biceps.",
+      "Then inhale and slowly lower the bar back to the starting position.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Choose the angled grip that is comfortable for your wrists."
+    ],
+    "mistakes": [
+      "Leaning backward to lift the bar."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "seated-incline-curl-dumbbell",
+    "name": "Seated Incline Curl (Dumbbell)",
+    "description": "Seated Incline Curl (Dumbbell) trains biceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Sit back on an incline bench with a dumbbell in each hand held at arms length. Keep your elbows close to your torso and rotate the palms of your hands until they are facing forward. This will be your starting position.",
+      "While holding the upper arm stationary, curl the weights forward while contracting the biceps as you breathe out. Only the forearms should move. Continue the movement until your biceps are fully contracted and the dumbbells are at shoulder level. Hold the contracted position for a second.",
+      "Slowly begin to bring the dumbbells back to starting position as your breathe in.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Keep your back supported and shoulders comfortable."
+    ],
+    "mistakes": [
+      "Moving the elbows forward to finish the curl."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "concentration-curl",
+    "name": "Concentration Curl",
+    "description": "Concentration Curl trains biceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Sit down on a flat bench with one dumbbell in front of you between your legs. Your legs should be spread with your knees bent and feet on the floor.",
+      "Use your right arm to pick the dumbbell up. Place the back of your right upper arm on the top of your inner right thigh. Rotate the palm of your hand until it is facing forward away from your thigh. Tip: Your arm should be extended and the dumbbell should be above the floor. This will be your starting position.",
+      "While holding the upper arm stationary, curl the weights forward while contracting the biceps as you breathe out. Only the forearms should move. Continue the movement until your biceps are fully contracted and the dumbbells are at shoulder level. Tip: At the top of the movement make sure that the little finger of your arm is higher than your thumb. This guarantees a good contraction. Hold the contracted position for a second as you squeeze the biceps.",
+      "Slowly begin to bring the dumbbells back to starting position as your breathe in. Caution: Avoid swinging motions at any time.",
+      "Repeat for the recommended amount of repetitions. Then repeat the movement with the left arm."
+    ],
+    "tips": [
+      "Keep the upper arm supported against the inner thigh."
+    ],
+    "mistakes": [
+      "Rocking the torso to raise the dumbbell."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "bicep-curl-cable",
+    "name": "Bicep Curl (Cable)",
+    "description": "Bicep Curl (Cable) trains biceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "biceps"
+    ],
+    "secondaryMuscles": [
+      "forearms"
+    ],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Stand up with your torso upright while holding a cable curl bar that is attached to a low pulley. Grab the cable bar at shoulder width and keep the elbows close to the torso. The palm of your hands should be facing up (supinated grip). This will be your starting position.",
+      "While holding the upper arms stationary, curl the weights while contracting the biceps as you breathe out. Only the forearms should move. Continue the movement until your biceps are fully contracted and the bar is at shoulder level. Hold the contracted position for a second as you squeeze the muscle.",
+      "Slowly begin to bring the curl bar back to starting position as your breathe in.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Keep the elbows beside your torso."
+    ],
+    "mistakes": [
+      "Letting the cable pull your shoulders forward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "reverse-curl-barbell",
+    "name": "Reverse Curl (Barbell)",
+    "description": "Reverse Curl (Barbell) trains forearms.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "forearms"
+    ],
+    "secondaryMuscles": [
+      "biceps"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Stand up with your torso upright while holding a barbell at shoulder width with the elbows close to the torso. The palm of your hands should be facing down (pronated grip). This will be your starting position.",
+      "While holding the upper arms stationary, curl the weights while contracting the biceps as you breathe out. Only the forearms should move. Continue the movement until your biceps are fully contracted and the bar is at shoulder level. Hold the contracted position for a second as you squeeze the muscle.",
+      "Slowly begin to bring the bar back to starting position as your breathe in.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Use an overhand grip and straight wrists."
+    ],
+    "mistakes": [
+      "Bending the wrists to lift a heavy load."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "skullcrusher-ez-bar",
+    "name": "Skullcrusher (EZ Bar)",
+    "description": "Skullcrusher (EZ Bar) trains triceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "ez-bar",
+      "bench"
+    ],
+    "instructions": [
+      "Using a close grip, lift the EZ bar and hold it with your elbows in as you lie on the bench. Your arms should be perpendicular to the floor. This will be your starting position.",
+      "Keeping the upper arms stationary, lower the bar by allowing the elbows to flex. Inhale as you perform this portion of the movement. Pause once the bar is directly above the forehead.",
+      "Lift the bar back to the starting position by extending the elbow and exhaling.",
+      "Repeat."
+    ],
+    "tips": [
+      "Keep the upper arms steady and lower under control."
+    ],
+    "mistakes": [
+      "Dropping the bar toward your face."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "triceps-rope-pushdown",
+    "name": "Triceps Rope Pushdown",
+    "description": "Triceps Rope Pushdown trains triceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Attach a rope attachment to a high pulley and grab with a neutral grip (palms facing each other).",
+      "Standing upright with the torso straight and a very small inclination forward, bring the upper arms close to your body and perpendicular to the floor. The forearms should be pointing up towards the pulley as they hold the rope with the palms facing each other. This is your starting position.",
+      "Using the triceps, bring the rope down as you bring each side of the rope to the side of your thighs. At the end of the movement the arms are fully extended and perpendicular to the floor. The upper arms should always remain stationary next to your torso and only the forearms should move. Exhale as you perform this movement.",
+      "After holding for a second, at the contracted position, bring the rope slowly up to the starting point. Breathe in as you perform this step.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Separate the rope ends gently near the bottom."
+    ],
+    "mistakes": [
+      "Using bodyweight to force the handle downward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "triceps-extension-cable-overhead",
+    "name": "Triceps Extension (Cable Overhead)",
+    "description": "Triceps Extension (Cable Overhead) trains triceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Attach a rope to the bottom pulley of the pulley machine.",
+      "Grasping the rope with both hands, extend your arms with your hands directly above your head using a neutral grip (palms facing each other). Your elbows should be in close to your head and the arms should be perpendicular to the floor with the knuckles aimed at the ceiling. This will be your starting position.",
+      "Slowly lower the rope behind your head as you hold the upper arms stationary. Inhale as you perform this movement and pause when your triceps are fully stretched.",
+      "Return to the starting position by flexing your triceps as you breathe out.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Keep your ribs down while your elbows bend."
+    ],
+    "mistakes": [
+      "Arching the lower back or forcing shoulder range."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "triceps-kickback-dumbbell",
+    "name": "Triceps Kickback (Dumbbell)",
+    "description": "Triceps Kickback (Dumbbell) trains triceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Start with a dumbbell in each hand and your palms facing your torso. Keep your back straight with a slight bend in the knees and bend forward at the waist. Your torso should be almost parallel to the floor. Make sure to keep your head up. Your upper arms should be close to your torso and parallel to the floor. Your forearms should be pointed towards the floor as you hold the weights. There should be a 90-degree angle formed between your forearm and upper arm. This is your starting position.",
+      "Now, while keeping your upper arms stationary, exhale and use your triceps to lift the weights until the arm is fully extended. Focus on moving the forearm.",
+      "After a brief pause at the top contraction, inhale and slowly lower the dumbbells back down to the starting position.",
+      "Repeat the movement for the prescribed amount of repetitions."
+    ],
+    "tips": [
+      "Hold the upper arm steady beside your torso."
+    ],
+    "mistakes": [
+      "Swinging the shoulder instead of extending the elbow."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "skullcrusher-dumbbell",
+    "name": "Skullcrusher (Dumbbell)",
+    "description": "Skullcrusher (Dumbbell) trains triceps.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "triceps"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Lie on a flat bench while holding two dumbbells directly in front of you. Your arms should be fully extended at a 90-degree angle from your torso and the floor. The palms should be facing in and the elbows should be tucked in. This is the starting position.",
+      "As you breathe in and you keep the upper arms stationary with the elbows in, slowly lower the weight until the dumbbells are near your ears.",
+      "At that point, while keeping the elbows in and the upper arms stationary, use the triceps to bring the weight back up to the starting position as you breathe out.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Use light weights and keep them clear of your face."
+    ],
+    "mistakes": [
+      "Rushing the lowering phase."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "front-squat-barbell",
+    "name": "Front Squat (Barbell)",
+    "description": "Front Squat (Barbell) trains quads and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "advanced",
+    "trackingType": "reps_weight",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "abs",
+      "upper-back"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Set rack safeties and support the bar across your front shoulders in a secure front rack.",
+      "Unrack, step back, brace your trunk, and bend your hips and knees while keeping your elbows lifted.",
+      "Lower to a depth you can control, then push through your whole foot to stand. Re-rack carefully after the set."
+    ],
+    "tips": [
+      "Maintain a secure front rack and keep your elbows lifted."
+    ],
+    "mistakes": [
+      "Letting the chest collapse forward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "hack-squat-machine",
+    "name": "Hack Squat (Machine)",
+    "description": "Hack Squat (Machine) trains quads and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "adductors"
+    ],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Place your shoulders under the pads and keep your back against the support.",
+      "Position your feet securely, release the safety handles, and bend your hips and knees to a controlled depth.",
+      "Push through your whole foot to rise without forcefully locking your knees; re-engage the safety to finish."
+    ],
+    "tips": [
+      "Keep your back supported and use the safety stops."
+    ],
+    "mistakes": [
+      "Lowering beyond the point where your pelvis remains supported."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "squat-smith-machine",
+    "name": "Squat (Smith Machine)",
+    "description": "Squat (Smith Machine) trains quads and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "squat",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "adductors"
+    ],
+    "equipment": [
+      "smith-machine"
+    ],
+    "instructions": [
+      "To begin, first set the bar on the height that best matches your height. Once the correct height is chosen and the bar is loaded, step under the bar and place the back of your shoulders (slightly below the neck) across it.",
+      "Hold on to the bar using both arms at each side (palms facing forward), unlock it and lift it off the rack by first pushing with your legs and at the same time straightening your torso.",
+      "Position your legs using a shoulder width medium stance with the toes slightly pointed out. Keep your head up at all times and also maintain a straight back. This will be your starting position. (Note: For the purposes of this discussion we will use the medium stance which targets overall development; however you can choose any of the three stances discussed in the foot stances section).",
+      "Begin to raise the bar as you exhale by pushing the floor with the heel of your foot as you straighten the legs again and go back to the starting position.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Set safety stops and find a comfortable foot position."
+    ],
+    "mistakes": [
+      "Forcing a stance that causes knee or back discomfort."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "lunge-dumbbell",
+    "name": "Lunge (Dumbbell)",
+    "description": "Lunge (Dumbbell) trains quads and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "lunge",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "adductors"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Stand with your torso upright holding two dumbbells in your hands by your sides. This will be your starting position.",
+      "Step forward with your right leg around 2 feet or so from the foot being left stationary behind and lower your upper body down, while keeping the torso upright and maintaining balance. Inhale as you go down. Note: As in the other exercises, do not allow your knee to go forward beyond your toes as you come down, as this will put undue stress on the knee joint. Make sure that you keep your front shin perpendicular to the ground.",
+      "Using mainly the heel of your foot, push up and go back to the starting position as you exhale.",
+      "Repeat the movement for the recommended amount of repetitions and then perform with the left leg."
+    ],
+    "tips": [
+      "Take a comfortable stride and control the landing."
+    ],
+    "mistakes": [
+      "Stepping so narrowly that you lose balance."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "walking-lunge-barbell",
+    "name": "Walking Lunge (Barbell)",
+    "description": "Walking Lunge (Barbell) trains quads and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "lunge",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "abs"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Begin standing with your feet shoulder width apart and a barbell across your upper back.",
+      "Step forward with one leg, flexing the knees to drop your hips. Descend until your rear knee nearly touches the ground. Your posture should remain upright, and your front knee should stay above the front foot.",
+      "Drive through the heel of your lead foot and extend both knees to raise yourself back up.",
+      "Step forward with your rear foot, repeating the lunge on the opposite leg."
+    ],
+    "tips": [
+      "Use clear floor space and controlled steps."
+    ],
+    "mistakes": [
+      "Rushing between steps or losing trunk position."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "reverse-lunge-dumbbell",
+    "name": "Reverse Lunge (Dumbbell)",
+    "description": "Reverse Lunge (Dumbbell) trains quads and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "lunge",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "adductors"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Stand with your torso upright holding two dumbbells in your hands by your sides. This will be your starting position.",
+      "Push up and go back to the starting position as you exhale. Tip: Use the ball of your feet to push in order to accentuate the quadriceps. To focus on the glutes, press with your heels.",
+      "Now repeat with the opposite leg."
+    ],
+    "tips": [
+      "Step back softly and push through the front foot."
+    ],
+    "mistakes": [
+      "Pushing mainly off the rear toes."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "step-up-dumbbell",
+    "name": "Step Up (Dumbbell)",
+    "description": "Step Up (Dumbbell) trains quads and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "lunge",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Stand up straight while holding a dumbbell on each hand (palms facing the side of your legs).",
+      "Place the right foot on the elevated platform. Step on the platform by extending the hip and the knee of your right leg. Use the heel mainly to lift the rest of your body up and place the foot of the left leg on the platform as well. Breathe out as you execute the force required to come up.",
+      "Step down with the left leg by flexing the hip and knee of the right leg as you inhale. Return to the original standing position by placing the right foot of to next to the left foot on the initial position.",
+      "Repeat with the right leg for the recommended amount of repetitions and then perform with the left leg."
+    ],
+    "tips": [
+      "Choose a secure box height you can control."
+    ],
+    "mistakes": [
+      "Jumping from the trailing foot to reach the top."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "lying-leg-curl-machine",
+    "name": "Lying Leg Curl (Machine)",
+    "description": "Lying Leg Curl (Machine) trains hamstrings.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "hamstrings"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Adjust the machine lever to fit your height and lie face down on the leg curl machine with the pad of the lever on the back of your legs (just a few inches under the calves). Tip: Preferably use a leg curl machine that is angled as opposed to flat since an angled position is more favorable for hamstrings recruitment.",
+      "Keeping the torso flat on the bench, ensure your legs are fully stretched and grab the side handles of the machine. Position your toes straight (or you can also use any of the other two stances described on the foot positioning section). This will be your starting position.",
+      "As you exhale, curl your legs up as far as possible without lifting the upper legs from the pad. Once you hit the fully contracted position, hold it for a second.",
+      "As you inhale, bring the legs back to the initial position. Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Align your knees with the pivot and keep hips against the pad."
+    ],
+    "mistakes": [
+      "Lifting the hips to move a heavier load."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "sumo-deadlift-barbell",
+    "name": "Sumo Deadlift (Barbell)",
+    "description": "Sumo Deadlift (Barbell) trains glutes and quads.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "glutes",
+      "quads"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "adductors",
+      "lower-back"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Begin with a bar loaded on the ground. Approach the bar so that the bar intersects the middle of the feet. The feet should be set very wide, near the collars. Bend at the hips to grip the bar. The arms should be directly below the shoulders, inside the legs, and you can use a pronated grip, a mixed grip, or hook grip. Relax the shoulders, which in effect lengthens your arms.",
+      "Take a breath, and then lower your hips, looking forward with your head with your chest up. Drive through the floor, spreading your feet apart, with your weight on the back half of your feet. Extend through the hips and knees.",
+      "As the bar passes through the knees, lean back and drive the hips into the bar, pulling your shoulder blades together.",
+      "Return the weight to the ground by bending at the hips and controlling the weight on the way down."
+    ],
+    "tips": [
+      "Use a wide stance that lets your knees follow your toes."
+    ],
+    "mistakes": [
+      "Jerking the bar or allowing knees to collapse inward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "deadlift-trap-bar",
+    "name": "Deadlift (Trap Bar)",
+    "description": "Deadlift (Trap Bar) trains quads and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "lower-back",
+      "forearms"
+    ],
+    "equipment": [
+      "other"
+    ],
+    "instructions": [
+      "For this exercise load a trap bar, also known as a hex bar, to an appropriate weight resting on the ground. Stand in the center of the apparatus and grasp both handles.",
+      "Lower your hips, look forward with your head and keep your chest up.",
+      "Begin the movement by driving through the heels and extend your hips and knees. Avoid rounding your back at all times.",
+      "At the completion of the movement, lower the weight back to the ground under control."
+    ],
+    "tips": [
+      "Stand centered inside the bar and brace before lifting."
+    ],
+    "mistakes": [
+      "Tilting the bar by pulling unevenly."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "good-morning-barbell",
+    "name": "Good Morning (Barbell)",
+    "description": "Good Morning (Barbell) trains hamstrings and glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "hamstrings",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "lower-back"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Begin with a bar on a rack at shoulder height. Rack the bar across the rear of your shoulders as you would a power squat, not on top of your shoulders. Keep your back tight, shoulder blades pinched together, and your knees slightly bent. Step back from the rack.",
+      "Begin by bending at the hips, moving them back as you bend over to near parallel. Keep your back arched and your cervical spine in proper alignment.",
+      "Reverse the motion by extending through the hips with your glutes and hamstrings. Continue until you have returned to the starting position."
+    ],
+    "tips": [
+      "Use a light load and hinge only as far as you can control."
+    ],
+    "mistakes": [
+      "Rounding the back or turning the movement into a squat."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "glute-kickback-cable",
+    "name": "Glute Kickback (Cable)",
+    "description": "Glute Kickback (Cable) trains glutes.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "intermediate",
+    "trackingType": "reps_weight",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings"
+    ],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Hook a leather ankle cuff to a low cable pulley and then attach the cuff to your ankle.",
+      "Face the weight stack from a distance of about two feet, grasping the steel frame for support.",
+      "While keeping your knees and hips bent slightly and your abs tight, contract your glutes to slowly \"kick\" the working leg back in a semicircular arc as high as it will comfortably go as you breathe out. Tip: At full extension, squeeze your glutes for a second in order to achieve a peak contraction.",
+      "Now slowly bring your working leg forward, resisting the pull of the cable until you reach the starting position.",
+      "Repeat for the recommended amount of repetitions.",
+      "Switch legs and repeat the movement for the other side."
+    ],
+    "tips": [
+      "Keep the pelvis facing forward and use a modest range."
+    ],
+    "mistakes": [
+      "Arching the lower back to raise the leg higher."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "single-leg-glute-bridge",
+    "name": "Single Leg Glute Bridge",
+    "description": "Single Leg Glute Bridge trains glutes.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "hinge",
+    "primaryMuscles": [
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "abs"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lay on the floor with your feet flat and knees bent.",
+      "Raise one leg off of the ground, pulling the knee to your chest. This will be your starting position.",
+      "Execute the movement by driving through the heel, extending your hip upward and raising your glutes off of the ground.",
+      "Extend as far as possible, pause and then return to the starting position."
+    ],
+    "tips": [
+      "Keep both sides of your pelvis level."
+    ],
+    "mistakes": [
+      "Twisting the hips or arching the lower back."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "seated-calf-raise",
+    "name": "Seated Calf Raise",
+    "description": "Seated Calf Raise trains calves.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "calves"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Sit on the machine and place your toes on the lower portion of the platform provided with the heels extending off. Choose the toe positioning of your choice (forward, in, or out) as per the beginning of this chapter.",
+      "Place your lower thighs under the lever pad, which will need to be adjusted according to the height of your thighs. Now place your hands on top of the lever pad in order to prevent it from slipping forward.",
+      "Lift the lever slightly by pushing your heels up and release the safety bar. This will be your starting position.",
+      "Slowly lower your heels by bending at the ankles until the calves are fully stretched. Inhale as you perform this movement.",
+      "Raise the heels by extending the ankles as high as possible as you contract the calves and breathe out. Hold the top contraction for a second.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Pause briefly at the top and lower slowly."
+    ],
+    "mistakes": [
+      "Bouncing through the bottom position."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "calf-press-leg-press-machine",
+    "name": "Calf Press (Leg Press Machine)",
+    "description": "Calf Press (Leg Press Machine) trains calves.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "calves"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Using a leg press machine, sit down on the machine and place your legs on the platform directly in front of you at a medium (shoulder width) foot stance.",
+      "Press on the platform by raising your heels as you breathe out by extending your ankles as high as possible and flexing your calf. Ensure that the knee is kept stationary at all times. There should be no bending at any time. Hold the contracted position by a second before you start to go back down.",
+      "Go back slowly to the starting position as you breathe in by lowering your heels as you bend the ankles until calves are stretched.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Keep the forefeet securely on the platform."
+    ],
+    "mistakes": [
+      "Letting your feet slip off the platform edge."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "seated-wrist-extension-barbell",
+    "name": "Seated Wrist Extension (Barbell)",
+    "description": "Seated Wrist Extension (Barbell) trains forearms.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "forearms"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Hold a barbell with both hands and your palms facing down; hands spaced about shoulder width.",
+      "Place your feet flat on the floor, at a distance that is slightly wider than shoulder width apart.",
+      "Lean forward and place your forearms on top of your upper thighs with your palms down. Tip: Make sure that the back of the wrists lay on top of your knees. This will be your starting position.",
+      "Lower the bar as far as possible while inhaling and keeping a tight grip.",
+      "Now curl bar up as high as possible while flexing the forearms and exhaling. Hold the contraction at the top for a second and Tip: Only the wrist should move."
+    ],
+    "tips": [
+      "Support the forearms and use a light bar."
+    ],
+    "mistakes": [
+      "Lifting the elbows or forcing the wrists backward."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "cable-crunch",
+    "name": "Cable Crunch",
+    "description": "Cable Crunch trains abs.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "core",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "abs"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Kneel below a high pulley that contains a rope attachment.",
+      "Grasp cable rope attachment and lower the rope until your hands are placed next to your face.",
+      "Flex your hips slightly and allow the weight to hyperextend the lower back. This will be your starting position.",
+      "With the hips stationary, flex the waist as you contract the abs so that the elbows travel towards the middle of the thighs. Exhale as you perform this portion of the movement and hold the contraction for a second.",
+      "Slowly return to the starting position as you inhale. Tip: Make sure that you keep constant tension on the abs throughout the movement. Also, do not choose a weight so heavy that the lower back handles the brunt of the work.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Curl your ribs toward your pelvis while keeping hips steady."
+    ],
+    "mistakes": [
+      "Pulling with the arms or sitting back onto your heels."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "reverse-crunch",
+    "name": "Reverse Crunch",
+    "description": "Reverse Crunch trains abs.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "core",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "abs"
+    ],
+    "secondaryMuscles": [
+      "hip-flexors"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lie down on the floor with your legs fully extended and arms to the side of your torso with the palms on the floor. Your arms should be stationary for the entire exercise.",
+      "Move your legs up so that your thighs are perpendicular to the floor and feet are together and parallel to the floor. This is the starting position.",
+      "While inhaling, move your legs towards the torso as you roll your pelvis backwards and you raise your hips off the floor. At the end of this movement your knees will be touching your chest.",
+      "Hold the contraction for a second and move your legs back to the starting position while exhaling.",
+      "Repeat for the recommended amount of repetitions."
+    ],
+    "tips": [
+      "Lift the pelvis gently rather than swinging your legs."
+    ],
+    "mistakes": [
+      "Using momentum to throw the knees toward your chest."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "lying-leg-raise",
+    "name": "Lying Leg Raise",
+    "description": "Lying Leg Raise trains abs and hip flexors.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "core",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "abs",
+      "hip-flexors"
+    ],
+    "secondaryMuscles": [],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lie on your back on the floor with your legs extended and arms beside your body.",
+      "Brace your abdomen and raise your legs with slightly bent knees while keeping your lower back controlled.",
+      "Lower slowly only as far as you can without arching your lower back."
+    ],
+    "tips": [
+      "Use a range that lets your lower back stay controlled."
+    ],
+    "mistakes": [
+      "Lowering the legs until the back arches."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "russian-twist",
+    "name": "Russian Twist",
+    "description": "Russian Twist trains obliques.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "core",
+    "difficulty": "intermediate",
+    "trackingType": "reps",
+    "movementPattern": "rotation",
+    "primaryMuscles": [
+      "obliques"
+    ],
+    "secondaryMuscles": [
+      "abs"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Sit on the floor with bent knees, feet supported, and hands together in front of your chest.",
+      "Lean back slightly with a controlled torso, then rotate your chest slowly to one side.",
+      "Return through the center and rotate to the other side without throwing your arms or forcing your lower back."
+    ],
+    "tips": [
+      "Rotate slowly with feet supported if needed."
+    ],
+    "mistakes": [
+      "Throwing your arms side to side while your trunk stays still."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "dead-bug",
+    "name": "Dead Bug",
+    "description": "Dead Bug trains abs.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "core",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "abs"
+    ],
+    "secondaryMuscles": [
+      "obliques",
+      "hip-flexors"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Lie on your back with hips and knees bent to right angles and arms pointing upward.",
+      "Brace your abdomen, then slowly extend one leg and the opposite arm without arching your back.",
+      "Return to the start and alternate sides with controlled breathing."
+    ],
+    "tips": [
+      "Move only as far as you can without arching your lower back."
+    ],
+    "mistakes": [
+      "Moving too quickly or losing contact with the floor."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "ab-wheel",
+    "name": "Ab Wheel",
+    "description": "Ab Wheel trains abs.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "core",
+    "difficulty": "intermediate",
+    "trackingType": "reps",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "abs"
+    ],
+    "secondaryMuscles": [
+      "lats",
+      "front-delts"
+    ],
+    "equipment": [
+      "other"
+    ],
+    "instructions": [
+      "Kneel on the floor and hold the wheel beneath your shoulders with both hands.",
+      "Brace your abdomen and roll forward only as far as you can without sagging through your lower back.",
+      "Pull the wheel back under your shoulders slowly, keeping your trunk supported throughout."
+    ],
+    "tips": [
+      "Begin on your knees and use a short controlled rollout."
+    ],
+    "mistakes": [
+      "Extending so far that the lower back sags."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "walking-lunge",
+    "name": "Walking Lunge",
+    "description": "Walking Lunge trains quads and glutes.",
+    "category": "calisthenics",
+    "activityType": "bodyweight-strength",
+    "bodyRegion": "lower-body",
+    "difficulty": "beginner",
+    "trackingType": "reps",
+    "movementPattern": "lunge",
+    "primaryMuscles": [
+      "quads",
+      "glutes"
+    ],
+    "secondaryMuscles": [
+      "hamstrings",
+      "adductors"
+    ],
+    "equipment": [
+      "bodyweight"
+    ],
+    "instructions": [
+      "Begin standing with your feet shoulder width apart and your hands on your hips.",
+      "Step forward with one leg, flexing the knees to drop your hips. Descend until your rear knee nearly touches the ground. Your posture should remain upright, and your front knee should stay above the front foot.",
+      "Drive through the heel of your lead foot and extend both knees to raise yourself back up.",
+      "Step forward with your rear foot, repeating the lunge on the opposite leg."
+    ],
+    "tips": [
+      "Keep steps controlled and knees tracking with your toes."
+    ],
+    "mistakes": [
+      "Losing balance by walking along a very narrow line."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a controlled, pain-free range of motion."
+    ],
+    "breathingTip": "Inhale during the return and exhale through the effort; keep your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "overhead-press-barbell",
+    "name": "Overhead Press (Barbell)",
+    "description": "Overhead Press (Barbell) strengthens the shoulders.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "front-delts",
+      "side-delts"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "equipment": [
+      "barbell"
+    ],
+    "instructions": [
+      "Stand with the bar at your upper chest and hands just outside shoulder width.",
+      "Brace your abdomen and press the bar overhead while keeping your ribs down.",
+      "Lower to the upper chest under control."
+    ],
+    "tips": [
+      "Keep the movement controlled and use a comfortable shoulder range."
+    ],
+    "mistakes": [
+      "Swinging the torso or forcing a painful range of motion."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "arnold-press-dumbbell",
+    "name": "Arnold Press (Dumbbell)",
+    "description": "Arnold Press (Dumbbell) strengthens the shoulders.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "front-delts",
+      "side-delts"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "equipment": [
+      "dumbbell",
+      "bench"
+    ],
+    "instructions": [
+      "Sit supported with dumbbells in front of your shoulders, palms facing you.",
+      "Press upward while smoothly turning your palms forward through a comfortable range.",
+      "Lower and reverse the rotation without arching your back."
+    ],
+    "tips": [
+      "Keep the movement controlled and use a comfortable shoulder range."
+    ],
+    "mistakes": [
+      "Swinging the torso or forcing a painful range of motion."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "shoulder-press-machine",
+    "name": "Shoulder Press (Machine)",
+    "description": "Shoulder Press (Machine) strengthens the shoulders.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "push",
+    "primaryMuscles": [
+      "front-delts",
+      "side-delts"
+    ],
+    "secondaryMuscles": [
+      "triceps"
+    ],
+    "equipment": [
+      "machine"
+    ],
+    "instructions": [
+      "Adjust the seat so handles start near shoulder height.",
+      "Keep your back supported and press the handles upward without forcing your elbows straight.",
+      "Lower slowly to a comfortable starting position."
+    ],
+    "tips": [
+      "Keep the movement controlled and use a comfortable shoulder range."
+    ],
+    "mistakes": [
+      "Swinging the torso or forcing a painful range of motion."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "lateral-raise-cable",
+    "name": "Lateral Raise (Cable)",
+    "description": "Lateral Raise (Cable) strengthens the shoulders.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "other",
+    "primaryMuscles": [
+      "side-delts"
+    ],
+    "secondaryMuscles": [
+      "front-delts"
+    ],
+    "equipment": [
+      "cable"
+    ],
+    "instructions": [
+      "Stand beside a low pulley and hold the handle with the outside hand.",
+      "Raise your arm slightly forward of your side to about shoulder height.",
+      "Lower slowly, keeping your torso still; repeat on the other side."
+    ],
+    "tips": [
+      "Keep the movement controlled and use a comfortable shoulder range."
+    ],
+    "mistakes": [
+      "Swinging the torso or forcing a painful range of motion."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  },
+  {
+    "slug": "reverse-fly-dumbbell",
+    "name": "Reverse Fly (Dumbbell)",
+    "description": "Reverse Fly (Dumbbell) strengthens the rear shoulders and upper back.",
+    "category": "strength",
+    "activityType": "weight-training",
+    "bodyRegion": "upper-body",
+    "difficulty": "beginner",
+    "trackingType": "reps_weight",
+    "movementPattern": "pull",
+    "primaryMuscles": [
+      "rear-delts"
+    ],
+    "secondaryMuscles": [
+      "upper-back",
+      "traps"
+    ],
+    "equipment": [
+      "dumbbell"
+    ],
+    "instructions": [
+      "Hold light dumbbells and hinge forward with a stable back and softly bent knees.",
+      "Open your arms to the sides with a slight bend in the elbows.",
+      "Lower under control without swinging your torso."
+    ],
+    "tips": [
+      "Keep the movement controlled and use a comfortable shoulder range."
+    ],
+    "mistakes": [
+      "Swinging the torso or forcing a painful range of motion."
+    ],
+    "safetyNotes": [
+      "Use secure equipment and a pain-free range; stop if you feel sharp pain."
+    ],
+    "breathingTip": "Inhale during the return; exhale through the effort while keeping your torso supported.",
+    "status": "draft"
+  }
+]
