@@ -10,7 +10,7 @@ import { notificationProgramId, registerProgramNotifications } from "./notificat
 type Context = { active: FollowedProgram | null; loading: boolean; error: string; refresh: () => Promise<void>; };
 const ProgramContext = createContext<Context | null>(null);
 export function ProgramProvider({ children }: { children: React.ReactNode }) {
-  const { user, ready, settings } = useSession();
+  const { user, ready } = useSession();
   const { session } = useWorkout();
   const [snapshot, setSnapshot] = useState<{ userId: string; active: FollowedProgram | null; error: string } | null>(null);
   const generation = useRef(0);
@@ -39,13 +39,15 @@ export function ProgramProvider({ children }: { children: React.ReactNode }) {
     return () => subscription.remove();
   }, [refresh, userId, ready]);
   useEffect(() => {
-    if (!userId || !ready || !active?.enrollment.reminder_enabled || !settings?.workoutReminders || Platform.OS === "web") return;
+    if (!userId || !ready || Platform.OS === "web") return;
+    // Claim this installation for the signed-in account even without an active
+    // program. Consent is checked separately on the server before every push.
     const register = () => { void registerProgramNotifications().catch(() => { /* Explicit reminder settings surface registration failures. */ }); };
     register();
     const foreground = AppState.addEventListener("change", state => { if (state === "active") register(); });
     const token = Notifications.addPushTokenListener(register);
     return () => { foreground.remove(); token.remove(); };
-  }, [userId, ready, active?.enrollment.reminder_enabled, settings?.workoutReminders]);
+  }, [userId, ready]);
   return <ProgramContext.Provider value={{ active, loading, error, refresh }}>{children}</ProgramContext.Provider>;
 }
 export function useProgram() {

@@ -104,7 +104,7 @@ export async function getTemplate(userId: string, id: string) {
       *,
       workout_template_exercises(
         *,
-        exercises(name),
+        exercises(name,exercise_media(kind,delivery_url,sort_order)),
         workout_template_sets(*)
       )
     `)

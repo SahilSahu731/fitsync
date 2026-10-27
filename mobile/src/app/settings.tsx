@@ -204,7 +204,7 @@ export default function SettingsScreen() {
       </View>
 
       <Txt className="mt-2 text-xs leading-5 text-muted">
-        Choose the time in your program's reminder settings. Turning this off
+        Choose the time in your program reminder settings. Turning this off
         silences daily program reminders on all your devices.
       </Txt>
 

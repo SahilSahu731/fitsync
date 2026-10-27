@@ -59,39 +59,41 @@ export async function runProgramReminders() {
     const claimed = await db.rpc("claim_fitsync_program_reminders", { p_limit: 50 });
     checkDbError(claimed.error, "claim program reminders");
     if (!claimed.data?.length) break;
-    await Promise.all(claimed.data.map(async (job: any) => {
-      try {
-        const [enrollment, device] = await Promise.all([
-          db.from("program_enrollments").select("*").eq("id", job.enrollment_id).maybeSingle(),
-          db.from("program_push_devices").select("*").eq("id", job.device_id).maybeSingle()
-        ]);
-        checkDbError(enrollment.error, "load reminder enrollment"); checkDbError(device.error, "load reminder device");
-        const e = enrollment.data; const d = device.data;
-        if (!e || !d?.enabled || d.user_id !== e.user_id || !canSendReminder(e, job.local_date)) {
-          await updateJob(job.id, { status: "cancelled" }); return;
+    for (let offset = 0; offset < claimed.data.length; offset += 6) {
+      await Promise.all(claimed.data.slice(offset, offset + 6).map(async (job: any) => {
+        try {
+          const [enrollment, device] = await Promise.all([
+            db.from("program_enrollments").select("*").eq("id", job.enrollment_id).maybeSingle(),
+            db.from("program_push_devices").select("*").eq("id", job.device_id).maybeSingle()
+          ]);
+          checkDbError(enrollment.error, "load reminder enrollment"); checkDbError(device.error, "load reminder device");
+          const e = enrollment.data; const d = device.data;
+          if (!e || !d?.enabled || d.user_id !== e.user_id || !canSendReminder(e, job.local_date)) {
+            await updateJob(job.id, { status: "cancelled" }); return;
+          }
+          const auth = await db.from("auth_sessions").select("id").eq("id", d.session_id).eq("user_id", e.user_id).is("revoked_at", null).gt("expires_at", new Date().toISOString()).maybeSingle();
+          checkDbError(auth.error, "check reminder device session");
+          if (!auth.data) { await updateJob(job.id, { status: "cancelled" }); return; }
+          const preference = await db.from("user_settings").select("workout_reminders").eq("user_id", e.user_id).maybeSingle();
+          checkDbError(preference.error, "check reminder consent");
+          const copy = preference.data?.workout_reminders ? reminderCopy(await programDetail(e.user_id, e.id)) : null;
+          if (!copy) { await updateJob(job.id, { status: "cancelled" }); return; }
+          attempted++;
+          const response = await expoRequest("send", [{ to: d.token, ...copy, sound: "rest_complete.wav", channelId: "program-reminders-v1", ttl: 3600,
+            data: { type: "program-reminder", enrollmentId: e.id }, priority: "normal" }]);
+          const ticket = response.data?.[0];
+          if (ticket?.status === "ok" && ticket.id) await updateJob(job.id, { status: "accepted", ticket_id: ticket.id });
+          else {
+            const code = ticket?.details?.error ?? "ticket_error";
+            await updateJob(job.id, { status: "failed", error_code: code });
+            if (code === "DeviceNotRegistered") await disableDevice(d.id);
+          }
+        } catch {
+          // Do not log tokens, request payloads, or personal workout names.
+          await updateJob(job.id, { status: "failed", error_code: "send_or_lookup_failed" });
         }
-        const auth = await db.from("auth_sessions").select("id").eq("id", d.session_id).eq("user_id", e.user_id).is("revoked_at", null).gt("expires_at", new Date().toISOString()).maybeSingle();
-        checkDbError(auth.error, "check reminder device session");
-        if (!auth.data) { await updateJob(job.id, { status: "cancelled" }); return; }
-        const preference = await db.from("user_settings").select("workout_reminders").eq("user_id", e.user_id).maybeSingle();
-        checkDbError(preference.error, "check reminder consent");
-        const copy = preference.data?.workout_reminders ? reminderCopy(await programDetail(e.user_id, e.id)) : null;
-        if (!copy) { await updateJob(job.id, { status: "cancelled" }); return; }
-        attempted++;
-        const response = await expoRequest("send", [{ to: d.token, ...copy, sound: "rest_complete.wav", channelId: "program-reminders-v1", ttl: 3600,
-          data: { type: "program-reminder", enrollmentId: e.id }, priority: "normal" }]);
-        const ticket = response.data?.[0];
-        if (ticket?.status === "ok" && ticket.id) await updateJob(job.id, { status: "accepted", ticket_id: ticket.id });
-        else {
-          const code = ticket?.details?.error ?? "ticket_error";
-          await updateJob(job.id, { status: "failed", error_code: code });
-          if (code === "DeviceNotRegistered") await disableDevice(d.id);
-        }
-      } catch {
-        // Do not log tokens, request payloads, or personal workout names.
-        await updateJob(job.id, { status: "failed", error_code: "send_or_lookup_failed" });
-      }
-    }));
+      }));
+    }
   }
   return { queued: queued.data, attempted };
 }

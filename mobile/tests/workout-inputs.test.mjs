@@ -29,7 +29,8 @@ test("number responder survives rerenders and preserves its drag origin", () => 
   const React = {
     useRef(value) { const index = cursor++; return slots[index] ??= { current: value }; },
     useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial; return [slots[index], () => {}]; },
-    useLayoutEffect(callback) { callback(); }
+    useLayoutEffect(callback) { callback(); },
+    useEffect(callback) { callback(); }
   };
   const { NumberEntry } = load("../src/features/workouts/components/workout-controls.tsx", {
     react: React, "react/jsx-runtime": { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) },

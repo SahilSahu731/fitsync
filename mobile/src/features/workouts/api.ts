@@ -59,7 +59,7 @@ export type TemplateExercise = {
   position: number;
   notes?: string;
   rest_seconds?: number;
-  exercises?: { name: string };
+  exercises?: { name: string; exercise_media?: { kind: string; delivery_url: string | null; sort_order: number }[] };
   workout_template_sets?: TemplateSet[];
 };
 
