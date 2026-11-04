@@ -9,6 +9,7 @@ import workoutRoutes from "./modules/workouts/workout.routes.js";
 import catalogAdminRoutes from "./modules/training-catalog/catalog.admin.routes.js";
 import programFollowRoutes from "./modules/program-follow/program.routes.js";
 import catalogRoutes from "./modules/training-catalog/catalog.routes.js";
+import exploreRoutes from "./modules/explore/explore.routes.js";
 
 import {
   notFound,
@@ -18,8 +19,12 @@ import {
 export const app = express();
 
 app.disable("x-powered-by");
+
 app.use(helmet());
-app.use(express.json({ limit: "64kb" }));
+
+app.use(
+  express.json({ limit: "64kb" })
+);
 
 app.get("/health", (_req, res) => {
   res.json({
@@ -36,6 +41,8 @@ app.use("/api/workouts", workoutRoutes);
 app.use("/api/program-follow", programFollowRoutes);
 app.use("/api/catalog/admin", catalogAdminRoutes);
 app.use("/api/catalog", catalogRoutes);
+
+app.use("/api/explore", exploreRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

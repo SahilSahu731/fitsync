@@ -11,7 +11,9 @@
     "exercises:seed": "tsx scripts/seed-starter-exercises.ts",
     "exercises:import": "tsx scripts/import-free-exercise-db.ts",
     "programs:reminders": "tsx scripts/send-program-reminders.ts",
-    "programs:check": "tsx scripts/check-program-following.ts"
+    "programs:check": "tsx scripts/check-program-following.ts",
+    "explore:seed": "tsx scripts/seed-explore-resources.ts",
+    "catalog:seed": "tsx src/modules/training-catalog/catalog.seed.ts"
   },
   "keywords": [],
   "author": "",
