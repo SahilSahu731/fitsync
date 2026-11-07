@@ -1,3 +1,4 @@
+import { useBilling } from "@/src/features/billing/billing-context";
 import { useAppAlert } from "@/src/components/app-dialog";
 
 import React, { useState } from "react";
@@ -27,6 +28,7 @@ export default function DeleteAccountScreen() {
   const router = useRouter();
 
   const { user, deleteAccount } = useSession();
+  const { entitlement, manage } = useBilling();
 
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,7 +42,7 @@ export default function DeleteAccountScreen() {
 
     Alert.alert(
       "Permanently delete your FitSync account?",
-      "Your FitSync profile, fitness settings, uploaded avatar, and backend sessions will be removed. This cannot be undone.",
+      "Your FitSync data will be permanently removed. Deleting your account does not cancel a store subscription. Manage or cancel it in the store before deleting.",
       [
         {
           text: "Cancel",
@@ -154,6 +156,8 @@ export default function DeleteAccountScreen() {
             </View>
           ))}
         </View>
+
+        {entitlement.source === "revenuecat" && <View className="mt-6 rounded-2xl bg-panel p-5"><Txt className="text-sm leading-6">Deleting your account does not cancel your store subscription.</Txt><Pressable className="mt-3" onPress={() => void manage().catch(error => Alert.alert("Subscription", error.message))}><Txt weight="semibold" className="text-brand">Manage or cancel subscription</Txt></Pressable></View>}
 
         <Txt
           weight="bold"

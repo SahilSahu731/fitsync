@@ -5,7 +5,7 @@ import { accessToken, unavailable, upstream, validOrigin } from "@/lib/server-ap
 async function handle(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   if (request.method !== "GET" && !validOrigin(request)) return NextResponse.json({ message: "Request origin not allowed." }, { status: 403 });
   const { path } = await context.params;
-  if (!["exercises", "me", "catalog"].includes(path[0]) || path.some(part => !/^[a-zA-Z0-9_-]+$/.test(part))) return new NextResponse(null, { status: 404 });
+  if (!["exercises", "me", "catalog", "explore"].includes(path[0]) || path.some(part => !/^[a-zA-Z0-9_-]+$/.test(part))) return new NextResponse(null, { status: 404 });
   const token = await accessToken();
   const publicCatalog = isPublicCatalogRead(request.method, path);
   if (!token && !publicCatalog) return NextResponse.json({ message: "Please sign in to continue." }, { status: 401 });

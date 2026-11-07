@@ -1,3 +1,6 @@
+import { TOOL_TAG, readTool } from "./explore.tools.js";
+import { db } from "../../config/supabase.js";
+import { checkDbError } from "../../common/errors.js";
 import { Router } from "express";
 import { z } from "zod";
 
@@ -63,6 +66,11 @@ const filtersSchema = z.object({
         "mixed"
     ]).optional()
 });
+
+router.get("/tools", asyncHandler(async (_req, res) => {
+    const { data, error } = await db.from("explore_resources").select("*").contains("tags", [TOOL_TAG]).eq("published", true).order("featured_rank", { nullsFirst: false }).order("title");
+    checkDbError(error, "list tools"); res.json((data ?? []).map(readTool));
+}));
 
 router.get(
     "/home",

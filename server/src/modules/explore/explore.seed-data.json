@@ -1,0 +1,1360 @@
+{
+  "resources": [
+    {
+      "slug": "push-day-preparation",
+      "kind": "mobility",
+      "title": "Before push day",
+      "summary": "Ease into pressing with shoulder movement and light practice.",
+      "cover_url": "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 5,
+      "tags": [
+        "Shoulders",
+        "Warm-up"
+      ],
+      "steps": [
+        {
+          "title": "Comfortable marching",
+          "seconds": 90,
+          "instruction": "Stand tall beside a wall. Lift one foot, set it down softly and alternate. Let your arms move naturally. Start slowly and increase your pace only while breathing comfortably.",
+          "modification": "Keep both hands on a stable chair and lift the feet just a few centimetres.",
+          "image_url": "asset:march",
+          "image_alt": "Illustrated movement cue: March in place. Alternate a comfortable knee lift.",
+          "video_url": null
+        },
+        {
+          "title": "Small shoulder circles",
+          "seconds": 60,
+          "instruction": "Stand or sit tall. With arms relaxed, circle the shoulders up, back and down for 30 seconds, then reverse. Keep the neck relaxed; make smooth circles without shrugging hard.",
+          "modification": "Sit with feet on the floor and reduce the size of each circle.",
+          "image_url": "asset:shoulders",
+          "image_alt": "Illustrated movement cue: Shoulder circles. Small circles, relaxed neck.",
+          "video_url": null
+        },
+        {
+          "title": "Wall slides",
+          "seconds": 90,
+          "instruction": "Stand with your back near a wall and elbows bent. Slide arms upward only as far as you can without arching the lower back. Lower slowly. Wall contact is optional; do not force wrists or elbows flat.",
+          "modification": "Slide one arm at a time, or stop below shoulder height.",
+          "image_url": "asset:wall",
+          "image_alt": "Illustrated movement cue: Wall slides. Ribs stacked, slide arms comfortably.",
+          "video_url": null
+        },
+        {
+          "title": "Seated upper-back turns",
+          "seconds": 60,
+          "instruction": "Sit toward the front of a stable chair, feet flat. Cross arms over your chest and gently turn your ribs to one side. Return to centre and alternate. Keep knees facing forward.",
+          "modification": "Rest hands on thighs and use a smaller turn.",
+          "image_url": "asset:rotation",
+          "image_alt": "Illustrated movement cue: Seated rotation. Turn the ribs; keep pelvis still.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 10
+    },
+    {
+      "slug": "squat-day-preparation",
+      "kind": "mobility",
+      "title": "Before squat day",
+      "summary": "Prepare ankles, hips and your squat pattern before loaded sets.",
+      "cover_url": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 6,
+      "tags": [
+        "Lower body",
+        "Warm-up"
+      ],
+      "steps": [
+        {
+          "title": "Comfortable marching",
+          "seconds": 90,
+          "instruction": "Stand tall beside a wall. Lift one foot, set it down softly and alternate. Let your arms move naturally. Start slowly and increase your pace only while breathing comfortably.",
+          "modification": "Keep both hands on a stable chair and lift the feet just a few centimetres.",
+          "image_url": "asset:march",
+          "image_alt": "Illustrated movement cue: March in place. Alternate a comfortable knee lift.",
+          "video_url": null
+        },
+        {
+          "title": "Supported ankle rocks",
+          "seconds": 90,
+          "instruction": "Face a wall in a short split stance. Keep the front heel planted and gently move the front knee forward over the toes, then back. Spend 45 seconds on each side without forcing depth.",
+          "modification": "Move the front foot nearer the wall and reduce the forward shift.",
+          "image_url": "asset:ankle",
+          "image_alt": "Illustrated movement cue: Ankle rock. Heel stays down, knee moves forward.",
+          "video_url": null
+        },
+        {
+          "title": "Wall hip hinges",
+          "seconds": 90,
+          "instruction": "Stand a short step in front of a wall, facing away. Soften knees, push hips back to lightly touch the wall, then stand tall. Keep your back long and pressure through the whole foot.",
+          "modification": "Stand closer to the wall and use a shorter range.",
+          "image_url": "asset:hinge",
+          "image_alt": "Illustrated movement cue: Hip hinge. Send hips back, keep a long spine.",
+          "video_url": null
+        },
+        {
+          "title": "Supported shallow squats",
+          "seconds": 90,
+          "instruction": "Hold a sturdy support. Place feet about shoulder-width apart. Bend hips and knees together into a comfortable shallow squat, then stand. Keep heels grounded and knees following the toes.",
+          "modification": "Use a high stable chair for slow sit-to-stands, with arm support as needed.",
+          "image_url": "asset:squat",
+          "image_alt": "Illustrated movement cue: Supported squat. Sit back with stable support.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 11
+    },
+    {
+      "slug": "hinge-day-preparation",
+      "kind": "mobility",
+      "title": "Before deadlift day",
+      "summary": "A simple standing preparation for hip hinges and pulling sessions.",
+      "cover_url": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 6,
+      "tags": [
+        "Hips",
+        "Warm-up"
+      ],
+      "steps": [
+        {
+          "title": "Comfortable marching",
+          "seconds": 90,
+          "instruction": "Stand tall beside a wall. Lift one foot, set it down softly and alternate. Let your arms move naturally. Start slowly and increase your pace only while breathing comfortably.",
+          "modification": "Keep both hands on a stable chair and lift the feet just a few centimetres.",
+          "image_url": "asset:march",
+          "image_alt": "Illustrated movement cue: March in place. Alternate a comfortable knee lift.",
+          "video_url": null
+        },
+        {
+          "title": "Wall hip hinges",
+          "seconds": 90,
+          "instruction": "Stand a short step in front of a wall, facing away. Soften knees, push hips back to lightly touch the wall, then stand tall. Keep your back long and pressure through the whole foot.",
+          "modification": "Stand closer to the wall and use a shorter range.",
+          "image_url": "asset:hinge",
+          "image_alt": "Illustrated movement cue: Hip hinge. Send hips back, keep a long spine.",
+          "video_url": null
+        },
+        {
+          "title": "Small shoulder circles",
+          "seconds": 60,
+          "instruction": "Stand or sit tall. With arms relaxed, circle the shoulders up, back and down for 30 seconds, then reverse. Keep the neck relaxed; make smooth circles without shrugging hard.",
+          "modification": "Sit with feet on the floor and reduce the size of each circle.",
+          "image_url": "asset:shoulders",
+          "image_alt": "Illustrated movement cue: Shoulder circles. Small circles, relaxed neck.",
+          "video_url": null
+        },
+        {
+          "title": "Supported shallow squats",
+          "seconds": 90,
+          "instruction": "Hold a sturdy support. Place feet about shoulder-width apart. Bend hips and knees together into a comfortable shallow squat, then stand. Keep heels grounded and knees following the toes.",
+          "modification": "Use a high stable chair for slow sit-to-stands, with arm support as needed.",
+          "image_url": "asset:squat",
+          "image_alt": "Illustrated movement cue: Supported squat. Sit back with stable support.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 12
+    },
+    {
+      "slug": "standing-desk-reset",
+      "kind": "mobility",
+      "title": "Standing desk reset",
+      "summary": "A gentle standing break after focused work at your desk.",
+      "cover_url": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 5,
+      "tags": [
+        "Desk break",
+        "Full body"
+      ],
+      "steps": [
+        {
+          "title": "Small shoulder circles",
+          "seconds": 60,
+          "instruction": "Stand or sit tall. With arms relaxed, circle the shoulders up, back and down for 30 seconds, then reverse. Keep the neck relaxed; make smooth circles without shrugging hard.",
+          "modification": "Sit with feet on the floor and reduce the size of each circle.",
+          "image_url": "asset:shoulders",
+          "image_alt": "Illustrated movement cue: Shoulder circles. Small circles, relaxed neck.",
+          "video_url": null
+        },
+        {
+          "title": "Standing side reaches",
+          "seconds": 60,
+          "instruction": "Stand with feet comfortably apart. Reach one arm up, gently lean a little to the opposite side, then return. Alternate sides slowly. Keep breathing; avoid twisting or leaning backward.",
+          "modification": "Sit on a stable chair and reach only as high as comfortable.",
+          "image_url": "asset:side",
+          "image_alt": "Illustrated movement cue: Side reach. Reach upward without forcing range.",
+          "video_url": null
+        },
+        {
+          "title": "Supported heel raises",
+          "seconds": 60,
+          "instruction": "Hold a sturdy chair. Rise onto the balls of both feet, pause briefly and lower slowly. Keep ankles aligned and use the support for balance. Do comfortable reps for the timer.",
+          "modification": "Remain seated and raise both heels with the balls of your feet grounded.",
+          "image_url": "asset:heel",
+          "image_alt": "Illustrated movement cue: Heel raise. Rise slowly, hold a sturdy support.",
+          "video_url": null
+        },
+        {
+          "title": "Easy walking",
+          "seconds": 120,
+          "instruction": "Walk on a clear, level surface at a relaxed pace. Let breathing settle and arms swing freely. Choose a pace where you can speak easily. The timer is a guide, not a speed target.",
+          "modification": "Walk slowly beside a railing or march seated if standing is uncomfortable.",
+          "image_url": "asset:walk",
+          "image_alt": "Illustrated movement cue: Easy walk. A relaxed pace with natural arm swing.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 13
+    },
+    {
+      "slug": "chair-movement-break",
+      "kind": "mobility",
+      "title": "Chair movement break",
+      "summary": "A seated movement break with no floor work. Use a stable chair without wheels.",
+      "cover_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Seated",
+        "Beginner"
+      ],
+      "steps": [
+        {
+          "title": "Small shoulder circles",
+          "seconds": 60,
+          "instruction": "Stand or sit tall. With arms relaxed, circle the shoulders up, back and down for 30 seconds, then reverse. Keep the neck relaxed; make smooth circles without shrugging hard.",
+          "modification": "Sit with feet on the floor and reduce the size of each circle.",
+          "image_url": "asset:shoulders",
+          "image_alt": "Illustrated movement cue: Shoulder circles. Small circles, relaxed neck.",
+          "video_url": null
+        },
+        {
+          "title": "Seated upper-back turns",
+          "seconds": 60,
+          "instruction": "Sit toward the front of a stable chair, feet flat. Cross arms over your chest and gently turn your ribs to one side. Return to centre and alternate. Keep knees facing forward.",
+          "modification": "Rest hands on thighs and use a smaller turn.",
+          "image_url": "asset:rotation",
+          "image_alt": "Illustrated movement cue: Seated rotation. Turn the ribs; keep pelvis still.",
+          "video_url": null
+        },
+        {
+          "title": "Seated forward reach",
+          "seconds": 60,
+          "instruction": "Sit on a stable chair with feet flat and knees apart. Hinge slightly forward from the hips and reach hands toward your knees. Return upright slowly. Do not round or force your back.",
+          "modification": "Keep hands resting on thighs and make the movement smaller.",
+          "image_url": "asset:reach",
+          "image_alt": "Illustrated movement cue: Forward reach. Reach hands forward from a chair.",
+          "video_url": null
+        },
+        {
+          "title": "Seated heel raises",
+          "seconds": 60,
+          "instruction": "Sit tall with both feet flat. Keep the balls of your feet on the floor, lift heels slowly and lower. Repeat gently.",
+          "modification": "Lift one heel at a time through a smaller range.",
+          "image_url": "asset:heel",
+          "image_alt": "Illustrated movement cue: Heel raise. Rise slowly, hold a sturdy support.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 14
+    },
+    {
+      "slug": "ankle-and-calf-flow",
+      "kind": "mobility",
+      "title": "Ankle & calf flow",
+      "summary": "Practice comfortable ankle movement with support for balance.",
+      "cover_url": "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 5,
+      "tags": [
+        "Ankles",
+        "Lower body"
+      ],
+      "steps": [
+        {
+          "title": "Comfortable marching",
+          "seconds": 90,
+          "instruction": "Stand tall beside a wall. Lift one foot, set it down softly and alternate. Let your arms move naturally. Start slowly and increase your pace only while breathing comfortably.",
+          "modification": "Keep both hands on a stable chair and lift the feet just a few centimetres.",
+          "image_url": "asset:march",
+          "image_alt": "Illustrated movement cue: March in place. Alternate a comfortable knee lift.",
+          "video_url": null
+        },
+        {
+          "title": "Supported ankle rocks",
+          "seconds": 90,
+          "instruction": "Face a wall in a short split stance. Keep the front heel planted and gently move the front knee forward over the toes, then back. Spend 45 seconds on each side without forcing depth.",
+          "modification": "Move the front foot nearer the wall and reduce the forward shift.",
+          "image_url": "asset:ankle",
+          "image_alt": "Illustrated movement cue: Ankle rock. Heel stays down, knee moves forward.",
+          "video_url": null
+        },
+        {
+          "title": "Supported heel raises",
+          "seconds": 60,
+          "instruction": "Hold a sturdy chair. Rise onto the balls of both feet, pause briefly and lower slowly. Keep ankles aligned and use the support for balance. Do comfortable reps for the timer.",
+          "modification": "Remain seated and raise both heels with the balls of your feet grounded.",
+          "image_url": "asset:heel",
+          "image_alt": "Illustrated movement cue: Heel raise. Rise slowly, hold a sturdy support.",
+          "video_url": null
+        },
+        {
+          "title": "Gentle wall calf stretch",
+          "seconds": 60,
+          "instruction": "Hands on a wall, place one leg behind with toes facing forward. Keep the back heel down and knee comfortably straight. Lean forward slightly for a mild stretch. Hold 30 seconds per side without bouncing.",
+          "modification": "Use a shorter stance or keep the back knee slightly bent.",
+          "image_url": "asset:calf",
+          "image_alt": "Illustrated movement cue: Calf stretch. Back heel down, both feet forward.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 15
+    },
+    {
+      "slug": "upper-back-movement",
+      "kind": "mobility",
+      "title": "Upper-back movement break",
+      "summary": "Explore gentle rotation and reaching without forcing a stretch.",
+      "cover_url": "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 5,
+      "tags": [
+        "Upper back",
+        "Mobility"
+      ],
+      "steps": [
+        {
+          "title": "Small shoulder circles",
+          "seconds": 60,
+          "instruction": "Stand or sit tall. With arms relaxed, circle the shoulders up, back and down for 30 seconds, then reverse. Keep the neck relaxed; make smooth circles without shrugging hard.",
+          "modification": "Sit with feet on the floor and reduce the size of each circle.",
+          "image_url": "asset:shoulders",
+          "image_alt": "Illustrated movement cue: Shoulder circles. Small circles, relaxed neck.",
+          "video_url": null
+        },
+        {
+          "title": "Seated upper-back turns",
+          "seconds": 60,
+          "instruction": "Sit toward the front of a stable chair, feet flat. Cross arms over your chest and gently turn your ribs to one side. Return to centre and alternate. Keep knees facing forward.",
+          "modification": "Rest hands on thighs and use a smaller turn.",
+          "image_url": "asset:rotation",
+          "image_alt": "Illustrated movement cue: Seated rotation. Turn the ribs; keep pelvis still.",
+          "video_url": null
+        },
+        {
+          "title": "Wall slides",
+          "seconds": 90,
+          "instruction": "Stand with your back near a wall and elbows bent. Slide arms upward only as far as you can without arching the lower back. Lower slowly. Wall contact is optional; do not force wrists or elbows flat.",
+          "modification": "Slide one arm at a time, or stop below shoulder height.",
+          "image_url": "asset:wall",
+          "image_alt": "Illustrated movement cue: Wall slides. Ribs stacked, slide arms comfortably.",
+          "video_url": null
+        },
+        {
+          "title": "Standing side reaches",
+          "seconds": 60,
+          "instruction": "Stand with feet comfortably apart. Reach one arm up, gently lean a little to the opposite side, then return. Alternate sides slowly. Keep breathing; avoid twisting or leaning backward.",
+          "modification": "Sit on a stable chair and reach only as high as comfortable.",
+          "image_url": "asset:side",
+          "image_alt": "Illustrated movement cue: Side reach. Reach upward without forcing range.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 16
+    },
+    {
+      "slug": "easy-recovery-walk",
+      "kind": "mobility",
+      "title": "Easy recovery reset",
+      "summary": "An easy movement session between harder training days.",
+      "cover_url": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 5,
+      "tags": [
+        "Recovery",
+        "Low intensity"
+      ],
+      "steps": [
+        {
+          "title": "Easy walking",
+          "seconds": 120,
+          "instruction": "Walk on a clear, level surface at a relaxed pace. Let breathing settle and arms swing freely. Choose a pace where you can speak easily. The timer is a guide, not a speed target.",
+          "modification": "Walk slowly beside a railing or march seated if standing is uncomfortable.",
+          "image_url": "asset:walk",
+          "image_alt": "Illustrated movement cue: Easy walk. A relaxed pace with natural arm swing.",
+          "video_url": null
+        },
+        {
+          "title": "Small shoulder circles",
+          "seconds": 60,
+          "instruction": "Stand or sit tall. With arms relaxed, circle the shoulders up, back and down for 30 seconds, then reverse. Keep the neck relaxed; make smooth circles without shrugging hard.",
+          "modification": "Sit with feet on the floor and reduce the size of each circle.",
+          "image_url": "asset:shoulders",
+          "image_alt": "Illustrated movement cue: Shoulder circles. Small circles, relaxed neck.",
+          "video_url": null
+        },
+        {
+          "title": "Standing side reaches",
+          "seconds": 60,
+          "instruction": "Stand with feet comfortably apart. Reach one arm up, gently lean a little to the opposite side, then return. Alternate sides slowly. Keep breathing; avoid twisting or leaning backward.",
+          "modification": "Sit on a stable chair and reach only as high as comfortable.",
+          "image_url": "asset:side",
+          "image_alt": "Illustrated movement cue: Side reach. Reach upward without forcing range.",
+          "video_url": null
+        },
+        {
+          "title": "Gentle wall calf stretch",
+          "seconds": 60,
+          "instruction": "Hands on a wall, place one leg behind with toes facing forward. Keep the back heel down and knee comfortably straight. Lean forward slightly for a mild stretch. Hold 30 seconds per side without bouncing.",
+          "modification": "Use a shorter stance or keep the back knee slightly bent.",
+          "image_url": "asset:calf",
+          "image_alt": "Illustrated movement cue: Calf stretch. Back heel down, both feet forward.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 17
+    },
+    {
+      "slug": "running-preparation",
+      "kind": "mobility",
+      "title": "Before an easy run",
+      "summary": "Raise effort gradually and practise lower-leg movement before starting your run.",
+      "cover_url": "https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 6,
+      "tags": [
+        "Running",
+        "Warm-up"
+      ],
+      "steps": [
+        {
+          "title": "Comfortable marching",
+          "seconds": 90,
+          "instruction": "Stand tall beside a wall. Lift one foot, set it down softly and alternate. Let your arms move naturally. Start slowly and increase your pace only while breathing comfortably.",
+          "modification": "Keep both hands on a stable chair and lift the feet just a few centimetres.",
+          "image_url": "asset:march",
+          "image_alt": "Illustrated movement cue: March in place. Alternate a comfortable knee lift.",
+          "video_url": null
+        },
+        {
+          "title": "Supported ankle rocks",
+          "seconds": 90,
+          "instruction": "Face a wall in a short split stance. Keep the front heel planted and gently move the front knee forward over the toes, then back. Spend 45 seconds on each side without forcing depth.",
+          "modification": "Move the front foot nearer the wall and reduce the forward shift.",
+          "image_url": "asset:ankle",
+          "image_alt": "Illustrated movement cue: Ankle rock. Heel stays down, knee moves forward.",
+          "video_url": null
+        },
+        {
+          "title": "Supported heel raises",
+          "seconds": 60,
+          "instruction": "Hold a sturdy chair. Rise onto the balls of both feet, pause briefly and lower slowly. Keep ankles aligned and use the support for balance. Do comfortable reps for the timer.",
+          "modification": "Remain seated and raise both heels with the balls of your feet grounded.",
+          "image_url": "asset:heel",
+          "image_alt": "Illustrated movement cue: Heel raise. Rise slowly, hold a sturdy support.",
+          "video_url": null
+        },
+        {
+          "title": "Progressive walk",
+          "seconds": 120,
+          "instruction": "Walk on level ground. Begin easily, then gradually increase to a brisk but conversational pace. After the timer, begin your run gently.",
+          "modification": "Walk slowly beside a railing or march seated if standing is uncomfortable.",
+          "image_url": "asset:walk",
+          "image_alt": "Illustrated movement cue: Easy walk. A relaxed pace with natural arm swing.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 18
+    },
+    {
+      "slug": "evening-downshift",
+      "kind": "mobility",
+      "title": "Evening movement downshift",
+      "summary": "A calm end-of-day routine with gentle movement and no performance targets.",
+      "cover_url": "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 5,
+      "tags": [
+        "Evening",
+        "Recovery"
+      ],
+      "steps": [
+        {
+          "title": "Easy walking",
+          "seconds": 120,
+          "instruction": "Walk on a clear, level surface at a relaxed pace. Let breathing settle and arms swing freely. Choose a pace where you can speak easily. The timer is a guide, not a speed target.",
+          "modification": "Walk slowly beside a railing or march seated if standing is uncomfortable.",
+          "image_url": "asset:walk",
+          "image_alt": "Illustrated movement cue: Easy walk. A relaxed pace with natural arm swing.",
+          "video_url": null
+        },
+        {
+          "title": "Seated upper-back turns",
+          "seconds": 60,
+          "instruction": "Sit toward the front of a stable chair, feet flat. Cross arms over your chest and gently turn your ribs to one side. Return to centre and alternate. Keep knees facing forward.",
+          "modification": "Rest hands on thighs and use a smaller turn.",
+          "image_url": "asset:rotation",
+          "image_alt": "Illustrated movement cue: Seated rotation. Turn the ribs; keep pelvis still.",
+          "video_url": null
+        },
+        {
+          "title": "Seated forward reach",
+          "seconds": 60,
+          "instruction": "Sit on a stable chair with feet flat and knees apart. Hinge slightly forward from the hips and reach hands toward your knees. Return upright slowly. Do not round or force your back.",
+          "modification": "Keep hands resting on thighs and make the movement smaller.",
+          "image_url": "asset:reach",
+          "image_alt": "Illustrated movement cue: Forward reach. Reach hands forward from a chair.",
+          "video_url": null
+        },
+        {
+          "title": "Standing side reaches",
+          "seconds": 60,
+          "instruction": "Stand with feet comfortably apart. Reach one arm up, gently lean a little to the opposite side, then return. Alternate sides slowly. Keep breathing; avoid twisting or leaning backward.",
+          "modification": "Sit on a stable chair and reach only as high as comfortable.",
+          "image_url": "asset:side",
+          "image_alt": "Illustrated movement cue: Side reach. Reach upward without forcing range.",
+          "video_url": null
+        }
+      ],
+      "body": [],
+      "published": true,
+      "featured_rank": 19
+    },
+    {
+      "slug": "choose-starting-weights",
+      "kind": "guide",
+      "title": "How heavy should you lift?",
+      "summary": "Choose a sensible first working weight and a clear rule for changing it.",
+      "cover_url": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Strength basics",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Start with the movement",
+          "paragraphs": [
+            "Practise the exercise with an easy load first. You should be able to repeat the same controlled range without shifting position to finish the rep. For an unfamiliar exercise, start lighter than you think you need."
+          ],
+          "image_url": "asset:squat",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Use a repeatable effort target",
+          "paragraphs": [
+            "For a first working set, choose a load that lets you finish your planned reps while feeling you could still do another two or three clean reps. This is a practical effort estimate, not a precise measurement. Stop the set when technique starts to change."
+          ]
+        },
+        {
+          "heading": "Example: three sets of eight",
+          "paragraphs": [
+            "If eight reps feel easy and you could do many more, add a small amount next set. If you cannot reach eight clean reps, reduce the load. A 10 kg dumbbell is not automatically equivalent to a machine marked 10 kg; log each variation separately."
+          ]
+        },
+        {
+          "heading": "Next session",
+          "paragraphs": [
+            "Keep the same exercise, setup and target. Once every set reaches the top of your planned rep range with good control, consider the smallest available increase. A challenging week is a reason to repeat a load, not a reason to rush."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Practise before loading.",
+            "Keep a few clean reps in reserve.",
+            "Progress only when all sets meet the target."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Warm-up guidance (NHS)",
+              "url": "https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/push-day-preparation"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 10
+    },
+    {
+      "slug": "double-progression-guide",
+      "kind": "guide",
+      "title": "A simple double-progression plan",
+      "summary": "Use a rep range to decide when to add weight.",
+      "cover_url": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Progression",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Pick one range",
+          "paragraphs": [
+            "Use a range such as 8–12 reps for an exercise you already know. Keep the number of sets, range of motion and rest periods consistent enough to compare sessions."
+          ],
+          "image_url": "asset:hinge",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Add repetitions first",
+          "paragraphs": [
+            "For example, 10, 9 and 8 reps with the same weight gives you a starting point. Next time aim to improve one set by one clean rep. You do not need to improve every set on every visit."
+          ]
+        },
+        {
+          "heading": "Then add a little weight",
+          "paragraphs": [
+            "When you can complete all three sets at 12 reps with your intended effort and technique, try the smallest available increase. Reps may return toward eight. If the increase is too large, use microplates or stay with the old load longer."
+          ]
+        },
+        {
+          "heading": "When to hold steady",
+          "paragraphs": [
+            "Poor sleep, schedule changes and unfamiliar equipment can affect performance. Repeat the load when needed. If several sessions decline, review recovery and total workload before adding more."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Track every set.",
+            "Reach the top of the range before adding load.",
+            "Treat daily fluctuations as normal."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Warm-up guidance (NHS)",
+              "url": "https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/easy-recovery-walk"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 11
+    },
+    {
+      "slug": "warmup-with-purpose",
+      "kind": "guide",
+      "title": "Build a warm-up with a purpose",
+      "summary": "Move from easy activity to specific practice without tiring yourself out.",
+      "cover_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Warm-up",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Raise effort gradually",
+          "paragraphs": [
+            "Begin with easy walking, cycling or marching. Gradually increase the pace until you feel ready to move. The aim is preparation, not a conditioning test."
+          ],
+          "image_url": "asset:march",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Practise relevant movement",
+          "paragraphs": [
+            "Choose a few gentle movements that match the session: ankle rocks and easy squats before lower-body work, or shoulder circles before pressing. Avoid forcing a range simply because a timer is running."
+          ]
+        },
+        {
+          "heading": "Approach your working load",
+          "paragraphs": [
+            "For a familiar lift, perform progressively heavier practice sets. Reduce reps as load rises so preparation does not exhaust you. The exact steps depend on the lift, planned working weight and your experience."
+          ]
+        },
+        {
+          "heading": "Try this today",
+          "paragraphs": [
+            "Open Before squat day or Before push day in Mobility. Finish with light practice sets of your first exercise. If you still feel unprepared, allow more time rather than rushing to a working set."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Warm up gradually.",
+            "Use movement specific to the session.",
+            "Keep practice sets comfortable."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Warm-up guidance (NHS)",
+              "url": "https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/push-day-preparation"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 12
+    },
+    {
+      "slug": "rest-time-decisions",
+      "kind": "guide",
+      "title": "How long should you rest?",
+      "summary": "Use performance and breathing to choose the next set’s start.",
+      "cover_url": "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Workout planning",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Let the next set guide the rest",
+          "paragraphs": [
+            "If reps fall sharply because you are still breathless, allow longer before the next set. The goal is to perform the planned work with control. A stopwatch is a useful reminder rather than a command."
+          ],
+          "image_url": "asset:walk",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "A practical starting point",
+          "paragraphs": [
+            "As a programming example, allow about two or three minutes after a demanding multi-joint set, then adjust to performance. Smaller, easier exercises may need less. Heavy practice can require more. These are starting choices, not rules for every person."
+          ]
+        },
+        {
+          "heading": "Use supersets thoughtfully",
+          "paragraphs": [
+            "Alternating exercises can save time, but both sets still add fatigue. Avoid pairing two demanding movements if it makes technique unreliable. Keep the same rest strategy when comparing logged sessions."
+          ]
+        },
+        {
+          "heading": "Try a comparison",
+          "paragraphs": [
+            "Next session, give a difficult exercise 30–60 seconds more rest than usual. Compare clean reps at the same load and effort. Use the Rest planner tool to see how your chosen rest affects session length."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Rest until you can perform the next set well.",
+            "Keep rest consistent for fair comparisons.",
+            "Longer rest can be a useful adjustment."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Warm-up guidance (NHS)",
+              "url": "https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/easy-recovery-walk"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 13
+    },
+    {
+      "slug": "two-day-strength-week",
+      "kind": "guide",
+      "title": "Build a realistic two-day strength week",
+      "summary": "A manageable starting structure for a busy schedule.",
+      "cover_url": "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Consistency",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Make space for two appointments",
+          "paragraphs": [
+            "Choose two days you can repeat most weeks. For example, Monday and Thursday leave time between sessions. General adult activity guidance includes muscle-strengthening work on at least two days per week."
+          ],
+          "image_url": "asset:squat",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Cover the major patterns",
+          "paragraphs": [
+            "Across the week, include familiar versions of squatting, hinging, pushing and pulling. Use exercises you can set up and perform comfortably. Start with a small amount of work rather than packing every possible exercise into each visit."
+          ]
+        },
+        {
+          "heading": "Example session structure",
+          "paragraphs": [
+            "A simple session might include a squat variation, a row, a press and a hip hinge. Begin with easy practice, then a modest number of controlled working sets. This is a planning example; exercise choice and volume should fit your starting capacity."
+          ]
+        },
+        {
+          "heading": "Fit activity around it",
+          "paragraphs": [
+            "Walking and other enjoyable aerobic activity can fit between strength days. Build toward the adult activity guidelines over time; shorter bouts count. If you miss a session, resume the next planned day rather than doubling everything."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Choose days you can keep.",
+            "Train major muscle groups across the week.",
+            "Build gradually from your starting point."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Adult activity guidance (CDC)",
+              "url": "https://www.cdc.gov/physical-activity-basics/guidelines/adults.html"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/easy-recovery-walk"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 14
+    },
+    {
+      "slug": "training-log-that-helps",
+      "kind": "guide",
+      "title": "Keep a training log you can use",
+      "summary": "Record the few details that make your next session easier to plan.",
+      "cover_url": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Tracking",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Log what actually happened",
+          "paragraphs": [
+            "Record the exercise variation, load and clean reps for each working set. Include units. For dumbbells, say whether the recorded weight is per hand; for barbells, record the total including the bar."
+          ],
+          "image_url": "asset:wall",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Keep the comparison fair",
+          "paragraphs": [
+            "Use a short note for changes in equipment, range or tempo. A new machine, deeper squat or longer pause changes the task. Do not treat all volume-load numbers as interchangeable measures of progress."
+          ]
+        },
+        {
+          "heading": "Add useful context",
+          "paragraphs": [
+            "A quick effort note, rest time and any setup change are usually enough. Avoid a long diary that you will not maintain. Record unusual discomfort so you can discuss it with an appropriate professional if needed."
+          ]
+        },
+        {
+          "heading": "Choose one next action",
+          "paragraphs": [
+            "Before leaving, decide whether to repeat the load, add a rep or try the smallest load increase next time. Use the progression checker as a reminder of a rule you chose, not as an instruction to lift through poor technique."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Record units and exercise variation.",
+            "Log clean reps for each set.",
+            "Choose a modest next step."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Warm-up guidance (NHS)",
+              "url": "https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/easy-recovery-walk"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 15
+    },
+    {
+      "slug": "soreness-and-recovery-basics",
+      "kind": "guide",
+      "title": "Soreness is not a progress score",
+      "summary": "Plan recovery without chasing discomfort.",
+      "cover_url": "https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Recovery",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Separate novelty from progress",
+          "paragraphs": [
+            "An unfamiliar exercise or an increase in work may leave you sore. Soreness alone does not show how effective a workout was. Improved performance, repeatable training and your ability to recover are more useful planning signals."
+          ],
+          "image_url": "asset:walk",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Use an easier day",
+          "paragraphs": [
+            "If you are moving comfortably, an easy walk or gentle movement break can be an option on a recovery day. Keep effort easy. Mobility is not a treatment for injury and should not be pushed through pain."
+          ]
+        },
+        {
+          "heading": "Review the recent change",
+          "paragraphs": [
+            "If a session leaves you unable to train as planned for several days, consider reducing the next increase in work. Change one thing at a time: sets, load or exercise novelty. Allow time to adapt."
+          ]
+        },
+        {
+          "heading": "Know when to stop",
+          "paragraphs": [
+            "Sharp, sudden or worsening pain, swelling, feeling unwell or symptoms that concern you deserve attention. Stop the provoking activity and seek appropriate professional guidance. Do not use a calculator or generic routine to assess an injury."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Do not chase soreness.",
+            "Increase work gradually.",
+            "Keep recovery sessions easy."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Warm-up guidance (NHS)",
+              "url": "https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/easy-recovery-walk"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 16
+    },
+    {
+      "slug": "mobility-without-forcing",
+      "kind": "guide",
+      "title": "Use mobility work without forcing it",
+      "summary": "Practise comfortable movement and link it to your training.",
+      "cover_url": "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Mobility",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Choose a task",
+          "paragraphs": [
+            "Start with the movement you want to practise: reaching overhead, bending into a squat or moving the ankle. A short specific routine is easier to repeat than an unstructured attempt to stretch everything."
+          ],
+          "image_url": "asset:ankle",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Use support and control",
+          "paragraphs": [
+            "A wall, rail or stable chair can make a movement easier to control. Work through a comfortable range with smooth breathing. More range is not automatically better if it requires twisting, bouncing or losing balance."
+          ]
+        },
+        {
+          "heading": "Time both sides clearly",
+          "paragraphs": [
+            "For a 60-second bilateral movement, spend about 30 seconds on each side unless the instructions say otherwise. A timer counts practice time, not required repetitions. Pause whenever you need to reset."
+          ]
+        },
+        {
+          "heading": "Connect it to practice",
+          "paragraphs": [
+            "After a preparation routine, practise an easy version of the exercise you plan to train. Compare comfort and control rather than forcing a deeper position. If a movement consistently hurts, stop and get individual guidance."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Choose movement for a purpose.",
+            "Use a comfortable range.",
+            "Pause or modify whenever needed."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Warm-up guidance (NHS)",
+              "url": "https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/easy-recovery-walk"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 17
+    },
+    {
+      "slug": "plate-loading-guide",
+      "kind": "guide",
+      "title": "Load a barbell with confidence",
+      "summary": "Understand total weight, matching sides and plate-calculator results.",
+      "cover_url": "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Equipment",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Start with the bar",
+          "paragraphs": [
+            "Check the bar’s actual weight rather than assuming all bars are 20 kg. Training bars and specialty bars differ. Add collar weight separately when relevant; the FitSync plate calculator excludes collars."
+          ],
+          "image_url": "asset:hinge",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Split the remainder",
+          "paragraphs": [
+            "For an 80 kg target on a 20 kg bar, plates must contribute 60 kg total, or 30 kg per side. With standard metric plates, each side could use 25 kg and 5 kg. Keep both sides matched."
+          ]
+        },
+        {
+          "heading": "Check what you actually have",
+          "paragraphs": [
+            "The calculator assumes enough matching pairs of the listed metric plates. Your gym may have a different inventory. If the target is not achievable, read the actual total and remaining amount rather than pretending the exact target was loaded."
+          ]
+        },
+        {
+          "heading": "Before lifting",
+          "paragraphs": [
+            "Load and unload in a controlled way, keep the area clear and use appropriate collars and rack safety equipment. Ask gym staff if you are unsure how to set up unfamiliar equipment."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Total load includes the bar.",
+            "Match the plates on both sides.",
+            "Check the achievable total before lifting."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Warm-up guidance (NHS)",
+              "url": "https://www.nhs.uk/live-well/exercise/how-to-warm-up-before-exercising/"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/easy-recovery-walk"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 18
+    },
+    {
+      "slug": "cardio-talk-test",
+      "kind": "guide",
+      "title": "Find a conversational cardio pace",
+      "summary": "A practical way to judge effort without chasing a watch number.",
+      "cover_url": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=85",
+      "duration_minutes": 4,
+      "tags": [
+        "Cardio",
+        "Beginner"
+      ],
+      "steps": [],
+      "body": [
+        {
+          "heading": "Start from your current capacity",
+          "paragraphs": [
+            "Walking, cycling and other activities can contribute to aerobic activity. Choose a mode you can repeat comfortably, begin with manageable bouts and increase gradually. Shorter bouts still contribute to your weekly total."
+          ],
+          "image_url": "asset:march",
+          "image_alt": "FitSync original movement illustration"
+        },
+        {
+          "heading": "Use the talk test",
+          "paragraphs": [
+            "At moderate intensity, you can generally talk but not sing. At vigorous intensity, speaking more than a few words without pausing for breath becomes difficult. This is a rough effort check, not a diagnostic test."
+          ]
+        },
+        {
+          "heading": "Do not confuse pace with effort",
+          "paragraphs": [
+            "The same speed can feel different on a hill, in heat or after a tiring day. Use the pace calculator to plan distance and time, then adjust your actual effort to conditions. It cannot prescribe a safe speed for every person."
+          ]
+        },
+        {
+          "heading": "Build a repeatable week",
+          "paragraphs": [
+            "General adult guidance recommends at least 150 minutes of moderate activity, or an equivalent vigorous combination, plus strengthening work. Build toward that from your starting point and adapt to individual needs."
+          ]
+        },
+        {
+          "heading": "Key takeaways",
+          "paragraphs": [
+            "Use talk as a practical effort check.",
+            "Short bouts count.",
+            "Adjust speed to conditions."
+          ]
+        },
+        {
+          "heading": "Further reading & next step",
+          "paragraphs": [
+            "The practical examples above are FitSync programming examples. Review the general guidance below and use the related library section to put one idea into practice."
+          ],
+          "links": [
+            {
+              "label": "Adult activity guidance (CDC)",
+              "url": "https://www.cdc.gov/physical-activity-basics/guidelines/adults.html"
+            },
+            {
+              "label": "Try a guided movement session",
+              "url": "/explore/resources/easy-recovery-walk"
+            }
+          ]
+        }
+      ],
+      "published": true,
+      "featured_rank": 19
+    }
+  ],
+  "tools": [
+    {
+      "slug": "one-rep-max",
+      "calculator_key": "one-rep-max",
+      "title": "Estimated 1RM",
+      "summary": "Estimate a single-rep maximum from a recent set.",
+      "explanation": "Epley estimate: load × (1 + reps ÷ 30), using 1–12 reps. A single repetition returns the entered weight. Estimates vary with technique and fatigue; this is not a reason to attempt a maximum.",
+      "example": "60 kg for 10 reps estimates 80 kg.",
+      "cover_url": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 1,
+      "published": true
+    },
+    {
+      "slug": "plate-calculator",
+      "calculator_key": "plate-calculator",
+      "title": "Plate calculator",
+      "summary": "Plan balanced metric plates for both sides of a bar.",
+      "explanation": "Subtract the bar weight and divide the remaining load between two sides. Uses matching pairs of 25, 20, 15, 10, 5, 2.5 and 1.25 kg plates, assuming enough of each. Collars are excluded. Check your gym’s inventory.",
+      "example": "80 kg on a 20 kg bar needs 30 kg per side: 25 kg + 5 kg.",
+      "cover_url": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 2,
+      "published": true
+    },
+    {
+      "slug": "workout-volume",
+      "calculator_key": "workout-volume",
+      "title": "Workout volume",
+      "summary": "Compare volume load for the same exercise and setup.",
+      "explanation": "Volume load = sets × reps × weight. Use consistent units and the same exercise variation. It does not capture range of motion, effort or technique and is not a universal progress score.",
+      "example": "3 sets × 8 reps × 50 kg = 1,200 kg of volume load.",
+      "cover_url": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 3,
+      "published": true
+    },
+    {
+      "slug": "warmup-sets",
+      "calculator_key": "warmup-sets",
+      "title": "Warm-up sets",
+      "summary": "Plan three gradual loads before your working weight.",
+      "explanation": "Examples at 50%, 70% and 85% of planned working load, rounded to your chosen increment. Adjust for the actual bar weight and available plates. Reduce repetitions as loads rise; these are examples rather than a complete warm-up prescription.",
+      "example": "100 kg with a 2.5 kg increment gives 50, 70 and 85 kg.",
+      "cover_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 4,
+      "published": true
+    },
+    {
+      "slug": "percentage-load",
+      "calculator_key": "percentage-load",
+      "title": "Percentage of a load",
+      "summary": "Turn a known reference load into a percentage target.",
+      "explanation": "Reference load × percentage ÷ 100. Round the result to equipment you actually have. The reference may be a working weight or an estimated maximum; the result does not prescribe repetitions or effort.",
+      "example": "80% of 100 kg = 80 kg.",
+      "cover_url": "https://images.unsplash.com/photo-1599901860904-17e6ed7083a0?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 5,
+      "published": true
+    },
+    {
+      "slug": "rep-target",
+      "calculator_key": "rep-target",
+      "title": "Load from a rep target",
+      "summary": "Estimate a starting load for a new rep target.",
+      "explanation": "Invert the Epley formula: estimated 1RM ÷ (1 + target reps ÷ 30). For a one-rep target, return the entered maximum. Works only for targets of 1–12 reps. Treat it as a rough starting estimate and adjust to clean technique.",
+      "example": "An 80 kg estimated maximum gives about 63.2 kg for 8 reps.",
+      "cover_url": "https://images.unsplash.com/photo-1534258936925-c58bed479fcb?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 6,
+      "published": true
+    },
+    {
+      "slug": "weight-converter",
+      "calculator_key": "weight-converter",
+      "title": "Kilograms & pounds",
+      "summary": "Convert a load between kg and lb.",
+      "explanation": "1 lb = 0.45359237 kg exactly. Results are rounded for display. Available plates rarely match the converted value exactly; choose an achievable load.",
+      "example": "20 kg is about 44.1 lb.",
+      "cover_url": "https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 7,
+      "published": true
+    },
+    {
+      "slug": "pace-calculator",
+      "calculator_key": "pace-calculator",
+      "title": "Running pace",
+      "summary": "Convert a distance and elapsed time into minutes per km.",
+      "explanation": "Elapsed minutes ÷ kilometres gives pace. Average speed = distance ÷ elapsed hours. Enter elapsed time including breaks if you want the overall average. This tool does not choose a training intensity.",
+      "example": "5 km in 30 minutes = 6:00 per km and 10 km/h.",
+      "cover_url": "https://images.unsplash.com/photo-1518310383802-640c2de311b2?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 8,
+      "published": true
+    },
+    {
+      "slug": "session-time",
+      "calculator_key": "session-time",
+      "title": "Session time budget",
+      "summary": "Budget work and rest time for straight sets.",
+      "explanation": "Sets × seconds per set + (sets − 1) × rest seconds. Rest is counted only between sets. Add warm-up, equipment changes and walking separately. This assumes one straight sequence of sets.",
+      "example": "4 sets of 40 seconds with 120 seconds between sets take 8 minutes 40 seconds.",
+      "cover_url": "https://images.unsplash.com/photo-1517963879433-6ad2b056d712?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 9,
+      "published": true
+    },
+    {
+      "slug": "progression",
+      "calculator_key": "progression",
+      "title": "Progression checker",
+      "summary": "Check a simple rule for your next load increase.",
+      "explanation": "Enter the lowest completed reps across your working sets and the top of your chosen rep range. If every set reaches that target, show a candidate load after your chosen increase. Only use it when technique and effort also met your plan.",
+      "example": "All sets reach 12 reps at 50 kg. A chosen 2.5 kg increase suggests trying 52.5 kg next time.",
+      "cover_url": "https://images.unsplash.com/photo-1518611012118-696072aa579a?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 10,
+      "published": true
+    },
+    {
+      "slug": "rest-planner",
+      "calculator_key": "rest-planner",
+      "title": "Rest time budget",
+      "summary": "See how rest periods add up across a session.",
+      "explanation": "For each exercise, count (sets − 1) rests. Multiply by the number of exercises and seconds per rest. This excludes rest between exercises and suits straight sets, not supersets.",
+      "example": "4 exercises × 3 sets with 90 seconds between sets = 12 minutes of within-exercise rest.",
+      "cover_url": "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 11,
+      "published": true
+    },
+    {
+      "slug": "distance-converter",
+      "calculator_key": "distance-converter",
+      "title": "Kilometres & miles",
+      "summary": "Convert a route distance between km and miles.",
+      "explanation": "1 mile = 1.609344 kilometres exactly. This is a distance conversion, not a pace or effort prescription.",
+      "example": "5 km is about 3.107 miles.",
+      "cover_url": "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 12,
+      "published": true
+    },
+    {
+      "slug": "training-density",
+      "calculator_key": "training-density",
+      "title": "Training density",
+      "summary": "Compare work per minute for a consistent session.",
+      "explanation": "Volume load ÷ elapsed minutes gives kg per minute. Compare only like-for-like exercise setups. A higher value is not automatically better; shorter rest may reduce technique or performance.",
+      "example": "1,200 kg volume load over 20 minutes = 60 kg/min.",
+      "cover_url": "https://images.unsplash.com/photo-1544367567-0f2fcb009e0b?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 13,
+      "published": true
+    },
+    {
+      "slug": "rep-tempo",
+      "calculator_key": "rep-tempo",
+      "title": "Rep tempo time",
+      "summary": "Estimate how long a controlled set will take.",
+      "explanation": "Add lowering, bottom pause, lifting and top pause seconds, then multiply by reps. These are timing estimates; a tempo notation containing X for explosive intent has no fixed duration.",
+      "example": "8 reps at 3 seconds down, 1 second pause, 1 second up and no top pause take about 40 seconds.",
+      "cover_url": "https://images.unsplash.com/photo-1571019613454-1cb2f99b2d8b?auto=format&fit=crop&w=1200&q=85",
+      "featured_rank": 14,
+      "published": true
+    }
+  ]
+}

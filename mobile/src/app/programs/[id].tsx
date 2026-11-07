@@ -1,6 +1,6 @@
 import React, { useCallback, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, RefreshControl, ScrollView, View } from "react-native";
-import { features } from "@/src/config/features";
+import { useBilling } from "@/src/features/billing/billing-context";
 import { ProgramCover } from "@/src/features/program-follow/program-visuals";
 import { ProgramToday } from "@/src/features/program-follow/program-today";
 import { ProgramProgress } from "@/src/features/program-follow/program-progress";
@@ -30,6 +30,7 @@ function MenuItem({ icon, title, subtitle, onPress }: { icon: Icon; title: strin
 }
 
 export default function FollowedProgramScreen() {
+  const { isPro } = useBilling();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { settings } = useSession();
   const { refresh } = useProgram();
@@ -83,7 +84,7 @@ export default function FollowedProgramScreen() {
       {header}
       <ScrollView ref={scroll} refreshControl={<RefreshControl refreshing={loading} onRefresh={() => void reload()} tintColor={C.brand} />} contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: 145 + insets.bottom }}>
         {error && <Pressable accessibilityRole="button" onPress={() => void reload()} className="mb-3 rounded-xl bg-panel p-3"><Txt className="text-xs text-muted">Couldn’t refresh. Showing your last loaded plan. Tap to retry.</Txt></Pressable>}
-        <ProgramCover key={e.id} detail={detail} pro={features.pro} />
+        <ProgramCover key={e.id} detail={detail} pro={isPro} />
         <View className="mb-6 flex-row gap-8 border-b border-border">
           {(["plan", "progress"] as const).map(value => <Pressable key={value} accessibilityRole="tab" accessibilityState={{ selected: tab === value }} onPress={() => setTab(value)} className="min-h-11 border-b-2 pb-3 pt-1" style={{ borderColor: tab === value ? C.brand : "transparent" }}><Txt weight="semibold" className={tab === value ? "text-ink" : "text-muted"}>{value === "plan" ? "Schedule" : "Progress & insights"}</Txt></Pressable>)}
         </View>
@@ -116,7 +117,7 @@ export default function FollowedProgramScreen() {
           </View>
           {active && openSlots.length > 0 && <Pressable accessibilityRole="button" onPress={() => selectSlot(openSlots[0])} className="mt-4 flex-row items-center gap-3 rounded-2xl border border-border p-4"><MaterialCommunityIcons name="calendar-clock-outline" size={25} color={C.muted} /><View className="flex-1"><Txt weight="semibold" className="text-sm">{openSlots.length} earlier {openSlots.length === 1 ? "session is" : "sessions are"} still open</Txt><Txt className="mt-1 text-xs text-muted">Start with week {openSlots[0].week}, day {openSlots[0].day}. Your progress stays saved.</Txt></View><MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} /></Pressable>}
           <Txt className="mt-4 text-xs leading-5 text-muted">Day 1 starts {formatProgramDate(e.start_date)}. Dates follow {e.timezone.replaceAll("_", " ")}.</Txt>
-        </> : <ProgramProgress key={e.id} detail={detail} pro={features.pro} unit={unit} onWeek={selectedWeek => { setSelection({ week: selectedWeek, day: 1 }); setPreviewId(null); setTab("plan"); }} />}
+        </> : <ProgramProgress key={e.id} detail={detail} pro={isPro} unit={unit} onWeek={selectedWeek => { setSelection({ week: selectedWeek, day: 1 }); setPreviewId(null); setTab("plan"); }} />}
 
 
         {active && <Pressable accessibilityRole="button" onPress={() => setDrawer("reminders")} className="mt-6 flex-row items-center gap-3 rounded-2xl bg-panel p-4"><MaterialCommunityIcons name="bell-outline" size={23} color={C.brand} /><View className="flex-1"><Txt weight="semibold" className="text-sm">Your daily nudge</Txt><Txt className="mt-1 text-xs text-muted">{reminderOn ? `${reminderTime} · ${e.timezone.replaceAll("_", " ")}` : "Off · Pick a time that fits your day"}</Txt></View><MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} /></Pressable>}

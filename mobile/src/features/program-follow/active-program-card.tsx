@@ -2,7 +2,7 @@ import React, { useCallback } from "react";
 import { ActivityIndicator, Pressable, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
-import { features } from "@/src/config/features";
+import { useBilling } from "@/src/features/billing/billing-context";
 import { ProgressRing, ProBadge } from "./program-visuals";
 import { useFocusEffect, router } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -13,6 +13,7 @@ import { focusAction, programFocus } from "./program-view";
 import { WorkoutAction } from "./workout-action";
 
 export function ActiveProgramCard() {
+  const { isPro } = useBilling();
   const { active, loading, error, refresh } = useProgram();
   useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
   if (!active) return (
@@ -35,7 +36,7 @@ export function ActiveProgramCard() {
         {e.cover_url && <Image source={{ uri: e.cover_url }} contentFit="cover" style={StyleSheet.absoluteFill} />}
         <LinearGradient colors={["#151515C0", "#151515F8"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 0 }} style={{ padding: 18 }}>
           <Pressable accessibilityRole="button" accessibilityLabel={`View ${e.program_name}, ${a.completed} of ${a.planned} workouts logged`} onPress={open} className="flex-row items-center gap-3">
-            <View className="flex-1"><View className="mb-2 flex-row items-center gap-2"><Txt weight="semibold" className="text-[9px] tracking-widest text-brand">YOUR PROGRAM</Txt>{features.pro && <ProBadge />}</View><Txt weight="bold" numberOfLines={1} className="text-lg">{e.program_name}</Txt><Txt className="mt-1 text-[11px] text-muted">Week {active.week}/{e.duration_weeks} · {week?.completed ?? 0}/{week?.planned ?? e.days_per_week} this week</Txt></View>
+            <View className="flex-1"><View className="mb-2 flex-row items-center gap-2"><Txt weight="semibold" className="text-[9px] tracking-widest text-brand">YOUR PROGRAM</Txt>{isPro && <ProBadge />}</View><Txt weight="bold" numberOfLines={1} className="text-lg">{e.program_name}</Txt><Txt className="mt-1 text-[11px] text-muted">Week {active.week}/{e.duration_weeks} · {week?.completed ?? 0}/{week?.planned ?? e.days_per_week} this week</Txt></View>
             <ProgressRing percent={a.progressPercent} size={64} label="Program completion" />
           </Pressable>
         </LinearGradient>

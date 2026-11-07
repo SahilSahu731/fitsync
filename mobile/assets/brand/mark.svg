@@ -2,7 +2,7 @@
   <defs>
     <linearGradient id="energy" x1="160" y1="142" x2="320" y2="370" gradientUnits="userSpaceOnUse">
       <stop stop-color="#FFA466"/>
-      <stop offset="0.5" stop-color="#FF7838"/>
+      <stop offset="0.5" stop-color="#"/>
       <stop offset="1" stop-color="#F05223"/>
     </linearGradient>
   </defs>

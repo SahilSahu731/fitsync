@@ -1,0 +1,21 @@
+import "dotenv/config";
+import assert from "node:assert/strict";
+import { db } from "../src/config/supabase.js";
+import { listSection, getResource } from "../src/modules/explore/explore.service.js";
+import { TOOL_TAG, readTool } from "../src/modules/explore/explore.tools.js";
+import { calculatorIds } from "../src/modules/explore/explore.schema.js";
+
+const { data, error } = await db.from("explore_resources").select("*");
+if (error) throw new Error(error.message);
+const rows = data ?? [];
+const tools = rows.filter(row => row.tags.includes(TOOL_TAG));
+const counts = { mobility: rows.filter(row => row.kind === "mobility").length, learn: rows.filter(row => row.kind === "guide" && !row.tags.includes(TOOL_TAG)).length, tools: tools.length };
+assert.ok(Object.values(counts).every(count => count >= 10));
+for (const tool of tools) assert.ok(calculatorIds.includes(readTool(tool).calculator_key as typeof calculatorIds[number]));
+const learn = await listSection("learn", { page: 1, pageSize: 100, q: "" });
+assert.ok(learn.items.every(row => !tools.some(tool => tool.id === row.id)), "Tools leaked into Learn");
+assert.equal(await getResource("plate-calculator"), null, "Tool should use the calculator screen");
+for (const slug of ["upper-body-warm-up", "progressive-overload", "hip-mobility-reset", "first-week-at-gym"]) assert.ok(rows.some(row => row.slug === slug), `Original record missing: ${slug}`);
+const urls = [...new Set(rows.filter(row => row.featured_rank >= 10 || row.tags.includes(TOOL_TAG)).map(row => row.cover_url).filter(Boolean))] as string[];
+const media = await Promise.all(urls.map(async url => { const response = await fetch(url, { method: "HEAD", signal: AbortSignal.timeout(20000) }); assert.ok(response.ok, `Cover returned ${response.status}`); assert.ok(response.headers.get("content-type")?.startsWith("image/")); return response.status; }));
+console.log(JSON.stringify({ counts, originalRecordsPresent: true, toolsExcludedFromLearn: true, checkedCoverImages: media.length }));

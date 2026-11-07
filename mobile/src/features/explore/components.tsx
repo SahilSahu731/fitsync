@@ -1,6 +1,7 @@
+import { MotionPressable as Pressable } from "@/src/components/motion";
 import React, { useState } from "react";
 
-import { Image, Pressable, View } from "react-native";
+import { Image, View } from "react-native";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -125,6 +126,7 @@ export function ToolTile({
       className="min-w-0 flex-1 justify-between rounded-2xl bg-panel p-4 active:opacity-80"
       style={{ minHeight: 140 }}
     >
+      {tool.cover_url ? <Image source={{ uri: tool.cover_url }} style={{ width: "100%", height: 100, borderRadius: 12, marginBottom: 12 }} resizeMode="cover" accessibilityLabel={tool.name} /> : null}
       <View className="h-11 w-11 items-center justify-center rounded-2xl bg-brand/10">
         <MaterialCommunityIcons name={tool.icon} size={26} color={C.brand} />
       </View>

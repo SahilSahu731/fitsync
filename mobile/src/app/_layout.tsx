@@ -9,6 +9,8 @@ import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
 import { ProgramProvider, ProgramNotificationLinks } from "@/src/features/program-follow/program-context";
+import { HealthSyncBridge } from "@/src/features/health-sync/use-health-sync";
+import { BillingProvider } from "@/src/features/billing/billing-context";
 import { WorkoutProvider } from "@/src/features/workouts/workout-context";
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 
@@ -27,6 +29,7 @@ import { AppDialogProvider } from "@/src/components/app-dialog";
 import { BrandReveal } from "@/src/components/brand-reveal";
 import { NativeBuildRequired } from "@/src/components/native-build-required";
 import { getMissingNativeModules } from "@/src/services/native-modules";
+import { MotionProvider } from "@/src/components/motion";
 import { C } from "@/src/constants/theme";
 
 void SplashScreen.preventAutoHideAsync().catch(console.warn);
@@ -104,17 +107,22 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
+      <MotionProvider>
       {missingNativeModules.length ? (
         <NativeBuildRequired missing={missingNativeModules} />
       ) : (
         <SessionProvider>
+          <BillingProvider>
+          <HealthSyncBridge />
           <AppDialogProvider>
             <WorkoutProvider>
               <ProgramProvider><Navigator /></ProgramProvider>
             </WorkoutProvider>
           </AppDialogProvider>
+        </BillingProvider>
         </SessionProvider>
       )}
+      </MotionProvider>
     </SafeAreaProvider>
   );
 }

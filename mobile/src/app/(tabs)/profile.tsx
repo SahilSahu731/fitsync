@@ -1,10 +1,11 @@
+import { useBilling } from "@/src/features/billing/billing-context";
+import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
 import { useAppAlert } from "@/src/components/app-dialog";
 
 import React, { useState } from "react";
 
 import {
   Image,
-  Pressable,
   ScrollView,
   View
 } from "react-native";
@@ -63,6 +64,7 @@ export default function ProfileScreen() {
   const Alert = useAppAlert();
   const router = useRouter();
   const { user, profile, signOut } = useSession();
+  const { isPro } = useBilling();
 
   const [busy, setBusy] = useState(false);
 
@@ -100,12 +102,13 @@ export default function ProfileScreen() {
   };
 
   return (
+    <ScreenEntrance style={{ flex: 1 }}>
     <ScrollView
       className="flex-1 bg-bg"
       contentContainerStyle={{
         paddingHorizontal: 22,
         paddingTop: 24,
-        paddingBottom: 60
+        paddingBottom: 150
       }}
     >
       <View className="flex-row items-center justify-between">
@@ -175,7 +178,7 @@ export default function ProfileScreen() {
               weight="bold"
               className="mt-2 text-[11px] tracking-[1px] text-brand"
             >
-              FITSYNC ATHLETE
+              {isPro ? "FITSYNC PRO" : "FITSYNC ATHLETE"}
             </Txt>
           </View>
         </View>
@@ -280,6 +283,10 @@ export default function ProfileScreen() {
         Account
       </Txt>
 
+      <SettingRow icon="star-four-points-outline" title={isPro ? "Your Pro membership" : "FitSync Pro"} subtitle="Personal plans, adaptations and weekly coaching" onPress={() => router.push("/pro")} />
+      <SettingRow icon="calendar-check-outline" title="Your personal plan" subtitle="Training that fits your goal and schedule" onPress={() => router.push("/coach")} />
+      <SettingRow icon="heart-pulse" title="Connect health data" subtitle="Import steps, sleep and weight with your permission" onPress={() => router.push("/health-sync")} />
+      <SettingRow icon="food-apple-outline" title="Meals & accountability" subtitle="Meal ideas, shopping lists and private commitments" onPress={() => router.push("/wellness")} />
       <SettingRow
         icon="account-edit"
         title="Personal information"
@@ -313,5 +320,6 @@ export default function ProfileScreen() {
         </Txt>
       </Pressable>
     </ScrollView>
+    </ScreenEntrance>
   );
 }

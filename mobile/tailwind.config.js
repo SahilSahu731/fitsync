@@ -18,11 +18,11 @@ module.exports = {
       colors: {
         bg: "#101011",
         panel: "#1A1A1D",
-        elevated: "#222225",
-        border: "#313137",
-        brand: "#FF7838",
+        elevated: "#242427",
+        border: "#303034",
+        brand: "#43CFB3",
         ink: "#F8F7F4",
-        muted: "#A7A7AA"
+        muted: "#A7AAAF"
       },
       borderRadius: {
         card: "24px"

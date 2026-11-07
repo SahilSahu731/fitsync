@@ -1,273 +1,68 @@
-
-import React from "react";
-import {
-  Pressable,
-  ScrollView,
-  View
-} from "react-native";
-
+import { WorkoutSyncNotice } from "@/src/features/workouts/components/workout-sync-notice";
+import { CoachHomeCard } from "@/src/features/coaching/home-card";
+import React, { useMemo } from "react";
+import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
+import { MotionPressable, ProgressFill, ScreenEntrance } from "@/src/components/motion";
+import { Txt, SectionHeading } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
-import {
-  Card,
-  SectionHeading,
-  Txt
-} from "@/src/components/ui";
-
 import { useSession } from "@/src/context/session";
+import { useProgress } from "@/src/features/progress/use-progress";
+import { buildProgress } from "@/src/features/progress/analytics";
+import { addDays, dateLabel, latestMetrics, localDate } from "@/src/features/progress/model";
+import { useWorkout } from "@/src/features/workouts/workout-context";
+import { ActiveProgramCard } from "@/src/features/program-follow/active-program-card";
 
-const week = ["M", "T", "W", "T", "F", "S", "S"];
+type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user, profile } = useSession();
+  const { user } = useSession();
+  const { session } = useWorkout();
+  const progress = useProgress();
+  const today = localDate();
+  const firstName = user?.name.trim().split(/\s+/)[0] || "Athlete";
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? "Good morning" : hour < 17 ? "Good afternoon" : "Good evening";
+  const data = useMemo(() => buildProgress(progress.journal.workouts, progress.journal.events, 7, today, progress.goals.weeklyWorkouts), [progress.journal.workouts, progress.journal.events, progress.goals.weeklyWorkouts, today]);
+  const currentWeek = data.weeks.at(-1)!;
+  const daily = latestMetrics(progress.journal.events).filter(entry => entry.date === today);
+  const steps = daily.find(entry => entry.metric === "steps")?.value;
+  const sleep = daily.find(entry => entry.metric === "sleep")?.value;
+  const quickStats: { label: string; value: string; unit: string; icon: IconName }[] = [
+    { label: "Steps today", value: steps == null ? "—" : steps.toLocaleString(), unit: "steps", icon: "shoe-print" },
+    { label: "Last night’s sleep", value: sleep == null ? "—" : sleep.toLocaleString(undefined, { maximumFractionDigits: 1 }), unit: "hours", icon: "weather-night" },
+  ];
 
-  const firstName =
-    user?.name.split(" ")[0].toUpperCase() || "ATHLETE";
-
-  return (
-    <ScrollView
-      className="flex-1 bg-bg"
-      contentContainerStyle={{
-        paddingHorizontal: 22,
-        paddingTop: 24,
-        paddingBottom: 50
-      }}
-    >
-      {/* Greeting */}
-
-      <View className="mb-8 flex-row items-center justify-between">
-        <View className="flex-1">
-          <Txt className="text-xs tracking-[2px] text-muted">
-            MAKE TODAY COUNT
-          </Txt>
-
-          <Txt
-            weight="extra"
-            className="mt-1 text-[30px] tracking-tight"
-          >
-            HEY, {firstName} ✌
-          </Txt>
-        </View>
-
-        <Pressable
-          onPress={() => router.push("/(tabs)/profile")}
-          className="h-12 w-12 items-center justify-center rounded-full border border-border bg-panel"
-        >
-          <MaterialCommunityIcons
-            name="account-circle-outline"
-            size={29}
-            color={C.ink}
-          />
-        </Pressable>
-      </View>
-
-      {/* Featured workout */}
-
-      <View className="overflow-hidden rounded-[30px] bg-brand p-6">
-        <View className="flex-row items-center justify-between">
-          <View className="rounded-full bg-[#151515] px-3 py-1">
-            <Txt
-              weight="extra"
-              className="text-[10px] tracking-[2px]"
-            >
-              YOUR NEXT SESSION
-            </Txt>
-          </View>
-
-          <Txt weight="extra" className="text-xs text-bg">
-            01 / 03
-          </Txt>
-        </View>
-
-        <View className="mt-9 flex-row items-center">
-          <Txt
-            weight="extra"
-            className="flex-1 text-[43px] leading-[43px] tracking-tight text-bg"
-          >
-            UPPER{"\n"}BODY.
-          </Txt>
-
-          <MaterialCommunityIcons
-            name="weight-lifter"
-            color={C.bg}
-            size={78}
-          />
-        </View>
-
-        <Txt weight="medium" className="mt-3 text-sm text-bg">
-          Chest · Back · Shoulders
-        </Txt>
-
-        <View className="mt-6 flex-row gap-4">
-          <Txt weight="semibold" className="text-xs text-bg">
-            ◷ 45 MIN
-          </Txt>
-
-          <Txt weight="semibold" className="text-xs text-bg">
-            ◈ 6 EXERCISES
-          </Txt>
-        </View>
-
-        <Pressable
-          onPress={() => router.push("/workout?plan=upper")}
-          className="mt-7 flex-row items-center justify-between rounded-2xl bg-bg px-5 py-4"
-        >
-          <Txt weight="bold" className="text-base">
-            START WORKOUT
-          </Txt>
-
-          <MaterialCommunityIcons
-            name="arrow-top-right"
-            size={24}
-            color={C.ink}
-          />
-        </Pressable>
-      </View>
-
-      {/* Weekly activity */}
-
-      <View className="mt-7">
-        <SectionHeading
-          title="Your week"
-          action="VIEW PROGRESS"
-          onAction={() => router.push("/(tabs)/progress")}
-        />
-
-        <View className="flex-row justify-between">
-          {week.map((label, i) => {
-            const active = [0, 2, 4].includes(i);
-
-            return (
-              <View key={i} className="items-center">
-                <Txt weight="medium" className="text-xs text-muted">
-                  {label}
-                </Txt>
-
-                <View
-                  className={`mt-2 h-10 w-10 items-center justify-center rounded-full ${active ? "bg-brand" : "border border-border bg-panel"}`}
-                >
-                  <MaterialCommunityIcons
-                    name={active ? "check" : "minus"}
-                    color={active ? C.bg : C.muted}
-                    size={17}
-                  />
-                </View>
-              </View>
-            );
-          })}
-        </View>
-
-        <Txt className="mt-3 text-xs text-muted">
-          Example activity only. Real sessions will replace these.
-        </Txt>
-      </View>
-
-      {/* Stats */}
-
-      <View className="mt-8">
-        <SectionHeading title="At a glance" />
-
-        <View className="flex-row gap-3">
-          <Card className="flex-1">
-            <MaterialCommunityIcons
-              name="calendar-check"
-              color={C.brand}
-              size={23}
-            />
-
-            <Txt weight="extra" className="mt-4 text-3xl">
-              3 / {profile?.trainingDays || 4}
-            </Txt>
-
-            <Txt className="text-xs text-muted">
-              Sessions this week
-            </Txt>
-          </Card>
-
-          <Card className="flex-1">
-            <MaterialCommunityIcons
-              name="trending-up"
-              color={C.brand}
-              size={23}
-            />
-
-            <Txt weight="extra" className="mt-4 text-3xl">
-              +12%
-            </Txt>
-
-            <Txt className="text-xs text-muted">
-              Example improvement
-            </Txt>
-          </Card>
+  return <ScreenEntrance style={{ flex: 1 }}>
+    <ScrollView className="flex-1 bg-bg" showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 20, paddingTop: 26, paddingBottom: 150 }} refreshControl={<RefreshControl refreshing={progress.refreshing && !progress.loading} onRefresh={() => void progress.refresh()} tintColor={C.brand} />}>
+      <View className="mb-6 flex-row items-center justify-between gap-3"><View className="flex-1"><Txt className="text-sm text-muted">{greeting}</Txt><Txt accessibilityRole="header" weight="semibold" className="mt-1 text-[32px] tracking-tight">{firstName}</Txt></View><MotionPressable accessibilityRole="button" accessibilityLabel="Open your profile" onPress={() => router.push("/(tabs)/profile")} className="h-12 w-12 items-center justify-center rounded-full bg-panel"><MaterialCommunityIcons name="account-circle-outline" size={30} color={C.ink} /></MotionPressable></View>
+      <WorkoutSyncNotice />
+      <CoachHomeCard />
+      <ActiveProgramCard />
+      <MotionPressable accessibilityRole="button" onPress={() => router.push(session ? "/workout" : "/(tabs)/train")} className="overflow-hidden rounded-[28px] bg-brand p-6">
+        <MaterialCommunityIcons name="dumbbell" size={170} color={C.bg} style={{ position: "absolute", right: -28, bottom: -34, opacity: 0.1, transform: [{ rotate: "-18deg" }] }} />
+        <View className="mb-4 flex-row items-center gap-2"><MaterialCommunityIcons name={session ? "play-circle-outline" : "lightning-bolt-outline"} size={18} color={C.bg} /><Txt weight="semibold" className="text-xs text-bg">{session ? "WORKOUT IN PROGRESS" : "MAKE TIME FOR YOU"}</Txt></View>
+        <Txt weight="bold" className="max-w-[240px] text-[30px] leading-9 text-bg">{session ? session.name : "Your next session\nstarts here."}</Txt>
+        <Txt className="mt-3 max-w-[230px] text-sm leading-5 text-bg/75">{session ? "Pick up where you left off." : "Open your routines or start a new workout."}</Txt>
+        <View className="mt-6 flex-row items-center self-start gap-2 rounded-full bg-bg px-5 py-3"><MaterialCommunityIcons name="play" size={18} color={C.ink} /><Txt weight="semibold" className="text-sm">{session ? "Resume workout" : "Let’s train"}</Txt></View>
+      </MotionPressable>
+      <View className="mt-7"><SectionHeading title="This week" action="Progress" onAction={() => router.push("/(tabs)/progress")} />
+        <View className="rounded-[24px] bg-panel p-5">
+          <View className="flex-row items-end justify-between"><View><Txt weight="bold" className="text-[34px]">{progress.loading ? "—" : currentWeek.workouts}<Txt className="text-lg text-muted"> / {progress.goals.weeklyWorkouts}</Txt></Txt><Txt className="mt-1 text-xs text-muted">Workouts completed</Txt></View><View className="items-end"><Txt weight="semibold" className="text-lg">{progress.loading ? "—" : currentWeek.minutes}<Txt className="text-xs text-muted"> min</Txt></Txt><Txt className="mt-1 text-xs text-muted">Training time</Txt></View></View>
+          <View className="mt-4"><ProgressFill ratio={currentWeek.workouts / progress.goals.weeklyWorkouts} color={C.brand} height={4} /></View>
+          <View className="mt-5 flex-row justify-between">{Array.from({ length: 7 }, (_, index) => addDays(currentWeek.date, index)).map(date => {
+            const count = data.calendar.find(day => day.date === date)?.workouts ?? 0;
+            const future = date > today;
+            return <View key={date} className="items-center"><Txt className="mb-2 text-[11px] text-muted">{dateLabel(date, { weekday: "narrow" })}</Txt><View style={{ width: 34, height: 34, borderRadius: 17, alignItems: "center", justifyContent: "center", backgroundColor: count ? C.brand : C.elevated, opacity: future ? 0.35 : 1, borderWidth: date === today ? 1 : 0, borderColor: C.brand }}><MaterialCommunityIcons name={count ? "check" : "minus"} size={16} color={count ? C.bg : C.muted} /></View></View>;
+          })}</View>
         </View>
       </View>
-
-      {/* Shortcuts */}
-
-      <View className="mt-8">
-        <SectionHeading title="Quick access" />
-
-        <Pressable
-          onPress={() => router.push("/(tabs)/library")}
-          className="mb-3 flex-row items-center rounded-2xl border border-border bg-panel p-4"
-        >
-          <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-elevated">
-            <MaterialCommunityIcons
-              name="bookshelf"
-              color={C.brand}
-              size={24}
-            />
-          </View>
-
-          <View className="flex-1">
-            <Txt weight="bold" className="text-base">
-              Exercise library
-            </Txt>
-
-            <Txt className="text-xs text-muted">
-              Browse techniques and equipment
-            </Txt>
-          </View>
-
-          <MaterialCommunityIcons
-            name="chevron-right"
-            color={C.muted}
-            size={24}
-          />
-        </Pressable>
-
-        <Pressable
-          onPress={() => router.push("/(tabs)/train")}
-          className="flex-row items-center rounded-2xl border border-border bg-panel p-4"
-        >
-          <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl bg-elevated">
-            <MaterialCommunityIcons
-              name="dumbbell"
-              color={C.brand}
-              size={24}
-            />
-          </View>
-
-          <View className="flex-1">
-            <Txt weight="bold" className="text-base">
-              Browse workouts
-            </Txt>
-
-            <Txt className="text-xs text-muted">
-              Pick a session that suits you
-            </Txt>
-          </View>
-
-          <MaterialCommunityIcons
-            name="chevron-right"
-            color={C.muted}
-            size={24}
-          />
-        </Pressable>
-      </View>
+      {progress.loading && <View className="mt-4 flex-row items-center gap-2"><ActivityIndicator size="small" color={C.brand} /><Txt className="text-xs text-muted">Opening your dashboard…</Txt></View>}
+      {!!(progress.syncError || progress.workoutError || progress.storageError) && <MotionPressable accessibilityRole="button" onPress={() => void progress.refresh()} className="mt-4 flex-row items-center gap-2 rounded-2xl bg-panel p-4"><MaterialCommunityIcons name="cloud-off-outline" size={19} color={C.muted} /><Txt className="flex-1 text-xs leading-5 text-muted">{progress.storageError ? "Could not open your saved progress. Tap to retry." : "Could not refresh all progress. Showing saved data. Tap to retry."}</Txt></MotionPressable>}
+      <View className="mt-7"><SectionHeading title="Daily check-in" action="View all" onAction={() => router.push("/(tabs)/progress")} /><View className="flex-row gap-3">{quickStats.map(stat => <MotionPressable key={stat.label} accessibilityRole="button" onPress={() => router.push("/(tabs)/progress")} className="flex-1 rounded-[22px] bg-panel p-4"><MaterialCommunityIcons name={stat.icon} size={24} color={C.brand} /><Txt weight="bold" className="mt-4 text-[28px]">{stat.value}<Txt className="text-xs text-muted"> {stat.unit}</Txt></Txt><Txt className="mt-1 text-xs text-muted">{stat.label}</Txt></MotionPressable>)}</View></View>
+      <View className="mt-7"><SectionHeading title="Explore more" /><View className="flex-row gap-3">{[{ label: "Library", subtitle: "Programs & guidance", icon: "bookshelf" as const, route: "/(tabs)/library" as const }, { label: "Progress", subtitle: "Your activity & trends", icon: "chart-areaspline" as const, route: "/(tabs)/progress" as const }].map(item => <MotionPressable key={item.label} accessibilityRole="button" onPress={() => router.push(item.route)} className="flex-1 rounded-[22px] bg-panel p-4"><View className="flex-row items-center justify-between"><MaterialCommunityIcons name={item.icon} color={C.brand} size={24} /><MaterialCommunityIcons name="arrow-top-right" color={C.muted} size={18} /></View><Txt weight="semibold" className="mt-4 text-base">{item.label}</Txt><Txt className="mt-1 text-xs text-muted">{item.subtitle}</Txt></MotionPressable>)}</View></View>
     </ScrollView>
-  );
+  </ScreenEntrance>;
 }

@@ -1,3 +1,5 @@
+import { Image } from "expo-image";
+import * as Linking from "expo-linking";
 import React, { useEffect, useState } from "react";
 
 import {
@@ -30,48 +32,26 @@ function formatClock(seconds: number) {
 }
 
 function MobilitySession({ resource }: { resource: ExploreResource }) {
-  const steps = resource.steps ?? [];
-
-  const [index, setIndex] = useState(0);
-
-  const [remaining, setRemaining] = useState(steps[0]?.seconds ?? 0);
-
-  const [running, setRunning] = useState(false);
-
-  const [complete, setComplete] = useState(false);
-
+  const steps = resource.steps;
+  const [clock, setClock] = useState({ index: 0, remaining: steps[0]?.seconds ?? 0, complete: false, running: false });
+  const { index, remaining, complete, running } = clock;
   useEffect(() => {
-    if (!running) {
-      return;
-    }
-
-    const timer = setInterval(
-      () => setRemaining((value) => Math.max(0, value - 1)),
-      1000,
-    );
-
+    if (!running) return;
+    const timer = setInterval(() => setClock(current => {
+      if (!current.running) return current;
+      if (current.remaining > 1) return { ...current, remaining: current.remaining - 1 };
+      const next = current.index + 1;
+      return next < steps.length
+        ? { ...current, index: next, remaining: steps[next].seconds }
+        : { ...current, remaining: 0, running: false, complete: true };
+    }), 1000);
     return () => clearInterval(timer);
-  }, [running]);
-
-  useEffect(() => {
-    if (!running || remaining > 0) {
-      return;
-    }
-
-    if (index + 1 < steps.length) {
-      setIndex(index + 1);
-
-      setRemaining(steps[index + 1].seconds);
-    } else {
-      setRunning(false);
-      setComplete(true);
-    }
-  }, [running, remaining, index, steps]);
+  }, [running, steps]);
 
   useEffect(() => {
     const listener = AppState.addEventListener("change", (state) => {
       if (state !== "active") {
-        setRunning(false);
+        setClock(current => ({ ...current, running: false }));
       }
     });
 
@@ -81,12 +61,7 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
   const jump = (next: number) => {
     const safe = Math.max(0, Math.min(steps.length - 1, next));
 
-    setIndex(safe);
-
-    setRemaining(steps[safe]?.seconds ?? 0);
-
-    setComplete(false);
-    setRunning(false);
+    setClock({ index: safe, remaining: steps[safe]?.seconds ?? 0, complete: false, running: false });
   };
 
   if (!steps.length) {
@@ -110,10 +85,14 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
           {complete ? "Nice work!" : steps[index].title}
         </Txt>
 
+        {steps[index].image_url && <Image source={{ uri: steps[index].image_url }} style={{ width: "100%", height: 220, borderRadius: 16, marginTop: 16 }} contentFit="contain" accessibilityLabel={steps[index].image_alt || steps[index].title} />}
         <Txt className="mt-2 text-sm leading-6 text-muted">
           {steps[index].instruction}
         </Txt>
 
+        {steps[index].modification && <View className="mt-4 rounded-xl bg-elevated p-4"><Txt weight="bold" className="text-sm text-brand">Make it easier</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{steps[index].modification}</Txt></View>}
+        {steps[index].video_url && <ExternalLink label="Watch demonstration" url={steps[index].video_url!} />}
+        <View className="mt-4 h-2 overflow-hidden rounded-full bg-elevated"><View style={{ height: "100%", width: `${complete ? 100 : Math.round((index + (steps[index].seconds - remaining) / steps[index].seconds) / steps.length * 100)}%`, backgroundColor: C.brand }} /></View>
         <Txt weight="bold" className="mt-6 text-center text-[54px]">
           {formatClock(remaining)}
         </Txt>
@@ -139,7 +118,7 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
                 return;
               }
 
-              setRunning((value) => !value);
+              setClock(current => ({ ...current, running: !current.running }));
             }}
             accessibilityRole="button"
             className="h-14 flex-1 flex-row items-center justify-center rounded-2xl bg-brand"
@@ -310,6 +289,7 @@ export default function ExploreResourceDetail() {
 
       {resource ? (
         <>
+          {resource.cover_url && <Image source={{ uri: resource.cover_url }} style={{ width: "100%", height: 210, borderRadius: 22, marginBottom: 20 }} contentFit="cover" accessibilityLabel={resource.title} />}
           <View className="flex-row flex-wrap gap-2">
             <View className="rounded-full bg-brand/10 px-3 py-2">
               <Txt className="text-xs text-brand">
@@ -335,6 +315,8 @@ export default function ExploreResourceDetail() {
                     {section.heading}
                   </Txt>
 
+                  {section.image_url && <Image source={{ uri: section.image_url }} style={{ width: "100%", height: 210, borderRadius: 16, marginTop: 12 }} contentFit="contain" accessibilityLabel={section.image_alt || section.heading} />}
+                  {section.links?.map((link, j) => <ExternalLink key={j} label={link.label} url={link.url} />)}
                   {section.paragraphs.map((paragraph, j) => (
                     <Txt
                       key={j}
@@ -358,4 +340,14 @@ export default function ExploreResourceDetail() {
       ) : null}
     </ScrollView>
   );
+}
+
+function ExternalLink({ label, url }: { label: string; url: string }) {
+  const router = useRouter();
+  const [error, setError] = useState("");
+  return <View><Pressable accessibilityRole="link" onPress={() => {
+    if (/^\/explore\/resources\/[a-z0-9-]+$/.test(url)) { router.push({ pathname: "/explore/resources/[slug]", params: { slug: url.split("/").pop()! } }); return; }
+    if (!url.startsWith("https://")) return;
+    void Linking.openURL(url).catch(() => setError("Could not open this link."));
+  }}><Txt className="mt-3 text-sm text-brand">{label} ↗</Txt></Pressable>{error && <Txt className="text-xs text-muted">{error}</Txt>}</View>;
 }

@@ -64,6 +64,10 @@ export async function requireAuth(
     if (!data) {
       throw new ApiError(401, "Session expired or revoked.");
     }
+    const expectedOwner = req.headers["x-fitsync-owner"];
+    if (expectedOwner && expectedOwner !== payload.sub) {
+      throw new ApiError(409, "The signed-in account changed. Reopen this screen.");
+    }
 
     (req as AuthRequest).auth = {
       userId: payload.sub,

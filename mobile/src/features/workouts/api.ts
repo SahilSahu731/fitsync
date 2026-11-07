@@ -120,12 +120,13 @@ export const workoutApi = {
       method: "DELETE"
     }),
 
-  active: () =>
-    apiRequest<WorkoutSession | null>("/workouts/active"),
+  active: (expectedOwnerId?: string) =>
+    apiRequest<WorkoutSession | null>("/workouts/active", { expectedOwnerId }),
 
-  start: (templateId?: string, programSlotId?: string) =>
+  start: (templateId?: string, programSlotId?: string, expectedOwnerId?: string) =>
     apiRequest<WorkoutSession>("/workouts/start", {
       method: "POST",
+      expectedOwnerId,
       json: { templateId, programSlotId }
     }),
 
@@ -184,23 +185,26 @@ export const workoutApi = {
       rir?: number | null;
       completed?: boolean;
       notes?: string;
-    }
+    },
+    expectedOwnerId?: string
   ) =>
     apiRequest<WorkoutSet>(
       `/workouts/sessions/${sessionId}/sets/${setId}?compact=true`,
       {
         method: "PATCH",
+        expectedOwnerId,
         json: data
       }
     ),
 
-  updateNotes: (id: string, notes: string) => apiRequest<{ notes: string }>(`/workouts/sessions/${id}`, { method: "PATCH", json: { notes } }),
+  updateNotes: (id: string, notes: string, expectedOwnerId?: string) => apiRequest<{ notes: string }>(`/workouts/sessions/${id}`, { method: "PATCH", expectedOwnerId, json: { notes } }),
 
-  finish: (id: string, elapsedSeconds?: number, notes = "") =>
+  finish: (id: string, elapsedSeconds?: number, notes = "", expectedOwnerId?: string) =>
     apiRequest<WorkoutSession>(
       `/workouts/sessions/${id}/finish`,
       {
         method: "POST",
+        expectedOwnerId,
         json: { elapsedSeconds, notes }
       }
     ),

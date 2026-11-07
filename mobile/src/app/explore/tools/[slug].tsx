@@ -3,6 +3,7 @@ import React, {
 } from "react";
 
 import {
+  Image,
   Pressable,
   ScrollView,
   TextInput,
@@ -22,12 +23,15 @@ import {
 } from "@/src/features/explore/components";
 
 import {
-  TOOLS,
+  EXTRA_CALCULATORS,
+  calculateExtra,
   calculatePlates,
   estimatedOneRepMax,
   warmupLoads,
   workoutVolume
 } from "@/src/features/explore/tools";
+
+import { usePublishedTools } from "@/src/features/explore/use-tools";
 
 function NumberField({
   label,
@@ -100,6 +104,7 @@ export default function ExploreCalculator() {
 
   const router = useRouter();
 
+  const { tools: TOOLS, loading, error, reload } = usePublishedTools();
   const tool = TOOLS.find(
     item => item.id === slug
   );
@@ -120,9 +125,10 @@ export default function ExploreCalculator() {
     return (
       <View className="flex-1 items-center justify-center bg-bg">
         <Txt>
-          Unknown calculator.
+          {loading ? "Loading calculator…" : error || "This calculator is not published."}
         </Txt>
 
+        {error && <Pressable onPress={reload}><Txt className="text-brand">Retry</Txt></Pressable>}
         <Pressable
           onPress={() => router.back()}
         >
@@ -188,7 +194,10 @@ export default function ExploreCalculator() {
         onBack={() => router.back()}
       />
 
-      {tool.id === "one-rep-max" ? (
+      {tool.cover_url && <Image source={{ uri: tool.cover_url }} style={{ width: "100%", height: 190, borderRadius: 20, marginBottom: 20 }} resizeMode="cover" accessibilityLabel={tool.name} />}
+      {tool.explanation && <View className="mb-5 rounded-2xl bg-panel p-5"><Txt weight="bold">How it works</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{tool.explanation}</Txt><Txt weight="bold" className="mt-4">Worked example</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{tool.example}</Txt></View>}
+      {tool.calculator_key && EXTRA_CALCULATORS[tool.calculator_key] && <ExtraCalculator key={tool.calculator_key} id={tool.calculator_key} />}
+      {tool.calculator_key === "one-rep-max" ? (
         <>
           <NumberField
             label="Weight lifted (kg)"
@@ -214,7 +223,7 @@ export default function ExploreCalculator() {
         </>
       ) : null}
 
-      {tool.id === "workout-volume" ? (
+      {tool.calculator_key === "workout-volume" ? (
         <>
           <NumberField
             label="Number of sets"
@@ -246,7 +255,7 @@ export default function ExploreCalculator() {
         </>
       ) : null}
 
-      {tool.id === "plate-calculator" ? (
+      {tool.calculator_key === "plate-calculator" ? (
         <>
           <NumberField
             label="Target total weight (kg)"
@@ -279,6 +288,7 @@ export default function ExploreCalculator() {
                 Each side of the bar
               </Txt>
 
+              <View className="mb-5 flex-row items-center gap-1" accessibilityLabel="Plate arrangement on each side"><View style={{ height: 10, width: 40, backgroundColor: C.muted }} />{plates.perSide.flatMap(p => Array.from({ length: p.countPerSide }, (_, i) => <View key={`${p.weight}-${i}`} style={{ minWidth: 24, height: 45 + p.weight * 2, backgroundColor: C.brand, borderRadius: 4, justifyContent: "center", alignItems: "center" }}><Txt className="text-xs text-bg">{p.weight}</Txt></View>))}</View>
               {plates.perSide.length ? (
                 plates.perSide.map(
                   plate => (
@@ -310,7 +320,7 @@ export default function ExploreCalculator() {
         </>
       ) : null}
 
-      {tool.id === "warmup-sets" ? (
+      {tool.calculator_key === "warmup-sets" ? (
         <>
           <NumberField
             label="Planned working weight (kg)"
@@ -358,4 +368,10 @@ export default function ExploreCalculator() {
       ) : null}
     </ScrollView>
   );
+}
+function ExtraCalculator({ id }: { id: string }) {
+  const definition = EXTRA_CALCULATORS[id];
+  const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(definition.fields.map(f => [f.key, f.initial])));
+  const result = calculateExtra(id, values);
+  return <View>{definition.fields.map(f => f.key === "direction" ? <View key={f.key} className="mb-5 flex-row gap-3">{["1", "2"].map(direction => <Pressable key={direction} accessibilityRole="button" accessibilityState={{ selected: values.direction === direction }} onPress={() => setValues(v => ({ ...v, direction }))} className={`flex-1 rounded-xl p-4 ${values.direction === direction ? "bg-brand" : "bg-panel"}`}><Txt weight="bold" className={values.direction === direction ? "text-bg" : "text-ink"}>{id === "weight-converter" ? direction === "1" ? "kg → lb" : "lb → kg" : direction === "1" ? "km → miles" : "miles → km"}</Txt></Pressable>)}</View> : <NumberField key={f.key} label={f.label} value={values[f.key]} onChange={next => setValues(v => ({ ...v, [f.key]: next }))} />)}<Result label="Result" value={result ?? "Enter valid values"} /></View>;
 }

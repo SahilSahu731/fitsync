@@ -1,10 +1,12 @@
+import { WorkoutSyncNotice } from "@/src/features/workouts/components/workout-sync-notice";
+import { CoachHomeCard } from "@/src/features/coaching/home-card";
+import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
 import { ActiveProgramCard } from "@/src/features/program-follow/active-program-card";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useCallback, useState } from "react";
 
 import {
   ActivityIndicator,
-  Pressable,
   RefreshControl,
   ScrollView,
   Share,
@@ -112,10 +114,10 @@ function QuickTile({
   return (
     <Pressable
       onPress={onPress}
-      className="flex-row items-center w-1/2 gap-3 rounded-[18px] bg-panel p-4"
+      className="min-w-0 flex-1 flex-row items-center gap-2 rounded-[18px] bg-panel p-3.5"
     >
-      <MaterialCommunityIcons name={icon} size={22} color={"white"} />
-      <Txt weight="semibold" className="text-lg">
+      <MaterialCommunityIcons name={icon} size={20} color={C.ink} />
+      <Txt weight="semibold" className="flex-1 text-[14px]">
         {title}
       </Txt>
 
@@ -183,7 +185,7 @@ function EmptyState({
 
 // Drop-in replacement for ProgramCard in your Train screen.
 // Imports needed in the screen:
-//   import { ..., Image, Pressable, StyleSheet, ... } from "react-native";
+//   import { ..., Image, StyleSheet, ... } from "react-native";
 
 // Fixes the URL shapes that commonly fail to render on devices.
 function coverUri(url?: string | null) {
@@ -613,7 +615,8 @@ export default function TrainScreen() {
 
   return (
     <>
-      <ScrollView
+      <ScreenEntrance style={{ flex: 1 }}>
+    <ScrollView
         className="flex-1 bg-bg"
         showsVerticalScrollIndicator={false}
         refreshControl={
@@ -639,7 +642,9 @@ export default function TrainScreen() {
           </Txt>
         </View>
 
-        <ActiveProgramCard />
+        <WorkoutSyncNotice />
+      <CoachHomeCard />
+      <ActiveProgramCard />
 
         {/* Hero: resume or start */}
 
@@ -696,7 +701,7 @@ export default function TrainScreen() {
                 transform: [{ rotate: "-18deg" }],
               }}
             />
-            <View className="w-52">
+            <View className="flex-1 pr-3">
               <Txt weight="bold" className="text-[22px] leading-8 text-bg">
                 Start a workout!
               </Txt>
@@ -873,6 +878,7 @@ export default function TrainScreen() {
           </>
         )}
       </ScrollView>
+    </ScreenEntrance>
       {actionBusy && (
         <View
           pointerEvents="auto"

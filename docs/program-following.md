@@ -21,21 +21,13 @@ The program page separates **My plan** from **My progress**. A seven-day calenda
 
 Progress shows completed sessions, sets, minutes, volume, and a tappable weekly completion chart. Reminder controls, history, program changes, and stopping live in the program options drawer. These UI improvements use migration 008; no additional database migration is needed.
 
-## Basic and Pro preview
+## Free and Pro
 
-`mobile/src/config/features.ts` contains the single temporary switch:
+Free includes the daily catalog plan, schedule, workout logging, completion ring, totals, milestones, weekly check-ins, recent logs, and program journal. Additional program charts use the signed-in account's server-verified Pro entitlement through `BillingProvider`; the global prototype switch has been removed.
 
-```ts
-export const features: { pro: boolean } = {
-  pro: false, // true = Pro view; false = Basic view
-};
-```
+FitSync Pro also provides adaptive personal plans, session adaptation, progression previews and weekly coaching through `/api/coaching`. These paid mutations are independently enforced by the server. Purchases, restore, expiry and webhooks are described in [billing.md](billing.md). Catalog program schedules remain fixed; personal coaching is a separate experience. Start personal-plan sessions from Coach to credit the corresponding day.
 
-Basic includes the daily plan, schedule, workout logging, completion ring, totals, milestones, weekly check-ins, recent logs, and program journal. Pro adds selectable weekly volume/set/time charts, comparisons between the two most recent fully elapsed scheduled weeks, due-session completion, by-planned-day logging, best run of completed scheduled sessions, a 28-day activity calendar, and routine first/latest comparisons linked to the actual workout logs.
-
-The switch is app-wide presentation configuration for this prototype, not a purchased entitlement. There is no subscription, checkout, or paywall API. Replace it with a server-owned per-account entitlement when subscriptions are introduced. No extra migration is needed to preview these insights.
-
-Insights use completed program workouts only. Weekly charts follow scheduled program weeks; the activity calendar follows actual completion dates in the program timezone. A stopped/completed program freezes the reporting date at its end date. Percentage changes require a nonzero baseline; incomplete weeks are excluded from week-over-week comparisons. Changes in volume do not establish changes in strength. Exercise selection and set counts may change between routine logs.
+Program insights use completed program workouts only. Weekly charts follow scheduled program weeks; the activity calendar follows actual completion dates in the program timezone. Changes in volume do not establish changes in strength. See [coaching.md](coaching.md) for comparable-performance reviews and [pro-release.md](pro-release.md) for the release checklist and remaining device tests.
 
 ## Deployment
 

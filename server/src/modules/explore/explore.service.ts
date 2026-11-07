@@ -1,3 +1,4 @@
+import { TOOL_TAG_FILTER } from "./explore.tools.js";
 import { db } from "../../config/supabase.js";
 import { checkDbError } from "../../common/errors.js";
 
@@ -226,6 +227,7 @@ export async function listSection(
             { count: "exact" }
         )
         .eq("kind", kind)
+        .not("tags", "cs", TOOL_TAG_FILTER)
         .eq("published", true);
 
     if (q) {
@@ -313,6 +315,7 @@ export async function getResource(slug: string) {
             "id,slug,kind,title,summary,cover_url,duration_minutes,steps,body,tags"
         )
         .eq("slug", slug)
+        .not("tags", "cs", TOOL_TAG_FILTER)
         .eq("published", true)
         .maybeSingle();
 

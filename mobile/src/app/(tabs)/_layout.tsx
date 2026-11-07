@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from "react";
 
-import { Image, Pressable, Text, View } from "react-native";
+import { Image, Text, View } from "react-native";
 
-import Animated, { LinearTransition } from "react-native-reanimated";
+import Animated, { LinearTransition, ReduceMotion } from "react-native-reanimated";
 
 import { Redirect, Tabs } from "expo-router";
 
@@ -13,6 +13,8 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "@/src/context/session";
 
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
+
+import { MotionPressable as Pressable } from "@/src/components/motion";
 
 import { C } from "@/src/constants/theme";
 
@@ -40,7 +42,7 @@ type TabBarProps = Parameters<
   NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>
 >[0];
 
-const TRANSITION = LinearTransition.duration(200);
+const TRANSITION = LinearTransition.springify().damping(24).stiffness(260).reduceMotion(ReduceMotion.System);
 
 const AVATAR_KEYS = [
   "avatarUrl",
@@ -140,8 +142,10 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
       <ActiveWorkoutBar inline />
 
       <View
-        className="h-18 flex-row items-center gap-1 rounded-full border bg-black p-2"
+        className="h-18 flex-row items-center gap-1 overflow-hidden rounded-full border p-2"
         style={{
+          backgroundColor: C.panel,
+          borderColor: C.border,
           shadowColor: "#000",
           shadowOpacity: 0.35,
           shadowRadius: 18,

@@ -5,6 +5,7 @@ import React, {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
 } from "react";
 
@@ -110,6 +111,8 @@ GoogleSignin.configure({
 
 export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [ready, setReady] = useState(false);
+  const identity = useRef<string | null>(null);
+  const generation = useRef(0);
 
   const [user, setUser] = useState<AuthUser | null>(null);
 
@@ -118,21 +121,32 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = useState<UserSettings | null>(null);
 
   const applyMe = useCallback((data: MeResponse) => {
+    identity.current = data.user.id;
     setUser(data.user);
     setProfile(data.profile);
     setSettings(data.settings);
   }, []);
 
   const resetState = useCallback(() => {
+    identity.current = null;
+    generation.current++;
     setUser(null);
     setProfile(null);
     setSettings(null);
   }, []);
 
+  const accountRequest = useCallback(async (path: string, options: Parameters<typeof apiRequest>[1] = {}) => {
+    const ownerId = identity.current; const revision = generation.current;
+    if (!ownerId) throw new Error("Sign in to update your account.");
+    const response = await apiRequest<MeResponse>(path, { ...options, expectedOwnerId: ownerId });
+    if (identity.current !== ownerId || generation.current !== revision || response.user.id !== ownerId) throw new Error("Your account changed. Reopen this screen.");
+    return response;
+  }, []);
+
   const reloadMe = useCallback(async () => {
-    const data = await apiRequest<MeResponse>("/me");
+    const data = await accountRequest("/me");
     applyMe(data);
-  }, [applyMe]);
+  }, [applyMe, accountRequest]);
 
   // Restore backend session after reopening the app.
 
@@ -205,87 +219,90 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     async (value: Profile) => {
       const { completedAt, ...input } = value;
 
-      const response = await apiRequest<MeResponse>("/me/profile", {
+      const response = await accountRequest("/me/profile", {
         method: "PUT",
         json: input,
       });
 
       applyMe(response);
     },
-    [applyMe],
+    [applyMe, accountRequest],
   );
 
   const updateAccount = useCallback(
     async (value: { name?: string; bio?: string }) => {
-      const response = await apiRequest<MeResponse>("/me", {
+      const response = await accountRequest("/me", {
         method: "PATCH",
         json: value,
       });
 
       applyMe(response);
     },
-    [applyMe],
+    [applyMe, accountRequest],
   );
 
   const updateFitness = useCallback(
     async (value: Partial<Omit<Profile, "completedAt">>) => {
-      const response = await apiRequest<MeResponse>("/me/profile", {
+      const response = await accountRequest("/me/profile", {
         method: "PATCH",
         json: value,
       });
 
       applyMe(response);
     },
-    [applyMe],
+    [applyMe, accountRequest],
   );
 
   const updateSettings = useCallback(
     async (value: Partial<UserSettings>) => {
-      const response = await apiRequest<MeResponse>("/me/settings", {
+      const response = await accountRequest("/me/settings", {
         method: "PATCH",
         json: value,
       });
 
       applyMe(response);
     },
-    [applyMe],
+    [applyMe, accountRequest],
   );
 
   const uploadAvatar = useCallback(
     async (uri: string, mimeType = "image/jpeg") => {
       const form = await createAvatarForm(uri, mimeType);
 
-      const response = await apiRequest<MeResponse>("/me/avatar", {
+      const response = await accountRequest("/me/avatar", {
         method: "POST",
         form,
       });
 
       applyMe(response);
     },
-    [applyMe],
+    [applyMe, accountRequest],
   );
 
   const removeAvatar = useCallback(async () => {
-    const response = await apiRequest<MeResponse>("/me/avatar", {
+    const response = await accountRequest("/me/avatar", {
       method: "DELETE",
     });
 
     applyMe(response);
-  }, [applyMe]);
+  }, [applyMe, accountRequest]);
 
   const redoOnboarding = useCallback(async () => {
-    const response = await apiRequest<MeResponse>("/me/profile", {
+    const response = await accountRequest("/me/profile", {
       method: "DELETE",
     });
 
     applyMe(response);
-  }, [applyMe]);
+  }, [applyMe, accountRequest]);
 
   const signOut = useCallback(async () => {
+    const account = identity.current;
+    identity.current = null; generation.current++;
     await unregisterProgramNotifications().catch(() => console.warn("Could not unregister program reminders on this device."));
     try {
       await apiRequest("/auth/logout", {
         method: "POST",
+        expectedOwnerId: account ?? undefined,
       });
     } catch (error) {
       console.warn("Server logout failed:", error);
@@ -303,8 +320,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   }, [resetState]);
 
   const deleteAccount = useCallback(async () => {
+    const account = identity.current;
+    if (!account) throw new Error("Sign in to delete your account.");
     await apiRequest("/me", {
       method: "DELETE",
+      expectedOwnerId: account,
       json: {
         confirmation: "DELETE",
       },

@@ -620,7 +620,10 @@ export async function finishWorkout(
     notes = "",
     elapsedSeconds?: number
 ) {
-    const session = await assertActive(userId, sessionId);
+    const session = await getOwnedSession(userId, sessionId);
+    // A retried offline completion preserves the original completion time.
+    if (session.status === status) return getSession(userId, sessionId);
+    if (session.status !== "active") throw new ApiError(409, "This workout has already ended.");
 
     const finishedAt = new Date();
     const elapsed = elapsedSeconds ??
@@ -643,8 +646,9 @@ export async function finishWorkout(
         .eq("status", "active");
 
     programError(error, "finish workout");
-
-    return getSession(userId, sessionId);
+    const result = await getSession(userId, sessionId);
+    if (result.status !== status) throw new ApiError(409, "This workout changed on another device. Reopen it before finishing.");
+    return result;
 }
 
 export async function listHistory(userId: string) {

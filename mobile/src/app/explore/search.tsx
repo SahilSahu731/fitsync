@@ -32,7 +32,7 @@ import {
   openExploreCard,
 } from "@/src/features/explore/navigation";
 
-import { TOOLS } from "@/src/features/explore/tools";
+import { usePublishedTools } from "@/src/features/explore/use-tools";
 
 export default function ExploreSearch() {
   const { q: initial } = useLocalSearchParams<{
@@ -40,6 +40,7 @@ export default function ExploreSearch() {
   }>();
 
   const router = useRouter();
+  const { tools: TOOLS, error: toolsError, reload: reloadTools } = usePublishedTools();
 
   const [search, setSearch] = useState(initial ?? "");
 
@@ -131,6 +132,7 @@ export default function ExploreSearch() {
         paddingBottom: 100,
       }}
     >
+      {toolsError && <Pressable onPress={reloadTools}><Txt className="mb-4 text-brand">Tools unavailable. Tap to retry.</Txt></Pressable>}
       <ExploreHeader title="Search Explore" onBack={() => router.back()} />
 
       <View className="h-14 flex-row items-center rounded-2xl bg-panel px-4">

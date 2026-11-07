@@ -2,11 +2,11 @@
 import React from "react";
 import {
   ActivityIndicator,
-  Pressable,
   Text,
   View,
   type TextProps
 } from "react-native";
+import { MotionPressable as Pressable } from "./motion";
 import { C } from "@/src/constants/theme";
 
 type TxtProps = TextProps & {
@@ -46,7 +46,7 @@ export function Card({
   className?: string;
 }) {
   return (
-    <View className={`rounded-card border border-border bg-panel p-5 ${className}`}>
+    <View className={`overflow-hidden rounded-card border border-border bg-panel p-5 ${className}`}>
       {children}
     </View>
   );
@@ -95,12 +95,12 @@ export function PrimaryButton({
       disabled={disabled || loading}
       accessibilityRole="button"
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      className={`h-14 flex-row items-center justify-center rounded-2xl border active:scale-[0.98] ${
+      className={`h-14 flex-row items-center justify-center rounded-2xl border ${
         disabled && !loading
           ? "border-[#626267] bg-border"
           : dark
             ? "border-transparent bg-ink active:bg-[#DEDEDB]"
-            : "border-transparent bg-brand active:bg-[#E8682C]"
+            : "border-transparent bg-brand active:bg-[#6ADCC4]"
       }`}
     >
       {loading ? (

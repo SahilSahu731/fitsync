@@ -225,7 +225,7 @@ export default function LiveWorkoutScreen() {
 
         <Pressable
           onPress={handleFinish}
-          disabled={busy || pendingSaves > 0}
+          disabled={busy}
           className="rounded-xl bg-white px-2 py-1"
         >
           <Txt weight="bold" className="text-lg text-bg">
@@ -271,10 +271,10 @@ export default function LiveWorkoutScreen() {
           </Txt>
           <Txt className="mt-1 text-[12px] text-white">
             {pendingSaves
-              ? `Saving ${pendingSaves} update${pendingSaves > 1 ? "s" : ""}…`
+              ? `${pendingSaves} update${pendingSaves > 1 ? "s" : ""} saved on this device · syncing…`
               : syncError
-                ? "Some updates failed · retry the marked sets"
-                : "Updates saved"}
+                ? "Saved on this device · cloud connection unavailable"
+                : "Updates saved to your account"}
           </Txt>
         </View>
         <MuscleFocus exercises={exercises} currentId={focusedExercise} />

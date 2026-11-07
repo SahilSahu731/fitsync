@@ -49,11 +49,18 @@ export type GuidedStep = {
     title: string;
     seconds: number;
     instruction: string;
+    image_url?: string | null;
+    image_alt?: string;
+    modification?: string;
+    video_url?: string | null;
 };
 
 export type GuideSection = {
     heading: string;
     paragraphs: string[];
+    image_url?: string | null;
+    image_alt?: string;
+    links?: { label: string; url: string }[];
 };
 
 export type ExploreResource = {

@@ -1,8 +1,8 @@
+import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
 import {
   ActivityIndicator,
-  Pressable,
   RefreshControl,
   ScrollView,
   TextInput,
@@ -35,7 +35,7 @@ import {
   openExploreCard,
   openExploreSection,
 } from "@/src/features/explore/navigation";
-import { TOOLS } from "@/src/features/explore/tools";
+import { usePublishedTools } from "@/src/features/explore/use-tools";
 
 
 type LoadMode = "initial" | "refresh" | "focus";
@@ -48,20 +48,22 @@ const TOOLS_PER_ROW = 2;
 // Hoisted so the chip list isn't rebuilt on every render.
 const DESTINATIONS: ExploreDestination[] = [...EXPLORE_SECTIONS, "tools"];
 
-const TOOL_ROWS = Array.from(
-  { length: Math.ceil(Math.min(TOOLS.length, TOOLS_PREVIEW_COUNT) / TOOLS_PER_ROW) },
-  (_, i) =>
-    TOOLS.slice(0, TOOLS_PREVIEW_COUNT).slice(
-      i * TOOLS_PER_ROW,
-      (i + 1) * TOOLS_PER_ROW,
-    ),
-);
 
 const errorMessage = (e: unknown) =>
   e instanceof Error ? e.message : "Unable to load Explore.";
 
 export default function ExploreHomeScreen() {
   const router = useRouter();
+  const { tools: TOOLS, error: toolsError, reload: reloadTools } = usePublishedTools();
+  const TOOL_ROWS = Array.from(
+    { length: Math.ceil(Math.min(TOOLS.length, TOOLS_PREVIEW_COUNT) / TOOLS_PER_ROW) },
+    (_, i) =>
+      TOOLS.slice(0, TOOLS_PREVIEW_COUNT).slice(
+        i * TOOLS_PER_ROW,
+        (i + 1) * TOOLS_PER_ROW,
+      ),
+  );
+
 
   const [data, setData] = useState<ExploreHome | null>(null);
   const [loading, setLoading] = useState(true);
@@ -150,6 +152,7 @@ export default function ExploreHomeScreen() {
     !!data && EXPLORE_SECTIONS.every((s) => !(data.sections[s]?.length ?? 0));
 
   return (
+    <ScreenEntrance style={{ flex: 1 }}>
     <ScrollView
       className="flex-1 bg-bg"
       keyboardShouldPersistTaps="handled"
@@ -168,6 +171,7 @@ export default function ExploreHomeScreen() {
         />
       }
     >
+      {toolsError && <Pressable onPress={reloadTools}><Txt className="mb-4 text-brand">Tools unavailable. Tap to retry.</Txt></Pressable>}
       {/* Header */}
       <View className="flex-row items-center justify-between">
         <View>
@@ -410,5 +414,6 @@ export default function ExploreHomeScreen() {
         </View>
       ))}
     </ScrollView>
+    </ScreenEntrance>
   );
 }

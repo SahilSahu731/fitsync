@@ -323,7 +323,9 @@ function RoutineDrawer({
   }, [template.id]);
 
   useEffect(() => {
-    void load();
+    let active = true;
+    queueMicrotask(() => { if (active) void load(); });
+    return () => { active = false; };
   }, [load]);
 
   const exercises = [...(detail?.workout_template_exercises ?? [])].sort(

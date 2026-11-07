@@ -15,7 +15,12 @@
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
         "backgroundColor": "#101011"
-      }
+      },
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_WEIGHT"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -23,7 +28,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/android-icon-monochrome.png",
-          "color": "#FF7838",
+          "color": "#43CFB3",
           "defaultChannel": "workout-rest-v2",
           "sounds": [
             "./assets/sound/rest_complete.wav"
@@ -63,7 +68,22 @@
       "@react-native-community/datetimepicker",
       "expo-audio",
       "expo-asset",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow FitSync to count steps during walks you choose to record."
+        }
+      ],
+      "react-native-health-connect",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "FitSync reads steps, sleep and weight to fill your progress journal when you choose to import.",
+          "NSHealthUpdateUsageDescription": "FitSync does not write to Apple Health.",
+          "background": false
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true

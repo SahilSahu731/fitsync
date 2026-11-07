@@ -609,7 +609,7 @@ async function main() {
                 body: resource.body ?? [],
                 cover_url: null
             })),
-            { onConflict: "slug" }
+            { onConflict: "slug", ignoreDuplicates: true }
         );
 
     if (error) {
