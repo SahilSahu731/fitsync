@@ -1,7 +1,7 @@
 import React, { useEffect, useRef, useState } from "react";
 import { Pressable, TextInput, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import * as Haptics from "expo-haptics";
+import { useExperience } from "@/src/features/experience/experience-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { C } from "@/src/constants/theme";
 import { Txt } from "@/src/components/ui";
@@ -28,10 +28,11 @@ export const SetRow = React.memo(function SetRow({
   onFocus?: (exerciseId: string) => void;
 }) {
   const { updateSet, startRest, busy } = useWorkout();
-  const [weight, setWeight] = useState(String(set.weight_kg ?? 0));
-  const [reps, setReps] = useState(String(set.reps ?? 8));
-  const [duration, setDuration] = useState(String(set.duration_seconds ?? 30));
-  const [distance, setDistance] = useState(String(set.distance_meters ?? 100));
+  const { feedback } = useExperience();
+  const [weight, setWeight] = useState(set.weight_kg == null ? (trackingType === "reps" ? "0" : "") : String(set.weight_kg));
+  const [reps, setReps] = useState(set.reps == null ? "" : String(set.reps));
+  const [duration, setDuration] = useState(set.duration_seconds == null ? "" : String(set.duration_seconds));
+  const [distance, setDistance] = useState(set.distance_meters == null ? "" : String(set.distance_meters));
   const [type, setType] = useState(set.set_type);
   const [notes, setNotes] = useState(set.notes ?? "");
   const [rpe, setRpe] = useState(set.rpe?.toString() ?? "");
@@ -68,12 +69,11 @@ export const SetRow = React.memo(function SetRow({
     const before = completed;
     if (toggle) {
       setCompleted(!before);
-      void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(
-        () => {},
-      );
+
     }
     try {
       await updateSet(set.id, patch);
+      if (toggle && !before) feedback("set");
       if (toggle && !before && Number(rest) > 0) startRest(Number(rest));
     } catch (e) {
       if (toggle) setCompleted(before);
@@ -94,7 +94,7 @@ export const SetRow = React.memo(function SetRow({
       (weighted && !validNumber(weight, 100000)) ||
       (!timed && !validNumber(reps, 1000, true)) ||
       (timed && !validNumber(duration, 86400, true)) ||
-      (trackingType === "distance_duration" && !validNumber(distance, 1000000))
+      (trackingType === "distance_duration" && distance.trim() !== "" && !validNumber(distance, 1000000))
     ) {
       setError("Enter valid, non-negative numbers before saving.");
       return null;
@@ -105,7 +105,7 @@ export const SetRow = React.memo(function SetRow({
         ? { reps: Number(reps) }
         : { durationSeconds: Number(duration) }),
       ...(trackingType === "distance_duration"
-        ? { distanceMeters: Number(distance) }
+        ? { distanceMeters: distance.trim() ? Number(distance) : null }
         : {}),
     };
   }
@@ -175,7 +175,7 @@ export const SetRow = React.memo(function SetRow({
           <NumberEntry
             compact
             onFocus={focus}
-            label="Meters"
+            label="Meters · optional"
             value={distance}
             onChange={setDistance}
             max={1000000}
@@ -193,7 +193,7 @@ export const SetRow = React.memo(function SetRow({
                 true,
               );
           }}
-          className={`h-11 w-12 items-center justify-center rounded-lg ${completed ? "bg-green-400" : "bg-white"}`}
+          className={`h-11 w-12 items-center justify-center rounded-lg ${completed ? "bg-brand" : "bg-white"}`}
         >
           <Txt weight="bold" className="text-xs text-bg">
             {completed ? (

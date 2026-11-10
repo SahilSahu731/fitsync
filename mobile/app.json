@@ -14,8 +14,14 @@
       "package": "com.sahil.fitsync",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
-        "backgroundColor": "#101011"
-      }
+        "backgroundColor": "#101011",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
+      },
+      "permissions": [
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_WEIGHT"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -23,7 +29,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/android-icon-monochrome.png",
-          "color": "#FF7838",
+          "color": "#C5F460",
           "defaultChannel": "workout-rest-v2",
           "sounds": [
             "./assets/sound/rest_complete.wav"
@@ -56,14 +62,47 @@
         "expo-build-properties",
         {
           "android": {
+            "minSdkVersion": 26,
             "usesCleartextTraffic": true
           }
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
+        }
+      ],
       "expo-asset",
-      "expo-video"
+      "expo-video",
+      [
+        "expo-sensors",
+        {
+          "motionPermission": "Allow FitSync to count steps during walks you choose to record."
+        }
+      ],
+      "react-native-health-connect",
+      [
+        "@kingstinct/react-native-healthkit",
+        {
+          "NSHealthShareUsageDescription": "FitSync reads steps, sleep and weight to fill your progress journal when you choose to import.",
+          "NSHealthUpdateUsageDescription": "FitSync does not write to Apple Health.",
+          "background": false
+        }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow FitSync to add training sessions you choose to your calendar.",
+          "remindersPermission": false,
+          "writeOnlyAccess": true,
+          "writeOnlyCalendarPermission": "Allow FitSync to add training sessions you choose to your calendar."
+        }
+      ],
+      "./plugins/with-purchases"
     ],
     "experiments": {
       "typedRoutes": true
@@ -74,6 +113,9 @@
         "projectId": "d9829030-6ee5-45ac-8cbb-55fe6602c5dc"
       }
     },
-    "owner": "sahillsahudevs-team"
+    "owner": "sahillsahudevs-team",
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    }
   }
 }

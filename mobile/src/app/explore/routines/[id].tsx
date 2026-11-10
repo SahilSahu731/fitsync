@@ -134,7 +134,11 @@ export default function RoutineDetailScreen() {
     };
   }, [id]);
 
-  useEffect(() => load(), [load]);
+  useEffect(() => {
+    let active = true; let cleanup: (() => void) | undefined;
+    queueMicrotask(() => { if (active) cleanup = load(); });
+    return () => { active = false; cleanup?.(); };
+  }, [load]);
 
   const handleSave = async () => {
     if (!routine || saving) return;

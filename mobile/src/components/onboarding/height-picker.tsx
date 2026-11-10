@@ -241,7 +241,7 @@ export function HeightPicker({
                 returnKeyType="done"
                 selectTextOnFocus
                 maxLength={3}
-                className="w-full p-0 font-outfit-semibold text-[56px] leading-[66px] text-white"
+                className="w-full p-0 font-inter-semibold text-[56px] leading-[66px] text-white"
                 style={{
                   textShadowColor: C.brand,
                   textShadowRadius: 16,

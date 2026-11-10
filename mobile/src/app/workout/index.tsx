@@ -1,3 +1,5 @@
+import { useExperience } from "@/src/features/experience/experience-context";
+import { useWorkoutAwake } from "@/src/features/experience/keep-workout-awake";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useEffect, useMemo, useState } from "react";
 
@@ -35,6 +37,7 @@ function formatTime(seconds: number) {
 
 export default function LiveWorkoutScreen() {
   const Alert = useAppAlert();
+  const { feedback } = useExperience();
   const router = useRouter();
 
   const {
@@ -53,6 +56,8 @@ export default function LiveWorkoutScreen() {
     syncError,
     updateNotes,
   } = useWorkout();
+
+  useWorkoutAwake(!!session);
 
   const [now, setNow] = useState(() => Date.now());
   const [focusedExercise, setFocusedExercise] = useState<string>();
@@ -109,6 +114,7 @@ export default function LiveWorkoutScreen() {
           onPress: async () => {
             try {
               await finish();
+              feedback("workout");
               router.replace("/(tabs)/train");
             } catch (error) {
               Alert.alert(
@@ -225,7 +231,7 @@ export default function LiveWorkoutScreen() {
 
         <Pressable
           onPress={handleFinish}
-          disabled={busy || pendingSaves > 0}
+          disabled={busy}
           className="rounded-xl bg-white px-2 py-1"
         >
           <Txt weight="bold" className="text-lg text-bg">
@@ -271,10 +277,10 @@ export default function LiveWorkoutScreen() {
           </Txt>
           <Txt className="mt-1 text-[12px] text-white">
             {pendingSaves
-              ? `Saving ${pendingSaves} update${pendingSaves > 1 ? "s" : ""}…`
+              ? `${pendingSaves} update${pendingSaves > 1 ? "s" : ""} saved on this device · syncing…`
               : syncError
-                ? "Some updates failed · retry the marked sets"
-                : "Updates saved"}
+                ? "Saved on this device · cloud connection unavailable"
+                : "Updates saved to your account"}
           </Txt>
         </View>
         <MuscleFocus exercises={exercises} currentId={focusedExercise} />

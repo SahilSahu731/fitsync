@@ -2,6 +2,7 @@ import { useProgram } from "@/src/features/program-follow/program-context";
 import { ProgramSetup } from "@/src/features/program-follow/program-setup";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useState } from "react";
+import { ExperienceSettings } from "@/src/features/experience/settings-section";
 
 import { Pressable, ScrollView, Switch, View } from "react-native";
 
@@ -164,6 +165,11 @@ export default function SettingsScreen() {
         </View>
       </View>
 
+      <ExperienceSettings />
+      <SettingsHeader title="Your schedule & membership" />
+      <View className="overflow-hidden rounded-2xl bg-panel">
+        {[{ title: "Training calendar", detail: "Plans, completed workouts, and calendar export", icon: "calendar-month-outline" as const, route: "/calendar" as const }, { title: "Membership & billing", detail: "Subscription, payment methods, and receipts", icon: "credit-card-outline" as const, route: "/billing" as const }].map((item, index) => <Pressable key={item.route} onPress={() => router.push(item.route)} className={`min-h-20 flex-row items-center gap-4 p-5 ${index === 0 ? "border-b border-border" : ""}`}><MaterialCommunityIcons name={item.icon} size={24} color={C.brand} /><View className="flex-1"><Txt weight="semibold" className="text-base">{item.title}</Txt><Txt className="mt-1 text-xs leading-5 text-muted">{item.detail}</Txt></View><MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} /></Pressable>)}
+      </View>
       {/* Notification preference */}
 
       <SettingsHeader title="Notifications" />

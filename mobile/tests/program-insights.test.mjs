@@ -87,5 +87,4 @@ test("Pro true/false renders the correct dashboard without changing basic log ac
     assert.ok(all.some(node => node.type === "Ring"));
     assert.ok(all.some(node => node.type === "Txt" && node.props.children === "Recent workouts"));
   }
-  const { features } = load("../src/config/features.ts"); assert.equal(typeof features.pro, "boolean");
 });

@@ -16,7 +16,13 @@ const schema = z.object({
 
   CLOUDINARY_CLOUD_NAME: z.string().min(1),
   CLOUDINARY_API_KEY: z.string().min(1),
-  CLOUDINARY_API_SECRET: z.string().min(1)
+  CLOUDINARY_API_SECRET: z.string().min(1),
+
+  // Billing is optional for local/free use. Only the server receives the secret key.
+  REVENUECAT_SECRET_API_KEY: z.preprocess(value => value === "" ? undefined : value, z.string().trim().min(10).optional()),
+  REVENUECAT_ENTITLEMENT_ID: z.string().trim().min(1).default("pro"),
+  REVENUECAT_WEBHOOK_AUTHORIZATION: z.preprocess(value => value === "" ? undefined : value, z.string().min(32).optional()),
+  REVENUECAT_ALLOW_SANDBOX: z.enum(["true", "false"]).default("false").transform(value => value === "true")
 });
 
 export const env = schema.parse(process.env);

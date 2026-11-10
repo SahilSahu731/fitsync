@@ -1,0 +1,31 @@
+# Health import
+
+FitSync can read steps, sleep stages and body weight from Health Connect on Android and Apple HealthKit on iOS. It imports the current day and six preceding local calendar days into the existing account-scoped progress journal. This is an optional read-only integration, separate from the phone's foreground pedometer. It does not write health records or run a background service.
+
+## Native setup
+
+The project uses Expo SDK 57 / React Native 0.86. Dependencies are `react-native-health-connect` 4.x, `@kingstinct/react-native-healthkit` 16.x, and its peer `react-native-nitro-modules`. Use `npx expo install` and rebuild the native app. Native additions do not work through an over-the-air JavaScript update alone or in Expo Go. Keep native projects generated through Expo config plugins, not hand edits.
+
+Add the built-in `react-native-health-connect` config plugin. Version 4 already includes the Expo integration; do not add the deprecated separate `expo-health-connect` package. Declare only Android read permissions `android.permission.health.READ_STEPS`, `android.permission.health.READ_SLEEP`, and `android.permission.health.READ_WEIGHT`. The plugin handles the permission delegate and manifest activity integration. Health Connect requires Android 8+ and the provider app on Android versions where it is not built into the system. Configure the actual privacy/rationale entrypoint and Play Console health-access declarations before distribution.
+
+Add the `@kingstinct/react-native-healthkit` plugin with a specific `NSHealthShareUsageDescription` explaining steps/sleep/weight journal import, an accurate `NSHealthUpdateUsageDescription` (FitSync does not write to Apple Health), and `background:false`. The plugin adds HealthKit capabilities; provisioning/signing must include them. The adapter requests the three read identifiers with an empty `toShare` list.
+
+`HealthSyncBridge` must be mounted inside `SessionProvider`. It reads only for an account that enabled import on this device, at launch/foreground, with a 15-minute throttle after the last completed attempt. `/health-sync` offers explicit connect/import, status, result counts, permission management and disconnect. Missing native modules, Expo Go and unsupported devices show unavailable states while manual tracking remains usable.
+
+## Consent and data rules
+
+Connect opens the platform's permission prompt after the user sees that imported summaries join their FitSync journal and cloud sync. Account-scoped preferences start disabled. No read queries run merely because the route or app opens for a new account. Partial Android grants are supported: denied types are not queried. HealthKit intentionally hides read-grant decisions, so successful authorization means the dialog completed, not that every permission was granted. Empty iOS responses explicitly explain that data may be absent or not shared.
+
+Daily steps use platform statistics/aggregation rather than adding raw phone/watch samples. Weight uses the latest sample each local day in kilograms. Sleep includes known asleep stages only, never all time-in-bed or awake intervals. Android stages use their session's wake date; Apple stages within 90 minutes form a sleep episode attributed to its wake date. Overlapping intervals for a date are unioned to avoid duplicate sleeping minutes. Sessions lacking known asleep stages stay missing. Fragmented sleep separated by long gaps can form separate episodes; these summaries are not a clinical sleep measurement.
+
+Imports append changed daily snapshots with source `healthkit` or `healthconnect`, using the journal's correction/event semantics. Repeated identical values do not append new events; totals replace previous imported totals rather than add to them. Latest manual entries, deletions and saved pedometer totals take priority, even when provider data differs. No-data days never become synthetic zeros. Old imports are retained when a source removes data or read access is revoked because HealthKit cannot distinguish those cases from missing permission. Users can correct/clear the journal entry manually. Only the recent seven days are reconciled; this is not an all-history mirror.
+
+Disconnect stops future imports for that FitSync account and cancels an outstanding read before it can append records. Existing journal entries remain saved. System permissions are controlled separately in Apple Health/Health Connect. FitSync does not call Android revoke-all as its disconnect mechanism: the native library documents that revocation can require app restart. Account changes during the OS prompt or record read stop the operation before it writes to a journal. Cloud failures preserve locally saved pending events and show a retry message; the Progress screen's normal sync can upload them later.
+
+## Verification
+
+Run from `mobile`: `node --test tests/health-sync.test.mjs`, `npm run typecheck`, and `npm run lint`. Pure/native-adapter tests use synthetic records and injected SDK/storage implementations. They cover opt-in, account isolation and switches, disconnect races, unavailable builds, partial permission grants, steps/weight/sleep normalization, overlap handling, deduplication, manual overrides, missing data and offline persistence. Tests never request actual health permissions or read device data.
+
+Before release, test new native builds on physical iOS and Android devices with health records, independently for each platform. Verify full/partial/denied grants, revocation, missing provider, no records, sleep across midnight, multiple data origins, repeated/changed imports, manual edits/deletions, offline upload retry, account switch, foreground refresh and disconnect. Confirm store health-access declarations, privacy policy/rationale routing and iOS entitlements. A successful TypeScript check or mocked adapter test does not prove native capability or store eligibility.
+
+Official references checked November 7, 2026: [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/), [Health Connect installation/config plugin](https://matinzd.github.io/react-native-health-connect/docs/get-started/), [Health Connect permissions](https://matinzd.github.io/react-native-health-connect/docs/permissions/), [HealthKit maintainer setup/API](https://github.com/kingstinct/react-native-healthkit).

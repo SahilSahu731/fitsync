@@ -165,7 +165,7 @@ export default function CreateWorkoutScreen() {
             accessibilityLabel="Routine name"
             placeholder="e.g. Upper body A"
             placeholderTextColor={C.muted}
-            className="min-h-12 font-outfit-bold text-2xl text-ink"
+            className="min-h-12 font-inter-bold text-2xl text-ink"
           />
           <View className="mt-3 flex-row items-center border-t border-border pt-3">
             <MaterialCommunityIcons

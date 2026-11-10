@@ -18,6 +18,8 @@ Program pages describe the actual data model: a seven-day schedule repeated for 
 
 Duration-based exercise targets are copied into target_duration_seconds instead of target_reps when saving a catalog routine.
 
+Personal coaching is now available separately from catalog programs: free four-week starter plans and Pro adaptation/progression use the profile and published exercise catalog. See [coaching.md](coaching.md). Catalog pages continue to describe fixed schedules accurately.
+
 ## Content and verification limits
 
 Only published catalog records are displayed. This change does not publish unreviewed exercises or seed incomplete routines. Existing catalog content still requires editorial review and publication. Live workout logging remains in the mobile app. Saved routines are personal copies, not live references to catalog prescriptions.

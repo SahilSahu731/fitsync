@@ -1,0 +1,27 @@
+# Dependencies and generated output
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+
+# Generated lockfiles
+package-lock.json
+npm-shrinkwrap.json
+yarn.lock
+pnpm-lock.yaml
+bun.lock
+bun.lockb
+
+# Local configuration and credentials
+.env
+.env.*
+*.keystore
+*.jks
+
+# Next.js output, type stubs, and static assets
+.next/
+out/
+.vercel/
+public/
+next-env.d.ts

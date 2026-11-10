@@ -11,7 +11,14 @@
     "exercises:seed": "tsx scripts/seed-starter-exercises.ts",
     "exercises:import": "tsx scripts/import-free-exercise-db.ts",
     "programs:reminders": "tsx scripts/send-program-reminders.ts",
-    "programs:check": "tsx scripts/check-program-following.ts"
+    "programs:check": "tsx scripts/check-program-following.ts",
+    "explore:enrich-covers": "tsx scripts/enrich-explore-covers.ts",
+    "explore:check": "tsx scripts/check-explore-content.ts",
+    "explore:seed-content": "tsx scripts/seed-content-studio.ts",
+    "explore:seed": "tsx scripts/seed-explore-resources.ts",
+    "catalog:seed": "tsx src/modules/training-catalog/catalog.seed.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [],
   "author": "",
@@ -38,6 +45,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.3.0",
     "@types/node": "^26.6.5",
+    "prettier": "3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

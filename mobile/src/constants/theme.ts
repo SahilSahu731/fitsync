@@ -68,9 +68,9 @@ export const MaxContentWidth = 800;
 export const C = {
   bg: "#101011",
   panel: "#1A1A1D",
-  elevated: "#222225",
-  border: "#313137",
-  brand: "#FF7838",
+  elevated: "#242427",
+  border: "#303034",
+  brand: "#C5F460",
   ink: "#F8F7F4",
-  muted: "#A7A7AA"
+  muted: "#A7AAAF"
 } as const;

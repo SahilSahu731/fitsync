@@ -1,3 +1,7 @@
+import progressRoutes from "./modules/progress/progress.routes.js";
+import billingRoutes from "./modules/billing/billing.routes.js";
+import coachingRoutes from "./modules/coaching/coaching.routes.js";
+import wellnessRoutes from "./modules/wellness/wellness.routes.js";
 import express from "express";
 import helmet from "helmet";
 
@@ -9,6 +13,8 @@ import workoutRoutes from "./modules/workouts/workout.routes.js";
 import catalogAdminRoutes from "./modules/training-catalog/catalog.admin.routes.js";
 import programFollowRoutes from "./modules/program-follow/program.routes.js";
 import catalogRoutes from "./modules/training-catalog/catalog.routes.js";
+import exploreAdminRoutes from "./modules/explore/explore.admin.routes.js";
+import exploreRoutes from "./modules/explore/explore.routes.js";
 
 import {
   notFound,
@@ -18,8 +24,12 @@ import {
 export const app = express();
 
 app.disable("x-powered-by");
+
 app.use(helmet());
-app.use(express.json({ limit: "64kb" }));
+
+app.use(
+  express.json({ limit: "64kb" })
+);
 
 app.get("/health", (_req, res) => {
   res.json({
@@ -33,9 +43,16 @@ app.use("/api/me", profileRoutes);
 app.use("/api/me", accountRoutes);
 app.use("/api/exercises", exerciseRoutes);
 app.use("/api/workouts", workoutRoutes);
+app.use("/api/billing", billingRoutes);
+app.use("/api/coaching", coachingRoutes);
+app.use("/api/wellness", wellnessRoutes);
+app.use("/api/progress", progressRoutes);
 app.use("/api/program-follow", programFollowRoutes);
 app.use("/api/catalog/admin", catalogAdminRoutes);
 app.use("/api/catalog", catalogRoutes);
+
+app.use("/api/explore/admin", exploreAdminRoutes);
+app.use("/api/explore", exploreRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

@@ -9,20 +9,20 @@ module.exports = {
   theme: {
     extend: {
       fontFamily: {
-        "outfit-regular": ["Outfit_400Regular"],
-        "outfit-medium": ["Outfit_500Medium"],
-        "outfit-semibold": ["Outfit_600SemiBold"],
-        "outfit-bold": ["Outfit_700Bold"],
-        "outfit-extra": ["Outfit_800ExtraBold"]
+        "inter-regular": ["Inter_400Regular"],
+        "inter-medium": ["Inter_500Medium"],
+        "inter-semibold": ["Inter_600SemiBold"],
+        "inter-bold": ["Inter_700Bold"],
+        "inter-extra": ["Inter_800ExtraBold"]
       },
       colors: {
         bg: "#101011",
         panel: "#1A1A1D",
-        elevated: "#222225",
-        border: "#313137",
-        brand: "#FF7838",
+        elevated: "#242427",
+        border: "#303034",
+        brand: "#C5F460",
         ink: "#F8F7F4",
-        muted: "#A7A7AA"
+        muted: "#A7AAAF"
       },
       borderRadius: {
         card: "24px"

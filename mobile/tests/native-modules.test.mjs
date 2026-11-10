@@ -35,25 +35,25 @@ test("an outdated binary can load the service without importing unavailable pack
   const { exports, imported } = runtime();
   assert.deepEqual(imported, []);
   assert.deepEqual(Array.from(exports.getMissingNativeModules()), [
-    "expo-secure-store", "expo-image-picker"
+    "expo-secure-store", "expo-image-picker", "expo-blur"
   ]);
 });
 
 test("missing secure storage fails clearly without importing or substituting storage", async () => {
-  const { exports, imported } = runtime(["ExponentImagePicker"]);
+  const { exports, imported } = runtime(["ExponentImagePicker", "ExpoBlur"]);
   await assert.rejects(exports.loadSecureStore(), /missing expo-secure-store.*new Android development build/);
   assert.deepEqual(imported, []);
 });
 
 test("missing image picker fails before its module can crash route evaluation", async () => {
-  const { exports, imported } = runtime(["ExpoSecureStore"]);
+  const { exports, imported } = runtime(["ExpoSecureStore", "ExpoBlur"]);
   await assert.rejects(exports.loadImagePicker(), /missing expo-image-picker/);
   assert.deepEqual(imported, []);
 });
 
 test("a rebuilt binary loads secure storage and the picker on demand", async () => {
   const { exports, imported, secureStore, imagePicker } = runtime([
-    "ExpoSecureStore", "ExponentImagePicker"
+    "ExpoSecureStore", "ExponentImagePicker", "ExpoBlur"
   ]);
   assert.deepEqual(Array.from(exports.getMissingNativeModules()), []);
   assert.deepEqual(imported, []);
