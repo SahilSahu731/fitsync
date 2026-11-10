@@ -16,7 +16,9 @@
     "explore:check": "tsx scripts/check-explore-content.ts",
     "explore:seed-content": "tsx scripts/seed-content-studio.ts",
     "explore:seed": "tsx scripts/seed-explore-resources.ts",
-    "catalog:seed": "tsx src/modules/training-catalog/catalog.seed.ts"
+    "catalog:seed": "tsx src/modules/training-catalog/catalog.seed.ts",
+    "format": "prettier --write .",
+    "format:check": "prettier --check ."
   },
   "keywords": [],
   "author": "",
@@ -43,6 +45,7 @@
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.3.0",
     "@types/node": "^26.6.5",
+    "prettier": "3.9.10",
     "tsx": "^4.23.15",
     "typescript": "^7.0.2"
   }

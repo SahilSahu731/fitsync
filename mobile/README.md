@@ -1,5 +1,21 @@
 # Welcome to your Expo app 👋
 
+## Android minimum SDK build failure
+
+FitSync requires Android 8.0 (API 26) or newer. Health Connect's native SDK requires
+minimum SDK 26; `app.json` sets this through the existing `expo-build-properties`
+plugin so Expo generates the correct Gradle configuration.
+
+If a build failed with `uses-sdk:minSdkVersion 24 cannot be smaller than version 26`,
+rebuild from `mobile/`:
+
+```bash
+npm run build:android:dev -- --clear-cache
+```
+
+Install the new APK, then run `npm run start:clean`. The SDK setting is native
+configuration and requires a new binary.
+
 ## Missing native modules in an Android development build
 
 `Cannot find native module 'ExpoSecureStore'` or `'ExponentImagePicker'` means
@@ -86,3 +102,7 @@ Join our community of developers creating universal apps.
 
 - [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
 - [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+
+## Glass tabs, branding, calendar and billing upgrade
+
+See [the rebuild and device-test guide](../docs/mobile-upgrade.md) for the new native modules, EAS environment configuration, development APK rebuild, Play sandbox setup, and verification checklist. The shared logo source is `../brand/mark.svg`; regenerate all mobile and website assets with `npm run assets:generate`.

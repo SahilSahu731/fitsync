@@ -14,14 +14,12 @@ import { BillingProvider } from "@/src/features/billing/billing-context";
 import { WorkoutProvider } from "@/src/features/workouts/workout-context";
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 
-import {
-  useFonts,
-  Inter_400Regular,
-  Inter_500Medium,
-  Inter_600SemiBold,
-  Inter_700Bold,
-  Inter_800ExtraBold,
-} from "@expo-google-fonts/inter";
+import { useFonts } from "expo-font";
+import { Inter_400Regular } from "@expo-google-fonts/inter/400Regular";
+import { Inter_500Medium } from "@expo-google-fonts/inter/500Medium";
+import { Inter_600SemiBold } from "@expo-google-fonts/inter/600SemiBold";
+import { Inter_700Bold } from "@expo-google-fonts/inter/700Bold";
+import { Inter_800ExtraBold } from "@expo-google-fonts/inter/800ExtraBold";
 
 import { SessionProvider, useSession } from "@/src/context/session";
 
@@ -29,7 +27,8 @@ import { AppDialogProvider } from "@/src/components/app-dialog";
 import { BrandReveal } from "@/src/components/brand-reveal";
 import { NativeBuildRequired } from "@/src/components/native-build-required";
 import { getMissingNativeModules } from "@/src/services/native-modules";
-import { MotionProvider } from "@/src/components/motion";
+import { ExperienceProvider } from "@/src/features/experience/experience-context";
+import { MotionProvider, useReducedAppMotion } from "@/src/components/motion";
 import { C } from "@/src/constants/theme";
 
 void SplashScreen.preventAutoHideAsync().catch(console.warn);
@@ -40,6 +39,7 @@ SplashScreen.setOptions({
 });
 
 function Navigator() {
+  const reduced = useReducedAppMotion();
   const { ready } = useSession();
 
   const [fontsReady, fontError] = useFonts({
@@ -87,7 +87,7 @@ function Navigator() {
             contentStyle: {
               backgroundColor: C.bg,
             },
-            animation: "fade_from_bottom",
+            animation: reduced ? "none" : "fade_from_bottom",
           }}
         />
       </SafeAreaView>
@@ -107,7 +107,7 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <MotionProvider>
+      <ExperienceProvider><MotionProvider>
       {missingNativeModules.length ? (
         <NativeBuildRequired missing={missingNativeModules} />
       ) : (
@@ -122,7 +122,7 @@ export default function RootLayout() {
         </BillingProvider>
         </SessionProvider>
       )}
-      </MotionProvider>
+      </MotionProvider></ExperienceProvider>
     </SafeAreaProvider>
   );
 }

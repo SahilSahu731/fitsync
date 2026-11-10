@@ -284,6 +284,8 @@ export default function ProfileScreen() {
       </Txt>
 
       <SettingRow icon="star-four-points-outline" title={isPro ? "Your Pro membership" : "FitSync Pro"} subtitle="Personal plans, adaptations and weekly coaching" onPress={() => router.push("/pro")} />
+      <SettingRow icon="credit-card-outline" title="Membership & billing" subtitle="Renewal, receipts and payment settings" onPress={() => router.push("/billing")} />
+      <SettingRow icon="calendar-month-outline" title="Training calendar" subtitle="Your planned sessions and completed workouts" onPress={() => router.push("/calendar")} />
       <SettingRow icon="calendar-check-outline" title="Your personal plan" subtitle="Training that fits your goal and schedule" onPress={() => router.push("/coach")} />
       <SettingRow icon="heart-pulse" title="Connect health data" subtitle="Import steps, sleep and weight with your permission" onPress={() => router.push("/health-sync")} />
       <SettingRow icon="food-apple-outline" title="Meals & accountability" subtitle="Meal ideas, shopping lists and private commitments" onPress={() => router.push("/wellness")} />

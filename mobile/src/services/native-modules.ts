@@ -2,7 +2,8 @@ import { requireOptionalNativeModule } from "expo";
 
 const modules = {
   "expo-secure-store": "ExpoSecureStore",
-  "expo-image-picker": "ExponentImagePicker"
+  "expo-image-picker": "ExponentImagePicker",
+  "expo-blur": "ExpoBlur"
 } as const;
 
 export function getMissingNativeModules(): string[] {

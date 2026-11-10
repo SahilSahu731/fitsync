@@ -29,13 +29,17 @@ for (const [name, size, options] of [
   ["splash-icon.png", 1024, { scale: 0.9 }],
   ["favicon.png", 64, { background: true, scale: 1 }],
   ["logo-glow.png", 512, { scale: 0.9 }],
-]) await sharp(Buffer.from(svg(size, options))).png().toFile(path.join(output, name));
+]) {
+  const image = sharp(Buffer.from(svg(size, options)));
+  if (options.background) image.removeAlpha();
+  await image.png().toFile(path.join(output, name));
+}
 await sharp({ create: { width: 1024, height: 1024, channels: 4, background: "#101011" } }).png().toFile(path.join(output, "android-icon-background.png"));
 await fs.copyFile(path.join(output, "icon.png"), path.join(repo, "web/public/logo.png"));
 await fs.writeFile(path.join(root, "assets/brand/mark.svg"), source);
 await fs.writeFile(path.join(repo, "web/public/brand/mark.svg"), source);
-await sharp(Buffer.from(svg(512, { background: true }))).png().toFile(path.join(repo, "web/src/app/icon.png"));
-await sharp(Buffer.from(svg(180, { background: true }))).png().toFile(path.join(repo, "web/src/app/apple-icon.png"));
+await sharp(Buffer.from(svg(512, { background: true }))).removeAlpha().png().toFile(path.join(repo, "web/src/app/icon.png"));
+await sharp(Buffer.from(svg(180, { background: true }))).removeAlpha().png().toFile(path.join(repo, "web/src/app/apple-icon.png"));
 const favicon = await sharp(Buffer.from(svg(48, { background: true, scale: 1 }))).png().toBuffer();
 const header = Buffer.alloc(22);
 header.writeUInt16LE(1, 2); header.writeUInt16LE(1, 4);

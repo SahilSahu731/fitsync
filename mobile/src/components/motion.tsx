@@ -3,10 +3,13 @@ import { AccessibilityInfo, Animated, Easing, Pressable, type PressableProps, ty
 import { useFocusEffect } from "expo-router";
 import { cssInterop } from "nativewind";
 
+import { useExperience } from "@/src/features/experience/experience-context";
+
 const MotionContext = createContext(true);
 
 export function MotionProvider({ children }: { children: React.ReactNode }) {
   const [reduced, setReduced] = useState(true);
+  const { preferences } = useExperience();
   useEffect(() => {
     let active = true;
     let preferenceChanged = false;
@@ -19,7 +22,7 @@ export function MotionProvider({ children }: { children: React.ReactNode }) {
     }).catch(() => {});
     return () => { active = false; subscription.remove(); };
   }, []);
-  return <MotionContext.Provider value={reduced}>{children}</MotionContext.Provider>;
+  return <MotionContext.Provider value={reduced || preferences.reduceMotion}>{children}</MotionContext.Provider>;
 }
 
 export const useReducedAppMotion = () => useContext(MotionContext);

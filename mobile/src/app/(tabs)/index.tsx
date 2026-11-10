@@ -56,7 +56,7 @@ export default function HomeScreen() {
         </LinearGradient>
       </MotionPressable>
       </ScreenEntrance>
-      <ScreenEntrance delay={130} style={{ marginTop: 28 }}><SectionHeading title="This week" action="Progress" onAction={() => router.push("/(tabs)/progress")} />
+      <ScreenEntrance delay={130} style={{ marginTop: 28 }}><SectionHeading title="This week" action="Calendar" onAction={() => router.push("/calendar")} />
         <View className="rounded-[24px] border border-border bg-panel p-5">
           <View className="flex-row items-end justify-between"><View><Txt weight="bold" className="text-[34px]">{progress.loading ? "—" : currentWeek.workouts}<Txt className="text-lg text-muted"> / {progress.goals.weeklyWorkouts}</Txt></Txt><Txt className="mt-1 text-xs text-muted">Workouts completed</Txt></View><View className="items-end"><Txt weight="semibold" className="text-lg">{progress.loading ? "—" : currentWeek.minutes}<Txt className="text-xs text-muted"> min</Txt></Txt><Txt className="mt-1 text-xs text-muted">Training time</Txt></View></View>
           <View className="mt-4"><ProgressFill ratio={currentWeek.workouts / progress.goals.weeklyWorkouts} color={C.brand} height={7} /></View>

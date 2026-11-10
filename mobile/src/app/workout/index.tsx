@@ -1,3 +1,5 @@
+import { useExperience } from "@/src/features/experience/experience-context";
+import { useWorkoutAwake } from "@/src/features/experience/keep-workout-awake";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useEffect, useMemo, useState } from "react";
 
@@ -35,6 +37,7 @@ function formatTime(seconds: number) {
 
 export default function LiveWorkoutScreen() {
   const Alert = useAppAlert();
+  const { feedback } = useExperience();
   const router = useRouter();
 
   const {
@@ -53,6 +56,8 @@ export default function LiveWorkoutScreen() {
     syncError,
     updateNotes,
   } = useWorkout();
+
+  useWorkoutAwake(!!session);
 
   const [now, setNow] = useState(() => Date.now());
   const [focusedExercise, setFocusedExercise] = useState<string>();
@@ -109,6 +114,7 @@ export default function LiveWorkoutScreen() {
           onPress: async () => {
             try {
               await finish();
+              feedback("workout");
               router.replace("/(tabs)/train");
             } catch (error) {
               Alert.alert(

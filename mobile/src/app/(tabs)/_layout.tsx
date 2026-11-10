@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import { Image, Text, View } from "react-native";
+import { Image, Keyboard, Text, View } from "react-native";
 
 import Animated, { LinearTransition, ReduceMotion } from "react-native-reanimated";
 
@@ -14,7 +14,9 @@ import { useSession } from "@/src/context/session";
 
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 
-import { MotionPressable as Pressable } from "@/src/components/motion";
+import { MotionPressable as Pressable, useReducedAppMotion } from "@/src/components/motion";
+import { TabGlassProvider, TabGlassScene, TabGlassSurface } from "@/src/components/glass-tabs";
+import { useExperience } from "@/src/features/experience/experience-context";
 
 import { C } from "@/src/constants/theme";
 
@@ -100,10 +102,18 @@ function resolveAvatar(...sources: unknown[]): string | null {
 
 function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
+  const reduced = useReducedAppMotion();
+  const { feedback } = useExperience();
 
   const { profile, user } = useSession();
 
   const [avatarFailed, setAvatarFailed] = useState(false);
+  const [keyboardOpen, setKeyboardOpen] = useState(false);
+  useEffect(() => {
+    const show = Keyboard.addListener("keyboardDidShow", () => setKeyboardOpen(true));
+    const hide = Keyboard.addListener("keyboardDidHide", () => setKeyboardOpen(false));
+    return () => { show.remove(); hide.remove(); };
+  }, []);
 
   const avatarUrl = resolveAvatar(
     profile,
@@ -120,16 +130,8 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
     setAvatarFailed(false);
   }, [avatarUrl]);
 
-  useEffect(() => {
-    if (__DEV__ && !avatarUrl) {
-      console.log(
-        "[tabs] no avatar field found. profile keys:",
-        profile ? Object.keys(profile) : null,
-        "user keys:",
-        user ? Object.keys(user) : null,
-      );
-    }
-  }, [avatarUrl, profile, user]);
+
+  if (keyboardOpen) return null;
 
   return (
     <View
@@ -141,21 +143,8 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
     >
       <ActiveWorkoutBar inline />
 
-      <View
-        className="h-18 flex-row items-center gap-1 overflow-hidden rounded-full border p-2"
-        style={{
-          backgroundColor: C.panel,
-          borderColor: C.border,
-          shadowColor: "#000",
-          shadowOpacity: 0.35,
-          shadowRadius: 18,
-          shadowOffset: {
-            width: 0,
-            height: 8,
-          },
-          elevation: 12,
-        }}
-      >
+      <View className="h-[76px] flex-row items-center gap-1 overflow-hidden rounded-[30px] border border-white/15 p-2" style={{ shadowColor: "#000", shadowOpacity: 0.28, shadowRadius: 18, shadowOffset: { width: 0, height: 8 }, elevation: 10 }}>
+        <TabGlassSurface />
         {state.routes.map((route, index) => {
           const id = route.name as TabId;
 
@@ -175,6 +164,7 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
             });
 
             if (!focused && !event.defaultPrevented) {
+              feedback("selection");
               navigation.navigate(route.name, route.params);
             }
           };
@@ -182,10 +172,8 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
           return (
             <Animated.View
               key={route.key}
-              layout={TRANSITION}
-              className={`h-12 overflow-hidden rounded-full ${
-                focused ? "flex-[2.3] bg-brand" : "flex-1"
-              }`}
+              layout={reduced ? undefined : TRANSITION}
+              className={`h-[58px] flex-1 overflow-hidden rounded-[23px] border ${focused ? "border-brand/25 bg-brand/15" : "border-transparent"}`}
             >
               <Pressable
                 accessibilityRole="tab"
@@ -200,7 +188,7 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
                     target: route.key,
                   })
                 }
-                className="h-full flex-row items-center justify-center"
+                className="h-full items-center justify-center gap-1"
               >
                 {showAvatar ? (
                   <View
@@ -226,21 +214,11 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
                   <MaterialCommunityIcons
                     name={ICONS[id][focused ? 1 : 0]}
                     size={24}
-                    color={focused ? C.bg : "white"}
+                    color={focused ? C.brand : C.muted}
                   />
                 )}
 
-                {focused && (
-                  <Text
-                    numberOfLines={1}
-                    className="ml-1.5 text text-bg"
-                    style={{
-                      fontFamily: "Inter_600SemiBold",
-                    }}
-                  >
-                    {TITLES[id]}
-                  </Text>
-                )}
+                <Text numberOfLines={1} maxFontSizeMultiplier={1.25} className={`text-[10px] font-inter-semibold ${focused ? "text-brand" : "text-muted"}`}>{TITLES[id]}</Text>
               </Pressable>
             </Animated.View>
           );
@@ -266,10 +244,12 @@ export default function TabsLayout() {
   }
 
   return (
-    <Tabs
+    <TabGlassProvider><Tabs
+      screenLayout={({ children }) => <TabGlassScene>{children}</TabGlassScene>}
       tabBar={(props) => <FloatingTabBar {...props} />}
       screenOptions={{
         headerShown: false,
+        tabBarHideOnKeyboard: true,
         sceneStyle: {
           backgroundColor: C.bg,
         },
@@ -284,6 +264,6 @@ export default function TabsLayout() {
           }}
         />
       ))}
-    </Tabs>
+    </Tabs></TabGlassProvider>
   );
 }

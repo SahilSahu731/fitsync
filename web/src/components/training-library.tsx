@@ -22,26 +22,316 @@ export function TrainingLibrary() {
   const { admin } = useSession();
   useEffect(() => {
     let active = true;
-    Promise.all([api<Program[]>("/catalog/programs"), api<Routine[]>("/catalog/routines"), api<Category[]>("/catalog/categories")])
-      .then(([p, r, c]) => { if (active) { setPrograms(p); setRoutines(r); setCategories(c); setError(""); } })
-      .catch(e => { if (active) setError(e.message); }).finally(() => { if (active) setLoading(false); });
-    return () => { active = false; };
+    Promise.all([
+      api<Program[]>("/catalog/programs"),
+      api<Routine[]>("/catalog/routines"),
+      api<Category[]>("/catalog/categories"),
+    ])
+      .then(([p, r, c]) => {
+        if (active) {
+          setPrograms(p);
+          setRoutines(r);
+          setCategories(c);
+          setError("");
+        }
+      })
+      .catch((e) => {
+        if (active) setError(e.message);
+      })
+      .finally(() => {
+        if (active) setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
   }, [retry]);
-  const rows = (mode === "programs" ? programs : routines).filter(row =>
-    `${row.name} ${row.description}`.toLowerCase().includes(search.toLowerCase()) && (!level || row.level === level) && (!equipment || row.equipment === equipment) && (!goal || row.goal === goal) &&
-    (mode !== "programs" || !days || (row as Program).days_per_week === Number(days)) &&
-    (mode !== "routines" || !category || row.training_routine_categories?.slug === category));
-  function reset() { setSearch(""); setLevel(""); setEquipment(""); setGoal(""); setDays(""); setCategory(""); }
-  function filter(label: string, value: string, change: (v: string) => void, options: string[]) { return <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2"><span>{label}</span><select value={value} onChange={e => change(e.target.value)}><option value="">Any {label.toLowerCase()}</option>{options.map(v => <option key={v} value={v}>{trainingLabels[v] ?? pretty(v)}</option>)}</select></label>; }
-  return <>
-    <section className="mb-12 grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-12 [&_h1]:my-5 [&_h1]:text-[42px] sm:[&_h1]:text-5xl [&_p]:mb-0"><div><p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">Your training library</p><h1>A plan for today.<br />A rhythm for the weeks ahead.</h1><p className="mt-5 mb-10 max-w-2xl text-lg leading-8 text-muted sm:text-xl">Choose a whole program when you want a weekly structure, or save one routine for a session you can repeat.</p></div><div className="p-6 sm:p-7 [&_h2]:mt-4 [&_h2]:mb-2 [&_h2_small]:mt-2 [&_h2_small]:block [&_h2_small]:text-sm [&_h2_small]:font-normal [&_h2_small]:text-muted [&>small]:block [&>small]:text-sm [&>small]:text-muted rounded-lg border border-line bg-white"><span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">How it fits together</span><h2>Upper / Lower <small>Program</small></h2><p>4 training days each week</p><div className="my-6 grid grid-cols-7 gap-1.5 [&_span]:rounded-sm [&_span]:bg-surface [&_span]:px-0.5 [&_span]:py-3 [&_span]:text-center [&_span]:text-[10px] [&_span]:text-muted [&_b]:mt-1 [&_b]:block [&_b]:text-xs [&_b]:text-ink" aria-label="Example schedule"><span>Day 1<b>Upper</b></span><span>Day 2<b>Lower</b></span><span>Day 3<b>Rest</b></span><span>Day 4<b>Upper</b></span><span>Day 5<b>Lower</b></span><span>Day 6<b>Rest</b></span><span>Day 7<b>Rest</b></span></div><small>Upper Body is a routine. Completing it today is a workout. This is an illustration, not a saved plan.</small></div></section>
-    <div className="mb-12 grid gap-7 border-y border-line py-8 md:grid-cols-3 [&_h3]:my-3 [&_p]:text-base [&_p]:text-muted">{[["Routine", "One reusable session", "Exercises, sets, rep targets, and rest. Example: Upper Body."], ["Program", "Your weekly structure", "Routines and rest days arranged over a number of weeks."], ["Workout", "What you actually do", "Start a routine in the mobile app, log your sets, then finish the session."]].map(([name, title, detail]) => <div key={name}><span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{name}</span><h3>{title}</h3><p>{detail}</p></div>)}</div>
-    <section className="scroll-mt-24" aria-label="Browse training"><div className="mb-8 flex w-fit max-w-full gap-2 rounded-md border border-line bg-surface p-1.5 [&_button]:rounded-sm [&_button]:px-3 [&_button]:py-3 [&_button]:text-sm [&_button]:font-medium sm:[&_button]:px-5 [&_button[aria-pressed=true]]:bg-ink [&_button[aria-pressed=true]]:text-white" aria-label="Training type">{(["programs", "routines"] as const).map(v => <button key={v} aria-pressed={mode === v} className={mode === v ? "bg-ink text-white" : ""} onClick={() => setMode(v)}>{v === "programs" ? "Programs · plan your week" : "Routines · plan a session"}</button>)}</div>
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-5 [&_h1]:mt-3 [&_p:not(:first-child)]:mt-4 [&_p:not(:first-child)]:max-w-2xl [&_p:not(:first-child)]:text-muted"><div><h2>{mode === "programs" ? "Find a program you can stick with" : "Find your next session"}</h2><p>{mode === "programs" ? "Compare training days, equipment, and experience before choosing." : "Browse by training style, then preview the exercises before saving."}</p></div></div>
-      <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 max-sm:[&>label:first-child]:col-span-full"><label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2"><span>Search</span><input type="search" value={search} onChange={e => setSearch(e.target.value)} placeholder={`Search ${mode}`} /></label>{filter("Level", level, setLevel, ["beginner", "intermediate", "advanced"])}{filter("Equipment", equipment, setEquipment, ["gym", "dumbbells", "bodyweight", "bands", "mixed"])}{filter("Goal", goal, setGoal, ["general", "muscle", "strength", "endurance", "fat_loss"])}{mode === "programs" ? filter("Days per week", days, setDays, ["1", "2", "3", "4", "5", "6", "7"]) : <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2"><span>Category</span><select value={category} onChange={e => setCategory(e.target.value)}><option value="">All categories</option>{categories.map(c => <option key={c.id} value={c.slug}>{c.name}</option>)}</select></label>}</div>
-      <div className="my-6 flex justify-between gap-4 text-sm text-muted"><span role="status">{loading ? "Loading library…" : `${rows.length} ${mode}`}</span><button className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline" onClick={reset}>Clear filters</button></div>
-      {error ? <div className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!" role="alert">Couldn’t load the training library. {error}<button className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline" onClick={() => { setLoading(true); setRetry(v => v + 1); }}>Try again</button></div> : !loading && !rows.length ? <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5 px-5 py-20 text-center [&>p]:max-w-lg [&>p]:leading-7 [&>p]:text-muted [&>h2]:text-3xl"><h2>{(mode === "programs" ? programs : routines).length ? "No matches yet" : `The ${mode} library is being prepared`}</h2><p>{(mode === "programs" ? programs : routines).length ? "Try fewer filters or a different search." : "Only reviewed, published plans appear here. You can still explore exercises and create a routine in the mobile app."}</p><Link className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-ink px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-ink/80 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-white! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink" href={admin ? `/admin/${mode}` : "/exercises"}>{admin ? `Manage ${mode}` : "Explore exercises"}</Link></div> : <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">{rows.map(row => <article className="rounded-lg border border-line bg-white flex flex-col gap-5 p-6 transition-colors hover:border-ink/40 [&_h3]:text-2xl [&>p]:flex-1 [&>p]:text-muted" key={row.id}><div className="flex items-center justify-between gap-3 [&>span:first-child]:text-[10px]"><span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">{mode === "programs" ? "Multi-week program" : "Single-session routine"}</span><span className="inline-flex w-fit items-center whitespace-nowrap rounded-sm bg-surface px-2.5 py-1 text-xs font-semibold text-ink">{pretty(row.level)}</span></div><h3><Link href={`/${mode}/${row.id}`}>{row.name}</Link></h3><p>{row.description}</p><div className="mt-2 mb-5 flex flex-wrap gap-2 [&_span]:rounded-sm [&_span]:border [&_span]:border-line [&_span]:px-3 [&_span]:py-1.5 [&_span]:text-xs [&_span]:text-muted"><span>{mode === "programs" ? `${(row as Program).days_per_week} days / week` : `~${(row as Routine).estimated_minutes} min`}</span>{mode === "programs" && <span>{(row as Program).duration_weeks} weeks</span>}<span>{trainingLabels[row.equipment]}</span></div><Link href={`/${mode}/${row.id}`} className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-ink px-5 py-3 text-base font-semibold text-white transition-colors hover:bg-ink/80 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-white! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink">{mode === "programs" ? "View weekly plan" : "Preview exercises"} →</Link></article>)}</div>}
-    </section>
-    <section className="rounded-lg border border-line bg-white mt-12 max-w-4xl p-6 sm:p-8 [&_p]:my-4 [&_p]:leading-7 [&_p]:text-muted"><h2>Start with a schedule you can repeat</h2><p>Choose training days that fit your life and leave room for recovery. For beginners, the NSCA describes two or three full-body sessions per week as a typical starting frequency—not a requirement to train every day.</p><a className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline" href="https://www.nsca.com/education/articles/kinetic-select/determination-of-resistance-training-frequency/" target="_blank" rel="noreferrer">Read the NSCA guidance ↗</a><p>FitSync programs currently show a repeating weekly schedule. They do not automatically change loads or exercises from week to week.</p></section>
-  </>;
+  const rows = (mode === "programs" ? programs : routines).filter(
+    (row) =>
+      `${row.name} ${row.description}`.toLowerCase().includes(search.toLowerCase()) &&
+      (!level || row.level === level) &&
+      (!equipment || row.equipment === equipment) &&
+      (!goal || row.goal === goal) &&
+      (mode !== "programs" || !days || (row as Program).days_per_week === Number(days)) &&
+      (mode !== "routines" || !category || row.training_routine_categories?.slug === category),
+  );
+  function reset() {
+    setSearch("");
+    setLevel("");
+    setEquipment("");
+    setGoal("");
+    setDays("");
+    setCategory("");
+  }
+  function filter(label: string, value: string, change: (v: string) => void, options: string[]) {
+    return (
+      <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2">
+        <span>{label}</span>
+        <select value={value} onChange={(e) => change(e.target.value)}>
+          <option value="">Any {label.toLowerCase()}</option>
+          {options.map((v) => (
+            <option key={v} value={v}>
+              {trainingLabels[v] ?? pretty(v)}
+            </option>
+          ))}
+        </select>
+      </label>
+    );
+  }
+  return (
+    <>
+      <section className="mb-12 grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-12 [&_h1]:my-5 [&_h1]:text-[42px] sm:[&_h1]:text-5xl [&_p]:mb-0">
+        <div>
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+            Your training library
+          </p>
+          <h1>
+            A plan for today.
+            <br />A rhythm for the weeks ahead.
+          </h1>
+          <p className="mt-5 mb-10 max-w-2xl text-lg leading-8 text-muted sm:text-xl">
+            Choose a whole program when you want a weekly structure, or save one routine for a
+            session you can repeat.
+          </p>
+        </div>
+        <div className="p-6 sm:p-7 [&_h2]:mt-4 [&_h2]:mb-2 [&_h2_small]:mt-2 [&_h2_small]:block [&_h2_small]:text-sm [&_h2_small]:font-normal [&_h2_small]:text-muted [&>small]:block [&>small]:text-sm [&>small]:text-muted rounded-lg border border-line bg-panel">
+          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+            How it fits together
+          </span>
+          <h2>
+            Upper / Lower <small>Program</small>
+          </h2>
+          <p>4 training days each week</p>
+          <div
+            className="my-6 grid grid-cols-7 gap-1.5 [&_span]:rounded-sm [&_span]:bg-surface [&_span]:px-0.5 [&_span]:py-3 [&_span]:text-center [&_span]:text-[10px] [&_span]:text-muted [&_b]:mt-1 [&_b]:block [&_b]:text-xs [&_b]:text-ink"
+            aria-label="Example schedule"
+          >
+            <span>
+              Day 1<b>Upper</b>
+            </span>
+            <span>
+              Day 2<b>Lower</b>
+            </span>
+            <span>
+              Day 3<b>Rest</b>
+            </span>
+            <span>
+              Day 4<b>Upper</b>
+            </span>
+            <span>
+              Day 5<b>Lower</b>
+            </span>
+            <span>
+              Day 6<b>Rest</b>
+            </span>
+            <span>
+              Day 7<b>Rest</b>
+            </span>
+          </div>
+          <small>
+            Upper Body is a routine. Completing it today is a workout. This is an illustration, not
+            a saved plan.
+          </small>
+        </div>
+      </section>
+      <div className="mb-12 grid gap-7 border-y border-line py-8 md:grid-cols-3 [&_h3]:my-3 [&_p]:text-base [&_p]:text-muted">
+        {[
+          [
+            "Routine",
+            "One reusable session",
+            "Exercises, sets, rep targets, and rest. Example: Upper Body.",
+          ],
+          [
+            "Program",
+            "Your weekly structure",
+            "Routines and rest days arranged over a number of weeks.",
+          ],
+          [
+            "Workout",
+            "What you actually do",
+            "Start a routine in the mobile app, log your sets, then finish the session.",
+          ],
+        ].map(([name, title, detail]) => (
+          <div key={name}>
+            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+              {name}
+            </span>
+            <h3>{title}</h3>
+            <p>{detail}</p>
+          </div>
+        ))}
+      </div>
+      <section className="scroll-mt-24" aria-label="Browse training">
+        <div
+          className="mb-8 flex w-fit max-w-full gap-2 rounded-md border border-line bg-surface p-1.5 [&_button]:rounded-sm [&_button]:px-3 [&_button]:py-3 [&_button]:text-sm [&_button]:font-medium sm:[&_button]:px-5 [&_button[aria-pressed=true]]:bg-brand [&_button[aria-pressed=true]]:text-background"
+          aria-label="Training type"
+        >
+          {(["programs", "routines"] as const).map((v) => (
+            <button
+              key={v}
+              aria-pressed={mode === v}
+              className={mode === v ? "bg-brand text-background" : ""}
+              onClick={() => setMode(v)}
+            >
+              {v === "programs" ? "Programs · plan your week" : "Routines · plan a session"}
+            </button>
+          ))}
+        </div>
+        <div className="mb-8 flex flex-wrap items-start justify-between gap-5 [&_h1]:mt-3 [&_p:not(:first-child)]:mt-4 [&_p:not(:first-child)]:max-w-2xl [&_p:not(:first-child)]:text-muted">
+          <div>
+            <h2>
+              {mode === "programs" ? "Find a program you can stick with" : "Find your next session"}
+            </h2>
+            <p>
+              {mode === "programs"
+                ? "Compare training days, equipment, and experience before choosing."
+                : "Browse by training style, then preview the exercises before saving."}
+            </p>
+          </div>
+        </div>
+        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 max-sm:[&>label:first-child]:col-span-full">
+          <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2">
+            <span>Search</span>
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder={`Search ${mode}`}
+            />
+          </label>
+          {filter("Level", level, setLevel, ["beginner", "intermediate", "advanced"])}
+          {filter("Equipment", equipment, setEquipment, [
+            "gym",
+            "dumbbells",
+            "bodyweight",
+            "bands",
+            "mixed",
+          ])}
+          {filter("Goal", goal, setGoal, [
+            "general",
+            "muscle",
+            "strength",
+            "endurance",
+            "fat_loss",
+          ])}
+          {mode === "programs" ? (
+            filter("Days per week", days, setDays, ["1", "2", "3", "4", "5", "6", "7"])
+          ) : (
+            <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2">
+              <span>Category</span>
+              <select value={category} onChange={(e) => setCategory(e.target.value)}>
+                <option value="">All categories</option>
+                {categories.map((c) => (
+                  <option key={c.id} value={c.slug}>
+                    {c.name}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+        </div>
+        <div className="my-6 flex justify-between gap-4 text-sm text-muted">
+          <span role="status">{loading ? "Loading library…" : `${rows.length} ${mode}`}</span>
+          <button
+            className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline"
+            onClick={reset}
+          >
+            Clear filters
+          </button>
+        </div>
+        {error ? (
+          <div
+            className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+            role="alert"
+          >
+            Couldn’t load the training library. {error}
+            <button
+              className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline"
+              onClick={() => {
+                setLoading(true);
+                setRetry((v) => v + 1);
+              }}
+            >
+              Try again
+            </button>
+          </div>
+        ) : !loading && !rows.length ? (
+          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5 px-5 py-20 text-center [&>p]:max-w-lg [&>p]:leading-7 [&>p]:text-muted [&>h2]:text-3xl">
+            <h2>
+              {(mode === "programs" ? programs : routines).length
+                ? "No matches yet"
+                : `The ${mode} library is being prepared`}
+            </h2>
+            <p>
+              {(mode === "programs" ? programs : routines).length
+                ? "Try fewer filters or a different search."
+                : "Only reviewed, published plans appear here. You can still explore exercises and create a routine in the mobile app."}
+            </p>
+            <Link
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+              href={admin ? `/admin/${mode}` : "/exercises"}
+            >
+              {admin ? `Manage ${mode}` : "Explore exercises"}
+            </Link>
+          </div>
+        ) : (
+          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+            {rows.map((row) => (
+              <article
+                className="rounded-lg border border-line bg-panel flex flex-col gap-5 p-6 transition-colors hover:border-ink/40 [&_h3]:text-2xl [&>p]:flex-1 [&>p]:text-muted"
+                key={row.id}
+              >
+                <div className="flex items-center justify-between gap-3 [&>span:first-child]:text-[10px]">
+                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
+                    {mode === "programs" ? "Multi-week program" : "Single-session routine"}
+                  </span>
+                  <span className="inline-flex w-fit items-center whitespace-nowrap rounded-sm bg-surface px-2.5 py-1 text-xs font-semibold text-ink">
+                    {pretty(row.level)}
+                  </span>
+                </div>
+                <h3>
+                  <Link href={`/${mode}/${row.id}`}>{row.name}</Link>
+                </h3>
+                <p>{row.description}</p>
+                <div className="mt-2 mb-5 flex flex-wrap gap-2 [&_span]:rounded-sm [&_span]:border [&_span]:border-line [&_span]:px-3 [&_span]:py-1.5 [&_span]:text-xs [&_span]:text-muted">
+                  <span>
+                    {mode === "programs"
+                      ? `${(row as Program).days_per_week} days / week`
+                      : `~${(row as Routine).estimated_minutes} min`}
+                  </span>
+                  {mode === "programs" && <span>{(row as Program).duration_weeks} weeks</span>}
+                  <span>{trainingLabels[row.equipment]}</span>
+                </div>
+                <Link
+                  href={`/${mode}/${row.id}`}
+                  className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+                >
+                  {mode === "programs" ? "View weekly plan" : "Preview exercises"} →
+                </Link>
+              </article>
+            ))}
+          </div>
+        )}
+      </section>
+      <section className="rounded-lg border border-line bg-panel mt-12 max-w-4xl p-6 sm:p-8 [&_p]:my-4 [&_p]:leading-7 [&_p]:text-muted">
+        <h2>Start with a schedule you can repeat</h2>
+        <p>
+          Choose training days that fit your life and leave room for recovery. For beginners, the
+          NSCA describes two or three full-body sessions per week as a typical starting
+          frequency—not a requirement to train every day.
+        </p>
+        <a
+          className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline"
+          href="https://www.nsca.com/education/articles/kinetic-select/determination-of-resistance-training-frequency/"
+          target="_blank"
+          rel="noreferrer"
+        >
+          Read the NSCA guidance ↗
+        </a>
+        <p>
+          FitSync programs currently show a repeating weekly schedule. They do not automatically
+          change loads or exercises from week to week.
+        </p>
+      </section>
+    </>
+  );
 }

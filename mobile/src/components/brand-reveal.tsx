@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, Image, StyleSheet, View, useAnimatedValue } from "react-native";
 import { Txt } from "@/src/components/ui";
+import { useReducedAppMotion } from "./motion";
 import { C } from "@/src/constants/theme";
 
 export function BrandReveal({
@@ -10,6 +11,7 @@ export function BrandReveal({
   onReady: () => Promise<void>;
   onDone: () => void;
 }) {
+  const reduced = useReducedAppMotion();
   const [laidOut, setLaidOut] = useState(false);
   const [imageReady, setImageReady] = useState(false);
   const opacity = useAnimatedValue(1);
@@ -30,7 +32,7 @@ export function BrandReveal({
       // Keep the native splash until this matching image has painted.
       await onReady();
       if (cancelled) return;
-      if (reduceMotion) {
+      if (reduceMotion || reduced) {
         onDone();
         return;
       }
@@ -84,7 +86,7 @@ export function BrandReveal({
       cancelled = true;
       animation?.stop();
     };
-  }, [laidOut, imageReady, onReady, onDone, opacity, scale, pulse, caption]);
+  }, [laidOut, imageReady, onReady, onDone, opacity, scale, pulse, caption, reduced]);
 
   return (
     <Animated.View

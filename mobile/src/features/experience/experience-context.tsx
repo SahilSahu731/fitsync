@@ -21,19 +21,21 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
   const current = useRef(DEFAULT_EXPERIENCE);
   const [ready, setReady] = useState(false);
   const [error, setError] = useState("");
+  const mounted = useRef(false);
+  const preferencesLoaded = useRef(false);
   const players = useRef<Partial<Record<"set" | "workout", AudioPlayer>>>({});
   const writes = useRef(Promise.resolve());
   const audioMode = useRef<Promise<void> | null>(null);
   const lastCue = useRef(0);
   useEffect(() => {
-    let active = true;
+    let active = true; mounted.current = true;
     void AsyncStorage.getItem(KEY).then(value => {
       if (active) { current.current = parseExperience(value); setPreferences(current.current); }
-    }).catch(() => { if (active) setError("Could not load device preferences. Try saving them again."); }).finally(() => { if (active) setReady(true); });
+    }).catch(() => { if (active) setError("Could not load device preferences. Try saving them again."); }).finally(() => { if (active) { preferencesLoaded.current = true; setReady(true); } });
     const subscription = AppState.addEventListener("change", state => {
       if (state !== "active") Object.values(players.current).forEach(player => player?.pause());
     });
-    return () => { active = false; subscription.remove(); Object.values(players.current).forEach(player => player?.remove()); players.current = {}; };
+    return () => { active = false; mounted.current = false; subscription.remove(); Object.values(players.current).forEach(player => player?.remove()); players.current = {}; };
   }, []);
   const update = useCallback((patch: Partial<ExperiencePreferences>) => {
     const write = writes.current.then(async () => {
@@ -48,7 +50,7 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
     return write;
   }, []);
   const feedback = useCallback((cue: Cue) => {
-    if (AppState.currentState !== "active") return;
+    if (!mounted.current || !preferencesLoaded.current || AppState.currentState !== "active") return;
     if (current.current.haptics) {
       const effect = cue === "selection" ? Haptics.selectionAsync() : cue === "workout"
         ? Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success)
@@ -63,11 +65,11 @@ export function ExperienceProvider({ children }: { children: React.ReactNode }) 
       const audio = require("expo-audio") as typeof import("expo-audio");
       audioMode.current ??= audio.setAudioModeAsync({ playsInSilentMode: false, interruptionMode: "mixWithOthers", shouldPlayInBackground: false });
       try { await audioMode.current; } catch { audioMode.current = null; return; }
-      if (!current.current.sounds || AppState.currentState !== "active") return;
+      if (!mounted.current || !current.current.sounds || AppState.currentState !== "active") return;
       const player = players.current[cue] ??= audio.createAudioPlayer(SOURCES[cue]);
       player.volume = 0.35;
       await player.seekTo(0);
-      if (current.current.sounds && AppState.currentState === "active") player.play();
+      if (mounted.current && current.current.sounds && AppState.currentState === "active") player.play();
     })().catch(() => { /* Audio never blocks durable workout logging. */ });
   }, []);
   return <Context.Provider value={{ preferences, ready, error, update, feedback }}>{children}</Context.Provider>;

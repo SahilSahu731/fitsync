@@ -42,7 +42,7 @@ export function ProScreen() {
   return <SafeAreaView className="flex-1 bg-bg" edges={["bottom"]}>
     <View className="flex-row items-center justify-between px-5 py-2">
       <MotionPressable accessibilityRole="button" accessibilityLabel="Go back" disabled={billing.busy} onPress={() => router.canGoBack() ? router.back() : router.replace("/(tabs)/profile")} className="h-11 w-11 items-center justify-center rounded-full bg-panel"><MaterialCommunityIcons name="arrow-left" size={23} color={C.ink} /></MotionPressable>
-      <Txt weight="semibold" className="text-sm">FITSYNC PRO</Txt><View className="h-11 w-11" />
+      <Txt weight="semibold" className="text-sm">FITSYNC PRO</Txt><MotionPressable accessibilityRole="button" accessibilityLabel="Membership and billing" disabled={billing.busy} onPress={() => router.push("/billing")} className="h-11 w-11 items-center justify-center"><MaterialCommunityIcons name="credit-card-outline" size={23} color={C.ink} /></MotionPressable>
     </View>
     <ScrollView refreshControl={<RefreshControl refreshing={billing.loading} onRefresh={() => void billing.refresh()} tintColor={C.brand} />} contentContainerStyle={{ padding: 24, paddingBottom: 40 }}>
       <View className="mb-6 mt-4 h-16 w-16 items-center justify-center rounded-[23px] bg-brand"><MaterialCommunityIcons name="star-four-points" size={34} color={C.bg} /></View>

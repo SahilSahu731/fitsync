@@ -62,6 +62,7 @@
         "expo-build-properties",
         {
           "android": {
+            "minSdkVersion": 26,
             "usesCleartextTraffic": true
           }
         }
@@ -71,7 +72,8 @@
         "expo-audio",
         {
           "microphonePermission": false,
-          "recordAudioAndroid": false
+          "recordAudioAndroid": false,
+          "enableBackgroundPlayback": false
         }
       ],
       "expo-asset",
@@ -95,9 +97,12 @@
         "expo-calendar",
         {
           "calendarPermission": "Allow FitSync to add training sessions you choose to your calendar.",
-          "remindersPermission": false
+          "remindersPermission": false,
+          "writeOnlyAccess": true,
+          "writeOnlyCalendarPermission": "Allow FitSync to add training sessions you choose to your calendar."
         }
-      ]
+      ],
+      "./plugins/with-purchases"
     ],
     "experiments": {
       "typedRoutes": true
