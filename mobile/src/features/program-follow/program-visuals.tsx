@@ -1,11 +1,14 @@
-import React, { useState } from "react";
-import { StyleSheet, View } from "react-native";
+import React, { useEffect, useState } from "react";
+import { Animated, Easing, StyleSheet, View } from "react-native";
 import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import Svg, { Circle } from "react-native-svg";
 import { Txt } from "@/src/components/ui";
+import { useReducedAppMotion } from "@/src/components/motion";
 import { C } from "@/src/constants/theme";
 import type { FollowedProgram } from "./api";
+
+const AnimatedCircle = Animated.createAnimatedComponent(Circle);
 
 export const PRO_COLOR = "#B6AAFF";
 export function ProBadge() {
@@ -14,11 +17,19 @@ export function ProBadge() {
 export function ProgressRing({ percent, size = 112, label = "complete" }: { percent: number; size?: number; label?: string }) {
   const radius = size / 2 - 7;
   const circumference = 2 * Math.PI * radius;
-  const value = Math.max(0, Math.min(100, percent));
+  const value = Number.isFinite(percent) ? Math.max(0, Math.min(100, percent)) : 0;
+  const reduced = useReducedAppMotion();
+  const [fill] = useState(() => new Animated.Value(0));
+  useEffect(() => {
+    if (reduced) { fill.setValue(value); return; }
+    const animation = Animated.timing(fill, { toValue: value, duration: 650, easing: Easing.out(Easing.cubic), useNativeDriver: false, isInteraction: false });
+    animation.start();
+    return () => animation.stop();
+  }, [fill, reduced, value]);
   return <View accessibilityRole="progressbar" accessibilityLabel={label} accessibilityValue={{ min: 0, max: 100, now: value }} style={{ width: size, height: size, alignItems: "center", justifyContent: "center" }}>
     <Svg width={size} height={size} style={StyleSheet.absoluteFill}>
       <Circle cx={size / 2} cy={size / 2} r={radius} stroke="#FFFFFF12" strokeWidth={6} fill="none" />
-      {value > 0 && <Circle cx={size / 2} cy={size / 2} r={radius} stroke={C.brand} strokeWidth={6} fill="none" strokeLinecap="round" strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={circumference * (1 - value / 100)} rotation={-90} origin={`${size / 2}, ${size / 2}`} />}
+      {value > 0 && <AnimatedCircle cx={size / 2} cy={size / 2} r={radius} stroke={C.brand} strokeWidth={6} fill="none" strokeLinecap="round" strokeDasharray={`${circumference} ${circumference}`} strokeDashoffset={fill.interpolate({ inputRange: [0, 100], outputRange: [circumference, 0] })} rotation={-90} origin={`${size / 2}, ${size / 2}`} />}
     </Svg>
     <Txt weight="bold" style={{ fontSize: size < 100 ? 20 : 29 }}>{value}<Txt style={{ fontSize: 13, color: C.muted }}>%</Txt></Txt>
     {size >= 100 && <Txt style={{ fontSize: 10, color: C.muted, marginTop: 2 }}>{label}</Txt>}

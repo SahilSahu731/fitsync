@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
-import { AccessibilityInfo, Animated, Pressable, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
+import { AccessibilityInfo, Animated, Easing, Pressable, type PressableProps, type StyleProp, type ViewStyle } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { cssInterop } from "nativewind";
 
@@ -41,8 +41,8 @@ export function MotionPressable({ style, onPressIn, onPressOut, onHoverIn, onHov
     {...props}
     disabled={disabled}
     style={[typeof style === "function" ? style({ pressed, hovered }) : style, { transform: [{ scale }] }]}
-    onHoverIn={event => { setHovered(true); onHoverIn?.(event); }}
-    onHoverOut={event => { setHovered(false); onHoverOut?.(event); }}
+    onHoverIn={event => { setHovered(true); if (!reduced && !disabled) Animated.spring(scale, { toValue: 1.015, speed: 25, bounciness: 3, useNativeDriver: true }).start(); onHoverIn?.(event); }}
+    onHoverOut={event => { setHovered(false); if (!reduced) Animated.spring(scale, { toValue: 1, speed: 30, bounciness: 0, useNativeDriver: true }).start(); onHoverOut?.(event); }}
     onPressIn={event => {
       setPressed(true);
       if (!reduced && !disabled) Animated.spring(scale, { toValue: 0.975, speed: 45, bounciness: 0, useNativeDriver: true }).start();
@@ -63,11 +63,28 @@ export function ScreenEntrance({ children, style, delay = 0 }: { children: React
   useFocusEffect(useCallback(() => {
     if (reduced) { progress.setValue(1); return; }
     progress.setValue(0);
-    const animation = Animated.timing(progress, { toValue: 1, duration: 320, delay, useNativeDriver: true });
+    const animation = Animated.timing(progress, { toValue: 1, duration: 440, delay, easing: Easing.out(Easing.cubic), useNativeDriver: true });
     animation.start();
     return () => { animation.stop(); progress.setValue(1); };
   }, [delay, progress, reduced]));
   return <Animated.View style={[style, { opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0.55, 1] }), transform: [{ translateY: progress.interpolate({ inputRange: [0, 1], outputRange: [10, 0] }) }] }]}>{children}</Animated.View>;
+}
+
+/** Decorative rings settle on focus; they never run continuously behind a screen. */
+export function OrbitAccent() {
+  const reduced = useReducedAppMotion();
+  const [progress] = useState(() => new Animated.Value(1));
+  useFocusEffect(useCallback(() => {
+    if (reduced) { progress.setValue(1); return; }
+    progress.setValue(0);
+    const animation = Animated.timing(progress, { toValue: 1, duration: 1600, easing: Easing.out(Easing.cubic), useNativeDriver: true, isInteraction: false });
+    animation.start();
+    return () => { animation.stop(); progress.setValue(1); };
+  }, [progress, reduced]));
+  return <Animated.View pointerEvents="none" accessible={false} accessibilityElementsHidden importantForAccessibility="no-hide-descendants" style={{ position: "absolute", width: 230, height: 230, right: -80, top: -52, opacity: progress.interpolate({ inputRange: [0, 1], outputRange: [0, 0.55] }), transform: [{ rotate: progress.interpolate({ inputRange: [0, 1], outputRange: ["-35deg", "0deg"] }) }, { scale: progress.interpolate({ inputRange: [0, 1], outputRange: [0.8, 1] }) }] }}>
+    {[0, 1, 2].map(index => <Animated.View key={index} style={{ position: "absolute", inset: index * 27, borderWidth: 1, borderColor: "#103F3760", borderRadius: 120 }} />)}
+    <Animated.View style={{ position: "absolute", top: 29, left: 29, width: 10, height: 10, borderRadius: 5, backgroundColor: "#103F3780" }} />
+  </Animated.View>;
 }
 
 export function ProgressFill({ ratio, color, trackColor = "#FFFFFF12", height = 5 }: { ratio: number; color: string; trackColor?: string; height?: number }) {
