@@ -145,7 +145,7 @@ export function Header() {
               <>
                 <Link
                   href="/login"
-                  className={`hidden rounded-xl px-5 py-2.5 text-lg font-medium transition-colors hover:bg-white/10 sm:block ${focusRing}`}
+                  className={`hidden rounded-xl px-5 py-2.5 text-lg font-medium transition-colors hover:bg-white/10 hover:text-brand sm:block ${focusRing}`}
                 >
                   Log in
                 </Link>

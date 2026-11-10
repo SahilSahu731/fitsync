@@ -99,7 +99,7 @@ export function Login({ register = false }: { register?: boolean }) {
             </Link>
           </header>
 
-          <div className="flex flex-1 items-center py-10 sm:py-14 lg:py-10">
+          <div className="flex flex-1 items-center py-7 sm:py-14 lg:py-10">
             <div className="mx-auto w-full max-w-100">
               <p className="mb-6 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.17em] text-muted">
                 <span className="size-1.5 rounded-full bg-brand" />
@@ -214,7 +214,21 @@ export function Login({ register = false }: { register?: boolean }) {
                 )}
               </div>
 
-              <div className="mt-9 space-y-5 border-t border-line pt-7">
+              <p className="mt-6 flex flex-wrap items-center gap-x-2 text-sm text-muted">
+                {register ? "Already have an account?" : "New to FitSync?"}
+                <Link
+                  href={register ? "/login" : "/register"}
+                  className="group inline-flex min-h-11 items-center gap-1.5 rounded-sm font-semibold text-ink underline decoration-line underline-offset-4 transition-colors hover:text-brand hover:decoration-brand"
+                >
+                  {register ? "Log in" : "Create a free account"}
+                  <ArrowUpRight
+                    size={15}
+                    className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                  />
+                </Link>
+              </p>
+
+              <div className="mt-7 space-y-5 border-t border-line pt-7">
                 {[
                   {
                     icon: Dumbbell,
@@ -238,20 +252,6 @@ export function Login({ register = false }: { register?: boolean }) {
                   </div>
                 ))}
               </div>
-
-              <p className="mt-8 flex flex-wrap items-center gap-x-2 text-sm text-muted">
-                {register ? "Already have an account?" : "New to FitSync?"}
-                <Link
-                  href={register ? "/login" : "/register"}
-                  className="group inline-flex min-h-11 items-center gap-1.5 rounded-sm font-semibold text-ink underline decoration-line underline-offset-4 transition-colors hover:text-brand hover:decoration-brand"
-                >
-                  {register ? "Log in" : "Create a free account"}
-                  <ArrowUpRight
-                    size={15}
-                    className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
-                  />
-                </Link>
-              </p>
             </div>
           </div>
 
@@ -285,7 +285,7 @@ export function Login({ register = false }: { register?: boolean }) {
             <p className="mb-4 text-[10px] font-medium tracking-[0.18em] text-brand">
               A LITTLE SPACE FOR YOURSELF.
             </p>
-            <h2 className="text-[42px] leading-[1.02] font-medium tracking-[-0.055em] sm:text-5xl lg:text-[clamp(2.7rem,4.6vw,4.8rem)]">
+            <h2 className="text-[34px] leading-[1.02] font-medium tracking-[-0.055em] sm:text-5xl lg:text-[clamp(2.7rem,4.6vw,4.8rem)]">
               {register ? "Every story starts" : "A little time."}
               <br />
               <span className="text-brand">{register ? "with showing up." : "All yours."}</span>
