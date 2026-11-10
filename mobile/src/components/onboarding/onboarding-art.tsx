@@ -73,8 +73,8 @@ export function OnboardingArt({
   return (
     <Svg width="100%" height={height} viewBox="0 0 360 235">
       <Rect width="360" height="235" rx="26" fill="#1B1B1D"/>
-      <Circle cx="180" cy="117" r="88" fill="#43CFB3" opacity=".12"/>
-      <Circle cx="180" cy="117" r="67" fill="none" stroke="#43CFB3" strokeWidth="1.5" opacity=".38"/>
+      <Circle cx="180" cy="117" r="88" fill="#C5F460" opacity=".12"/>
+      <Circle cx="180" cy="117" r="67" fill="none" stroke="#C5F460" strokeWidth="1.5" opacity=".38"/>
       <Circle cx="180" cy="117" r="108" fill="none" stroke="#343436" strokeDasharray="5 7"/>
       <Path d="M21 24H64M296 209H338" stroke={C.brand} strokeWidth="3" strokeLinecap="round"/>
       <Circle cx="306" cy="32" r="5" fill={C.brand}/>

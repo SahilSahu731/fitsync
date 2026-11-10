@@ -15,11 +15,11 @@ type TxtProps = TextProps & {
 };
 
 const fonts = {
-  regular: "font-outfit-regular",
-  medium: "font-outfit-medium",
-  semibold: "font-outfit-semibold",
-  bold: "font-outfit-bold",
-  extra: "font-outfit-extra"
+  regular: "font-inter-regular",
+  medium: "font-inter-medium",
+  semibold: "font-inter-semibold",
+  bold: "font-inter-bold",
+  extra: "font-inter-extra"
 };
 
 export function Txt({
@@ -100,7 +100,7 @@ export function PrimaryButton({
           ? "border-[#626267] bg-border"
           : dark
             ? "border-transparent bg-ink active:bg-[#DEDEDB]"
-            : "border-transparent bg-brand active:bg-[#6ADCC4]"
+            : "border-transparent bg-brand active:bg-[#B3E34F]"
       }`}
     >
       {loading ? (

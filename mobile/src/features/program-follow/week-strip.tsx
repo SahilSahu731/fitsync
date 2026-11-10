@@ -67,10 +67,10 @@ export function WeekStrip({
                 backgroundColor: selected
                   ? "#F4F0E9"
                   : day.today
-                    ? "#43CFB318"
+                    ? "#C5F46018"
                     : "transparent",
                 borderWidth: day.today && !selected ? 1 : 0,
-                borderColor: "#43CFB350",
+                borderColor: "#C5F46050",
               }}
             >
               {done ? (

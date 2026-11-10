@@ -70,7 +70,7 @@ export const C = {
   panel: "#1A1A1D",
   elevated: "#242427",
   border: "#303034",
-  brand: "#43CFB3",
+  brand: "#C5F460",
   ink: "#F8F7F4",
   muted: "#A7AAAF"
 } as const;

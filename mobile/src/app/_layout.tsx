@@ -16,12 +16,12 @@ import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-work
 
 import {
   useFonts,
-  Outfit_400Regular,
-  Outfit_500Medium,
-  Outfit_600SemiBold,
-  Outfit_700Bold,
-  Outfit_800ExtraBold,
-} from "@expo-google-fonts/outfit";
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+  Inter_800ExtraBold,
+} from "@expo-google-fonts/inter";
 
 import { SessionProvider, useSession } from "@/src/context/session";
 
@@ -43,11 +43,11 @@ function Navigator() {
   const { ready } = useSession();
 
   const [fontsReady, fontError] = useFonts({
-    Outfit_400Regular,
-    Outfit_500Medium,
-    Outfit_600SemiBold,
-    Outfit_700Bold,
-    Outfit_800ExtraBold,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
+    Inter_800ExtraBold,
   });
 
   const [showReveal, setShowReveal] = useState(true);

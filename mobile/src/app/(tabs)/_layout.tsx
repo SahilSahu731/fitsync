@@ -235,7 +235,7 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
                     numberOfLines={1}
                     className="ml-1.5 text text-bg"
                     style={{
-                      fontFamily: "Outfit_600SemiBold",
+                      fontFamily: "Inter_600SemiBold",
                     }}
                   >
                     {TITLES[id]}

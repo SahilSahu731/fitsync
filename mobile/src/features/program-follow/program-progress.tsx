@@ -116,10 +116,10 @@ export function ProgramProgress({
               paddingVertical: 14,
               borderRadius: 18,
               backgroundColor:
-                item.week === detail.week ? "#43CFB312" : C.panel,
+                item.week === detail.week ? "#C5F46012" : C.panel,
               borderWidth: 1,
               borderColor:
-                item.week === detail.week ? "#43CFB350" : "transparent",
+                item.week === detail.week ? "#C5F46050" : "transparent",
               alignItems: "center",
             }}
           >

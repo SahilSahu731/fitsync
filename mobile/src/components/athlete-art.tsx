@@ -40,21 +40,21 @@ export function AthleteArt({
 
       <Path
         d="M36 264L90 22"
-        stroke="#43CFB3"
+        stroke="#C5F460"
         strokeWidth="2"
         opacity="0.7"
       />
 
       <Path
         d="M248 272L332 36"
-        stroke="#43CFB3"
+        stroke="#C5F460"
         strokeWidth="2"
         opacity="0.5"
       />
 
       <Path
         d="M47 47H103M246 240h53"
-        stroke="#43CFB3"
+        stroke="#C5F460"
         strokeWidth="4"
         strokeLinecap="round"
       />
@@ -70,9 +70,9 @@ export function AthleteArt({
           strokeLinecap="round"
         />
 
-        <Rect x="29" y="23" width="20" height="70" rx="5" fill="#43CFB3"/>
+        <Rect x="29" y="23" width="20" height="70" rx="5" fill="#C5F460"/>
         <Rect x="17" y="35" width="11" height="46" rx="3" fill="#F8F7F4"/>
-        <Rect x="269" y="23" width="20" height="70" rx="5" fill="#43CFB3"/>
+        <Rect x="269" y="23" width="20" height="70" rx="5" fill="#C5F460"/>
         <Rect x="291" y="35" width="11" height="46" rx="3" fill="#F8F7F4"/>
 
         <Circle cx="163" cy="99" r="28" fill="#F8F7F4"/>
@@ -80,14 +80,14 @@ export function AthleteArt({
         <Path
           d="M146 93C148 69 180 74 184 95"
           fill="none"
-          stroke="#43CFB3"
+          stroke="#C5F460"
           strokeWidth="7"
           strokeLinecap="round"
         />
 
         <Path
           d="M137 138Q163 114 188 138L209 186 195 209 181 191 168 152 158 194 139 209 127 188Z"
-          fill="#43CFB3"
+          fill="#C5F460"
         />
 
         <Path
@@ -109,7 +109,7 @@ export function AthleteArt({
 
         <Path
           d="M117 269H146M195 269H226"
-          stroke="#43CFB3"
+          stroke="#C5F460"
           strokeWidth="14"
           strokeLinecap="round"
         />

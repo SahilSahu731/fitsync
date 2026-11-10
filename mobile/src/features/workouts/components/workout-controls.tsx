@@ -229,7 +229,7 @@ export function NumberEntry({
           keyboardType={step < 1 ? "decimal-pad" : "number-pad"}
           selectTextOnFocus
           editable={!disabled}
-          className={`min-w-0 flex-1 text-center font-outfit-bold text-ink ${compact ? "h-11 px-1 text-base" : "h-14 px-2 text-xl"}`}
+          className={`min-w-0 flex-1 text-center font-inter-bold text-ink ${compact ? "h-11 px-1 text-base" : "h-14 px-2 text-xl"}`}
         />
         <View
           className={`bg-panel ${compact ? "h-11 w-8" : "h-14 w-12"}`}

@@ -501,7 +501,7 @@ export default function LibraryScreen() {
             autoCorrect={false}
             className="ml-3 h-14 flex-1 text-lg text-white"
             style={{
-              fontFamily: "Outfit_400Regular",
+              fontFamily: "Inter_400Regular",
             }}
           />
 

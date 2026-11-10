@@ -46,7 +46,7 @@ export default function HomeScreen() {
       <WorkoutSyncNotice />
       <ScreenEntrance delay={60}>
       <MotionPressable accessibilityRole="button" onPress={() => router.push(session ? "/workout" : "/(tabs)/train")} className="overflow-hidden rounded-[28px] bg-brand" style={{ shadowColor: C.brand, shadowOpacity: 0.16, shadowRadius: 22, shadowOffset: { width: 0, height: 8 }, elevation: 4 }}>
-        <LinearGradient colors={["#83E6CE", C.brand, "#2BA990"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 26 }}>
+        <LinearGradient colors={["#E0F9AA", C.brand, "#AAD944"]} start={{ x: 0, y: 0 }} end={{ x: 1, y: 1 }} style={{ padding: 26 }}>
         <OrbitAccent />
         <MaterialCommunityIcons name="dumbbell" size={170} color={C.bg} style={{ position: "absolute", right: -28, bottom: -34, opacity: 0.1, transform: [{ rotate: "-18deg" }] }} />
         <View className="mb-4 flex-row items-center gap-2"><MaterialCommunityIcons name={session ? "play-circle-outline" : "lightning-bolt-outline"} size={18} color={C.bg} /><Txt weight="semibold" className="text-xs text-bg">{session ? "WORKOUT IN PROGRESS" : "MAKE TIME FOR YOU"}</Txt></View>

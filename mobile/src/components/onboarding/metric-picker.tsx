@@ -21,7 +21,7 @@ export function MetricPicker({ value, onChange, min, max, step, unit, decimals =
   };
   return <View className="py-[26px]">
     <View className="flex-row justify-center items-center gap-[10px]">
-      <TextInput accessibilityLabel={`Measurement in ${unit}`} value={text ?? value.toFixed(decimals)} onChangeText={changeText} onEndEditing={() => setText(null)} keyboardType="decimal-pad" returnKeyType="done" maxLength={6} selectTextOnFocus className="font-outfit-semibold text-ink text-[68px] min-w-[140px] text-center p-[0px]" />
+      <TextInput accessibilityLabel={`Measurement in ${unit}`} value={text ?? value.toFixed(decimals)} onChangeText={changeText} onEndEditing={() => setText(null)} keyboardType="decimal-pad" returnKeyType="done" maxLength={6} selectTextOnFocus className="font-inter-semibold text-ink text-[68px] min-w-[140px] text-center p-[0px]" />
       <Txt className="text-muted text-[22px]">{unit}</Txt>
     </View>
     <Txt className="text-center text-muted text-[13px] mt-[6px]">Tap the number or slide to adjust</Txt>

@@ -226,7 +226,7 @@ function InputField({
           maxLength={maxLength}
           className="flex-1 text-base text-ink"
           style={{
-            fontFamily: "Outfit_500Medium",
+            fontFamily: "Inter_500Medium",
             textAlignVertical:
               multiline ? "top" : "center"
           }}

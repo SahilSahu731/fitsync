@@ -43,7 +43,7 @@ export function ProgramToday({
       </View>
       <View
         className="overflow-hidden rounded-[24px] border"
-        style={{ borderColor: rest || complete ? "#86EFAC25" : "#43CFB330" }}
+        style={{ borderColor: rest || complete ? "#86EFAC25" : "#C5F46030" }}
       >
         <LinearGradient
           colors={

@@ -175,7 +175,7 @@ export default function DeleteAccountScreen() {
           placeholderTextColor={C.muted}
           className="h-14 rounded-2xl border border-border bg-panel px-4 text-base text-ink"
           style={{
-            fontFamily: "Outfit_700Bold"
+            fontFamily: "Inter_700Bold"
           }}
         />
 

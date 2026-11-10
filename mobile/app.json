@@ -14,7 +14,8 @@
       "package": "com.sahil.fitsync",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
-        "backgroundColor": "#101011"
+        "backgroundColor": "#101011",
+        "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
       "permissions": [
         "android.permission.health.READ_STEPS",
@@ -28,7 +29,7 @@
         "expo-notifications",
         {
           "icon": "./assets/images/android-icon-monochrome.png",
-          "color": "#43CFB3",
+          "color": "#C5F460",
           "defaultChannel": "workout-rest-v2",
           "sounds": [
             "./assets/sound/rest_complete.wav"
@@ -66,7 +67,13 @@
         }
       ],
       "@react-native-community/datetimepicker",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false,
+          "recordAudioAndroid": false
+        }
+      ],
       "expo-asset",
       "expo-video",
       [
@@ -83,6 +90,13 @@
           "NSHealthUpdateUsageDescription": "FitSync does not write to Apple Health.",
           "background": false
         }
+      ],
+      [
+        "expo-calendar",
+        {
+          "calendarPermission": "Allow FitSync to add training sessions you choose to your calendar.",
+          "remindersPermission": false
+        }
       ]
     ],
     "experiments": {
@@ -94,6 +108,9 @@
         "projectId": "d9829030-6ee5-45ac-8cbb-55fe6602c5dc"
       }
     },
-    "owner": "sahillsahudevs-team"
+    "owner": "sahillsahudevs-team",
+    "web": {
+      "favicon": "./assets/images/favicon.png"
+    }
   }
 }
