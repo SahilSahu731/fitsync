@@ -1,10 +1,6 @@
 import React, { useEffect } from "react";
 import { Pressable, View } from "react-native";
-import Animated, {
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from "react-native-reanimated";
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
 import Svg, { Circle } from "react-native-svg";
 import * as Haptics from "expo-haptics";
 import { Txt } from "@/src/components/ui";
@@ -33,7 +29,15 @@ const formatTotal = (minutes: number) => {
 };
 
 /** One day of the week chart: grows when the day is part of the routine. */
-function WeekBar({ index, trained, minutes }: { index: number; trained: boolean; minutes: number }) {
+function WeekBar({
+  index,
+  trained,
+  minutes,
+}: {
+  index: number;
+  trained: boolean;
+  minutes: number;
+}) {
   const target = trained ? Math.max(BAR_STUB, (minutes / 60) * BAR_MAX) : BAR_STUB;
   const height = useSharedValue(target);
 
@@ -47,7 +51,7 @@ function WeekBar({ index, trained, minutes }: { index: number; trained: boolean;
     <View className="items-center gap-2">
       <View className="justify-end" style={{ height: BAR_MAX }}>
         <Animated.View
-          className={`w-[18px] rounded-full ${trained ? "bg-brand" : "bg-white/15"}`}
+          className={`w-[18px] rounded-full ${trained ? "bg-ink" : "bg-white/15"}`}
           style={barStyle}
         />
       </View>
@@ -101,14 +105,11 @@ function DurationRing({
             fill="none"
           />
         </Svg>
-        <Txt
-          weight="semibold"
-          className={`text-[24px] ${selected ? "text-ink" : "text-muted"}`}
-        >
+        <Txt weight="semibold" className={`text-[24px] ${selected ? "text-ink" : "text-muted"}`}>
           {minutes}
         </Txt>
       </View>
-      <Txt className={`text-[13px] ${selected ? "text-brand" : "text-muted"}`}>min</Txt>
+      <Txt className={`text-[13px] ${selected ? "text-ink" : "text-muted"}`}>min</Txt>
     </Pressable>
   );
 }
@@ -153,7 +154,7 @@ export function RoutineStep({ draft, update }: StepProps) {
                   update({ trainingDays: value });
                 }}
                 className={`h-[60px] w-[42px] items-center justify-center rounded-full active:scale-95 ${
-                  selected ? "bg-brand" : "bg-white/[0.07]"
+                  selected ? "bg-ink" : "bg-white/[0.07]"
                 }`}
               >
                 <Txt
@@ -202,7 +203,7 @@ export function RoutineStep({ draft, update }: StepProps) {
             </Txt>
             <Txt className="text-[15px] text-muted">minutes a week</Txt>
             {total >= 60 && (
-              <Txt weight="medium" className="mt-1 text-[14px] text-brand">
+              <Txt weight="medium" className="mt-1 text-[14px] text-ink">
                 {formatTotal(total)}
               </Txt>
             )}

@@ -29,7 +29,7 @@ export function CoachSetupScreen() {
   };
   const disabled = resource.busy || resource.loading;
   return <View className="flex-1 bg-bg"><CoachHeader title="Make it yours" subtitle="A starting plan is included with Free" /><ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>
-    <Txt weight="extra" className="text-[34px] leading-[39px] tracking-[-0.8px]">One plan. Your pace.</Txt><Txt className="mb-7 mt-3 text-base leading-6 text-muted">Choose what matters to you. We will build four weeks of movement with a clear starting point.</Txt>
+    <Txt weight="semibold" className="text-[34px] leading-[39px] tracking-[-0.8px]">One plan. Your pace.</Txt><Txt className="mb-7 mt-3 text-base leading-6 text-muted">Choose what matters to you. We will build four weeks of movement with a clear starting point.</Txt>
     {!profile && <View className="mb-5 rounded-2xl bg-panel p-4"><Txt className="text-sm leading-6">Complete your fitness profile first so your plan has the basics it needs.</Txt><View className="mt-3"><PrimaryButton title="Complete setup" onPress={() => router.push("/onboarding")} /></View></View>}
     <Txt weight="semibold" className="mb-3 text-lg">Your main goal</Txt><View className="mb-7 gap-2">{(Object.keys(GOAL_LABELS) as Goal[]).map(value => <Choice key={value} value={value} label={GOAL_LABELS[value]} selected={goal === value} onSelect={setGoal} disabled={disabled} />)}</View>
     <Txt weight="semibold" className="mb-3 text-lg">What can you train with?</Txt><View className="mb-7 flex-row flex-wrap gap-2">{(Object.keys(EQUIPMENT_LABELS) as Equipment[]).map(value => <Choice key={value} value={value} label={EQUIPMENT_LABELS[value]} selected={equipment === value} onSelect={setEquipment} disabled={disabled} />)}</View>

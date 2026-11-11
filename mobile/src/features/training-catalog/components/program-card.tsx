@@ -29,14 +29,14 @@ export function ProgramCard({
           <MaterialCommunityIcons
             name="dumbbell"
             size={42}
-            color={C.brand}
+            color={C.ink}
           />
         </View>
       )}
 
       <View className="p-4">
         <View className="flex-row items-center justify-between">
-          <Txt weight="bold" className="flex-1 text-[24px]">
+          <Txt weight="semibold" className="flex-1 text-[24px]">
             {program.name}
           </Txt>
         </View>

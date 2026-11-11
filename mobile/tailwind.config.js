@@ -1,33 +1,32 @@
-
 /** @type {import('tailwindcss').Config} */
 module.exports = {
   content: {
     relative: true,
-    files: ["./src/**/*.{js,jsx,ts,tsx}"]
+    files: ["./src/**/*.{js,jsx,ts,tsx}"],
   },
   presets: [require("nativewind/preset")],
   theme: {
     extend: {
       fontFamily: {
-        "inter-regular": ["Inter_400Regular"],
-        "inter-medium": ["Inter_500Medium"],
-        "inter-semibold": ["Inter_600SemiBold"],
-        "inter-bold": ["Inter_700Bold"],
-        "inter-extra": ["Inter_800ExtraBold"]
+        "poppins-regular": ["Poppins_400Regular"],
+        "poppins-medium": ["Poppins_500Medium"],
+        "poppins-semibold": ["Poppins_600SemiBold"],
+        "poppins-bold": ["Poppins_700Bold"],
+        "poppins-extra": ["Poppins_800ExtraBold"],
       },
       colors: {
-        bg: "#101011",
-        panel: "#1A1A1D",
-        elevated: "#242427",
-        border: "#303034",
+        bg: "#000000",
+        panel: "#111111",
+        elevated: "#1C1C1C",
+        border: "#2A2A2A",
         brand: "#C5F460",
-        ink: "#F8F7F4",
-        muted: "#A7AAAF"
+        ink: "#FFFFFF",
+        muted: "#A3A3A3",
       },
       borderRadius: {
-        card: "24px"
-      }
-    }
+        card: "28px",
+      },
+    },
   },
-  plugins: []
+  plugins: [],
 };

@@ -38,8 +38,8 @@ export function WorkoutAction({ slot, title, quiet = false }: { slot: ProgramSlo
   const color = quiet ? C.ink : C.bg;
   return (
     <Pressable onPress={() => void run()} disabled={busy || workout.busy || unavailable} accessibilityRole="button" accessibilityLabel={label}
-      className={`min-h-12 flex-row items-center justify-center gap-2 rounded-full px-5 py-3 ${quiet ? "bg-elevated" : "bg-brand"} ${busy || workout.busy || unavailable ? "opacity-50" : ""}`}>
-      {busy ? <ActivityIndicator color={color} /> : <><MaterialCommunityIcons name={completed ? "notebook-outline" : "play"} size={21} color={color} /><Txt weight="bold" className="flex-shrink text-sm" style={{ color }}>{label}</Txt></>}
+      className={`min-h-12 flex-row items-center justify-center gap-2 rounded-full px-5 py-3 ${quiet ? "bg-elevated" : "bg-ink"} ${busy || workout.busy || unavailable ? "opacity-50" : ""}`}>
+      {busy ? <ActivityIndicator color={color} /> : <><MaterialCommunityIcons name={completed ? "notebook-outline" : "play"} size={21} color={color} /><Txt weight="semibold" className="flex-shrink text-sm" style={{ color }}>{label}</Txt></>}
     </Pressable>
   );
 }

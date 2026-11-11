@@ -28,7 +28,7 @@ export function ProgramToday({
   return (
     <View>
       <View className="mb-3 flex-row items-center justify-between">
-        <Txt weight="bold" className="text-xl">
+        <Txt weight="semibold" className="text-xl">
           {detail.enrollment.status === "active"
             ? "Your next move"
             : "Your journey"}
@@ -42,12 +42,12 @@ export function ProgramToday({
         </Txt>
       </View>
       <View
-        className="overflow-hidden rounded-[24px] border"
-        style={{ borderColor: rest || complete ? "#86EFAC25" : "#C5F46030" }}
+        className="overflow-hidden rounded-[24px]"
+        style={{ borderColor: rest || complete ? "#D4D4D425" : "#C5F46030" }}
       >
         <LinearGradient
           colors={
-            rest || complete ? ["#1B2D26", "#161C19"] : ["#30221C", "#1D1918"]
+            rest || complete ? ["#292929", "#161C19"] : ["#252525", "#1D1918"]
           }
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
@@ -61,7 +61,7 @@ export function ProgramToday({
                     height: 5,
                     width: 5,
                     borderRadius: 3,
-                    backgroundColor: rest || complete ? "#86EFAC" : C.brand,
+                    backgroundColor: rest || complete ? "#D4D4D4" : C.brand,
                   }}
                 />
                 <Txt
@@ -69,14 +69,14 @@ export function ProgramToday({
                   style={{
                     fontSize: 9,
                     letterSpacing: 1.2,
-                    color: rest || complete ? "#86EFAC" : "#FFAA80",
+                    color: rest || complete ? "#D4D4D4" : "#B9B9B9",
                     flex: 1,
                   }}
                 >
                   {focus.eyebrow}
                 </Txt>
               </View>
-              <Txt weight="bold" className="text-[26px] leading-8">
+              <Txt weight="semibold" className="text-[26px] leading-8">
                 {focus.title}
               </Txt>
             </View>
@@ -91,7 +91,7 @@ export function ProgramToday({
                   }
                   label="This week completed"
                 />
-                <Txt className="mt-1 text-[9px] text-muted">THIS WEEK</Txt>
+                <Txt className="mt-1 text-[11px] text-muted">THIS WEEK</Txt>
               </View>
             )}
           </View>
@@ -127,7 +127,7 @@ export function ProgramToday({
               onPress={onRefresh}
               className="py-2"
             >
-              <Txt className="text-brand">Refresh plan</Txt>
+              <Txt className="text-ink">Refresh plan</Txt>
             </Pressable>
           ) : detail.enrollment.status !== "active" ? (
             <Pressable

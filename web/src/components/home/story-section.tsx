@@ -14,10 +14,6 @@ export function StorySection() {
     >
       <div className="grid gap-7 lg:grid-cols-[.4fr_1fr] lg:gap-16">
         <div>
-          <p className="flex items-center gap-3 text-[10px] font-semibold tracking-[.16em] text-brand">
-            <span className="h-px w-6 bg-brand" />
-            01 / A LITTLE MORE POSSIBILITY
-          </p>
           <h2
             id="story-heading"
             className="mt-5 max-w-48 text-xl leading-7 font-medium tracking-tight text-muted"

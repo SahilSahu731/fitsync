@@ -118,7 +118,7 @@ function PickerSheet({
             <View className="h-1 w-10 rounded-full bg-border" />
           </View>
 
-          <Txt weight="bold" className="px-6 pb-2 pt-4 text-[20px]">
+          <Txt weight="semibold" className="px-6 pb-2 pt-4 text-[20px]">
             {title}
           </Txt>
 
@@ -128,7 +128,7 @@ function PickerSheet({
               paddingBottom: Math.max(insets.bottom, 16) + 8,
             }}
           >
-            {loading && <ActivityIndicator className="my-8" color={C.brand} />}
+            {loading && <ActivityIndicator className="my-8" color={C.ink} />}
 
             {options.map((option) => {
               const selected = option.code === value;
@@ -137,12 +137,12 @@ function PickerSheet({
                 <Pressable
                   key={option.code || "__all"}
                   onPress={() => onSelect(option.code)}
-                  className="flex-row items-center justify-between border-b border-border/30 px-6 py-4"
+                  className="flex-row items-center justify-between px-6 py-4"
                 >
                   <Txt
                     weight={selected ? "bold" : "medium"}
                     className={`text-[15px] ${
-                      selected ? "text-brand" : "text-ink"
+                      selected ? "text-ink" : "text-ink"
                     }`}
                   >
                     {option.label}
@@ -152,7 +152,7 @@ function PickerSheet({
                     <MaterialCommunityIcons
                       name="check"
                       size={20}
-                      color={C.brand}
+                      color={C.ink}
                     />
                   )}
                 </Pressable>
@@ -225,7 +225,7 @@ function ExerciseCard({
     <Pressable
       onPress={onPress}
       style={{ width }}
-      className="mb-3 overflow-hidden rounded-3xl border border-border/30 bg-panel"
+      className="mb-3 overflow-hidden rounded-3xl bg-panel"
     >
       <View
         className="items-center justify-center bg-elevated"
@@ -246,7 +246,7 @@ function ExerciseCard({
             transition={200}
           />
         ) : (
-          <MaterialCommunityIcons name="dumbbell" size={38} color={C.brand} />
+          <MaterialCommunityIcons name="dumbbell" size={38} color={C.ink} />
         )}
 
         <View
@@ -260,7 +260,7 @@ function ExerciseCard({
       </View>
 
       <View className="px-3 pb-3 pt-2.5">
-        <Txt weight="bold" numberOfLines={2} className="text-[15px] leading-5">
+        <Txt weight="semibold" numberOfLines={2} className="text-[15px] leading-5">
           {exercise.name}
         </Txt>
 
@@ -269,7 +269,7 @@ function ExerciseCard({
         </Txt>
 
         {exercise.status !== "published" && (
-          <Txt weight="semibold" className="mt-1 text-[11px] text-brand">
+          <Txt weight="semibold" className="mt-1 text-[11px] text-ink">
             {pretty(exercise.status)}
           </Txt>
         )}
@@ -483,7 +483,7 @@ export default function LibraryScreen() {
           <MaterialCommunityIcons name="arrow-left" size={22} color={C.ink} />
         </Pressable>
 
-        <Txt weight="bold" className="text-[30px] leading-9">
+        <Txt weight="semibold" className="text-[30px] leading-9">
           Exercise library
         </Txt>
       </View>
@@ -499,9 +499,9 @@ export default function LibraryScreen() {
             placeholderTextColor={C.muted}
             returnKeyType="search"
             autoCorrect={false}
-            className="ml-3 h-14 flex-1 text-lg text-white"
+            className="font-poppins-regular ml-3 h-14 flex-1 text-lg text-white"
             style={{
-              fontFamily: "Inter_400Regular",
+              fontFamily: "Poppins_400Regular",
             }}
           />
 
@@ -536,7 +536,7 @@ export default function LibraryScreen() {
                 weight="semibold"
                 numberOfLines={1}
                 className={`mr-1 flex-1 text-[13px] ${
-                  code ? "text-brand" : "text-ink"
+                  code ? "text-ink" : "text-ink"
                 }`}
               >
                 {selectedLabel || item.label}
@@ -563,7 +563,7 @@ export default function LibraryScreen() {
               }}
               hitSlop={8}
             >
-              <Txt weight="medium" className="text-sm text-brand">
+              <Txt weight="medium" className="text-sm text-ink">
                 Clear filters
               </Txt>
             </Pressable>
@@ -577,7 +577,7 @@ export default function LibraryScreen() {
 
   const footer = (
     <View className="items-center pb-14 pt-2">
-      {loading && <ActivityIndicator className="my-6" color={C.brand} />}
+      {loading && <ActivityIndicator className="my-6" color={C.ink} />}
 
       {!loading && !error && items.length > 0 && (
         <Txt className="text-sm text-muted">
@@ -589,7 +589,7 @@ export default function LibraryScreen() {
 
       {error ? (
         <View
-          className="rounded-2xl border border-border bg-panel p-4"
+          className="rounded-2xl bg-panel p-4"
           style={{
             marginHorizontal: SIDE,
             alignSelf: "stretch",
@@ -598,7 +598,7 @@ export default function LibraryScreen() {
           <Txt>{error}</Txt>
 
           <Pressable onPress={() => setRefreshKey((value) => value + 1)}>
-            <Txt weight="semibold" className="mt-3 text-brand">
+            <Txt weight="semibold" className="mt-3 text-ink">
               Try again
             </Txt>
           </Pressable>

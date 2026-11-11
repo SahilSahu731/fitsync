@@ -90,7 +90,7 @@ export function AccessGate({
         <h2>We couldn’t connect</h2>
         <p>{error}</p>
         <button
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => void reload()}
         >
           Try again
@@ -100,7 +100,7 @@ export function AccessGate({
   if (!account)
     return (
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5 px-5 py-20 text-center [&>p]:max-w-lg [&>p]:leading-7 [&>p]:text-muted [&>h2]:text-3xl">
-        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-md bg-brand text-background">
+        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/8 text-white">
           <Icon name={adminOnly ? "shield" : "dumbbell"} size={28} />
         </span>
         <h2>{adminOnly ? "Your admin workspace awaits" : "Your next movement starts here"}</h2>
@@ -111,7 +111,7 @@ export function AccessGate({
             : "explore the exercise library and your fitness profile."}
         </p>
         <Link
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           href={`/login?next=${adminOnly ? "/admin/exercises" : "/exercises"}`}
         >
           Continue with Google <Icon name="arrow" size={16} />
@@ -125,7 +125,7 @@ export function AccessGate({
         <h2>Admin access required</h2>
         <p>Your account can browse exercises. Only an administrator can manage the library.</p>
         <Link
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           href="/exercises"
         >
           Explore exercises

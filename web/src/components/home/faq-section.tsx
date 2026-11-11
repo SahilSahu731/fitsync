@@ -1,5 +1,6 @@
 import { Plus } from "lucide-react";
 import { Reveal } from "@/components/motion";
+import { container, headline } from "@/components/marketing/shared";
 import { questions } from "./content";
 
 export function FAQSection() {
@@ -7,41 +8,33 @@ export function FAQSection() {
     <section
       id="questions"
       aria-labelledby="faq-heading"
-      className="mx-auto grid max-w-7xl gap-9 px-5 py-20 sm:px-8 sm:py-28 lg:grid-cols-[.8fr_1.2fr] lg:gap-20 lg:px-12"
+      className={`${container} grid scroll-mt-28 gap-12 py-24 sm:py-32 lg:grid-cols-[.85fr_1.15fr] lg:gap-24`}
     >
       <Reveal>
-        <p className="mb-5 text-[10px] font-semibold tracking-[.16em] text-brand">
-          BEFORE YOUR FIRST MOVE
-        </p>
-        <h2
-          id="faq-heading"
-          className="max-w-90 text-[clamp(2.2rem,4.4vw,3.5rem)] leading-[1.08] tracking-[-.045em]"
-        >
-          A few good
-          <br />
-          things to know.
+        <p className="text-xs tracking-[.12em] text-white/55 uppercase">A little clarity</p>
+        <h2 id="faq-heading" className={`mt-6 ${headline}`}>
+          Good questions.
         </h2>
-        <p className="mt-5 max-w-70 text-base leading-7 text-muted">
-          Keep the questions.
-          <br />
-          We’ll help with the starting point.
+        <p className="mt-6 max-w-xs text-sm leading-7 text-white/50">
+          A few things to know before your first move.
         </p>
       </Reveal>
-      <Reveal delay={80}>
-        <div className="border-t border-line">
+      <Reveal>
+        <div className="space-y-3">
           {questions.map(({ question, answer }) => (
-            <details key={question} name="home-faq" className="group border-b border-line">
-              <summary className="flex min-h-21 cursor-pointer list-none items-center justify-between gap-5 py-6 text-base font-medium transition-colors marker:content-none hover:text-brand [&::-webkit-details-marker]:hidden sm:text-lg">
+            <details
+              key={question}
+              name="fitsync-faq"
+              className="group rounded-2xl bg-panel px-6 transition-colors open:bg-panel-raised sm:px-7"
+            >
+              <summary className="flex min-h-20 cursor-pointer list-none items-center justify-between gap-6 py-5 text-sm font-medium marker:content-none [&::-webkit-details-marker]:hidden sm:text-base">
                 {question}
                 <Plus
-                  size={21}
-                  strokeWidth={1.5}
-                  className="text-muted transition-transform group-open:rotate-45 group-open:text-brand"
+                  size={19}
+                  className="shrink-0 text-white/50 transition-transform duration-300 group-open:rotate-45"
                 />
               </summary>
-              <p className="max-w-xl pr-6 pb-7 text-sm leading-7 text-muted sm:text-base">
-                {answer}
-              </p>
+              <p className="max-w-xl pb-7 text-sm leading-7 text-white/55">{answer}</p>
             </details>
           ))}
         </div>

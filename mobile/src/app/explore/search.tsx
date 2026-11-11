@@ -132,7 +132,7 @@ export default function ExploreSearch() {
         paddingBottom: 100,
       }}
     >
-      {toolsError && <Pressable onPress={reloadTools}><Txt className="mb-4 text-brand">Tools unavailable. Tap to retry.</Txt></Pressable>}
+      {toolsError && <Pressable onPress={reloadTools}><Txt className="mb-4 text-ink">Tools unavailable. Tap to retry.</Txt></Pressable>}
       <ExploreHeader title="Search Explore" onBack={() => router.back()} />
 
       <View className="h-14 flex-row items-center rounded-2xl bg-panel px-4">
@@ -148,7 +148,7 @@ export default function ExploreSearch() {
         />
       </View>
 
-      {loading ? <ActivityIndicator color={C.brand} className="mt-10" /> : null}
+      {loading ? <ActivityIndicator color={C.ink} className="mt-10" /> : null}
 
       {!loading && query && !found ? (
         <Txt className="mt-8 text-sm text-muted">
@@ -166,7 +166,7 @@ export default function ExploreSearch() {
         results[section]?.length ? (
           <View key={section} className="mt-8">
             <View className="mb-3 flex-row items-center justify-between">
-              <Txt weight="bold" className="text-xl">
+              <Txt weight="semibold" className="text-xl">
                 {EXPLORE_LABELS[section]}
               </Txt>
 
@@ -182,7 +182,7 @@ export default function ExploreSearch() {
                 }
                 accessibilityLabel={`See all ${section}`}
               >
-                <Txt className="text-sm text-brand">See all</Txt>
+                <Txt className="text-sm text-ink">See all</Txt>
               </Pressable>
             </View>
 
@@ -217,7 +217,7 @@ export default function ExploreSearch() {
 
       {query && matches.length ? (
         <View className="mt-8">
-          <Txt weight="bold" className="mb-3 text-xl">
+          <Txt weight="semibold" className="mb-3 text-xl">
             Tools
           </Txt>
 
@@ -234,7 +234,7 @@ export default function ExploreSearch() {
               }
               className="mb-2 rounded-xl bg-panel p-4"
             >
-              <Txt weight="bold">{tool.name}</Txt>
+              <Txt weight="semibold">{tool.name}</Txt>
 
               <Txt className="mt-1 text-sm text-muted">{tool.description}</Txt>
             </Pressable>

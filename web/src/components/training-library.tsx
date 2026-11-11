@@ -1,5 +1,7 @@
 "use client";
 import Link from "next/link";
+import { ArrowUpRight, CalendarDays, Dumbbell, RotateCcw, Search } from "lucide-react";
+import { Reveal } from "./motion";
 import { useEffect, useState } from "react";
 import { api, pretty } from "@/lib/api";
 import { type Program, type Routine, type Category, trainingLabels } from "@/lib/training";
@@ -79,122 +81,82 @@ export function TrainingLibrary() {
   }
   return (
     <>
-      <section className="mb-12 grid items-center gap-8 lg:grid-cols-[1.15fr_1fr] lg:gap-12 [&_h1]:my-5 [&_h1]:text-[42px] sm:[&_h1]:text-5xl [&_p]:mb-0">
-        <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-            Your training library
-          </p>
-          <h1>
-            A plan for today.
-            <br />A rhythm for the weeks ahead.
+      <section className="grid gap-12 pt-10 pb-20 sm:pt-16 sm:pb-28 lg:grid-cols-[1.2fr_1fr] lg:items-center lg:gap-24">
+        <Reveal>
+          <p className="text-xs tracking-[.12em] text-white/55 uppercase">The training library</p>
+          <h1 className="mt-6 text-[clamp(3rem,6.5vw,6rem)] leading-[1.04] font-medium tracking-[-.06em]">
+            A little structure.
+            <br />
+            <span className="text-white/50">A lot of possibility.</span>
           </h1>
-          <p className="mt-5 mb-10 max-w-2xl text-lg leading-8 text-muted sm:text-xl">
-            Choose a whole program when you want a weekly structure, or save one routine for a
-            session you can repeat.
+          <p className="mt-7 max-w-lg text-base leading-8 text-white/55">
+            Find a program for your week or a routine for your next session. Preview the work, make
+            it yours, and take it to the mobile app.
           </p>
-        </div>
-        <div className="p-6 sm:p-7 [&_h2]:mt-4 [&_h2]:mb-2 [&_h2_small]:mt-2 [&_h2_small]:block [&_h2_small]:text-sm [&_h2_small]:font-normal [&_h2_small]:text-muted [&>small]:block [&>small]:text-sm [&>small]:text-muted rounded-lg border border-line bg-panel">
-          <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-            How it fits together
-          </span>
-          <h2>
-            Upper / Lower <small>Program</small>
-          </h2>
-          <p>4 training days each week</p>
-          <div
-            className="my-6 grid grid-cols-7 gap-1.5 [&_span]:rounded-sm [&_span]:bg-surface [&_span]:px-0.5 [&_span]:py-3 [&_span]:text-center [&_span]:text-[10px] [&_span]:text-muted [&_b]:mt-1 [&_b]:block [&_b]:text-xs [&_b]:text-ink"
-            aria-label="Example schedule"
+          <a
+            href="#browse-training"
+            className="mt-7 inline-flex min-h-11 items-center gap-3 text-sm font-medium"
           >
-            <span>
-              Day 1<b>Upper</b>
-            </span>
-            <span>
-              Day 2<b>Lower</b>
-            </span>
-            <span>
-              Day 3<b>Rest</b>
-            </span>
-            <span>
-              Day 4<b>Upper</b>
-            </span>
-            <span>
-              Day 5<b>Lower</b>
-            </span>
-            <span>
-              Day 6<b>Rest</b>
-            </span>
-            <span>
-              Day 7<b>Rest</b>
-            </span>
+            Find your next session
+            <ArrowUpRight size={17} />
+          </a>
+        </Reveal>
+        <Reveal delay={80}>
+          <div className="rounded-3xl bg-panel p-7 sm:p-9">
+            <p className="text-xs text-white/55">A little training clarity</p>
+            <div className="mt-8 space-y-7">
+              {[
+                {
+                  icon: CalendarDays,
+                  title: "Program",
+                  detail: "Routines arranged into a weekly plan.",
+                },
+                {
+                  icon: Dumbbell,
+                  title: "Routine",
+                  detail: "A reusable session with exercises and targets.",
+                },
+                {
+                  icon: CheckMark,
+                  title: "Workout",
+                  detail: "The session you actually complete and log.",
+                },
+              ].map(({ icon: Icon, title, detail }) => (
+                <div key={title} className="flex gap-4">
+                  <Icon size={21} strokeWidth={1.2} className="mt-1 text-white/50" />
+                  <div>
+                    <h2 className="text-base font-medium">{title}</h2>
+                    <p className="mt-2 text-sm leading-7 text-white/55">{detail}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
           </div>
-          <small>
-            Upper Body is a routine. Completing it today is a workout. This is an illustration, not
-            a saved plan.
-          </small>
-        </div>
+        </Reveal>
       </section>
-      <div className="mb-12 grid gap-7 border-y border-line py-8 md:grid-cols-3 [&_h3]:my-3 [&_p]:text-base [&_p]:text-muted">
-        {[
-          [
-            "Routine",
-            "One reusable session",
-            "Exercises, sets, rep targets, and rest. Example: Upper Body.",
-          ],
-          [
-            "Program",
-            "Your weekly structure",
-            "Routines and rest days arranged over a number of weeks.",
-          ],
-          [
-            "Workout",
-            "What you actually do",
-            "Start a routine in the mobile app, log your sets, then finish the session.",
-          ],
-        ].map(([name, title, detail]) => (
-          <div key={name}>
-            <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-              {name}
-            </span>
-            <h3>{title}</h3>
-            <p>{detail}</p>
+      <section id="browse-training" className="scroll-mt-32 pb-16" aria-label="Browse training">
+        <div className="mb-10 flex flex-wrap items-center justify-between gap-6">
+          <div className="inline-flex rounded-full bg-white/5 p-1.5" aria-label="Training type">
+            {(["programs", "routines"] as const).map((value) => (
+              <button
+                key={value}
+                aria-pressed={mode === value}
+                onClick={() => setMode(value)}
+                className={`min-h-11 rounded-full px-6 text-sm transition-colors ${mode === value ? "bg-white text-black" : "text-white/50 hover:text-white"}`}
+              >
+                {value === "programs" ? "Programs" : "Routines"}
+              </button>
+            ))}
           </div>
-        ))}
-      </div>
-      <section className="scroll-mt-24" aria-label="Browse training">
-        <div
-          className="mb-8 flex w-fit max-w-full gap-2 rounded-md border border-line bg-surface p-1.5 [&_button]:rounded-sm [&_button]:px-3 [&_button]:py-3 [&_button]:text-sm [&_button]:font-medium sm:[&_button]:px-5 [&_button[aria-pressed=true]]:bg-brand [&_button[aria-pressed=true]]:text-background"
-          aria-label="Training type"
-        >
-          {(["programs", "routines"] as const).map((v) => (
-            <button
-              key={v}
-              aria-pressed={mode === v}
-              className={mode === v ? "bg-brand text-background" : ""}
-              onClick={() => setMode(v)}
-            >
-              {v === "programs" ? "Programs · plan your week" : "Routines · plan a session"}
-            </button>
-          ))}
+          <p className="text-xs text-white/50">Published plans. Ready to make your own.</p>
         </div>
-        <div className="mb-8 flex flex-wrap items-start justify-between gap-5 [&_h1]:mt-3 [&_p:not(:first-child)]:mt-4 [&_p:not(:first-child)]:max-w-2xl [&_p:not(:first-child)]:text-muted">
-          <div>
-            <h2>
-              {mode === "programs" ? "Find a program you can stick with" : "Find your next session"}
-            </h2>
-            <p>
-              {mode === "programs"
-                ? "Compare training days, equipment, and experience before choosing."
-                : "Browse by training style, then preview the exercises before saving."}
-            </p>
-          </div>
-        </div>
-        <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-5 max-sm:[&>label:first-child]:col-span-full">
-          <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2">
+        <div className="grid gap-4 rounded-3xl bg-panel p-6 sm:grid-cols-2 lg:grid-cols-5 sm:p-8">
+          <label className="flex min-w-0 flex-col gap-2 text-sm">
             <span>Search</span>
             <input
               type="search"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(event) => setSearch(event.target.value)}
               placeholder={`Search ${mode}`}
             />
           </label>
@@ -216,83 +178,101 @@ export function TrainingLibrary() {
           {mode === "programs" ? (
             filter("Days per week", days, setDays, ["1", "2", "3", "4", "5", "6", "7"])
           ) : (
-            <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2">
+            <label className="flex min-w-0 flex-col gap-2 text-sm">
               <span>Category</span>
-              <select value={category} onChange={(e) => setCategory(e.target.value)}>
+              <select value={category} onChange={(event) => setCategory(event.target.value)}>
                 <option value="">All categories</option>
-                {categories.map((c) => (
-                  <option key={c.id} value={c.slug}>
-                    {c.name}
+                {categories.map((item) => (
+                  <option key={item.id} value={item.slug}>
+                    {item.name}
                   </option>
                 ))}
               </select>
             </label>
           )}
         </div>
-        <div className="my-6 flex justify-between gap-4 text-sm text-muted">
-          <span role="status">{loading ? "Loading library…" : `${rows.length} ${mode}`}</span>
+        <div className="my-6 flex items-center justify-between gap-5 text-xs text-white/55">
+          <span role="status">
+            {loading ? "Loading your training library…" : `${rows.length} ${mode}`}
+          </span>
           <button
-            className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline"
             onClick={reset}
+            className="inline-flex min-h-11 items-center gap-2 hover:text-white"
           >
-            Clear filters
+            <RotateCcw size={13} />
+            Reset filters
           </button>
         </div>
         {error ? (
-          <div
-            className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
-            role="alert"
-          >
-            Couldn’t load the training library. {error}
+          <div role="alert" className="rounded-3xl bg-panel p-10 text-center">
+            <h2 className="text-2xl font-medium">The library couldn’t load.</h2>
+            <p className="mx-auto mt-4 max-w-md text-sm leading-7 text-white/50">{error}</p>
             <button
-              className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline"
               onClick={() => {
                 setLoading(true);
-                setRetry((v) => v + 1);
+                setRetry((value) => value + 1);
               }}
+              className="mt-6 inline-flex min-h-12 items-center gap-3 rounded-full bg-white px-6 text-sm font-medium text-black"
             >
               Try again
+              <RotateCcw size={15} />
             </button>
           </div>
-        ) : !loading && !rows.length ? (
-          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5 px-5 py-20 text-center [&>p]:max-w-lg [&>p]:leading-7 [&>p]:text-muted [&>h2]:text-3xl">
-            <h2>
+        ) : loading ? (
+          <div
+            role="status"
+            aria-label="Loading training plans"
+            className="grid gap-5 md:grid-cols-2 lg:grid-cols-3"
+          >
+            {[0, 1, 2].map((value) => (
+              <div
+                key={value}
+                className="h-75 animate-pulse rounded-3xl bg-panel motion-reduce:animate-none"
+              />
+            ))}
+          </div>
+        ) : !rows.length ? (
+          <div className="rounded-3xl bg-panel px-6 py-20 text-center">
+            <Search size={30} strokeWidth={1} className="mx-auto text-white/50" />
+            <h2 className="mt-6 text-2xl font-medium">
               {(mode === "programs" ? programs : routines).length
-                ? "No matches yet"
-                : `The ${mode} library is being prepared`}
+                ? "A different starting point?"
+                : "Good things take a little preparation."}
             </h2>
-            <p>
+            <p className="mx-auto mt-4 max-w-lg text-sm leading-7 text-white/50">
               {(mode === "programs" ? programs : routines).length
-                ? "Try fewer filters or a different search."
-                : "Only reviewed, published plans appear here. You can still explore exercises and create a routine in the mobile app."}
+                ? "There are no matches for these filters. Try a broader search to find your next session."
+                : "The published library is being prepared. You can explore the exercise library or build a routine in the mobile app in the meantime."}
             </p>
             <Link
-              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
               href={admin ? `/admin/${mode}` : "/exercises"}
+              className="mt-7 inline-flex min-h-12 items-center gap-4 rounded-full bg-white px-6 text-sm font-medium text-black"
             >
-              {admin ? `Manage ${mode}` : "Explore exercises"}
+              {admin ? "Manage the library" : "Explore exercises"}
+              <ArrowUpRight size={16} />
             </Link>
           </div>
         ) : (
-          <div className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
+          <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-3">
             {rows.map((row) => (
               <article
-                className="rounded-lg border border-line bg-panel flex flex-col gap-5 p-6 transition-colors hover:border-ink/40 [&_h3]:text-2xl [&>p]:flex-1 [&>p]:text-muted"
                 key={row.id}
+                className="group flex flex-col rounded-3xl bg-panel p-7 transition-colors duration-300 hover:bg-panel-raised sm:p-8"
               >
-                <div className="flex items-center justify-between gap-3 [&>span:first-child]:text-[10px]">
-                  <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-                    {mode === "programs" ? "Multi-week program" : "Single-session routine"}
-                  </span>
-                  <span className="inline-flex w-fit items-center whitespace-nowrap rounded-sm bg-surface px-2.5 py-1 text-xs font-semibold text-ink">
+                <div className="flex items-center justify-between text-white/50">
+                  <Dumbbell size={28} strokeWidth={1} />
+                  <span className="rounded-full bg-white/6 px-3 py-1 text-[10px]">
                     {pretty(row.level)}
                   </span>
                 </div>
-                <h3>
+                <p className="mt-10 text-[10px] tracking-wider text-white/50 uppercase">
+                  {mode === "programs" ? "Multi-week program" : "Single-session routine"}
+                </p>
+                <h3 className="mt-3 text-2xl leading-tight font-medium tracking-tight">
                   <Link href={`/${mode}/${row.id}`}>{row.name}</Link>
                 </h3>
-                <p>{row.description}</p>
-                <div className="mt-2 mb-5 flex flex-wrap gap-2 [&_span]:rounded-sm [&_span]:border [&_span]:border-line [&_span]:px-3 [&_span]:py-1.5 [&_span]:text-xs [&_span]:text-muted">
+                <p className="mt-4 flex-1 text-sm leading-7 text-white/50">{row.description}</p>
+                <div className="mt-7 flex flex-wrap gap-x-4 gap-y-2 text-xs text-white/50">
                   <span>
                     {mode === "programs"
                       ? `${(row as Program).days_per_week} days / week`
@@ -303,35 +283,55 @@ export function TrainingLibrary() {
                 </div>
                 <Link
                   href={`/${mode}/${row.id}`}
-                  className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+                  className="mt-8 flex min-h-12 items-center justify-between rounded-full bg-white/7 px-5 text-xs font-medium transition-colors group-hover:bg-white group-hover:text-black"
                 >
-                  {mode === "programs" ? "View weekly plan" : "Preview exercises"} →
+                  {mode === "programs" ? "Explore the program" : "Preview the session"}
+                  <ArrowUpRight size={17} />
                 </Link>
               </article>
             ))}
           </div>
         )}
       </section>
-      <section className="rounded-lg border border-line bg-panel mt-12 max-w-4xl p-6 sm:p-8 [&_p]:my-4 [&_p]:leading-7 [&_p]:text-muted">
-        <h2>Start with a schedule you can repeat</h2>
-        <p>
-          Choose training days that fit your life and leave room for recovery. For beginners, the
-          NSCA describes two or three full-body sessions per week as a typical starting
-          frequency—not a requirement to train every day.
-        </p>
-        <a
-          className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline"
-          href="https://www.nsca.com/education/articles/kinetic-select/determination-of-resistance-training-frequency/"
-          target="_blank"
-          rel="noreferrer"
+      <section className="my-10 flex flex-col justify-between gap-7 rounded-3xl bg-white p-8 text-black sm:flex-row sm:items-center sm:p-10">
+        <div>
+          <h2 className="text-2xl font-medium tracking-tight">Make room for your real week.</h2>
+          <p className="mt-3 max-w-xl text-sm leading-7 text-black/55">
+            Save a routine or program to your account. Open it in FitSync mobile when you’re ready
+            to train.
+          </p>
+        </div>
+        <Link
+          href="/features"
+          className="inline-flex min-h-12 shrink-0 items-center gap-5 rounded-full bg-black px-6 text-sm font-medium text-white"
         >
-          Read the NSCA guidance ↗
-        </a>
-        <p>
-          FitSync programs currently show a repeating weekly schedule. They do not automatically
-          change loads or exercises from week to week.
-        </p>
+          Meet the app
+          <ArrowUpRight size={16} />
+        </Link>
       </section>
     </>
+  );
+}
+function CheckMark({
+  size = 21,
+  className = "",
+}: {
+  size?: number;
+  strokeWidth?: number;
+  className?: string;
+}) {
+  return (
+    <svg
+      width={size}
+      height={size}
+      viewBox="0 0 24 24"
+      fill="none"
+      stroke="currentColor"
+      strokeWidth="1.2"
+      className={className}
+      aria-hidden="true"
+    >
+      <path d="m5 12 4 4 10-10" />
+    </svg>
   );
 }

@@ -42,7 +42,7 @@ export function AdminOverview() {
         </div>
         <Link
           href="/admin/exercises/new"
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           <Icon name="plus" size={18} />
           Add exercise
@@ -50,7 +50,7 @@ export function AdminOverview() {
       </div>
       {error && (
         <div
-          className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+          className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!"
           role="alert"
         >
           {error}
@@ -66,7 +66,7 @@ export function AdminOverview() {
         {["Total exercises", "Published", "Drafts", "Archived"].map((label, i) => (
           <div
             key={label}
-            className="rounded-lg border border-line bg-panel relative p-5 sm:p-6 [&>span]:text-sm [&>span]:text-muted [&>strong]:mt-3 [&>strong]:block [&>strong]:text-4xl [&>strong]:font-semibold [&>svg]:absolute [&>svg]:top-6 [&>svg]:right-5 [&>svg]:text-ink max-sm:[&>svg]:hidden"
+            className="rounded-3xl bg-panel relative p-5 sm:p-6 [&>span]:text-sm [&>span]:text-muted [&>strong]:mt-3 [&>strong]:block [&>strong]:text-4xl [&>strong]:font-semibold [&>svg]:absolute [&>svg]:top-6 [&>svg]:right-5 [&>svg]:text-ink max-sm:[&>svg]:hidden"
           >
             <span>{label}</span>
             <strong>{counts[i] ?? "—"}</strong>
@@ -75,7 +75,7 @@ export function AdminOverview() {
         ))}
       </div>
       <div className="mb-7 bg-background p-7 text-white sm:p-10 [&_h2]:text-3xl [&_p]:mt-4 [&_p]:max-w-xl [&_p]:text-white/65 [&_a]:mt-6">
-        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-md bg-brand text-background">
+        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/8 text-white">
           <Icon name="dumbbell" size={32} />
         </span>
         <h2>One library. Every athlete.</h2>
@@ -85,7 +85,7 @@ export function AdminOverview() {
         </p>
         <Link
           href="/admin/exercises"
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         >
           Manage exercises
           <Icon name="arrow" size={18} />
@@ -94,15 +94,19 @@ export function AdminOverview() {
       <div className="grid gap-6 md:grid-cols-3">
         {[
           [
-            "01",
+            "Create",
             "Create the movement",
             "Add the name, muscle groups, equipment, and clear instructions.",
           ],
-          ["02", "Show the technique", "Upload an image. Add a GIF or MP4 now or later."],
-          ["03", "Make it available", "Publish to the library, or keep a draft until it’s ready."],
+          ["Technique", "Show the technique", "Upload an image. Add a GIF or MP4 now or later."],
+          [
+            "Publish",
+            "Make it available",
+            "Publish to the library, or keep a draft until it’s ready.",
+          ],
         ].map(([n, title, text]) => (
           <div
-            className="rounded-lg border border-line bg-panel flex flex-col items-start gap-5 p-7 [&_h2]:text-2xl [&_p]:flex-1 [&_p]:leading-7 [&_p]:text-muted"
+            className="rounded-3xl bg-panel flex flex-col items-start gap-5 p-7 [&_h2]:text-2xl [&_p]:flex-1 [&_p]:leading-7 [&_p]:text-muted"
             key={n}
           >
             <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">

@@ -128,7 +128,7 @@ export function AppDialogProvider({ children }: { children: React.ReactNode }) {
                   </View>
                   <View className="min-w-0 flex-1">
                 <Txt
-                  weight="bold"
+                  weight="semibold"
                   accessibilityRole="header"
                   className="text-[25px] leading-[31px] tracking-[-0.5px] text-ink"
                 >
@@ -148,7 +148,7 @@ export function AppDialogProvider({ children }: { children: React.ReactNode }) {
                       className={`min-h-[52px] flex-1 items-center justify-center rounded-2xl px-2 py-1 active:opacity-75 ${
                         action.style === "cancel" || (dialog.actions.length > 1 && index === 0 && action.style !== "destructive")
                           ? "bg-elevated"
-                          : "bg-brand"
+                          : "bg-ink"
                       }`}
                     >
                       <Txt

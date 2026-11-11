@@ -26,7 +26,7 @@ export function Segments<T extends string | number | null>({
           accessibilityLabel={option.label}
           accessibilityState={{ checked: value === option.value }}
           onPress={() => onChange(option.value)}
-          className={`min-h-12 min-w-11 justify-center rounded-3xl px-8 py-1 active:opacity-70 ${value === option.value ? "border-brand bg-brand" : "border-border bg-panel"}`}
+          className={`min-h-12 min-w-11 justify-center rounded-3xl px-8 py-1 active:opacity-70 ${value === option.value ? " bg-ink" : " bg-panel"}`}
         >
           <Txt
             weight="semibold"

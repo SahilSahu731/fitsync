@@ -8,7 +8,7 @@ export default function ErrorPage({ reset }: { reset: () => void }) {
       <h1>Something interrupted your session.</h1>
       <p>Please try loading this page again.</p>
       <button
-        className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
         onClick={reset}
       >
         Try again

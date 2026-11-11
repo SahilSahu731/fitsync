@@ -24,7 +24,7 @@ export function ConfirmDialog({
   return (
     <dialog
       ref={ref}
-      className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-lg rounded-lg border border-line bg-panel p-7 text-ink shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-xs [&_h2]:text-2xl [&_p]:my-5 [&_p]:text-base [&_p]:leading-7 [&_p]:text-muted"
+      className="fixed inset-0 m-auto w-[calc(100%-2rem)] max-w-lg rounded-3xl bg-panel p-7 text-ink shadow-2xl backdrop:bg-black/70 backdrop:backdrop-blur-xs [&_h2]:text-2xl [&_p]:my-5 [&_p]:text-base [&_p]:leading-7 [&_p]:text-muted"
       aria-labelledby="confirmation-title"
       aria-describedby="confirmation-description"
       onCancel={(e) => {
@@ -37,14 +37,14 @@ export function ConfirmDialog({
       <div className="flex flex-wrap items-center gap-3">
         <button
           autoFocus
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface! "
           disabled={busy}
           onClick={onCancel}
         >
           Cancel
         </button>
         <button
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-brand! text-background! hover:bg-brand-hover!"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-brand! text-background! hover:bg-white/85!"
           disabled={busy}
           onClick={onConfirm}
         >

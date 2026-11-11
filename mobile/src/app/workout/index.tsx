@@ -3,13 +3,7 @@ import { useWorkoutAwake } from "@/src/features/experience/keep-workout-awake";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useEffect, useMemo, useState } from "react";
 
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  View,
-  TextInput,
-} from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, View, TextInput } from "react-native";
 
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -21,10 +15,7 @@ import { useWorkout } from "@/src/features/workouts/workout-context";
 import { MuscleFocus } from "@/src/features/workouts/components/muscle-focus";
 import { WorkoutDrawer } from "@/src/features/workouts/components/workout-controls";
 import { ExerciseImage } from "@/src/features/workouts/components/exercise-image";
-import {
-  TrainActions,
-  ReorderTraining,
-} from "@/src/features/workouts/components/train-actions";
+import { TrainActions, ReorderTraining } from "@/src/features/workouts/components/train-actions";
 import { type SessionExercise } from "@/src/features/workouts/api";
 import { SetRow } from "@/src/features/workouts/components/set-row";
 
@@ -62,9 +53,7 @@ export default function LiveWorkoutScreen() {
   const [now, setNow] = useState(() => Date.now());
   const [focusedExercise, setFocusedExercise] = useState<string>();
   const [notesOpen, setNotesOpen] = useState(false);
-  const [exerciseMenu, setExerciseMenu] = useState<SessionExercise | null>(
-    null,
-  );
+  const [exerciseMenu, setExerciseMenu] = useState<SessionExercise | null>(null);
   const [reordering, setReordering] = useState(false);
   const [collapsed, setCollapsed] = useState<string[]>([]);
 
@@ -77,83 +66,62 @@ export default function LiveWorkoutScreen() {
   }, []);
 
   const exercises = useMemo(() => {
-    return [...(session?.workout_session_exercises ?? [])].sort(
-      (a, b) => a.position - b.position,
-    );
+    return [...(session?.workout_session_exercises ?? [])].sort((a, b) => a.position - b.position);
   }, [session]);
 
-  const elapsed = session
-    ? Math.floor((now - new Date(session.started_at).getTime()) / 1000)
-    : 0;
+  const elapsed = session ? Math.floor((now - new Date(session.started_at).getTime()) / 1000) : 0;
 
-  const restRemaining = restTimer
-    ? Math.max(0, Math.ceil((restTimer.endsAt - now) / 1000))
-    : 0;
+  const restRemaining = restTimer ? Math.max(0, Math.ceil((restTimer.endsAt - now) / 1000)) : 0;
 
   const completedSets = exercises.reduce(
     (total, item) =>
-      total +
-      item.workout_logged_sets.filter((set) => set.completed_at !== null)
-        .length,
+      total + item.workout_logged_sets.filter((set) => set.completed_at !== null).length,
     0,
   );
 
-  const totalSets = exercises.reduce(
-    (total, item) => total + item.workout_logged_sets.length,
-    0,
-  );
+  const totalSets = exercises.reduce((total, item) => total + item.workout_logged_sets.length, 0);
 
   const handleFinish = () => {
-    Alert.alert(
-      "Finish workout?",
-      "Your completed sets will be saved to your history.",
-      [
-        { text: "Keep training", style: "cancel" },
-        {
-          text: "Finish",
-          onPress: async () => {
-            try {
-              await finish();
-              feedback("workout");
-              router.replace("/(tabs)/train");
-            } catch (error) {
-              Alert.alert(
-                "Could not finish",
-                error instanceof Error ? error.message : "Please try again.",
-              );
-            }
-          },
+    Alert.alert("Finish workout?", "Your completed sets will be saved to your history.", [
+      { text: "Keep training", style: "cancel" },
+      {
+        text: "Finish",
+        onPress: async () => {
+          try {
+            await finish();
+            feedback("workout");
+            router.replace("/(tabs)/train");
+          } catch (error) {
+            Alert.alert(
+              "Could not finish",
+              error instanceof Error ? error.message : "Please try again.",
+            );
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const handleDiscard = () => {
-    Alert.alert(
-      "Discard workout?",
-      "This workout will not appear in your completed history.",
-      [
-        { text: "Cancel", style: "cancel" },
-        {
-          text: "Discard",
-          style: "destructive",
-          onPress: async () => {
-            try {
-              await discard();
-              router.replace("/(tabs)/train");
-            } catch {
-              Alert.alert("Error", "Could not discard the workout.");
-            }
-          },
+    Alert.alert("Discard workout?", "This workout will not appear in your completed history.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Discard",
+        style: "destructive",
+        onPress: async () => {
+          try {
+            await discard();
+            router.replace("/(tabs)/train");
+          } catch {
+            Alert.alert("Error", "Could not discard the workout.");
+          }
         },
-      ],
-    );
+      },
+    ]);
   };
 
   const confirmRemove = (exercise: SessionExercise) => {
-    const logged = exercise.workout_logged_sets.filter(
-      (set) => set.completed_at,
-    ).length;
+    const logged = exercise.workout_logged_sets.filter((set) => set.completed_at).length;
     Alert.alert(
       `Remove ${exercise.exercise_name}?`,
       `This removes the exercise and its ${exercise.workout_logged_sets.length} set(s) from this workout${logged ? `, including ${logged} logged set(s)` : ""}. Your saved routine stays unchanged.`,
@@ -180,7 +148,7 @@ export default function LiveWorkoutScreen() {
   if (loading) {
     return (
       <View className="flex-1 items-center justify-center bg-bg">
-        <ActivityIndicator color={C.brand} />
+        <ActivityIndicator color={C.ink} />
       </View>
     );
   }
@@ -188,17 +156,17 @@ export default function LiveWorkoutScreen() {
   if (!session) {
     return (
       <View className="flex-1 items-center justify-center bg-bg px-6">
-        <MaterialCommunityIcons name="dumbbell" size={50} color={C.brand} />
+        <MaterialCommunityIcons name="dumbbell" size={50} color={C.ink} />
 
-        <Txt weight="bold" className="mt-5 text-2xl">
+        <Txt weight="semibold" className="mt-5 text-2xl">
           No active workout
         </Txt>
 
         <Pressable
           onPress={() => router.replace("/(tabs)/train")}
-          className="mt-6 rounded-2xl bg-brand px-8 py-4"
+          className="mt-6 rounded-2xl bg-ink px-8 py-4"
         >
-          <Txt weight="bold" className="text-bg">
+          <Txt weight="semibold" className="text-bg">
             GO TO WORKOUTS
           </Txt>
         </Pressable>
@@ -208,33 +176,31 @@ export default function LiveWorkoutScreen() {
 
   return (
     <View className="flex-1 bg-bg">
-      <View className="flex-row items-center justify-between px-5 pb-4 pt-3">
+      <View className="flex-row items-center gap-3 px-6 pb-5 pt-3">
         <Pressable
-          onPress={() => router.back()}
-          className="h-11 w-11 items-center justify-center rounded-full"
+          accessibilityRole="button"
+          accessibilityLabel="Minimize workout"
+          onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/train"))}
+          className="h-11 w-11 items-center justify-center rounded-full bg-panel"
         >
-          <MaterialCommunityIcons
-            name="chevron-down"
-            size={28}
-            color={"white"}
-          />
+          <MaterialCommunityIcons name="chevron-down" size={24} color={C.ink} />
         </Pressable>
-
-        <View className="items-center">
-          <Txt weight="bold" className="text-[20px]">
+        <View className="min-w-0 flex-1">
+          <Txt weight="medium" numberOfLines={2} className="text-base leading-6 tracking-[-0.4px]">
             {session.name}
           </Txt>
+          <Txt className="mt-1 text-xs text-muted">
+            {formatTime(Math.max(0, elapsed))} · in progress
+          </Txt>
         </View>
-        <Txt weight="semibold" className="text-green-500">
-          {formatTime(Math.max(0, elapsed))}
-        </Txt>
-
         <Pressable
-          onPress={handleFinish}
+          accessibilityRole="button"
+          accessibilityState={{ disabled: busy }}
           disabled={busy}
-          className="rounded-xl bg-white px-2 py-1"
+          onPress={handleFinish}
+          className={`min-h-11 items-center justify-center rounded-full bg-ink px-5 ${busy ? "opacity-50" : ""}`}
         >
-          <Txt weight="bold" className="text-lg text-bg">
+          <Txt weight="semibold" className="text-xs text-black">
             Finish
           </Txt>
         </Pressable>
@@ -244,15 +210,15 @@ export default function LiveWorkoutScreen() {
         <View className="flex-1">
           <View className="flex-row justify-between">
             <Txt weight="medium" className="text-sm text-muted">
-              Session Progress
+              Your session
             </Txt>
-            <Txt weight="bold" className="text-green-400">
+            <Txt weight="semibold" className="text-ink">
               {completedSets}/{totalSets}
             </Txt>
           </View>
-          <View className="mt-3 h-2 overflow-hidden rounded-full bg-elevated">
+          <View className="mt-3 h-1 overflow-hidden rounded-full bg-elevated">
             <View
-              className="h-full rounded-full bg-green-400"
+              className="h-full rounded-full bg-ink"
               style={{
                 width: `${totalSets ? (completedSets / totalSets) * 100 : 0}%`,
               }}
@@ -265,9 +231,7 @@ export default function LiveWorkoutScreen() {
                 (total, e) =>
                   total +
                   e.workout_logged_sets.reduce(
-                    (sum, s) =>
-                      sum +
-                      (s.completed_at ? (s.weight_kg ?? 0) * (s.reps ?? 0) : 0),
+                    (sum, s) => sum + (s.completed_at ? (s.weight_kg ?? 0) * (s.reps ?? 0) : 0),
                     0,
                   ),
                 0,
@@ -289,32 +253,20 @@ export default function LiveWorkoutScreen() {
         onPress={() => setNotesOpen(true)}
         className="mx-5 mb-4 flex-row items-center gap-2 rounded-xl bg-panel px-4 py-3"
       >
-        <MaterialCommunityIcons
-          name="note-text-outline"
-          color={"white"}
-          size={22}
-        />
+        <MaterialCommunityIcons name="note-text-outline" color={"white"} size={22} />
         <Txt className="flex-1 text-white" numberOfLines={1}>
           {session.notes || "Add workout notes · energy, goals, how you feel"}
         </Txt>
-        <MaterialCommunityIcons
-          name="chevron-right"
-          size={22}
-          color={"white"}
-        />
+        <MaterialCommunityIcons name="chevron-right" size={22} color={"white"} />
       </Pressable>
 
       {restRemaining > 0 && (
-        <View className="mx-5 mb-4 flex-row items-center rounded-2xl bg-brand/10 p-4">
-          <MaterialCommunityIcons
-            name="timer-outline"
-            size={28}
-            color={"red"}
-          />
+        <View className="mx-5 mb-4 flex-row items-center rounded-2xl bg-white/5 p-4">
+          <MaterialCommunityIcons name="timer-outline" size={28} color={"red"} />
 
           <View className="ml-3 flex-1">
             <Txt weight="semibold">Rest Timer</Txt>
-            <Txt weight="extra" className="text-[26px] text-red-600">
+            <Txt weight="semibold" className="text-[26px] text-red-600">
               {formatTime(restRemaining)}
             </Txt>
           </View>
@@ -322,14 +274,11 @@ export default function LiveWorkoutScreen() {
           <Pressable
             accessibilityLabel="Add thirty seconds rest"
             onPress={() => startRest(restRemaining + 30)}
-            className="mr-2 rounded-xl bg-green-500/40 px-3 py-3"
+            className="mr-2 rounded-xl bg-ink/40 px-3 py-3"
           >
             <Txt>+30s</Txt>
           </Pressable>
-          <Pressable
-            onPress={stopRest}
-            className="rounded-xl  bg-red-400/60 px-4 py-3"
-          >
+          <Pressable onPress={stopRest} className="rounded-xl bg-red-400/60 px-4 py-3">
             <Txt weight="medium" className="text-sm">
               Skip
             </Txt>
@@ -346,19 +295,14 @@ export default function LiveWorkoutScreen() {
         }}
       >
         <Txt className="mb-4 text-xs text-muted">
-          Values are prefilled targets. Adjust to what you performed, then tap
-          Log set to save. New sets reuse the previous set’s values.
+          Values are prefilled targets. Adjust to what you performed, then tap Log set to save. New
+          sets reuse the previous set’s values.
         </Txt>
         {exercises.map((exercise) => {
-          const sets = [...exercise.workout_logged_sets].sort(
-            (a, b) => a.position - b.position,
-          );
+          const sets = [...exercise.workout_logged_sets].sort((a, b) => a.position - b.position);
 
           return (
-            <View
-              key={exercise.id}
-              className="mb-5 overflow-hidden rounded-[26px] bg-panel"
-            >
+            <View key={exercise.id} className="mb-5 overflow-hidden rounded-[26px] bg-panel">
               <View className="flex-row items-center px-3 pb-3 pt-4">
                 <Pressable
                   onPress={() => {
@@ -372,12 +316,9 @@ export default function LiveWorkoutScreen() {
                   accessibilityLabel={`Expand or collapse ${exercise.exercise_name}`}
                   className="min-w-0 flex-1 flex-row items-center"
                 >
-                  <ExerciseImage
-                    uri={exercise.image_url}
-                    name={exercise.exercise_name}
-                  />
+                  <ExerciseImage uri={exercise.image_url} name={exercise.exercise_name} />
                   <View className="ml-3 flex-1">
-                    <Txt weight="bold" className="text-lg" numberOfLines={2}>
+                    <Txt weight="semibold" className="text-lg" numberOfLines={2}>
                       {exercise.exercise_name}
                     </Txt>
                     <Txt className="mt-1 text-sm text-muted">
@@ -390,11 +331,7 @@ export default function LiveWorkoutScreen() {
                     </Txt>
                   </View>
                   <MaterialCommunityIcons
-                    name={
-                      collapsed.includes(exercise.id)
-                        ? "chevron-down"
-                        : "chevron-up"
-                    }
+                    name={collapsed.includes(exercise.id) ? "chevron-down" : "chevron-up"}
                     size={26}
                     color={"white"}
                   />
@@ -408,18 +345,16 @@ export default function LiveWorkoutScreen() {
                   accessibilityLabel={`Options for ${exercise.exercise_name}`}
                   className="ml-1 h-11 w-11 items-center justify-center"
                 >
-                  <MaterialCommunityIcons
-                    name="dots-horizontal"
-                    size={26}
-                    color={C.ink}
-                  />
+                  <MaterialCommunityIcons name="dots-horizontal" size={26} color={C.ink} />
                 </Pressable>
               </View>
 
               {!collapsed.includes(exercise.id) && (
                 <>
                   <View className="px-3">
-                    {!!exercise.notes && <Txt className="mb-3 px-1 text-sm text-muted">{exercise.notes}</Txt>}
+                    {!!exercise.notes && (
+                      <Txt className="mb-3 px-1 text-sm text-muted">{exercise.notes}</Txt>
+                    )}
                     {sets.map((set, setIndex) => (
                       <SetRow
                         key={set.id}
@@ -441,15 +376,11 @@ export default function LiveWorkoutScreen() {
                       );
                     }}
                     disabled={busy}
-                    className="mx-3 mb-4 mt-2 flex-row items-center justify-center rounded-xl border border-dashed border-border py-3"
+                    className="mx-3 mb-4 mt-2 flex-row items-center justify-center rounded-xl py-3"
                   >
-                    <MaterialCommunityIcons
-                      name="plus"
-                      size={20}
-                      color={C.brand}
-                    />
+                    <MaterialCommunityIcons name="plus" size={20} color={C.ink} />
 
-                    <Txt weight="semibold" className="ml-2 text-brand">
+                    <Txt weight="semibold" className="ml-2 text-ink">
                       ADD SET
                     </Txt>
                   </Pressable>
@@ -461,17 +392,17 @@ export default function LiveWorkoutScreen() {
 
         <Pressable
           onPress={() => router.push("/workout/add-exercise")}
-          className="mb-4 flex-row items-center justify-center rounded-2xl bg-brand py-5"
+          className="mb-4 flex-row items-center justify-center rounded-2xl bg-ink py-5"
         >
           <MaterialCommunityIcons name="plus" size={22} color={C.bg} />
 
-          <Txt weight="bold" className="ml-2 text-bg">
+          <Txt weight="semibold" className="ml-2 text-bg">
             ADD EXERCISE
           </Txt>
         </Pressable>
 
         <Pressable onPress={handleDiscard} className="items-center py-5">
-          <Txt weight="semibold" className="text-red-400">
+          <Txt weight="semibold" className="text-muted">
             Discard workout
           </Txt>
         </Pressable>
@@ -552,8 +483,7 @@ function WorkoutNotes({
       }}
     >
       <Txt className="mb-3 text-muted">
-        Keep context for your whole session. These notes are saved with your
-        workout.
+        Keep context for your whole session. These notes are saved with your workout.
       </Txt>
       <TextInput
         autoFocus
@@ -564,7 +494,7 @@ function WorkoutNotes({
         editable={!saving}
         placeholder="Energy, sleep, goals, technique reminders…"
         placeholderTextColor={C.muted}
-        className="min-h-[150px] rounded-2xl bg-bg p-4 text-ink"
+        className="font-poppins-regular min-h-[150px] rounded-2xl bg-bg p-4 text-ink"
       />
       {!!error && <Txt className="mt-3 text-red-300">{error}</Txt>}
       <Pressable
@@ -580,9 +510,9 @@ function WorkoutNotes({
             setSaving(false);
           }
         }}
-        className="mt-5 items-center rounded-2xl bg-brand p-4"
+        className="mt-5 items-center rounded-2xl bg-ink p-4"
       >
-        <Txt weight="bold" className="text-bg">
+        <Txt weight="semibold" className="text-bg">
           {saving ? "Saving…" : "Save workout notes"}
         </Txt>
       </Pressable>

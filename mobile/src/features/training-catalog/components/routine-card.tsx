@@ -29,13 +29,13 @@ export function RoutineCard({
           <MaterialCommunityIcons
             name="dumbbell"
             size={32}
-            color={C.brand}
+            color={C.ink}
           />
         </View>
       )}
 
       <View className="flex-1 justify-center p-3">
-        <Txt weight="bold" className="text-xl">
+        <Txt weight="semibold" className="text-xl">
           {routine.name}
         </Txt>
 

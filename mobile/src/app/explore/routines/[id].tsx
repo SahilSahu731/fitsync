@@ -21,9 +21,9 @@ import { catalogApi, type Routine } from "@/src/features/training-catalog/api";
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
-const GREEN = "#4ADE80";
-const BLUE = "#60A5FA";
-const GOLD = "#FACC15";
+const GREEN = "#B8B8B8";
+const BLUE = "#9C9C9C";
+const GOLD = "#C9C9C9";
 const RED = "#F87171";
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -59,11 +59,11 @@ function StatTile({
         <MaterialCommunityIcons name={icon} size={20} color={color} />
       </View>
 
-      <Txt weight="extra" className="mt-2.5 text-xl">
+      <Txt weight="semibold" className="mt-2.5 text-xl">
         {value}
       </Txt>
 
-      <Txt className="mt-0.5 text-[10px] tracking-wider text-muted">
+      <Txt className="mt-0.5 text-[11px] tracking-wider text-muted">
         {label}
       </Txt>
     </View>
@@ -190,7 +190,7 @@ export default function RoutineDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-bg">
         {BackButton}
-        <ActivityIndicator color={C.brand} />
+        <ActivityIndicator color={C.ink} />
       </View>
     );
   }
@@ -204,7 +204,7 @@ export default function RoutineDetailScreen() {
           size={44}
           color={C.muted}
         />
-        <Txt weight="bold" className="mt-4 text-lg">
+        <Txt weight="semibold" className="mt-4 text-lg">
           Routine unavailable
         </Txt>
         <Txt className="mt-1 text-center text-sm text-muted">
@@ -212,9 +212,9 @@ export default function RoutineDetailScreen() {
         </Txt>
         <Pressable
           onPress={() => load()}
-          className="mt-5 rounded-full bg-brand px-6 py-3"
+          className="mt-5 rounded-full bg-ink px-6 py-3"
         >
-          <Txt weight="bold" className="text-bg">
+          <Txt weight="semibold" className="text-bg">
             Try again
           </Txt>
         </Pressable>
@@ -249,7 +249,7 @@ export default function RoutineDetailScreen() {
               <MaterialCommunityIcons
                 name="dumbbell"
                 size={80}
-                color={C.brand}
+                color={C.ink}
                 style={{ opacity: 0.4 }}
               />
             </View>
@@ -264,11 +264,11 @@ export default function RoutineDetailScreen() {
             <MaterialCommunityIcons
               name="account-check-outline"
               size={22}
-              color={C.brand}
+              color={C.ink}
             />
             <Txt
               weight="semibold"
-              className="ml-1.5 text-lg tracking-wider text-brand"
+              className="ml-1.5 text-lg tracking-wider text-ink"
             >
               By {routine.author}
             </Txt>
@@ -293,7 +293,7 @@ export default function RoutineDetailScreen() {
               <Tag
                 icon="target"
                 label={routine.goal.replace(/_/g, " ")}
-                color={C.brand}
+                color={C.ink}
               />
             ) : null}
           </View>
@@ -308,7 +308,7 @@ export default function RoutineDetailScreen() {
           <View className="mt-6 flex-row gap-3">
             <StatTile
               icon="timer-outline"
-              color={C.brand}
+              color={C.ink}
               value={`${routine.estimated_minutes}`}
               label="MINUTES"
             />
@@ -328,7 +328,7 @@ export default function RoutineDetailScreen() {
 
           {/* Exercises */}
           <View className="mb-4 mt-9 flex-row items-center justify-between">
-            <Txt weight="bold" className="text-[22px]">
+            <Txt weight="semibold" className="text-[22px]">
               Exercises
             </Txt>
             <Txt className="text-sm text-white/80">{exercises.length} total</Txt>
@@ -341,13 +341,13 @@ export default function RoutineDetailScreen() {
             >
               <View className="flex-row items-center">
                 <View className="h-11 w-11 items-center justify-center rounded-2xl bg-green-600/20">
-                  <Txt weight="extra" className="text-brand">
+                  <Txt weight="semibold" className="text-ink">
                     {index + 1}
                   </Txt>
                 </View>
 
                 <View className="ml-3 flex-1">
-                  <Txt weight="bold" className="text-[16px]" numberOfLines={2}>
+                  <Txt weight="semibold" className="text-[16px]" numberOfLines={2}>
                     {item.exercises.name}
                   </Txt>
 
@@ -364,7 +364,7 @@ export default function RoutineDetailScreen() {
                 </View>
 
                 <View className="ml-2 rounded-full bg-elevated px-3 py-1.5">
-                  <Txt weight="bold" className="text-[13px]">
+                  <Txt weight="semibold" className="text-[13px]">
                     {item.sets} ×{" "}
                     {item.min_reps === item.max_reps
                       ? item.min_reps
@@ -393,7 +393,7 @@ export default function RoutineDetailScreen() {
 
       {/* Sticky save bar */}
       <View
-        className="absolute bottom-0 left-0 right-0 border-t border-border bg-bg px-5 pt-4"
+        className="absolute bottom-0 left-0 right-0 bg-bg px-5 pt-4"
         style={{ paddingBottom: Math.max(insets.bottom, 16) }}
       >
         <Pressable
@@ -402,7 +402,7 @@ export default function RoutineDetailScreen() {
           accessibilityRole="button"
           accessibilityLabel={saved ? "Routine saved" : "Save routine"}
           className={`h-14 flex-row items-center justify-center rounded-full ${
-            saved ? "bg-green-500/15" : "bg-brand"
+            saved ? "bg-ink/15" : "bg-ink"
           }`}
         >
           {saving ? (
@@ -415,7 +415,7 @@ export default function RoutineDetailScreen() {
                 color={saved ? GREEN : C.bg}
               />
               <Txt
-                weight="bold"
+                weight="semibold"
                 className="ml-2 text-base"
                 style={{ color: saved ? GREEN : C.bg }}
               >

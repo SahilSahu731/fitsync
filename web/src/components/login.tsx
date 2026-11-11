@@ -60,7 +60,7 @@ export function Login({ register = false }: { register?: boolean }) {
           await reload();
           const destination = new URLSearchParams(window.location.search).get("next");
           window.location.assign(
-            destination && /^\/(admin|exercises|user)(\/|\?|$)/.test(destination)
+            destination && /^\/(admin|exercises|user|programs|routines)(\/|\?|$)/.test(destination)
               ? destination
               : "/user/home",
           );
@@ -108,7 +108,7 @@ export function Login({ register = false }: { register?: boolean }) {
               <h1 className="text-[clamp(3.25rem,12vw,4rem)] leading-[1.02] font-semibold tracking-[-0.06em]">
                 {register ? "Make your" : "Welcome"}
                 <br />
-                <span className="text-brand">{register ? "first move." : "back."}</span>
+                <span className="text-white">{register ? "first move." : "back."}</span>
               </h1>
               <p className="mt-5 max-w-85 text-base leading-7 text-muted sm:text-lg sm:leading-8">
                 {register
@@ -125,13 +125,13 @@ export function Login({ register = false }: { register?: boolean }) {
                       : "Log in to FitSync"}
                 </h2>
                 {account ? (
-                  <div className="rounded-2xl border border-line bg-panel p-5">
+                  <div className="rounded-2xl bg-panel p-5">
                     <p className="mb-4 break-words text-sm text-muted">
                       Signed in as <span className="font-medium text-ink">{account.user.name}</span>
                     </p>
                     <Link
                       href={admin ? "/admin/exercises" : "/user/home"}
-                      className="group flex min-h-13 items-center justify-between gap-4 rounded-full bg-brand px-5 py-3 text-sm font-semibold text-background transition-colors hover:bg-brand-hover"
+                      className="group flex min-h-13 items-center justify-between gap-4 rounded-full bg-white px-5 py-3 text-sm font-semibold text-background transition-colors hover:bg-white/85"
                     >
                       Go to your workspace
                       <ArrowUpRight
@@ -153,7 +153,7 @@ export function Login({ register = false }: { register?: boolean }) {
                         {!ready && !error && (
                           <div
                             role="status"
-                            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-3 rounded-full border border-line bg-panel px-4 text-sm text-muted"
+                            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-3 rounded-full bg-white/6 bg-panel px-4 text-sm text-muted"
                           >
                             <LoaderCircle
                               size={17}
@@ -166,7 +166,7 @@ export function Login({ register = false }: { register?: boolean }) {
                     ) : (
                       <div
                         role="status"
-                        className="flex items-start gap-3 rounded-xl border border-line bg-panel p-4"
+                        className="flex items-start gap-3 rounded-2xl bg-panel p-4"
                       >
                         <CircleAlert size={18} className="mt-0.5 text-brand" />
                         <div>
@@ -189,7 +189,7 @@ export function Login({ register = false }: { register?: boolean }) {
                     {error && (
                       <div
                         role="alert"
-                        className="mt-4 flex items-start gap-3 rounded-xl border border-line bg-panel p-4"
+                        className="mt-4 flex items-start gap-3 rounded-2xl bg-panel p-4"
                       >
                         <CircleAlert size={18} className="mt-0.5 text-brand" />
                         <div className="min-w-0">
@@ -228,7 +228,7 @@ export function Login({ register = false }: { register?: boolean }) {
                 </Link>
               </p>
 
-              <div className="mt-7 space-y-5 border-t border-line pt-7">
+              <div className="mt-7 space-y-5  pt-7">
                 {[
                   {
                     icon: Dumbbell,
@@ -242,8 +242,8 @@ export function Login({ register = false }: { register?: boolean }) {
                   },
                 ].map(({ icon: FeatureIcon, title, description }) => (
                   <div key={title} className="flex items-start gap-3.5">
-                    <span className="flex size-9 items-center justify-center rounded-full border border-line">
-                      <FeatureIcon size={17} strokeWidth={1.5} className="text-brand" />
+                    <span className="flex size-9 items-center justify-center rounded-full bg-white/6">
+                      <FeatureIcon size={17} strokeWidth={1.5} className="text-white" />
                     </span>
                     <div>
                       <h3 className="text-sm font-medium tracking-normal">{title}</h3>
@@ -255,14 +255,14 @@ export function Login({ register = false }: { register?: boolean }) {
             </div>
           </div>
 
-          <footer className="mx-auto flex w-full max-w-110 flex-wrap items-center justify-between gap-3 border-t border-line py-6 text-[11px] text-muted">
+          <footer className="mx-auto flex w-full max-w-110 flex-wrap items-center justify-between gap-3  py-6 text-[11px] text-muted">
             <span>Built around you. Built for your next.</span>
             <span>FitSync © {new Date().getFullYear()}</span>
           </footer>
         </section>
 
         <aside
-          className="relative mx-5 mb-5 min-h-85 overflow-hidden rounded-3xl border border-line bg-panel sm:mx-12 lg:my-5 lg:mr-5 lg:ml-0 lg:min-h-[calc(100svh-2.5rem)]"
+          className="relative mx-5 mb-5 min-h-85 overflow-hidden rounded-3xl  bg-panel sm:mx-12 lg:my-5 lg:mr-5 lg:ml-0 lg:min-h-[calc(100svh-2.5rem)]"
           aria-label="A moment for your next session"
         >
           <Image
@@ -271,7 +271,7 @@ export function Login({ register = false }: { register?: boolean }) {
             fill
             preload
             sizes="(max-width: 1023px) 100vw, 52vw"
-            className="object-cover object-[50%_45%]"
+            className="object-cover object-[50%_45%] grayscale"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/5 to-black/35" />
           <div className="absolute inset-x-6 top-6 flex items-center justify-between gap-4 text-[9px] font-medium tracking-[0.17em] text-white/75 sm:inset-x-8 sm:top-8 xl:inset-x-11 xl:top-10">
@@ -279,7 +279,6 @@ export function Login({ register = false }: { register?: boolean }) {
               <span className="size-1.5 rounded-full bg-brand" />
               THE MOMENT BEFORE YOUR NEXT.
             </span>
-            <span className="hidden font-mono text-white/45 sm:block">FS / 01</span>
           </div>
           <div className="absolute inset-x-6 bottom-7 sm:inset-x-8 sm:bottom-9 xl:inset-x-11 xl:bottom-11">
             <p className="mb-4 text-[10px] font-medium tracking-[0.18em] text-brand">
@@ -288,9 +287,9 @@ export function Login({ register = false }: { register?: boolean }) {
             <h2 className="text-[34px] leading-[1.02] font-medium tracking-[-0.055em] sm:text-5xl lg:text-[clamp(2.7rem,4.6vw,4.8rem)]">
               {register ? "Every story starts" : "A little time."}
               <br />
-              <span className="text-brand">{register ? "with showing up." : "All yours."}</span>
+              <span className="text-white">{register ? "with showing up." : "All yours."}</span>
             </h2>
-            <div className="mt-5 flex items-end justify-between gap-5 border-t border-white/20 pt-5">
+            <div className="mt-5 flex items-end justify-between gap-5  pt-5">
               <p className="max-w-70 text-xs leading-6 text-white/65 sm:text-sm">
                 No perfect starting point.
                 <br />
@@ -299,7 +298,7 @@ export function Login({ register = false }: { register?: boolean }) {
               <svg
                 viewBox="0 0 92 64"
                 fill="none"
-                className="w-19 text-brand/80 sm:w-22"
+                className="w-19 text-white/60 sm:w-22"
                 aria-hidden="true"
               >
                 <path

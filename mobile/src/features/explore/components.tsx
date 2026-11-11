@@ -10,7 +10,6 @@ import { C } from "@/src/constants/theme";
 
 import type { ExploreCard, ExploreDestination } from "./api";
 
-
 import { EXPLORE_LABELS } from "./navigation";
 import { ToolDefinition } from "./tools";
 
@@ -40,18 +39,16 @@ export function ExploreHeader({
         onPress={onBack}
         accessibilityRole="button"
         accessibilityLabel="Go back"
-        className="mb-5 h-10 w-10 items-center justify-center rounded-full bg-panel"
+        className="mb-6 h-11 w-11 items-center justify-center rounded-full bg-panel"
       >
         <MaterialCommunityIcons name="arrow-left" color={C.ink} size={22} />
       </Pressable>
 
-      <Txt weight="bold" className="text-[32px]">
+      <Txt weight="medium" className="text-[34px] leading-[42px] tracking-[-1px]">
         {title}
       </Txt>
 
-      {subtitle ? (
-        <Txt className="mt-1 text-sm text-muted">{subtitle}</Txt>
-      ) : null}
+      {subtitle ? <Txt className="mt-1 text-sm text-muted">{subtitle}</Txt> : null}
     </View>
   );
 }
@@ -72,7 +69,7 @@ export function ExploreCardTile({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Open ${card.title}`}
-      className="min-w-0 flex-1 overflow-hidden rounded-2xl bg-panel active:opacity-80"
+      className="min-w-0 flex-1 overflow-hidden rounded-[24px] bg-panel active:opacity-80"
     >
       <View
         className={`items-center justify-center overflow-hidden bg-elevated ${
@@ -90,16 +87,12 @@ export function ExploreCardTile({
             }}
           />
         ) : (
-          <MaterialCommunityIcons
-            name={SECTION_ICONS[card.section]}
-            size={40}
-            color={C.brand}
-          />
+          <MaterialCommunityIcons name={SECTION_ICONS[card.section]} size={40} color={C.ink} />
         )}
       </View>
 
-      <View className="min-h-[80px] justify-between p-3">
-        <Txt numberOfLines={2} weight="bold" className="text-[16px] leading-5">
+      <View className="min-h-[96px] justify-between p-4">
+        <Txt numberOfLines={2} weight="medium" className="text-base leading-6">
           {card.title}
         </Txt>
 
@@ -111,13 +104,7 @@ export function ExploreCardTile({
   );
 }
 
-export function ToolTile({
-  tool,
-  onPress,
-}: {
-  tool: ToolDefinition;
-  onPress: () => void;
-}) {
+export function ToolTile({ tool, onPress }: { tool: ToolDefinition; onPress: () => void }) {
   return (
     <Pressable
       onPress={onPress}
@@ -126,13 +113,20 @@ export function ToolTile({
       className="min-w-0 flex-1 justify-between rounded-2xl bg-panel p-4 active:opacity-80"
       style={{ minHeight: 140 }}
     >
-      {tool.cover_url ? <Image source={{ uri: tool.cover_url }} style={{ width: "100%", height: 100, borderRadius: 12, marginBottom: 12 }} resizeMode="cover" accessibilityLabel={tool.name} /> : null}
-      <View className="h-11 w-11 items-center justify-center rounded-2xl bg-brand/10">
-        <MaterialCommunityIcons name={tool.icon} size={26} color={C.brand} />
+      {tool.cover_url ? (
+        <Image
+          source={{ uri: tool.cover_url }}
+          style={{ width: "100%", height: 100, borderRadius: 12, marginBottom: 12 }}
+          resizeMode="cover"
+          accessibilityLabel={tool.name}
+        />
+      ) : null}
+      <View className="h-11 w-11 items-center justify-center rounded-2xl bg-white/5">
+        <MaterialCommunityIcons name={tool.icon} size={26} color={C.ink} />
       </View>
 
       <View className="mt-5">
-        <Txt weight="bold" numberOfLines={2} className="">
+        <Txt weight="semibold" numberOfLines={2} className="text-sm leading-6">
           {tool.name}
         </Txt>
 
@@ -163,7 +157,7 @@ export function ExploreSectionBlock({
   return (
     <View className="mt-9">
       <View className="mb-4 flex-row items-center justify-between gap-2">
-        <Txt weight="bold" className="flex-1 text-[24px]">
+        <Txt weight="semibold" className="flex-1 text-xl tracking-[-0.5px]">
           {EXPLORE_LABELS[section]}
         </Txt>
 
@@ -173,29 +167,23 @@ export function ExploreSectionBlock({
           accessibilityLabel={`See all ${EXPLORE_LABELS[section]}`}
           className="flex-row items-center py-2 pl-3"
         >
-          <Txt weight="semibold" className="text-sm text-brand">
+          <Txt weight="semibold" className="text-sm text-ink">
             See all
           </Txt>
 
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={19}
-            color={C.brand}
-          />
+          <MaterialCommunityIcons name="chevron-right" size={19} color={C.ink} />
         </Pressable>
       </View>
 
       {warning ? (
-        <View className="rounded-xl border border-border bg-panel p-4">
+        <View className="rounded-xl bg-panel p-4">
           <Txt className="text-sm text-muted">
             This section couldn&apos;t load. Pull down to retry.
           </Txt>
         </View>
       ) : items.length === 0 ? (
-        <View className="rounded-xl border border-dashed border-border p-4">
-          <Txt className="text-sm text-muted">
-            No published content yet. Check back soon.
-          </Txt>
+        <View className="rounded-xl p-4">
+          <Txt className="text-sm text-muted">No published content yet. Check back soon.</Txt>
         </View>
       ) : (
         <View className="gap-3">
@@ -204,11 +192,7 @@ export function ExploreSectionBlock({
             .map((row, index) => (
               <View key={index} className="flex-row gap-3">
                 {row.map((item) => (
-                  <ExploreCardTile
-                    key={item.id}
-                    card={item}
-                    onPress={() => onOpen(item)}
-                  />
+                  <ExploreCardTile key={item.id} card={item} onPress={() => onOpen(item)} />
                 ))}
 
                 {row.length === 1 ? <View className="flex-1" /> : null}

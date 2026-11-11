@@ -9,7 +9,8 @@ import "./globals.css";
 import { SessionProvider } from "@/components/session";
 export const metadata: Metadata = {
   title: { default: "FitSync — Training, tracking & progress", template: "%s | FitSync" },
-  description: "Learn exercises, build your fitness profile, and keep your training in sync.",
+  description:
+    "Bring your workouts, training plans, everyday health and progress together. A little more in sync, with FitSync.",
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

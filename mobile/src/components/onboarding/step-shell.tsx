@@ -43,7 +43,7 @@ export function StepShell({
           >
             <MaterialCommunityIcons name="arrow-left" size={24} color={C.ink} />
           </Pressable>
-          <Txt weight="semibold" className="text-base">
+          <Txt weight="semibold" className="text-sm">
             Your starting point
           </Txt>
           <Txt className="w-11 text-right text-[13px] text-muted">
@@ -59,7 +59,7 @@ export function StepShell({
           {STEPS.map((item, index) => (
             <View
               key={item.label}
-              className={`h-[3px] flex-1 rounded-full ${index <= step ? "bg-brand" : "bg-border"}`}
+              className={`h-[3px] flex-1 rounded-full ${index <= step ? "bg-ink" : "bg-border"}`}
             />
           ))}
         </View>
@@ -72,13 +72,13 @@ export function StepShell({
         contentContainerClassName="px-6 pb-8 pt-[18px]"
       >
         <Animated.View entering={stepEntrance}>
-          {/* <Txt weight="medium" className="mb-3 text-[13px] text-brand">
+          {/* <Txt weight="medium" className="mb-3 text-[13px] text-ink">
             {STEPS[step].label}
           </Txt> */}
           <Txt
             accessibilityRole="header"
-            weight="semibold"
-            className="text-[32px] leading-[38px] tracking-[-0.8px]"
+            weight="medium"
+            className="text-[34px] leading-[42px] tracking-[-1px]"
           >
             {STEPS[step].title}
           </Txt>
@@ -88,29 +88,33 @@ export function StepShell({
           {children}
         </Animated.View>
       </ScrollView>
-      <View className="shrink-0 border-t border-[#242427] px-6 pb-[18px] pt-3.5">
+      <View className="shrink-0 px-6 pb-[18px] pt-3.5">
         <Pressable
           accessibilityRole="button"
           accessibilityState={{ disabled: busy, busy }}
           disabled={busy}
           onPress={onNext}
-          className="min-h-14 flex-row items-center justify-center gap-3 rounded-2xl bg-brand p-4 active:scale-[0.98] active:bg-[#E8682C]"
+          className="min-h-14 flex-row items-center justify-center gap-3 rounded-full bg-ink p-4 active:scale-[0.98] active:bg-white/80"
         >
-          {busy && <ActivityIndicator size="small" color={C.bg} accessibilityLabel={saving ? "Saving setup" : "Opening next step"} />}
+          {busy && (
+            <ActivityIndicator
+              size="small"
+              color={C.bg}
+              accessibilityLabel={saving ? "Saving setup" : "Opening next step"}
+            />
+          )}
           <Txt accessibilityLiveRegion="polite" weight="semibold" className="text-[17px] text-bg">
             {saving
               ? "Saving your setup…"
               : transitioning
                 ? "Continuing…"
-              : editing
-                ? "Save changes"
-                : step === STEPS.length - 1
-                  ? "Finish my setup"
-                  : "Continue"}
+                : editing
+                  ? "Save changes"
+                  : step === STEPS.length - 1
+                    ? "Finish my setup"
+                    : "Continue"}
           </Txt>
-          {!busy && (
-            <MaterialCommunityIcons name="arrow-right" size={20} color={C.bg} />
-          )}
+          {!busy && <MaterialCommunityIcons name="arrow-right" size={20} color={C.bg} />}
         </Pressable>
         {step === 6 && !editing && (
           <Pressable

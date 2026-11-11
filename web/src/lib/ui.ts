@@ -1,9 +1,9 @@
-/** Shared Tailwind variants for database-backed status and difficulty values. */
+/** Neutral badges keep catalog status readable without decorative outlines. */
 export const badgeClasses: Record<string, string> = {
-  published: "bg-brand/40! text-ink!",
-  draft: "bg-surface! text-muted! ring-1 ring-line",
+  published: "bg-white/10! text-white!",
+  draft: "bg-white/5! text-muted!",
   archived: "bg-panel-raised! text-muted!",
-  beginner: "bg-brand! text-background!",
-  intermediate: "bg-panel-raised! text-ink! ring-1 ring-inset ring-line",
-  advanced: "bg-background! text-brand! ring-1 ring-inset ring-line",
+  beginner: "bg-white/90! text-black!",
+  intermediate: "bg-white/15! text-white!",
+  advanced: "bg-white/8! text-white!",
 };

@@ -7,87 +7,126 @@ import { useSession } from "./session";
 import { Icon } from "./icon";
 export function UserOverview() {
   const { account, admin } = useSession();
+  const firstName = account?.user.name.split(" ")[0] || "there";
   return (
     <>
-      <div className="mb-8 flex flex-wrap items-start justify-between gap-5 [&_h1]:mt-3 [&_p:not(:first-child)]:mt-4 [&_p:not(:first-child)]:max-w-2xl [&_p:not(:first-child)]:text-muted">
+      <div className="mb-12 flex flex-wrap items-start justify-between gap-6">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
-            Your fitness, in sync
+          <p className="text-xs tracking-[.12em] text-white/55 uppercase">Your FitSync</p>
+          <h1 className="mt-5 text-[clamp(2.8rem,5vw,4.5rem)] leading-tight font-medium tracking-[-.06em]">
+            Good to see you, {firstName}.
+          </h1>
+          <p className="mt-4 text-sm leading-7 text-white/55">
+            A little time for yourself. A little more in sync.
           </p>
-          <h1>Hey, {account?.user.name.split(" ")[0]}.</h1>
-          <p>Every session is another step forward. Make today count.</p>
         </div>
         {admin && (
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
             href="/admin"
+            className="inline-flex min-h-11 items-center gap-3 rounded-full bg-white/8 px-5 text-xs"
           >
             Admin workspace
-            <Icon name="arrow" size={16} />
+            <Icon name="arrow" size={15} />
           </Link>
         )}
       </div>
-      <div className="mb-7 bg-background p-7 text-white sm:p-10 [&_h2]:text-3xl [&_p]:mt-4 [&_p]:max-w-xl [&_p]:text-white/65 [&_a]:mt-6">
-        <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-md bg-brand text-background">
-          <Icon name="dumbbell" size={32} />
-        </span>
-        <h2>Find your next movement.</h2>
-        <p>
-          Explore exercises for your goals, your equipment, and the way you train. Learn the
-          technique before your next session.
-        </p>
-        <Link
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          href="/exercises"
-        >
-          Explore the library
-          <Icon name="arrow" size={17} />
-        </Link>
-      </div>
-      <div className="mb-7 grid grid-cols-2 gap-4 xl:grid-cols-4">
-        {[
-          ["Your goal", account?.profile ? pretty(account.profile.goal) : "Let’s set one"],
-          ["Experience", account?.profile ? pretty(account.profile.experience) : "Not set"],
-          [
-            "Training days",
-            account?.profile ? `${account.profile.trainingDays} / week` : "Not set",
-          ],
-          [
-            "Session length",
-            account?.profile ? `${account.profile.minutesPerWorkout} min` : "Not set",
-          ],
-        ].map(([label, value]) => (
-          <div
-            className="rounded-lg border border-line bg-panel relative p-5 sm:p-6 [&>span]:text-sm [&>span]:text-muted [&>strong]:mt-3 [&>strong]:block [&>strong]:text-4xl [&>strong]:font-semibold [&>svg]:absolute [&>svg]:top-6 [&>svg]:right-5 [&>svg]:text-ink max-sm:[&>svg]:hidden [&>strong]:text-2xl!"
-            key={label}
+      <section className="grid gap-8 rounded-3xl bg-panel p-7 sm:p-10 lg:grid-cols-[1.4fr_1fr] lg:gap-16">
+        <div>
+          <span className="inline-flex size-12 items-center justify-center rounded-2xl bg-white/8">
+            <Icon name="dumbbell" size={23} />
+          </span>
+          <h2 className="mt-8 text-3xl leading-tight font-medium tracking-[-.04em]">
+            Where would you like
+            <br />
+            to take today?
+          </h2>
+          <p className="mt-5 max-w-md text-sm leading-7 text-white/50">
+            Find your next session, get to know a movement, or update the goals that guide your
+            training.
+          </p>
+          <Link
+            href="/programs"
+            className="mt-7 inline-flex min-h-12 items-center gap-5 rounded-full bg-white px-6 text-sm font-medium text-black"
           >
-            <span>{label}</span>
-            <strong>{value}</strong>
-          </div>
+            Explore training
+            <Icon name="arrow" size={17} />
+          </Link>
+        </div>
+        <div className="grid grid-cols-2 content-center gap-5">
+          {[
+            ["Your goal", account?.profile ? pretty(account.profile.goal) : "Let’s set one"],
+            ["Experience", account?.profile ? pretty(account.profile.experience) : "Not set"],
+            [
+              "Training days",
+              account?.profile ? `${account.profile.trainingDays} / week` : "Not set",
+            ],
+            [
+              "Session length",
+              account?.profile ? `${account.profile.minutesPerWorkout} min` : "Not set",
+            ],
+          ].map(([label, value]) => (
+            <div key={label} className="rounded-2xl bg-black/35 p-5">
+              <p className="text-xs text-white/50">{label}</p>
+              <p className="mt-4 text-xl font-medium tracking-tight">{value}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+      <div className="mt-6 grid gap-6 md:grid-cols-2">
+        {[
+          {
+            href: "/exercises",
+            icon: "dumbbell",
+            title: "Find your next movement.",
+            text: "Technique, demonstrations and exercises for your equipment.",
+          },
+          {
+            href: "/user/profile",
+            icon: "user",
+            title: account?.profile
+              ? "A profile that grows with you."
+              : "Make this a little more you.",
+            text: "Keep your goals, experience and preferences in sync with the mobile app.",
+          },
+        ].map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className="group rounded-3xl bg-panel p-7 transition-colors hover:bg-panel-raised sm:p-8"
+          >
+            <div className="flex justify-between text-white/55">
+              <Icon name={item.icon} size={24} />
+              <Icon
+                name="arrow"
+                size={19}
+                className="transition-transform group-hover:translate-x-1"
+              />
+            </div>
+            <h2 className="mt-8 text-xl font-medium tracking-tight">{item.title}</h2>
+            <p className="mt-4 max-w-md text-sm leading-7 text-white/55">{item.text}</p>
+          </Link>
         ))}
       </div>
-      <div className="rounded-lg border border-line bg-panel flex flex-col items-start justify-between gap-6 p-7 sm:flex-row sm:items-center [&_p]:mt-3 [&_p]:max-w-xl [&_p]:text-muted">
+      <div className="mt-12 flex flex-col justify-between gap-5 rounded-3xl bg-white p-7 text-black sm:flex-row sm:items-center sm:p-9">
         <div>
-          <h2>
-            {account?.profile ? "A profile that moves with you." : "Let’s make this personal."}
-          </h2>
-          <p>
-            {account?.profile
-              ? "Update your goals and preferences as your training evolves."
-              : "Tell us about your goals and training preferences. Your profile also appears in the mobile app."}
+          <h2 className="text-xl font-medium tracking-tight">Take the everyday with you.</h2>
+          <p className="mt-3 max-w-xl text-sm leading-7 text-black/55">
+            Log workouts, check in on your health, and follow your plan in FitSync mobile. Your
+            account brings it together.
           </p>
         </div>
         <Link
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
-          href="/user/profile"
+          href="/#app-preview"
+          className="inline-flex min-h-12 shrink-0 items-center gap-4 rounded-full bg-black px-6 text-sm text-white"
         >
-          {account?.profile ? "Edit profile" : "Set up profile"}
+          Explore the app
           <Icon name="arrow" size={16} />
         </Link>
       </div>
     </>
   );
 }
+
 export function ProfileForm({ settings = false }: { settings?: boolean }) {
   const { account, updateAccount } = useSession();
   const [busy, setBusy] = useState(false);
@@ -198,7 +237,7 @@ export function ProfileForm({ settings = false }: { settings?: boolean }) {
       </div>
       <form
         onSubmit={save}
-        className="rounded-lg border border-line bg-panel p-5 sm:p-7 max-w-4xl [&_h2]:mb-6 [&_h2]:text-2xl"
+        className="rounded-3xl bg-panel p-5 sm:p-7 max-w-4xl [&_h2]:mb-6 [&_h2]:text-2xl"
       >
         <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0">
           {settings ? (
@@ -270,7 +309,7 @@ export function ProfileForm({ settings = false }: { settings?: boolean }) {
                   />
                 </label>
               </div>
-              <h2 className="mt-8 border-t border-line pt-8">Your training</h2>
+              <h2 className="mt-8  pt-8">Your training</h2>
               <div className="grid gap-5 sm:grid-cols-2">
                 {select("Primary goal", "goal", ["muscle", "strength", "fat_loss", "fitness"])}
                 {select("Experience", "experience", ["beginner", "intermediate", "advanced"])}
@@ -333,9 +372,9 @@ export function ProfileForm({ settings = false }: { settings?: boolean }) {
               </div>
             </>
           )}
-          <div className="mt-8 flex justify-end border-t border-line pt-6">
+          <div className="mt-8 flex justify-end  pt-6">
             <button
-              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               type="submit"
               disabled={busy}
             >
@@ -346,7 +385,7 @@ export function ProfileForm({ settings = false }: { settings?: boolean }) {
         </fieldset>
         {error && (
           <div
-            className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+            className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!"
             role="alert"
           >
             {error}
@@ -354,7 +393,7 @@ export function ProfileForm({ settings = false }: { settings?: boolean }) {
         )}
         {message && (
           <div
-            className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-brand! bg-brand/20! text-ink!"
+            className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink bg-white/10! text-ink!"
             role="status"
           >
             {message}

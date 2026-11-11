@@ -56,7 +56,7 @@ export function ExercisePicker({
           <MaterialCommunityIcons name="arrow-left" color={C.ink} size={26} />
         </Pressable>
         <View className="ml-3 flex-1">
-          <Txt weight="bold" className="text-2xl">
+          <Txt weight="semibold" className="text-2xl">
             {title}
           </Txt>
         </View>
@@ -72,7 +72,7 @@ export function ExercisePicker({
           placeholder="Name, muscle or equipment"
           placeholderTextColor={C.muted}
           accessibilityLabel="Search exercises"
-          className="h-14 flex-1 px-3 text-ink"
+          className="font-poppins-regular h-14 flex-1 px-3 text-ink"
         />
         {!!query && (
           <Pressable
@@ -93,7 +93,7 @@ export function ExercisePicker({
           {picked.length} selected
         </Txt>
         <Pressable disabled={saving} onPress={() => setSelected([])}>
-          <Txt className="text-sm text-brand">Clear selection</Txt>
+          <Txt className="text-sm text-ink">Clear selection</Txt>
         </Pressable>
       </View>
       <PickerResults
@@ -114,7 +114,7 @@ export function ExercisePicker({
         }
       />
       <View
-        className="border-t border-border bg-panel px-5 pt-3"
+        className="bg-panel px-5 pt-3"
         style={{ paddingBottom: Math.max(16, insets.bottom) }}
       >
         {!!error && (
@@ -143,13 +143,13 @@ export function ExercisePicker({
               setSaving(false);
             }
           }}
-          className={`h-14 flex-row items-center justify-center rounded-2xl ${picked.length ? "bg-brand" : "bg-elevated"}`}
+          className={`h-14 flex-row items-center justify-center rounded-2xl ${picked.length ? "bg-ink" : "bg-elevated"}`}
         >
           {saving && (
             <ActivityIndicator color={C.bg} style={{ marginRight: 10 }} />
           )}
           <Txt
-            weight="bold"
+            weight="semibold"
             className={picked.length ? "text-bg text-lg" : "text-muted "}
           >
             {saving
@@ -250,7 +250,7 @@ function PickerResults({
       ListFooterComponent={
         <View className="items-center py-4">
           {loading ? (
-            <ActivityIndicator color={C.brand} />
+            <ActivityIndicator color={C.ink} />
           ) : error ? (
             <Pressable
               onPress={() => void next()}
@@ -260,7 +260,7 @@ function PickerResults({
             </Pressable>
           ) : hasMore ? (
             <Pressable onPress={() => void next()} className="p-3">
-              <Txt className="text-brand">Load 15 more</Txt>
+              <Txt className="text-ink">Load 15 more</Txt>
             </Pressable>
           ) : items.length > 0 ? (
             <Txt className="text-xs text-muted">
@@ -284,7 +284,7 @@ function PickerResults({
               checked: position >= 0 || exists,
               disabled: blocked,
             }}
-            className={`mb-2 flex-row items-center rounded-2xl border p-3 ${position >= 0 ? "border-brand bg-brand/10" : " bg-panel"}`}
+            className={`mb-2 flex-row items-center rounded-2xl  p-3 ${position >= 0 ? " bg-white/5" : " bg-panel"}`}
           >
             <ExerciseImage uri={item.imageUrl} name={item.name} size={60} />
             <View className="mx-3 flex-1">
@@ -299,10 +299,10 @@ function PickerResults({
               )}
             </View>
             <View
-              className={`h-8 w-8 items-center justify-center rounded-full ${position >= 0 ? "bg-brand" : "bg-elevated"}`}
+              className={`h-8 w-8 items-center justify-center rounded-full ${position >= 0 ? "bg-ink" : "bg-elevated"}`}
             >
               {position >= 0 ? (
-                <Txt weight="bold" className="text-bg">
+                <Txt weight="semibold" className="text-bg">
                   {position + 1}
                 </Txt>
               ) : (

@@ -197,19 +197,19 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
         {admin ? (
           <Link
             href="/admin/exercises/new"
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           >
             <Icon name="plus" size={18} />
             Add exercise
           </Link>
         ) : (
-          <span className="hidden size-20 shrink-0 -rotate-6 items-center justify-center bg-brand text-background sm:flex">
+          <span className="hidden size-20 shrink-0 -rotate-6 items-center justify-center bg-white text-black sm:flex">
             <Icon name="dumbbell" size={42} />
           </span>
         )}
       </div>
       {admin && (
-        <div className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-line! bg-surface! text-ink!">
+        <div className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!">
           <Icon name="image" />
           <span>
             Start with an image. Add an optional GIF or MP4 demonstration whenever you’re ready.
@@ -217,7 +217,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
         </div>
       )}
       <form
-        className="rounded-lg border border-line bg-panel mb-7 p-5 sm:p-6"
+        className="rounded-3xl bg-panel mb-7 p-5 sm:p-6"
         onSubmit={(e) => {
           e.preventDefault();
           setPage(1);
@@ -260,7 +260,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
               ["draft", "published", "archived"].map((code) => ({ code, label: pretty(code) })),
             )}
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             type="submit"
           >
             <Icon name="filter" size={17} />
@@ -268,7 +268,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
           </button>
           <button
             type="button"
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-transparent! text-muted! hover:bg-surface! hover:text-ink!"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-transparent! text-muted! hover:bg-surface! hover:text-ink!"
             onClick={() => {
               const blank = {
                 q: "",
@@ -295,7 +295,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
       </div>
       {error && (
         <div
-          className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+          className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!"
           role="alert"
         >
           {error}
@@ -315,7 +315,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
         >
           {Array.from({ length: 6 }, (_, n) => (
             <div
-              className="h-80 overflow-hidden rounded-lg border border-line bg-panel [&>div]:h-50 [&>div]:animate-pulse [&>div]:bg-surface [&>span]:m-5 [&>span]:block [&>span]:h-4 [&>span]:w-2/3 [&>span]:bg-surface"
+              className="h-80 overflow-hidden rounded-3xl bg-panel [&>div]:h-50 [&>div]:animate-pulse [&>div]:bg-surface [&>span]:m-5 [&>span]:block [&>span]:h-4 [&>span]:w-2/3 [&>span]:bg-surface"
               key={n}
             >
               <div />
@@ -328,7 +328,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
         data &&
         (data.items.length ? (
           admin ? (
-            <div className="rounded-lg border border-line bg-panel overflow-x-auto">
+            <div className="rounded-3xl bg-panel overflow-x-auto">
               <table className="w-full border-collapse text-left whitespace-nowrap [&_th]:border-b [&_th]:border-line [&_th]:bg-surface [&_th]:px-5 [&_th]:py-4 [&_th]:text-xs [&_th]:font-semibold [&_th]:tracking-wide [&_th]:text-muted [&_th]:uppercase [&_td]:border-b [&_td]:border-line [&_td]:px-5 [&_td]:py-4 [&_td]:text-sm [&_tr:last-child_td]:border-b-0 [&_tbody_tr]:hover:bg-surface/60 [&_small]:mt-1 [&_small]:block [&_small]:text-xs [&_small]:text-muted">
                 <thead>
                   <tr>
@@ -349,7 +349,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
                           className="flex items-center gap-3 [&_strong]:block [&_strong]:max-w-64 [&_strong]:whitespace-normal"
                           href={`/admin/exercises/${exercise.id}/edit`}
                         >
-                          <span className="block size-14 shrink-0 overflow-hidden rounded-md border border-line [&_img]:size-full [&_img]:object-cover [&_video]:size-full [&_video]:object-cover [&>div]:min-h-0 [&>div]:h-full [&>div]:gap-0 [&_svg]:size-6 [&_span]:hidden">
+                          <span className="block size-14 shrink-0 overflow-hidden rounded-xl [&_img]:size-full [&_img]:object-cover [&_video]:size-full [&_video]:object-cover [&>div]:min-h-0 [&>div]:h-full [&>div]:gap-0 [&_svg]:size-6 [&_span]:hidden">
                             <MediaPreview exercise={exercise} />
                           </span>
                           <span>
@@ -377,7 +377,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
                       </td>
                       <td>
                         <span
-                          className={`inline-flex w-fit items-center whitespace-nowrap rounded-sm bg-surface px-2.5 py-1 text-xs font-semibold text-ink ${badgeClasses[exercise.status] ?? ""}`}
+                          className={`inline-flex w-fit items-center whitespace-nowrap rounded-full bg-white/6 px-3 py-1 text-xs font-semibold text-ink ${badgeClasses[exercise.status] ?? ""}`}
                         >
                           {pretty(exercise.status)}
                         </span>
@@ -409,14 +409,14 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
             <div className="grid gap-6 sm:grid-cols-2 xl:grid-cols-3">
               {data.items.map((exercise) => (
                 <Link
-                  className="overflow-hidden rounded-lg border border-line bg-panel transition-transform hover:-translate-y-1 hover:border-ink/40"
+                  className="overflow-hidden rounded-3xl bg-panel transition-transform hover:-translate-y-1 "
                   key={exercise.id}
                   href={`/exercises/${exercise.slug}`}
                 >
                   <div className="relative aspect-[16/10] overflow-hidden bg-surface [&>img]:size-full [&>img]:object-contain [&>video]:size-full [&>video]:object-contain">
                     <MediaPreview exercise={exercise} />
                     <span
-                      className={`inline-flex w-fit items-center whitespace-nowrap rounded-sm bg-surface px-2.5 py-1 text-xs font-semibold text-ink absolute top-3 left-3 ${badgeClasses[exercise.difficulty] ?? ""}`}
+                      className={`inline-flex w-fit items-center whitespace-nowrap rounded-full bg-white/6 px-3 py-1 text-xs font-semibold text-ink absolute top-3 left-3 ${badgeClasses[exercise.difficulty] ?? ""}`}
                     >
                       {pretty(exercise.difficulty)}
                     </span>
@@ -433,7 +433,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
                     </p>
                     <h2>{exercise.name}</h2>
                     <p>{exercise.primaryMuscles.map(pretty).join(" · ") || exercise.regionLabel}</p>
-                    <div className="mt-5 flex items-center justify-between gap-3 border-t border-line pt-4 text-sm text-muted">
+                    <div className="mt-5 flex items-center justify-between gap-3  pt-4 text-sm text-muted">
                       <span>{exercise.equipment.map(pretty).join(", ") || "No equipment"}</span>
                       <Icon name="arrow" size={18} />
                     </div>
@@ -443,7 +443,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
             </div>
           )
         ) : (
-          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5 px-5 py-20 text-center [&>p]:max-w-lg [&>p]:leading-7 [&>p]:text-muted [&>h2]:text-3xl rounded-lg border border-line bg-panel">
+          <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5 px-5 py-20 text-center [&>p]:max-w-lg [&>p]:leading-7 [&>p]:text-muted [&>h2]:text-3xl rounded-3xl bg-panel">
             <Icon name="search" size={32} />
             <h2>No exercises found</h2>
             <p>
@@ -454,7 +454,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
             {admin && (
               <Link
                 href="/admin/exercises/new"
-                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
               >
                 Add exercise
               </Link>
@@ -476,7 +476,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
         {loading && data && <span role="status">Loading more exercises…</span>}
         {!loading && !error && hasMore && (
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink min-h-10! px-4! py-2! text-sm!"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface!  min-h-10! px-4! py-2! text-sm!"
             onClick={loadMore}
           >
             Load more

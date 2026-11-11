@@ -242,7 +242,7 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
   return (
     <View>
       {/* Glass weighing-scale slab */}
-      <View className="overflow-hidden rounded-[36px] border border-white/15 bg-white/[0.06] px-4 pb-7 pt-4">
+      <View className="overflow-hidden rounded-[36px] bg-white/[0.06] px-4 pb-7 pt-4">
         {/* Light catching the top edge of the glass */}
         <LinearGradient
           pointerEvents="none"
@@ -251,13 +251,13 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
         />
 
         <View className="flex-row items-center justify-center gap-2 pb-3">
-          <MaterialCommunityIcons name="scale-bathroom" size={18} color={C.brand} />
+          <MaterialCommunityIcons name="scale-bathroom" size={18} color={C.ink} />
           <Txt className="text-sm text-white/60">Current weight</Txt>
         </View>
 
         {/* Readout */}
         <View
-          className="flex-row items-center justify-between rounded-3xl border border-white/10 px-3 py-3"
+          className="flex-row items-center justify-between rounded-3xl px-3 py-3"
           style={{ backgroundColor: GLASS_DARK }}
         >
           <Pressable
@@ -266,7 +266,7 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
             disabled={atMin}
             onPress={() => nudge(-step)}
             hitSlop={8}
-            className={`h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 active:bg-white/20 ${atMin ? "opacity-30" : ""}`}
+            className={`h-11 w-11 items-center justify-center rounded-full   bg-white/10 active:bg-white/20 ${atMin ? "opacity-30" : ""}`}
           >
             <MaterialCommunityIcons name="minus" size={22} color="#fff" />
           </Pressable>
@@ -289,14 +289,14 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
               returnKeyType="done"
               selectTextOnFocus
               maxLength={6}
-              className="min-w-[116px] p-0 text-center font-inter-semibold text-[60px] leading-[72px] text-white"
+              className="min-w-[116px] p-0 text-center font-poppins-semibold text-[60px] leading-[72px] text-white"
               style={{
                 textShadowColor: C.brand,
                 textShadowRadius: 16,
                 textShadowOffset: { width: 0, height: 0 },
               }}
             />
-            <Txt weight="medium" className="pb-2.5 text-lg text-brand">
+            <Txt weight="medium" className="pb-2.5 text-lg text-ink">
               {unit}
             </Txt>
           </View>
@@ -307,7 +307,7 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
             disabled={atMax}
             onPress={() => nudge(step)}
             hitSlop={8}
-            className={`h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 active:bg-white/20 ${atMax ? "opacity-30" : ""}`}
+            className={`h-11 w-11 items-center justify-center rounded-full   bg-white/10 active:bg-white/20 ${atMax ? "opacity-30" : ""}`}
           >
             <MaterialCommunityIcons name="plus" size={22} color="#fff" />
           </Pressable>
@@ -315,7 +315,7 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
 
         {/* Dial window */}
         <View
-          className="mt-3 h-[88px] overflow-hidden rounded-3xl border border-white/10"
+          className="mt-3 h-[88px] overflow-hidden rounded-3xl"
           style={{ backgroundColor: GLASS_DARK }}
         >
           <View
@@ -363,7 +363,7 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
             {/* Needle */}
             <View
               pointerEvents="none"
-              className="absolute left-1/2 top-0 -ml-[1.5px] h-[56px] w-[3px] rounded-b-full bg-brand"
+              className="absolute left-1/2 top-0 -ml-[1.5px] h-[56px] w-[3px] rounded-b-full bg-ink"
               style={{
                 shadowColor: C.brand,
                 shadowOpacity: 0.9,
@@ -375,8 +375,14 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
         </View>
 
         {/* Little rubber feet */}
-        <View pointerEvents="none" className="absolute bottom-2.5 left-10 h-1.5 w-10 rounded-full bg-white/15" />
-        <View pointerEvents="none" className="absolute bottom-2.5 right-10 h-1.5 w-10 rounded-full bg-white/15" />
+        <View
+          pointerEvents="none"
+          className="absolute bottom-2.5 left-10 h-1.5 w-10 rounded-full bg-white/15"
+        />
+        <View
+          pointerEvents="none"
+          className="absolute bottom-2.5 right-10 h-1.5 w-10 rounded-full bg-white/15"
+        />
       </View>
 
       <Txt className="mt-3 text-center text-sm text-muted">

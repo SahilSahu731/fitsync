@@ -81,7 +81,7 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
         <h1>Plan unavailable</h1>
         <p role="alert">{error || "This plan is no longer published."}</p>
         <button
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface! "
           onClick={() => {
             setLoading(true);
             setRetry((v) => v + 1);
@@ -119,7 +119,7 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
           <p className="mt-5 mb-10 max-w-2xl text-lg leading-8 text-muted sm:text-xl">
             {record.description}
           </p>
-          <div className="mt-2 mb-5 flex flex-wrap gap-2 [&_span]:rounded-sm [&_span]:border [&_span]:border-line [&_span]:px-3 [&_span]:py-1.5 [&_span]:text-xs [&_span]:text-muted">
+          <div className="mt-2 mb-5 flex flex-wrap gap-2 [&_span]:rounded-sm [&_span]:bg-white/5 [&_span]:px-3 [&_span]:py-1.5 [&_span]:text-xs [&_span]:text-muted">
             <span>{pretty(record.level)}</span>
             <span>{trainingLabels[record.goal]}</span>
             <span>{trainingLabels[record.equipment]}</span>
@@ -138,7 +138,7 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
               </p>
               {days.map((day) => (
                 <article
-                  className={`rounded-lg border border-line bg-panel mb-3 grid grid-cols-[3rem_minmax(0,1fr)] gap-3 p-5 [&>a]:col-start-2 [&_p]:mt-2 [&_p]:text-muted [&_details]:mt-4 [&_summary]:cursor-pointer [&_summary]:font-medium ${day.routine_id ? "" : "bg-surface!"}`}
+                  className={`rounded-3xl bg-panel mb-3 grid sm:grid-cols-[4rem_minmax(0,1fr)] gap-3 p-5 [&>a]:col-start-2 [&_p]:mt-2 [&_p]:text-muted [&_details]:mt-4 [&_summary]:cursor-pointer [&_summary]:font-medium ${day.routine_id ? "" : "bg-surface!"}`}
                   key={day.id}
                 >
                   <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
@@ -184,7 +184,7 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
             </section>
           )}
         </div>
-        <aside className="rounded-lg border border-line bg-panel self-start p-6 lg:sticky lg:top-25 [&_h2]:my-4 [&_p]:my-4 [&_p]:text-muted [&>small]:mt-5 [&>small]:block [&>small]:text-xs [&>small]:text-muted">
+        <aside className="rounded-3xl bg-panel self-start p-6 lg:sticky lg:top-25 [&_h2]:my-4 [&_p]:my-4 [&_p]:text-muted [&>small]:mt-5 [&>small]:block [&>small]:text-xs [&>small]:text-muted">
           <span className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
             Make it yours
           </span>
@@ -202,14 +202,14 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
             <p role="status">Checking your account…</p>
           ) : !account ? (
             <Link
-              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 mt-3 w-full"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 mt-3 w-full"
               href={`/login?next=${encodeURIComponent(`/${kind}/${id}`)}`}
             >
               Sign in to save
             </Link>
           ) : (
             <button
-              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 mt-3 w-full"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 mt-3 w-full"
               disabled={saving || saved}
               onClick={() => void save()}
             >
@@ -224,7 +224,7 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
           )}
           {saved && account && (
             <p
-              className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-brand! bg-brand/20! text-ink!"
+              className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink bg-white/10! text-ink!"
               role="status"
             >
               Ready in the mobile app’s Train tab. Sign in there with the same account.
@@ -232,7 +232,7 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
           )}
           {saveError && (
             <p
-              className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+              className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!"
               role="alert"
             >
               {saveError}
@@ -252,10 +252,9 @@ function ExerciseList({ routine }: { routine: Routine }) {
     (a, b) => a.position - b.position,
   );
   return (
-    <ol className="my-5 list-none [&_li]:flex [&_li]:gap-4 [&_li]:border-b [&_li]:border-line [&_li]:py-5 [&_h3]:text-lg [&_p]:my-2 [&_p]:text-sm [&_p]:text-muted [&_small]:block [&_small]:text-xs [&_small]:text-muted [&_a]:hover:underline">
-      {items.map((item, index) => (
+    <ol className="my-5 list-none [&_li]:flex [&_li]:gap-4  [&_li]:py-5 [&_h3]:text-lg [&_p]:my-2 [&_p]:text-sm [&_p]:text-muted [&_small]:block [&_small]:text-xs [&_small]:text-muted [&_a]:hover:underline">
+      {items.map((item) => (
         <li key={item.id}>
-          <span className="font-semibold text-ink">{String(index + 1).padStart(2, "0")}</span>
           <div>
             <h3>
               {item.exercises ? (

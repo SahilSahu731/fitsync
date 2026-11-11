@@ -29,10 +29,16 @@ export const SetRow = React.memo(function SetRow({
 }) {
   const { updateSet, startRest, busy } = useWorkout();
   const { feedback } = useExperience();
-  const [weight, setWeight] = useState(set.weight_kg == null ? (trackingType === "reps" ? "0" : "") : String(set.weight_kg));
+  const [weight, setWeight] = useState(
+    set.weight_kg == null ? (trackingType === "reps" ? "0" : "") : String(set.weight_kg),
+  );
   const [reps, setReps] = useState(set.reps == null ? "" : String(set.reps));
-  const [duration, setDuration] = useState(set.duration_seconds == null ? "" : String(set.duration_seconds));
-  const [distance, setDistance] = useState(set.distance_meters == null ? "" : String(set.distance_meters));
+  const [duration, setDuration] = useState(
+    set.duration_seconds == null ? "" : String(set.duration_seconds),
+  );
+  const [distance, setDistance] = useState(
+    set.distance_meters == null ? "" : String(set.distance_meters),
+  );
   const [type, setType] = useState(set.set_type);
   const [notes, setNotes] = useState(set.notes ?? "");
   const [rpe, setRpe] = useState(set.rpe?.toString() ?? "");
@@ -48,16 +54,14 @@ export const SetRow = React.memo(function SetRow({
     let active = true;
     void AsyncStorage.getItem(restKey)
       .then((value) => {
-        if (active && value !== null && Number.isFinite(Number(value)))
-          setRest(value);
+        if (active && value !== null && Number.isFinite(Number(value))) setRest(value);
       })
       .catch(console.warn);
     return () => {
       active = false;
     };
   }, [restKey]);
-  const timed =
-    trackingType === "duration" || trackingType === "distance_duration";
+  const timed = trackingType === "duration" || trackingType === "distance_duration";
   const weighted = !timed;
   const focus = () => onFocus?.(exerciseId);
   async function save(patch: Patch, toggle = false) {
@@ -69,7 +73,6 @@ export const SetRow = React.memo(function SetRow({
     const before = completed;
     if (toggle) {
       setCompleted(!before);
-
     }
     try {
       await updateSet(set.id, patch);
@@ -94,16 +97,16 @@ export const SetRow = React.memo(function SetRow({
       (weighted && !validNumber(weight, 100000)) ||
       (!timed && !validNumber(reps, 1000, true)) ||
       (timed && !validNumber(duration, 86400, true)) ||
-      (trackingType === "distance_duration" && distance.trim() !== "" && !validNumber(distance, 1000000))
+      (trackingType === "distance_duration" &&
+        distance.trim() !== "" &&
+        !validNumber(distance, 1000000))
     ) {
       setError("Enter valid, non-negative numbers before saving.");
       return null;
     }
     return {
       ...(weighted ? { weightKg: Number(weight) } : {}),
-      ...(!timed
-        ? { reps: Number(reps) }
-        : { durationSeconds: Number(duration) }),
+      ...(!timed ? { reps: Number(reps) } : { durationSeconds: Number(duration) }),
       ...(trackingType === "distance_duration"
         ? { distanceMeters: distance.trim() ? Number(distance) : null }
         : {}),
@@ -111,7 +114,7 @@ export const SetRow = React.memo(function SetRow({
   }
   const appearance = setAppearance(type);
   return (
-    <View className="mb-2 rounded-xl border bg-elevated px-2 py-2">
+    <View className="mb-2 rounded-xl bg-elevated px-2 py-2">
       <View className="flex-row items-end gap-2">
         <SetTypePicker
           value={type}
@@ -129,9 +132,7 @@ export const SetRow = React.memo(function SetRow({
               await updateSet(set.id, { setType: next });
             } catch (e) {
               setType(previous);
-              setError(
-                e instanceof Error ? e.message : "Could not save set type.",
-              );
+              setError(e instanceof Error ? e.message : "Could not save set type.");
             } finally {
               inFlight.current = false;
               setSaving(false);
@@ -183,34 +184,21 @@ export const SetRow = React.memo(function SetRow({
           />
         )}
         <Pressable
+          accessibilityRole="checkbox"
+          accessibilityState={{ checked: completed, disabled: saving || busy, busy: saving }}
           accessibilityLabel={completed ? "Undo completed set" : "Log set"}
           disabled={saving || busy}
           onPress={() => {
             const values = metrics();
-            if (values)
-              void save(
-                { ...values, setType: type, completed: !completed },
-                true,
-              );
+            if (values) void save({ ...values, setType: type, completed: !completed }, true);
           }}
-          className={`h-11 w-12 items-center justify-center rounded-lg ${completed ? "bg-brand" : "bg-white"}`}
+          className={`h-11 w-12 items-center justify-center rounded-lg ${completed ? "bg-ink" : "bg-white/10"}`}
         >
-          <Txt weight="bold" className="text-xs text-bg">
-            {completed ? (
-              <MaterialCommunityIcons
-                name={completed ? "close-circle" :"close-circle-outline"}
-                size={18}
-                color={"black"}
-              />
-              
-            ) : (
-              <MaterialCommunityIcons
-                name={completed ? "check-circle" : "check-circle-outline"}
-                size={18}
-                color={"black"}
-              />
-            )}
-          </Txt>
+          <MaterialCommunityIcons
+            name={completed ? "check" : "circle-outline"}
+            size={20}
+            color={completed ? C.bg : C.muted}
+          />
         </Pressable>
       </View>
       <Pressable
@@ -222,14 +210,8 @@ export const SetRow = React.memo(function SetRow({
         accessibilityLabel={`Edit rest, notes and effort for set ${number}`}
         className="mt-1 min-h-9 flex-row items-center gap-1"
       >
-        <MaterialCommunityIcons
-          name="timer-outline"
-          size={14}
-          color={C.muted}
-        />
-        <Txt className="text-xs text-muted">
-          {Number(rest) ? `${rest}s` : "Off"}
-        </Txt>
+        <MaterialCommunityIcons name="timer-outline" size={14} color={C.muted} />
+        <Txt className="text-xs text-muted">{Number(rest) ? `${rest}s` : "Off"}</Txt>
         <MaterialCommunityIcons
           name={notes ? "note-text" : "note-text-outline"}
           size={14}
@@ -238,7 +220,7 @@ export const SetRow = React.memo(function SetRow({
         <Txt className="flex-1 text-xs text-muted" numberOfLines={1}>
           {notes || "Notes & effort"}
         </Txt>
-        <Txt className="text-[10px] text-muted">
+        <Txt className="text-[11px] text-muted">
           {saving ? "Saving…" : completed ? "Logged" : ""}
         </Txt>
         <MaterialCommunityIcons name="chevron-down" size={14} color={C.muted} />
@@ -249,13 +231,8 @@ export const SetRow = React.memo(function SetRow({
         </Txt>
       )}
       {drawer === "details" && (
-        <WorkoutDrawer
-          title={`Set ${number} · notes & recovery`}
-          onClose={() => setDrawer(null)}
-        >
-          <Txt className="mb-2 text-muted">
-            Rest after this set · saved on this device
-          </Txt>
+        <WorkoutDrawer title={`Set ${number} · notes & recovery`} onClose={() => setDrawer(null)}>
+          <Txt className="mb-2 text-muted">Rest after this set · saved on this device</Txt>
           <NumberEntry
             onFocus={focus}
             label="Rest · seconds (0 = off)"
@@ -270,33 +247,29 @@ export const SetRow = React.memo(function SetRow({
             placeholderTextColor={C.muted}
             value={notes}
             onChangeText={setNotes}
-            className="min-h-[90px] rounded-xl bg-bg p-4 text-ink"
+            className="font-poppins-regular min-h-[90px] rounded-xl bg-bg p-4 text-ink"
           />
           <View className="mt-5 flex-row gap-3">
             <View className="flex-1">
-              <Txt className="mb-2 text-xs text-muted">
-                RPE · effort 1–10 (optional)
-              </Txt>
+              <Txt className="mb-2 text-xs text-muted">RPE · effort 1–10 (optional)</Txt>
               <TextInput
                 keyboardType="decimal-pad"
                 value={rpe}
                 onChangeText={setRpe}
                 placeholder="—"
                 placeholderTextColor={C.muted}
-                className="rounded-xl bg-bg p-4 text-ink"
+                className="font-poppins-regular rounded-xl bg-bg p-4 text-ink"
               />
             </View>
             <View className="flex-1">
-              <Txt className="mb-2 text-xs text-muted">
-                RIR · reps left 0–10
-              </Txt>
+              <Txt className="mb-2 text-xs text-muted">RIR · reps left 0–10</Txt>
               <TextInput
                 keyboardType="number-pad"
                 value={rir}
                 onChangeText={setRir}
                 placeholder="—"
                 placeholderTextColor={C.muted}
-                className="rounded-xl bg-bg p-4 text-ink"
+                className="font-poppins-regular rounded-xl bg-bg p-4 text-ink"
               />
             </View>
           </View>
@@ -309,9 +282,7 @@ export const SetRow = React.memo(function SetRow({
                 (rpe !== "" && (!validNumber(rpe, 10) || Number(rpe) < 1)) ||
                 (rir !== "" && !validNumber(rir, 10, true))
               ) {
-                setError(
-                  "Rest must be 0–900 seconds, RPE 1–10, and RIR a whole number from 0–10.",
-                );
+                setError("Rest must be 0–900 seconds, RPE 1–10, and RIR a whole number from 0–10.");
                 return;
               }
               setSaving(true);
@@ -325,16 +296,14 @@ export const SetRow = React.memo(function SetRow({
                 await AsyncStorage.setItem(restKey, rest);
                 setDrawer(null);
               } catch (e) {
-                setError(
-                  e instanceof Error ? e.message : "Could not save details.",
-                );
+                setError(e instanceof Error ? e.message : "Could not save details.");
               } finally {
                 setSaving(false);
               }
             }}
-            className="mt-6 items-center rounded-2xl bg-brand p-4"
+            className="mt-6 items-center rounded-2xl bg-ink p-4"
           >
-            <Txt weight="bold" className="text-bg">
+            <Txt weight="semibold" className="text-bg">
               {saving ? "Saving…" : "Save set details"}
             </Txt>
           </Pressable>
