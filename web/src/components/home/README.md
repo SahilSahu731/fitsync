@@ -7,7 +7,9 @@
 | File                        | What it controls                                                                                                         |
 | --------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
 | `content.ts`                | Hero copy and links, image paths, ticker labels, getting-started steps, movement descriptions, sample workouts, and FAQs |
-| `hero-section.tsx`          | Hero layout, photographic background layers, headlines, buttons, and orbit artwork                                       |
+| `hero-section.tsx`          | Hero headline, buttons, assurances, and the product facts strip                                                          |
+| `hero-visual.tsx`           | Athlete illustration, track layers, pointer tilt, floating motion, and pause control                                     |
+| `app-preview-section.tsx`   | Separate interactive app demo section                                                                                    |
 | `workout-preview.tsx`       | Interactive example phone: choose a session and toggle example sets                                                      |
 | `movement-ticker.tsx`       | Moving labels and their pause/resume button                                                                              |
 | `story-section.tsx`         | Scroll-emphasized statement and the three getting-started steps                                                          |
@@ -29,11 +31,11 @@
 - 3D scene, weights, keyboard controls, and motion toggle: `src/components/dumbbell-scene.tsx`.
 - Navigation and footer: `src/components/shell.tsx`.
 
-Change `homeImages` in `content.ts` when replacing imagery. Put final assets in `public/art/`; Next Image URLs start with `/art/`. The studio image is the hero background, the chalk runner is used in the equipment section, and the preparation photo appears in the closing section. Image generation details are in `docs/homepage-design.md` at the repository root.
+Change `homeImages` in `content.ts` when replacing imagery. Put final assets in `public/art/`; Next Image URLs start with `/art/`. The chalk runner leads the hero and also appears in the equipment section. The studio image sits behind the separate app demo, and the preparation photo appears in the closing section. Image generation details are in `docs/homepage-design.md` at the repository root.
 
 The phone, chart, and weekly rhythm are clearly marked examples. The phone and planner update local preview state only; they do not save workouts or change a user's account. Keep example labels when editing them.
 
-The ticker has a pause control. Reveal/tilt/chart animations honor reduced motion, and content remains readable without JavaScript.
+The ticker and floating hero artwork each have a pause control. Reveal/tilt/chart animations honor reduced motion, and content remains readable without JavaScript.
 
 ## Validate changes
 
@@ -41,5 +43,5 @@ From `web/`:
 
 ```bash
 npm run build
-npm run format:check -- src/app/page.tsx src/app/globals.css src/components/home src/components/motion.tsx
+npx prettier --check src/app/page.tsx src/app/globals.css src/components/home src/components/motion.tsx
 ```

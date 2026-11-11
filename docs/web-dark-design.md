@@ -2,11 +2,13 @@
 
 The web uses Inter, forest-black surfaces, chalk-white type, and the existing lime brand color. Layout and interaction styling use Tailwind utilities; palette tokens live in `web/src/app/globals.css`.
 
-## Original hero artwork
+The current homepage component map and background artwork are documented in [homepage-design.md](homepage-design.md).
+
+## Original athlete artwork
 
 - Final asset: `web/public/art/athlete-motion.webp`
 - Generation mode: built-in ImageGen.
-- Usage: homepage hero; responsive Next Image with an accessible description.
+- Usage: chalk accent in the equipment section, rendered as a decorative Next Image.
 - The generated PNG was encoded as WebP for delivery.
 
 ### Generation prompt
