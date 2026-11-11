@@ -41,6 +41,7 @@ type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tab
 
 function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
+  const { user } = useSession();
   const { feedback } = useExperience();
 
   const { expand } = useTabBarMotion();
@@ -80,6 +81,7 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
                 focused={focused}
                 label={TITLES[id]}
                 artwork={ARTWORK[id]}
+                avatarUrl={id === "profile" ? user?.avatarUrl : undefined}
                 onPress={() => {
                   expand();
                   const event = navigation.emit({

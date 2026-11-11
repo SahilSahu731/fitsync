@@ -1,5 +1,5 @@
-import React, { createContext, useContext, useEffect, useMemo } from "react";
-import { View } from "react-native";
+import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
+import { Image, View } from "react-native";
 import Animated, {
   Extrapolation,
   interpolate,
@@ -82,6 +82,7 @@ export function AnimatedTabButton({
   focused,
   label,
   artwork,
+  avatarUrl,
   onPress,
   onLongPress,
 }: {
@@ -89,11 +90,13 @@ export function AnimatedTabButton({
   focused: boolean;
   label: string;
   artwork: TabArtworkName;
+  avatarUrl?: string | null;
   onPress: () => void;
   onLongPress: () => void;
 }) {
   const navigation = useContext(Context);
   const { compact } = useTabBarMotion();
+  const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
   if (!navigation) throw new Error("Tab buttons need AnimatedTabBar");
   const { layout } = navigation;
   const position = useAnimatedStyle(() => ({
@@ -160,6 +163,16 @@ export function AnimatedTabButton({
           <Animated.View className="absolute" style={filled}>
             <TabArtwork name={artwork} color={C.bg} selected />
           </Animated.View>
+          {avatarUrl && failedAvatar !== avatarUrl && (
+            <Image
+              key={avatarUrl}
+              source={{ uri: avatarUrl }}
+              onError={() => setFailedAvatar(avatarUrl)}
+              resizeMode="cover"
+              accessible={false}
+              className="absolute h-6 w-6 rounded-full"
+            />
+          )}
         </Animated.View>
       </MotionPressable>
     </Animated.View>
