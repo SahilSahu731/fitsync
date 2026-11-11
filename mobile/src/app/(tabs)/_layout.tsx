@@ -10,21 +10,22 @@ import { useSession } from "@/src/context/session";
 
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 
+import { TabBarMotionProvider, useTabBarMotion } from "@/src/components/tab-bar-motion";
+import type { TabArtworkName } from "@/src/components/tab-artwork";
 import { AnimatedTabBar, AnimatedTabButton } from "@/src/components/animated-tabs";
 import { TabGlassProvider, TabGlassScene } from "@/src/components/glass-tabs";
 import { useExperience } from "@/src/features/experience/experience-context";
 
 import { C } from "@/src/constants/theme";
 
-const ICONS = {
-  index: ["home-outline", "home"],
-  train: ["dumbbell", "dumbbell"],
-  library: ["bookshelf", "bookshelf"],
-  progress: ["chart-areaspline", "chart-areaspline"],
-  profile: ["account-circle-outline", "account-circle"],
-} as const;
-
-type TabId = keyof typeof ICONS;
+const ARTWORK = {
+  index: "home",
+  train: "train",
+  library: "library",
+  progress: "progress",
+  profile: "profile",
+} as const satisfies Record<string, TabArtworkName>;
+type TabId = keyof typeof ARTWORK;
 
 const TITLES: Record<TabId, string> = {
   index: "Home",
@@ -34,71 +35,15 @@ const TITLES: Record<TabId, string> = {
   profile: "Me",
 };
 
-const TAB_IDS = Object.keys(ICONS) as TabId[];
+const TAB_IDS = Object.keys(ARTWORK) as TabId[];
 
 type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tabBar"]>>[0];
-
-const AVATAR_KEYS = [
-  "avatarUrl",
-  "avatar_url",
-  "avatar",
-  "photoURL",
-  "photoUrl",
-  "photo_url",
-  "photo",
-  "profilePicture",
-  "profile_picture",
-  "profilePic",
-  "profileImage",
-  "profile_image",
-  "imageUrl",
-  "image_url",
-  "image",
-  "picture",
-  "pfp",
-];
-
-function pickUrl(value: unknown): string | null {
-  if (typeof value === "string" && value.trim()) {
-    return value.trim();
-  }
-
-  if (value && typeof value === "object") {
-    const v = value as Record<string, unknown>;
-
-    return pickUrl(v.url) ?? pickUrl(v.uri) ?? pickUrl(v.publicUrl);
-  }
-
-  return null;
-}
-
-function resolveAvatar(...sources: unknown[]): string | null {
-  for (const source of sources) {
-    if (!source || typeof source !== "object") {
-      continue;
-    }
-
-    const obj = source as Record<string, unknown>;
-
-    for (const key of AVATAR_KEYS) {
-      const url = pickUrl(obj[key]);
-
-      if (url) {
-        return url;
-      }
-    }
-  }
-
-  return null;
-}
 
 function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const { feedback } = useExperience();
 
-  const { profile, user } = useSession();
-
-  const [failedAvatarUrl, setFailedAvatarUrl] = useState<string | null>(null);
+  const { expand } = useTabBarMotion();
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", () => setKeyboardOpen(true));
@@ -109,20 +54,10 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
     };
   }, []);
 
-  const avatarUrl = resolveAvatar(
-    profile,
-    user,
-    (
-      user as {
-        user_metadata?: unknown;
-      } | null
-    )?.user_metadata,
-  );
-
   const routes = state.routes.filter((route) => TAB_IDS.includes(route.name as TabId));
   const selectedIndex = routes.findIndex((route) => route.key === state.routes[state.index]?.key);
 
-  if (keyboardOpen) return null;
+  if (keyboardOpen || !routes.length) return null;
 
   return (
     <View
@@ -135,19 +70,18 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
       <View className="w-full max-w-md self-center gap-3">
         <ActiveWorkoutBar inline />
         <AnimatedTabBar selectedIndex={selectedIndex} count={routes.length}>
-          {routes.map((route) => {
+          {routes.map((route, index) => {
             const id = route.name as TabId;
             const focused = route.key === state.routes[state.index]?.key;
-            const showAvatar = id === "profile" && avatarUrl && failedAvatarUrl !== avatarUrl;
             return (
               <AnimatedTabButton
                 key={route.key}
+                index={index}
                 focused={focused}
                 label={TITLES[id]}
-                icons={ICONS[id]}
-                avatarUrl={showAvatar ? avatarUrl : undefined}
-                onAvatarError={() => setFailedAvatarUrl(avatarUrl)}
+                artwork={ARTWORK[id]}
                 onPress={() => {
+                  expand();
                   const event = navigation.emit({
                     type: "tabPress",
                     target: route.key,
@@ -184,28 +118,30 @@ export default function TabsLayout() {
   }
 
   return (
-    <TabGlassProvider>
-      <Tabs
-        screenLayout={({ children }) => <TabGlassScene>{children}</TabGlassScene>}
-        tabBar={(props) => <FloatingTabBar {...props} />}
-        screenOptions={{
-          headerShown: false,
-          tabBarHideOnKeyboard: true,
-          sceneStyle: {
-            backgroundColor: C.bg,
-          },
-        }}
-      >
-        {TAB_IDS.map((id) => (
-          <Tabs.Screen
-            key={id}
-            name={id}
-            options={{
-              title: TITLES[id],
-            }}
-          />
-        ))}
-      </Tabs>
-    </TabGlassProvider>
+    <TabBarMotionProvider>
+      <TabGlassProvider>
+        <Tabs
+          screenLayout={({ children }) => <TabGlassScene>{children}</TabGlassScene>}
+          tabBar={(props) => <FloatingTabBar {...props} />}
+          screenOptions={{
+            headerShown: false,
+            tabBarHideOnKeyboard: true,
+            sceneStyle: {
+              backgroundColor: C.bg,
+            },
+          }}
+        >
+          {TAB_IDS.map((id) => (
+            <Tabs.Screen
+              key={id}
+              name={id}
+              options={{
+                title: TITLES[id],
+              }}
+            />
+          ))}
+        </Tabs>
+      </TabGlassProvider>
+    </TabBarMotionProvider>
   );
 }

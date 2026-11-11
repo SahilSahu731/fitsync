@@ -1,3 +1,4 @@
+import { TabScrollView } from "@/src/components/tab-bar-motion";
 import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -295,7 +296,7 @@ export function ProgressDashboard() {
 
   return (
     <ScreenEntrance className="flex-1 bg-bg">
-      <ScrollView
+      <TabScrollView
         ref={scroll}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -795,7 +796,7 @@ export function ProgressDashboard() {
                     : "Your journal is up to date"}
           </Txt>
         </View>
-      </ScrollView>
+      </TabScrollView>
 
       {editor && (
         <MetricEditor

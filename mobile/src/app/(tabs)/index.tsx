@@ -1,5 +1,6 @@
+import { TabScrollView } from "@/src/components/tab-bar-motion";
 import React, { useMemo } from "react";
-import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
+import { ActivityIndicator, RefreshControl, View } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable, ProgressFill, ScreenEntrance } from "@/src/components/motion";
@@ -57,7 +58,7 @@ export default function HomeScreen() {
   ];
   return (
     <ScreenEntrance className="flex-1 bg-bg">
-      <ScrollView
+      <TabScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName={`w-full max-w-2xl self-center px-6 pt-6 ${session ? "pb-56" : "pb-44"}`}
@@ -278,7 +279,7 @@ export default function HomeScreen() {
           </View>
         </ScreenEntrance>
         <Txt className="mt-10 text-center text-[11px] text-muted">A little more in sync.</Txt>
-      </ScrollView>
+      </TabScrollView>
     </ScreenEntrance>
   );
 }

@@ -1,3 +1,4 @@
+import { TabScrollView } from "@/src/components/tab-bar-motion";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 
@@ -131,7 +132,7 @@ export default function ExploreHomeScreen() {
 
   return (
     <ScreenEntrance style={{ flex: 1 }}>
-      <ScrollView
+      <TabScrollView
         className="flex-1 bg-bg"
         keyboardShouldPersistTaps="handled"
         keyboardDismissMode="on-drag"
@@ -356,7 +357,7 @@ export default function ExploreHomeScreen() {
             ))}
           </View>
         ))}
-      </ScrollView>
+      </TabScrollView>
     </ScreenEntrance>
   );
 }

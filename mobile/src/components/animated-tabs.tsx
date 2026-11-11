@@ -1,30 +1,27 @@
-import React, { useEffect } from "react";
-import { Image, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
+import React, { createContext, useContext, useEffect, useMemo } from "react";
+import { View } from "react-native";
 import Animated, {
   Extrapolation,
-  ReduceMotion,
   interpolate,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withSpring,
+  type DerivedValue,
 } from "react-native-reanimated";
-import { MotionPressable, useReducedAppMotion } from "./motion";
+import { MotionPressable } from "./motion";
 import { TabGlassSurface } from "./glass-tabs";
+import { TAB_SPRING, useTabBarMotion } from "./tab-bar-motion";
+import { TAB_PADDING, tabBarLayout } from "./tab-bar-model";
+import { TabArtwork, type TabArtworkName } from "./tab-artwork";
 import { C } from "@/src/constants/theme";
 
-type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
-const SPRING = {
-  damping: 28,
-  stiffness: 340,
-  mass: 0.8,
-  overshootClamping: true,
-  reduceMotion: ReduceMotion.System,
-};
-const PADDING = 8;
-const GAP = 4;
+type Layout = ReturnType<typeof tabBarLayout>;
+const Context = createContext<{
+  layout: DerivedValue<Layout>;
+} | null>(null);
 
-/** One continuous selection moves beneath the fixed, generous touch targets. */
+/** Real dimensions animate so the compact bar retains full-size touch targets. */
 export function AnimatedTabBar({
   children,
   selectedIndex,
@@ -34,126 +31,137 @@ export function AnimatedTabBar({
   selectedIndex: number;
   count: number;
 }) {
-  const reduced = useReducedAppMotion();
-  const width = useSharedValue(0);
-  const selection = useSharedValue(selectedIndex);
-
+  const { compact, reduced } = useTabBarMotion();
+  const available = useSharedValue(0);
+  const weights = useSharedValue<number[]>(
+    Array.from({ length: count }, (_, index) => (index === selectedIndex ? 1 : 0)),
+  );
   useEffect(() => {
-    selection.set(reduced ? selectedIndex : withSpring(selectedIndex, SPRING));
-  }, [selectedIndex, reduced, selection]);
-
-  const indicator = useAnimatedStyle(() => {
-    const cell = Math.max(0, (width.get() - PADDING * 2 - GAP * (count - 1)) / count);
-    return {
-      width: cell,
-      opacity: cell > 0 && selectedIndex >= 0 ? 1 : 0,
-      transform: [{ translateX: selection.get() * (cell + GAP) }],
-    };
-  });
-
+    const next = Array.from({ length: count }, (_, index) => (index === selectedIndex ? 1 : 0));
+    weights.set(reduced ? next : withSpring(next, TAB_SPRING));
+  }, [count, selectedIndex, weights, reduced]);
+  const layout = useDerivedValue(() => tabBarLayout(available.get(), compact.get(), weights.get()));
+  const shell = useAnimatedStyle(() => ({
+    width: layout.get().width,
+    height: layout.get().height,
+    opacity: available.get() > 0 ? 1 : 0,
+  }));
+  const indicator = useAnimatedStyle(() => ({
+    left: layout.get().indicatorLeft,
+    width: layout.get().indicatorWidth,
+    height: layout.get().buttonHeight,
+    opacity: selectedIndex >= 0 ? 1 : 0,
+  }));
+  const context = useMemo(() => ({ layout }), [layout]);
   return (
-    <View className="overflow-hidden rounded-[30px] bg-panel shadow-xl shadow-black/30">
-      <TabGlassSurface />
+    <Context.Provider value={context}>
       <View
-        onLayout={(event) => width.set(event.nativeEvent.layout.width)}
-        className="h-[72px] flex-row gap-1 p-2"
+        onLayout={(event) => available.set(event.nativeEvent.layout.width)}
+        className="w-full items-center"
       >
         <Animated.View
-          pointerEvents="none"
-          accessible={false}
-          className="absolute left-2 top-2 h-14 rounded-[22px] bg-ink"
-          style={indicator}
-        />
-        {children}
+          className="overflow-hidden rounded-full bg-panel shadow-xl shadow-black/30"
+          style={shell}
+        >
+          <TabGlassSurface />
+          <Animated.View
+            pointerEvents="none"
+            accessible={false}
+            className="absolute rounded-full bg-ink"
+            style={[{ top: TAB_PADDING }, indicator]}
+          />
+          {children}
+        </Animated.View>
       </View>
-    </View>
+    </Context.Provider>
   );
 }
 
 export function AnimatedTabButton({
+  index,
   focused,
   label,
-  icons,
-  avatarUrl,
-  onAvatarError,
+  artwork,
   onPress,
   onLongPress,
 }: {
+  index: number;
   focused: boolean;
   label: string;
-  icons: readonly [IconName, IconName];
-  avatarUrl?: string;
-  onAvatarError: () => void;
+  artwork: TabArtworkName;
   onPress: () => void;
   onLongPress: () => void;
 }) {
-  const reduced = useReducedAppMotion();
-  const activation = useSharedValue(focused ? 1 : 0);
-
-  useEffect(() => {
-    activation.set(reduced ? (focused ? 1 : 0) : withSpring(focused ? 1 : 0, SPRING));
-  }, [focused, reduced, activation]);
-
-  const iconMotion = useAnimatedStyle(() => ({
+  const navigation = useContext(Context);
+  const { compact } = useTabBarMotion();
+  if (!navigation) throw new Error("Tab buttons need AnimatedTabBar");
+  const { layout } = navigation;
+  const position = useAnimatedStyle(() => ({
+    left: layout.get().positions[index],
+    width: layout.get().widths[index],
+    height: layout.get().buttonHeight,
+  }));
+  const symbolMotion = useAnimatedStyle(() => ({
     transform: [
-      { translateY: interpolate(activation.get(), [0, 1], [0, -7], Extrapolation.CLAMP) },
-      { scale: interpolate(activation.get(), [0, 1], [1, 1.06], Extrapolation.CLAMP) },
+      { scale: (1 - compact.get() * 0.08) * (1 + (layout.get().activation[index] ?? 0) * 0.04) },
     ],
   }));
-  const outline = useAnimatedStyle(() => ({ opacity: 1 - activation.get() }));
-  const filled = useAnimatedStyle(() => ({ opacity: activation.get() }));
-  const labelMotion = useAnimatedStyle(() => ({
-    opacity: interpolate(activation.get(), [0, 0.2, 1], [0, 0, 1], Extrapolation.CLAMP),
-    transform: [{ translateY: interpolate(activation.get(), [0, 1], [7, 0], Extrapolation.CLAMP) }],
-  }));
-
+  const outline = useAnimatedStyle(() => ({ opacity: 1 - (layout.get().activation[index] ?? 0) }));
+  const filled = useAnimatedStyle(() => ({ opacity: layout.get().activation[index] ?? 0 }));
+  const labelMotion = useAnimatedStyle(() => {
+    const activation = Math.max(0, (layout.get().activation[index] ?? 0) * (1 - compact.get()));
+    return {
+      width: layout.get().labelCapacity * activation,
+      marginRight: 6 * activation,
+      opacity: interpolate(activation, [0, 0.25, 1], [0, 0, 1], Extrapolation.CLAMP),
+    };
+  });
+  const textWidth = useAnimatedStyle(() => ({ width: layout.get().labelCapacity }));
   return (
-    <MotionPressable
-      accessibilityRole="tab"
-      accessibilityLabel={label}
-      accessibilityState={{ selected: focused }}
-      onPress={onPress}
-      onLongPress={onLongPress}
-      className="h-14 min-w-0 flex-1 items-center justify-center rounded-[22px]"
-    >
-      <Animated.View
-        pointerEvents="none"
-        accessible={false}
-        importantForAccessibility="no-hide-descendants"
-        className="h-7 w-7 items-center justify-center"
-        style={iconMotion}
+    <Animated.View className="absolute top-1.5" style={position}>
+      <MotionPressable
+        accessibilityRole="tab"
+        accessibilityLabel={label}
+        accessibilityState={{ selected: focused }}
+        onPress={onPress}
+        onLongPress={onLongPress}
+        className="h-full w-full flex-row items-center justify-center rounded-full"
       >
-        {avatarUrl ? (
-          <Image
-            source={{ uri: avatarUrl }}
-            onError={onAvatarError}
-            resizeMode="cover"
-            className="h-7 w-7 rounded-full"
-          />
-        ) : (
-          <>
-            <Animated.View className="absolute" style={outline}>
-              <MaterialCommunityIcons name={icons[0]} size={25} color={C.muted} />
-            </Animated.View>
-            <Animated.View className="absolute" style={filled}>
-              <MaterialCommunityIcons name={icons[1]} size={25} color={C.bg} />
-            </Animated.View>
-          </>
+        {focused && (
+          <Animated.View
+            pointerEvents="none"
+            accessible={false}
+            className="h-5 overflow-hidden"
+            style={labelMotion}
+          >
+            <Animated.Text
+              accessible={false}
+              numberOfLines={1}
+              adjustsFontSizeToFit
+              minimumFontScale={0.85}
+              maxFontSizeMultiplier={1.2}
+              className="absolute right-0 text-right font-poppins-medium text-xs leading-5 text-bg"
+              style={textWidth}
+            >
+              {label}
+            </Animated.Text>
+          </Animated.View>
         )}
-      </Animated.View>
-      {focused && (
-        <Animated.Text
+        <Animated.View
+          pointerEvents="none"
           accessible={false}
-          numberOfLines={1}
-          adjustsFontSizeToFit
-          minimumFontScale={0.85}
-          maxFontSizeMultiplier={1.2}
-          className="absolute inset-x-0 bottom-1.5 text-center font-poppins-medium text-[11px] leading-[14px] text-bg"
-          style={labelMotion}
+          importantForAccessibility="no-hide-descendants"
+          className="h-6 w-6 items-center justify-center"
+          style={symbolMotion}
         >
-          {label}
-        </Animated.Text>
-      )}
-    </MotionPressable>
+          <Animated.View className="absolute" style={outline}>
+            <TabArtwork name={artwork} color={C.muted} />
+          </Animated.View>
+          <Animated.View className="absolute" style={filled}>
+            <TabArtwork name={artwork} color={C.bg} selected />
+          </Animated.View>
+        </Animated.View>
+      </MotionPressable>
+    </Animated.View>
   );
 }

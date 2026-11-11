@@ -1,3 +1,4 @@
+import { TabScrollView } from "@/src/components/tab-bar-motion";
 import { WorkoutSyncNotice } from "@/src/features/workouts/components/workout-sync-notice";
 import { CoachHomeCard } from "@/src/features/coaching/home-card";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
@@ -516,7 +517,7 @@ export default function TrainScreen() {
   return (
     <>
       <ScreenEntrance style={{ flex: 1 }}>
-        <ScrollView
+        <TabScrollView
           className="flex-1 bg-bg"
           showsVerticalScrollIndicator={false}
           refreshControl={
@@ -757,7 +758,7 @@ export default function TrainScreen() {
               </View>
             </>
           )}
-        </ScrollView>
+        </TabScrollView>
       </ScreenEntrance>
       {actionBusy && (
         <View

@@ -1,5 +1,6 @@
+import { TabScrollView } from "@/src/components/tab-bar-motion";
 import React, { useState } from "react";
-import { ActivityIndicator, Image, ScrollView, View } from "react-native";
+import { ActivityIndicator, Image, View } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
@@ -133,7 +134,7 @@ export default function ProfileScreen() {
     ]);
   return (
     <ScreenEntrance className="flex-1 bg-bg">
-      <ScrollView
+      <TabScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
         contentContainerClassName="w-full max-w-2xl self-center px-6 pt-6 pb-44"
@@ -286,7 +287,7 @@ export default function ProfileScreen() {
         <Txt className="mt-7 text-center text-[11px] text-muted">
           Your training. Your habits. In sync.
         </Txt>
-      </ScrollView>
+      </TabScrollView>
     </ScreenEntrance>
   );
 }

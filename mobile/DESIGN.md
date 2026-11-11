@@ -8,7 +8,7 @@ The app follows the website's black and white direction with Poppins and restrai
 - `src/app/_layout.tsx` loads bundled Poppins regular, medium, semibold, bold and extra-bold assets before the navigator becomes visible.
 - `src/components/ui.tsx` provides text, borderless cards, pills, buttons, section headings and the page heading.
 - `src/components/motion.tsx` keeps short native press feedback and focus entrances, and respects both system and in-app reduced-motion settings.
-- The floating tab bar has a spring-driven sliding selection, a small icon lift, and a label that fades in below only the active icon. Every tab keeps an accessible name and a fixed touch target. Motion respects the system and in-app reduced-motion settings; the existing blur fallback remains in place.
+- The floating tab bar uses original SVG navigation artwork and an active label to the left of its symbol. It contracts while scrolling down and expands on upward scrolling, near the top, when changing tabs, or when tapping a tab. Native shared values animate the real width and height; touch targets remain at least 44 points. Direction thresholds ignore small reversals and native bounce. System and app reduced-motion preferences are respected, and the blur fallback remains in place.
 
 ## Journeys
 
