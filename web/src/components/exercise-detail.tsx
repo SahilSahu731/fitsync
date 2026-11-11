@@ -30,7 +30,7 @@ export function ExerciseDetail({ id }: { id: string }) {
         <h2>Couldn’t load this exercise</h2>
         <p role="alert">{error}</p>
         <button
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => setRetry(retry + 1)}
         >
           Try again
@@ -67,7 +67,7 @@ export function ExerciseDetail({ id }: { id: string }) {
         </div>
         {admin && (
           <Link
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface! "
             href={`/admin/exercises/${exercise.id}/edit`}
           >
             <Icon name="edit" size={16} />
@@ -77,7 +77,7 @@ export function ExerciseDetail({ id }: { id: string }) {
       </div>
       <div className="grid items-start gap-7 lg:grid-cols-[1.6fr_1fr]">
         <div>
-          <div className="rounded-lg border border-line bg-panel mb-6 p-4 [&_figure]:mb-5 [&_figure:last-child]:mb-0 [&_img]:max-h-130 [&_img]:w-full [&_img]:object-contain [&_img]:bg-surface [&_video]:max-h-130 [&_video]:w-full [&_video]:object-contain [&_video]:bg-surface [&_figcaption]:px-1 [&_figcaption]:pt-3 [&_figcaption]:text-xs [&_figcaption]:text-muted [&_a]:underline">
+          <div className="rounded-3xl bg-panel mb-6 p-4 [&_figure]:mb-5 [&_figure:last-child]:mb-0 [&_img]:max-h-130 [&_img]:w-full [&_img]:object-contain [&_img]:bg-surface [&_video]:max-h-130 [&_video]:w-full [&_video]:object-contain [&_video]:bg-surface [&_figcaption]:px-1 [&_figcaption]:pt-3 [&_figcaption]:text-xs [&_figcaption]:text-muted [&_a]:underline">
             {exercise.media.length ? (
               exercise.media.map((media) => (
                 <figure key={media.id}>
@@ -118,7 +118,7 @@ export function ExerciseDetail({ id }: { id: string }) {
               </div>
             )}
           </div>
-          <section className="rounded-lg border border-line bg-panel p-6 sm:p-8 [&_h2]:mt-3 [&_ol]:mt-6 [&_li]:flex [&_li]:items-start [&_li]:gap-5 [&_li]:border-b [&_li]:border-line [&_li]:py-5 [&_li:last-child]:border-0 [&_li>span]:min-w-6 [&_li>span]:text-sm [&_li>span]:font-semibold [&_li>p]:leading-7 [&_li>p]:text-muted">
+          <section className="rounded-3xl bg-panel p-6 sm:p-8 [&_h2]:mt-3 [&_ol]:mt-6 [&_li]:flex [&_li]:items-start [&_li]:gap-5  [&_li]:py-5 [&_li:last-child]:border-0 [&_li>span]:min-w-6 [&_li>span]:text-sm [&_li>span]:font-semibold [&_li>p]:leading-7 [&_li>p]:text-muted">
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-muted">
               The technique
             </p>
@@ -126,7 +126,7 @@ export function ExerciseDetail({ id }: { id: string }) {
             <ol>
               {exercise.instructions.map((line, i) => (
                 <li key={i}>
-                  <span>{String(i + 1).padStart(2, "0")}</span>
+                  <Icon name="check" size={16} className="mt-1 text-white/40" />
                   <p>{line}</p>
                 </li>
               ))}
@@ -134,7 +134,7 @@ export function ExerciseDetail({ id }: { id: string }) {
           </section>
         </div>
         <aside>
-          <div className="rounded-lg border border-line bg-panel mb-6 p-6 [&_h2]:mb-5 [&>div]:flex [&>div]:justify-between [&>div]:gap-5 [&>div]:border-b [&>div]:border-line [&>div]:py-4 [&>div]:text-sm [&>div:last-child]:border-0 [&_span]:shrink-0 [&_span]:text-muted [&_strong]:text-right [&_strong]:font-medium">
+          <div className="rounded-3xl bg-panel mb-6 p-6 [&_h2]:mb-5 [&>div]:flex [&>div]:justify-between [&>div]:gap-5  [&>div]:py-4 [&>div]:text-sm [&>div:last-child]:border-0 [&_span]:shrink-0 [&_span]:text-muted [&_strong]:text-right [&_strong]:font-medium">
             <h2>At a glance</h2>
             {[
               ["Level", pretty(exercise.difficulty)],
@@ -161,7 +161,7 @@ export function ExerciseDetail({ id }: { id: string }) {
             ([title, lines]) =>
               (lines as string[]).length > 0 && (
                 <section
-                  className="rounded-lg border border-line bg-panel mb-6 p-6 [&_h2]:text-xl [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mt-2 [&_li]:text-sm [&_li]:leading-7 [&_li]:text-muted"
+                  className="rounded-3xl bg-panel mb-6 p-6 [&_h2]:text-xl [&_ul]:mt-4 [&_ul]:list-disc [&_ul]:pl-5 [&_li]:mt-2 [&_li]:text-sm [&_li]:leading-7 [&_li]:text-muted"
                   key={title as string}
                 >
                   <h2>{title}</h2>
@@ -174,7 +174,7 @@ export function ExerciseDetail({ id }: { id: string }) {
               ),
           )}
           {exercise.breathingTip && (
-            <div className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-line! bg-surface! text-ink!">
+            <div className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!">
               <span>
                 <strong>Keep breathing</strong>
                 <br />

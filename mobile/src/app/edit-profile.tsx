@@ -166,7 +166,7 @@ function SectionTitle({
   return (
     <View className="mb-5 mt-8">
       <Txt
-        weight="extra"
+        weight="semibold"
         className="text-[23px] tracking-tight"
       >
         {title}
@@ -224,9 +224,9 @@ function InputField({
           keyboardType={keyboardType}
           multiline={multiline}
           maxLength={maxLength}
-          className="flex-1 text-base text-ink"
+          className="font-poppins-regular flex-1 text-base text-ink"
           style={{
-            fontFamily: "Inter_500Medium",
+            fontFamily: "Poppins_500Medium",
             textAlignVertical:
               multiline ? "top" : "center"
           }}
@@ -234,8 +234,8 @@ function InputField({
 
         {suffix ? (
           <Txt
-            weight="bold"
-            className="ml-2 text-sm text-brand"
+            weight="semibold"
+            className="ml-2 text-sm text-ink"
           >
             {suffix}
           </Txt>
@@ -294,7 +294,7 @@ function InfoRow({
     <View className="flex-row items-start">
       <MaterialCommunityIcons
         name={icon}
-        color={C.brand}
+        color={C.ink}
         size={19}
       />
 
@@ -697,7 +697,7 @@ export default function EditProfileScreen() {
     >
       {/* Header */}
 
-      <View className="flex-row items-center justify-between border-b border-border px-6 pb-4 pt-5">
+      <View className="flex-row items-center justify-between px-6 pb-4 pt-5">
         <Pressable
           onPress={() => router.back()}
           disabled={saving || uploading}
@@ -711,7 +711,7 @@ export default function EditProfileScreen() {
         </Pressable>
 
         <Txt
-          weight="extra"
+          weight="semibold"
           className="text-xl tracking-tight"
         >
           Edit Profile
@@ -748,7 +748,7 @@ export default function EditProfileScreen() {
             onPress={choosePhoto}
             className="relative"
           >
-            <View className="h-36 w-36 overflow-hidden rounded-full bg-brand">
+            <View className="h-36 w-36 overflow-hidden rounded-full bg-ink">
               {user.avatarUrl ? (
                 <Image
                   source={{
@@ -760,7 +760,7 @@ export default function EditProfileScreen() {
               ) : (
                 <View className="h-full w-full items-center justify-center">
                   <Txt
-                    weight="extra"
+                    weight="semibold"
                     className="text-5xl text-bg"
                   >
                     {(
@@ -771,7 +771,7 @@ export default function EditProfileScreen() {
               )}
             </View>
 
-            <View className="absolute -bottom-1 -right-1 h-11 w-11 items-center justify-center rounded-full border-4 border-panel bg-brand">
+            <View className="absolute -bottom-1 -right-1 h-11 w-11 items-center justify-center rounded-full bg-ink">
               <MaterialCommunityIcons
                 name="camera-plus"
                 color={C.bg}
@@ -781,7 +781,7 @@ export default function EditProfileScreen() {
           </Pressable>
 
           <Txt
-            weight="extra"
+            weight="semibold"
             className="mt-6 text-lg"
           >
             YOUR LOOK. YOUR IDENTITY.
@@ -790,11 +790,11 @@ export default function EditProfileScreen() {
           <Pressable
             onPress={choosePhoto}
             disabled={uploading || saving}
-            className="mt-3 rounded-full border border-brand px-5 py-2.5"
+            className="mt-3 rounded-full px-5 py-2.5"
           >
             <Txt
-              weight="bold"
-              className="text-xs text-brand"
+              weight="semibold"
+              className="text-xs text-ink"
             >
               {uploading
                 ? "UPLOADING..."
@@ -843,7 +843,7 @@ export default function EditProfileScreen() {
 
         <View className="mb-3 rounded-2xl bg-panel p-4">
           <Txt
-            weight="bold"
+            weight="semibold"
             className="text-xs text-muted"
           >
             CONNECTED GOOGLE ACCOUNT
@@ -988,14 +988,14 @@ export default function EditProfileScreen() {
                   void Haptics.selectionAsync();
                   setTrainingDays(days);
                 }}
-                className={`h-14 flex-1 items-center justify-center rounded-2xl border ${
+                className={`h-14 flex-1 items-center justify-center rounded-2xl  ${
                   selected
-                    ? "border-brand bg-brand"
-                    : "border-border bg-panel"
+                    ? " bg-ink"
+                    : " bg-panel"
                 }`}
               >
                 <Txt
-                  weight="extra"
+                  weight="semibold"
                   className="text-xl"
                   style={{
                     color: selected
@@ -1036,10 +1036,10 @@ export default function EditProfileScreen() {
             FINISH
         ================================== */}
 
-        <View className="mt-5 rounded-[24px] border border-brand bg-[#271F19] p-5">
+        <View className="mt-5 rounded-[24px] bg-[#202020] p-5">
           <Txt
-            weight="extra"
-            className="text-lg text-brand"
+            weight="semibold"
+            className="text-lg text-ink"
           >
             Your Journey Starts here.
           </Txt>
@@ -1054,10 +1054,10 @@ export default function EditProfileScreen() {
 
       {/* Sticky save button */}
 
-      <View className="border-t border-border bg-bg px-6 pb-6 pt-4">
+      <View className="bg-bg px-6 pb-6 pt-4">
         {(saving || uploading) && (
           <View accessibilityLiveRegion="polite" className="mb-3.5 flex-row items-center gap-3">
-            <ActivityIndicator size="small" color={C.brand} />
+            <ActivityIndicator size="small" color={C.ink} />
             <View style={{ flex: 1 }}>
               <Txt weight="semibold">{uploading ? "Updating your photo…" : "Saving your changes…"}</Txt>
               <Txt className="mt-[3px] text-[13px] text-muted">

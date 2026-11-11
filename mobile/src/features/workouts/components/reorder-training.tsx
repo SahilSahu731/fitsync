@@ -71,14 +71,14 @@ export function ReorderTraining({ title, items, onClose, onSave, hint = "Your or
     <SafeAreaView className="flex-1 bg-bg">
       <View className="flex-row items-center justify-between px-4 py-3">
         <Pressable disabled={busy} onPress={close} className="p-3"><Txt>Cancel</Txt></Pressable>
-        <Txt weight="bold" className="flex-1 text-center text-lg" numberOfLines={1}>Reorder {title}</Txt>
+        <Txt weight="semibold" className="flex-1 text-center text-lg" numberOfLines={1}>Reorder {title}</Txt>
         <Pressable disabled={busy || !!activeId} className="p-3" onPress={async () => {
           if (saving.current || live.current) return;
           saving.current = true; setBusy(true); setError("");
           try { await onSave(currentOrder.current.map(row => row.id)); onClose(); }
           catch (e) { setError(e instanceof Error ? e.message : "Could not save order."); }
           finally { saving.current = false; setBusy(false); }
-        }}><Txt weight="bold" className="text-brand">{busy ? "Saving…" : "Save"}</Txt></Pressable>
+        }}><Txt weight="semibold" className="text-ink">{busy ? "Saving…" : "Save"}</Txt></Pressable>
       </View>
       <Txt className="px-6 pb-4 text-sm text-muted">Drag a handle to move an item. Hold near an edge to scroll. {hint}</Txt>
       {!!error && <Txt className="px-6 pb-4 text-red-300" accessibilityRole="alert">{error}</Txt>}
@@ -141,7 +141,7 @@ export function ReorderRow(props: DragRowProps) {
       borderColor: dragging ? C.brand : C.border,
     };
   });
-  return <Animated.View style={[{ position: "absolute", top: 0, left: 0, right: 0, height: HEIGHT - 8 }, style]} className="flex-row items-center rounded-2xl border bg-panel pl-3">
+  return <Animated.View style={[{ position: "absolute", top: 0, left: 0, right: 0, height: HEIGHT - 8 }, style]} className="flex-row items-center rounded-2xl bg-panel pl-3">
     <Txt className="mr-3 text-sm text-muted">{index + 1}</Txt>
     {!!item.imageUrl && <ExerciseImage uri={item.imageUrl} name={item.name} size={42} />}
     <Txt className="ml-2 flex-1" weight="semibold" numberOfLines={2}>{item.name}</Txt>

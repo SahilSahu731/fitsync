@@ -124,15 +124,15 @@ function FilterDropdown({
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`Filter by ${config.label}`}
-      className={`h-12 min-w-0 flex-1 flex-row items-center justify-between rounded-xl border px-3 ${
-        active ? "border-brand bg-brand/10" : "border-border/40 bg-panel"
+      className={`h-12 min-w-0 flex-1 flex-row items-center justify-between rounded-xl  px-3 ${
+        active ? " bg-white/5" : " bg-panel"
       }`}
     >
       <Txt
         weight="semibold"
         numberOfLines={1}
         className={`mr-1 flex-1 text-[13px] ${
-          active ? "text-brand" : "text-ink"
+          active ? "text-ink" : "text-ink"
         }`}
       >
         {selected?.label ?? config.label}
@@ -193,7 +193,7 @@ function FilterSheet({
           </View>
 
           <View className="flex-row items-center justify-between px-6 pb-3 pt-5">
-            <Txt weight="bold" className="text-[22px]">
+            <Txt weight="semibold" className="text-[22px]">
               {config?.label ?? "Filter"}
             </Txt>
 
@@ -217,20 +217,20 @@ function FilterSheet({
                   onPress={() => onSelect(option.value)}
                   accessibilityRole="button"
                   accessibilityState={{ selected }}
-                  className="flex-row items-center justify-between border-b border-border/30 px-6 py-4"
+                  className="flex-row items-center justify-between px-6 py-4"
                 >
                   <Txt
                     weight={selected ? "bold" : "medium"}
                     className={`text-[15px] ${
-                      selected ? "text-brand" : "text-ink"
+                      selected ? "text-ink" : "text-ink"
                     }`}
                   >
                     {option.label}
                   </Txt>
 
                   <View
-                    className={`h-6 w-6 items-center justify-center rounded-full border ${
-                      selected ? "border-brand bg-brand" : "border-border"
+                    className={`h-6 w-6 items-center justify-center rounded-full  ${
+                      selected ? " bg-ink" : ""
                     }`}
                   >
                     {selected ? (
@@ -274,7 +274,7 @@ function BrowseCard({
       accessibilityRole="button"
       accessibilityLabel={`Open ${card.title}`}
       style={{ width }}
-      className="mb-3 overflow-hidden rounded-3xl border border-border/30 bg-panel active:opacity-80"
+      className="mb-3 overflow-hidden rounded-3xl bg-panel active:opacity-80"
     >
       <View
         className="items-center justify-center overflow-hidden bg-elevated"
@@ -292,7 +292,7 @@ function BrowseCard({
           <MaterialCommunityIcons
             name={SECTION_ICONS[card.section]}
             size={40}
-            color={C.brand}
+            color={C.ink}
           />
         )}
 
@@ -303,7 +303,7 @@ function BrowseCard({
           <Txt
             weight="semibold"
             numberOfLines={1}
-            className="text-[10px] text-white"
+            className="text-[11px] text-white"
           >
             {card.meta}
           </Txt>
@@ -311,7 +311,7 @@ function BrowseCard({
       </View>
 
       <View className="min-h-[83px] px-3 pb-3 pt-3">
-        <Txt weight="bold" numberOfLines={2} className="text-[15px] leading-5">
+        <Txt weight="semibold" numberOfLines={2} className="text-[15px] leading-5">
           {card.title}
         </Txt>
 
@@ -520,12 +520,12 @@ export default function ExploreBrowseScreen() {
   if (!section) {
     return (
       <View className="flex-1 items-center justify-center bg-bg px-6">
-        <Txt weight="bold" className="text-xl">
+        <Txt weight="semibold" className="text-xl">
           Section not found
         </Txt>
 
         <Pressable onPress={() => router.back()} className="mt-4">
-          <Txt className="text-brand">Go back</Txt>
+          <Txt className="text-ink">Go back</Txt>
         </Pressable>
       </View>
     );
@@ -546,7 +546,7 @@ export default function ExploreBrowseScreen() {
         </Pressable>
         <View>
 
-        <Txt weight="bold" className="text-[26px] leading-9">
+        <Txt weight="semibold" className="text-[26px] leading-9">
           {title}
         </Txt>
 
@@ -615,10 +615,10 @@ export default function ExploreBrowseScreen() {
             <MaterialCommunityIcons
               name="close-circle-outline"
               size={16}
-              color={C.brand}
+              color={C.ink}
             />
 
-            <Txt weight="semibold" className="text-sm text-brand">
+            <Txt weight="semibold" className="text-sm text-ink">
               Clear filters
             </Txt>
           </Pressable>
@@ -629,13 +629,13 @@ export default function ExploreBrowseScreen() {
 
   const empty = loading ? (
     <View className="items-center py-16">
-      <ActivityIndicator size="large" color={C.brand} />
+      <ActivityIndicator size="large" color={C.ink} />
     </View>
   ) : error ? (
     <View className="items-center rounded-2xl bg-panel p-7">
       <MaterialCommunityIcons name="wifi-alert" size={34} color={C.muted} />
 
-      <Txt weight="bold" className="mt-3 text-lg">
+      <Txt weight="semibold" className="mt-3 text-lg">
         Couldn&apos;t load {title.toLowerCase()}
       </Txt>
 
@@ -643,9 +643,9 @@ export default function ExploreBrowseScreen() {
 
       <Pressable
         onPress={() => setRetry((value) => value + 1)}
-        className="mt-5 rounded-full bg-brand px-6 py-3"
+        className="mt-5 rounded-full bg-ink px-6 py-3"
       >
-        <Txt weight="bold" className="text-bg">
+        <Txt weight="semibold" className="text-bg">
           Try again
         </Txt>
       </Pressable>
@@ -654,7 +654,7 @@ export default function ExploreBrowseScreen() {
     <View className="items-center px-6 py-16">
       <MaterialCommunityIcons name="magnify-close" size={42} color={C.muted} />
 
-      <Txt weight="bold" className="mt-4 text-xl">
+      <Txt weight="semibold" className="mt-4 text-xl">
         No results found
       </Txt>
 
@@ -670,7 +670,7 @@ export default function ExploreBrowseScreen() {
           }}
           className="mt-5 rounded-full bg-panel px-6 py-3"
         >
-          <Txt weight="semibold" className="text-brand">
+          <Txt weight="semibold" className="text-ink">
             Clear search & filters
           </Txt>
         </Pressable>
@@ -694,9 +694,9 @@ export default function ExploreBrowseScreen() {
           className="min-w-[160px] items-center rounded-full bg-panel px-7 py-3.5"
         >
           {moreLoading ? (
-            <ActivityIndicator color={C.brand} />
+            <ActivityIndicator color={C.ink} />
           ) : (
-            <Txt weight="semibold" className="text-brand">
+            <Txt weight="semibold" className="text-ink">
               {moreError ? "Retry loading" : "Load more"}
             </Txt>
           )}

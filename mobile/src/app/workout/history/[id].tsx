@@ -17,15 +17,15 @@ import {
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
-const GREEN = "#4ADE80";
-const BLUE = "#60A5FA";
-const GOLD = "#FACC15";
+const GREEN = "#B8B8B8";
+const BLUE = "#9C9C9C";
+const GOLD = "#C9C9C9";
 
 const SET_STYLE: Record<SetType, { label: string; color: string }> = {
   normal: { label: "Working", color: C.muted },
   warmup: { label: "Warm-up", color: GOLD },
   heavy: { label: "Heavy", color: "#F87171" },
-  failure: { label: "Failure", color: "#FB7185" },
+  failure: { label: "Failure", color: "#909090" },
   drop: { label: "Drop", color: BLUE },
 };
 
@@ -64,11 +64,11 @@ function StatTile({
         <MaterialCommunityIcons name={icon} size={19} color={color} />
       </View>
 
-      <Txt weight="extra" className="mt-3 text-xl" numberOfLines={1}>
+      <Txt weight="semibold" className="mt-3 text-xl" numberOfLines={1}>
         {value}
       </Txt>
 
-      <Txt className="mt-0.5 text-[10px] tracking-wider text-muted">
+      <Txt className="mt-0.5 text-[11px] tracking-wider text-muted">
         {label}
       </Txt>
     </View>
@@ -141,14 +141,14 @@ export default function WorkoutHistoryDetail() {
           size={44}
           color={C.muted}
         />
-        <Txt weight="bold" className="mt-4 text-lg">
+        <Txt weight="semibold" className="mt-4 text-lg">
           Could not load workout
         </Txt>
         <Pressable
           onPress={() => router.back()}
-          className="mt-5 rounded-full bg-brand px-6 py-3"
+          className="mt-5 rounded-full bg-ink px-6 py-3"
         >
-          <Txt weight="bold" className="text-bg">
+          <Txt weight="semibold" className="text-bg">
             Go back
           </Txt>
         </Pressable>
@@ -159,7 +159,7 @@ export default function WorkoutHistoryDetail() {
   if (!session) {
     return (
       <View className="flex-1 items-center justify-center bg-bg">
-        <ActivityIndicator color={C.brand} />
+        <ActivityIndicator color={C.ink} />
       </View>
     );
   }
@@ -183,11 +183,11 @@ export default function WorkoutHistoryDetail() {
       </Pressable>
 
       {/* Header */}
-      <View className="overflow-hidden rounded-[28px] bg-brand/10 p-6">
+      <View className="overflow-hidden rounded-[28px] bg-white/5 p-6">
         <MaterialCommunityIcons
           name="trophy"
           size={150}
-          color={C.brand}
+          color={C.ink}
           style={{
             position: "absolute",
             right: -20,
@@ -197,14 +197,14 @@ export default function WorkoutHistoryDetail() {
           }}
         />
 
-        <View className="flex-row items-center self-start rounded-full bg-green-500/15 px-3 py-1.5">
+        <View className="flex-row items-center self-start rounded-full bg-ink/15 px-3 py-1.5">
           <MaterialCommunityIcons name="check-circle" size={14} color={GREEN} />
           <Txt weight="semibold" className="ml-1.5 text-xs text-green-400">
             Workout complete
           </Txt>
         </View>
 
-        <Txt weight="bold" className="mt-4 text-[32px] leading-10">
+        <Txt weight="semibold" className="mt-4 text-[32px] leading-10">
           {session.name}
         </Txt>
 
@@ -229,7 +229,7 @@ export default function WorkoutHistoryDetail() {
             color={"green"}
             style={{ marginLeft: 10, width:20 }}
           />
-          <Txt className="ml-1.5 text-lg text-green-500">
+          <Txt className="ml-1.5 text-lg text-ink">
             {started.toLocaleTimeString(undefined, {
               hour: "numeric",
               minute: "2-digit",
@@ -242,7 +242,7 @@ export default function WorkoutHistoryDetail() {
       <View className="my-4 flex-row gap-3">
         <StatTile
           icon="timer-outline"
-          color={C.brand}
+          color={C.ink}
           label="DURATION"
           value={formatDuration(session.elapsed_seconds)}
         />
@@ -260,17 +260,17 @@ export default function WorkoutHistoryDetail() {
         />
       </View>
 
-      {!!session.notes && <View className="mb-5 rounded-2xl bg-panel p-4"><Txt weight="bold">Workout notes</Txt><Txt className="mt-2 text-muted">{session.notes}</Txt></View>}
+      {!!session.notes && <View className="mb-5 rounded-2xl bg-panel p-4"><Txt weight="semibold">Workout notes</Txt><Txt className="mt-2 text-muted">{session.notes}</Txt></View>}
       {/* Exercises */}
       <View className="mb-3 mt-3 flex-row items-center justify-between">
-        <Txt weight="bold" className="text-[20px]">
+        <Txt weight="semibold" className="text-[20px]">
           Exercises
         </Txt>
         <Txt className="text-sm text-muted">{stats.exercises} done</Txt>
       </View>
 
       {exercises.length === 0 ? (
-        <View className="items-center rounded-[22px] border border-dashed border-border p-8">
+        <View className="items-center rounded-[22px] p-8">
           <MaterialCommunityIcons name="dumbbell" size={34} color={C.muted} />
           <Txt className="mt-3 text-sm text-muted">
             No completed sets were logged in this workout.
@@ -287,14 +287,14 @@ export default function WorkoutHistoryDetail() {
             >
               {/* Exercise header */}
               <View className="flex-row items-center p-4">
-                <View className="h-10 w-10 items-center justify-center rounded-2xl bg-brand/15">
-                  <Txt weight="bold" className="text-brand">
+                <View className="h-10 w-10 items-center justify-center rounded-2xl bg-white/10">
+                  <Txt weight="semibold" className="text-ink">
                     {exerciseIndex + 1}
                   </Txt>
                 </View>
 
                 <View className="ml-3 flex-1">
-                  <Txt weight="bold" className="text-[16px]" numberOfLines={2}>
+                  <Txt weight="semibold" className="text-[16px]" numberOfLines={2}>
                     {exercise.exercise_name}
                   </Txt>
                   <Txt className="mt-0.5 text-xs text-muted">
@@ -306,10 +306,10 @@ export default function WorkoutHistoryDetail() {
 
               {/* Column labels */}
               <View className="flex-row bg-elevated/60 px-4 py-2">
-                <Txt className="w-24 text-[10px] tracking-wider text-muted">
+                <Txt className="w-24 text-[11px] tracking-wider text-muted">
                   SET
                 </Txt>
-                <Txt className="flex-1 text-right text-[10px] tracking-wider text-muted">
+                <Txt className="flex-1 text-right text-[11px] tracking-wider text-muted">
                   LOGGED PERFORMANCE
                 </Txt>
               </View>
@@ -325,7 +325,7 @@ export default function WorkoutHistoryDetail() {
                   <View
                     key={set.id}
                     className={`flex-row items-center px-4 py-3 ${
-                      index === sets.length - 1 ? "" : "border-b border-border"
+                      index === sets.length - 1 ? "" : " "
                     }`}
                   >
                     <View className="w-24 flex-row items-center">
@@ -334,7 +334,7 @@ export default function WorkoutHistoryDetail() {
                         style={{ backgroundColor: `${style.color}26` }}
                       >
                         <Txt
-                          weight="bold"
+                          weight="semibold"
                           className="text-xs"
                           style={{ color: style.color }}
                         >

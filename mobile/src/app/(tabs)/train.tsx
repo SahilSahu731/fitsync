@@ -18,20 +18,13 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { C } from "@/src/constants/theme";
-import { Txt } from "@/src/components/ui";
+import { PageHeading, SectionHeading, Txt } from "@/src/components/ui";
 
-import {
-  workoutApi,
-  type WorkoutTemplate,
-  type HistoryItem,
-} from "@/src/features/workouts/api";
+import { workoutApi, type WorkoutTemplate, type HistoryItem } from "@/src/features/workouts/api";
 
 import { useWorkout } from "@/src/features/workouts/workout-context";
 
-import {
-  catalogApi,
-  type SavedProgram,
-} from "@/src/features/training-catalog/api";
+import { catalogApi, type SavedProgram } from "@/src/features/training-catalog/api";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSession } from "@/src/context/session";
@@ -45,13 +38,10 @@ import { RoutineCard } from "@/src/features/workouts/components/routine-card";
 
 function ordered<T extends { id: string }>(rows: T[], ids: string[]) {
   const rank = new Map(ids.map((id, index) => [id, index]));
-  return [...rows].sort(
-    (a, b) => (rank.get(a.id) ?? ids.length) - (rank.get(b.id) ?? ids.length),
-  );
+  return [...rows].sort((a, b) => (rank.get(a.id) ?? ids.length) - (rank.get(b.id) ?? ids.length));
 }
 type MenuTarget =
-  | { kind: "routine"; item: WorkoutTemplate }
-  | { kind: "program"; item: SavedProgram };
+  { kind: "routine"; item: WorkoutTemplate } | { kind: "program"; item: SavedProgram };
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 function formatDuration(seconds: number | null | undefined) {
@@ -65,39 +55,8 @@ function formatDuration(seconds: number | null | undefined) {
   return remaining ? `${hours}h ${remaining}m` : `${hours}h`;
 }
 
-function SectionHeading({
-  title,
-  action,
-  onAction,
-}: {
-  title: string;
-  action?: string;
-  onAction?: () => void;
-}) {
-  return (
-    <View className="mb-3 flex-row items-center justify-between">
-      <Txt weight="bold" className="text-[20px]">
-        {title}
-      </Txt>
-
-      {action && onAction ? (
-        <Pressable onPress={onAction} hitSlop={12}>
-          <Txt weight="semibold" className="text-sm text-blue-500 underline">
-            {action}
-          </Txt>
-        </Pressable>
-      ) : null}
-    </View>
-  );
-}
-
 function Skeleton({ height }: { height: number }) {
-  return (
-    <View
-      className="mb-3 rounded-[22px] bg-panel"
-      style={{ height, opacity: 0.7 }}
-    />
-  );
+  return <View className="mb-3 rounded-[22px] bg-panel" style={{ height, opacity: 0.7 }} />;
 }
 
 function QuickTile({
@@ -148,37 +107,24 @@ function EmptyState({
   onPress?: () => void;
 }) {
   return (
-    <View className="items-center rounded-[24px] border border-dashed border-border p-2">
-      <View className="flex-row items-center mb-3 justify-between gap-2">
-        <View className="items-center mt-4 justify-center rounded-2xl bg-panel">
-          <Image
-            source={require("../../../assets/images/no-program.png")}
-            style={{ width: 120, height: 80, borderRadius: 30 }}
-            contentFit="contain"
-            onError={(error) => console.log("Image error:", error)}
-          />
-        </View>
-        <View className="text-left w-1/2">
-          <Txt weight="bold" className="mt-4 text-base">
-            {title}
-          </Txt>
-
-          <Txt className="mt-1 text-center text-sm leading-5 text-muted">
-            {description}
-          </Txt>
-        </View>
-      </View>
-
-      {action && onPress ? (
+    <View className="rounded-[28px] bg-panel p-6">
+      <MaterialCommunityIcons name={icon} size={30} color={C.muted} />
+      <Txt weight="medium" className="mt-6 text-xl leading-7 tracking-[-0.5px]">
+        {title}
+      </Txt>
+      <Txt className="mt-3 max-w-sm text-sm leading-6 text-muted">{description}</Txt>
+      {action && onPress && (
         <Pressable
+          accessibilityRole="button"
           onPress={onPress}
-          className="mt-5 mb-3 rounded-full bg-brand px-6 py-3"
+          className="mt-5 min-h-12 flex-row items-center justify-between rounded-full bg-elevated px-5"
         >
-          <Txt weight="bold" className="text-sm text-bg">
+          <Txt weight="medium" className="text-xs">
             {action}
           </Txt>
+          <MaterialCommunityIcons name="arrow-top-right" size={17} color={C.ink} />
         </Pressable>
-      ) : null}
+      )}
     </View>
   );
 }
@@ -230,50 +176,34 @@ function ProgramCard({
       <View>
         {/* Cover */}
 
-        <View
-          className="w-full overflow-hidden bg-brand/10"
-          style={{ height: 140 }}
-        >
+        <View className="w-full overflow-hidden bg-white/5" style={{ height: 140 }}>
           {showCover ? (
             <Image
               source={{ uri: uri as string }}
               resizeMode="cover"
               style={{ width: "100%", height: 140 }}
               onError={(event) => {
-                console.warn(
-                  "Program cover failed to load:",
-                  uri,
-                );
+                console.warn("Program cover failed to load:", uri);
                 setCoverFailed(true);
               }}
             />
           ) : (
-            <View
-              className="items-center justify-center"
-            >
+            <View className="items-center justify-center">
               <MaterialCommunityIcons
                 name="calendar-check"
                 size={64}
-                color={C.brand}
+                color={C.ink}
                 style={{ opacity: 0.35 }}
               />
             </View>
           )}
 
           {/* Soft shade so badges stay readable on any photo */}
-          {showCover ? (
-            <View
-              pointerEvents="none"
-            />
-          ) : null}
+          {showCover ? <View pointerEvents="none" /> : null}
 
           <View className="absolute left-3 right-3 top-3 flex-row items-center justify-between">
             <View className="flex-row items-center rounded-full bg-black/60 px-3 py-1.5">
-              <MaterialCommunityIcons
-                name="calendar-week"
-                size={14}
-                color="#FFFFFF"
-              />
+              <MaterialCommunityIcons name="calendar-week" size={14} color="#FFFFFF" />
 
               <Txt weight="semibold" className="ml-1.5 text-xs text-white">
                 {program.days_per_week} days a week
@@ -290,11 +220,7 @@ function ProgramCard({
               }}
               className="h-9 w-9 items-center justify-center rounded-full bg-black/60"
             >
-              <MaterialCommunityIcons
-                name="dots-horizontal"
-                size={20}
-                color="#FFFFFF"
-              />
+              <MaterialCommunityIcons name="dots-horizontal" size={20} color="#FFFFFF" />
             </Pressable>
           </View>
         </View>
@@ -302,7 +228,7 @@ function ProgramCard({
         {/* Details */}
 
         <View className="px-4 pt-4">
-          <Txt weight="bold" className="text-[19px] leading-6" numberOfLines={2}>
+          <Txt weight="semibold" className="text-[19px] leading-6" numberOfLines={2}>
             {program.name}
           </Txt>
 
@@ -313,7 +239,7 @@ function ProgramCard({
         </View>
       </View>
 
-      <View className="mx-4 mb-4 mt-4 flex-row items-center justify-between border-t border-border pt-3">
+      <View className="mx-4 mb-4 mt-4 flex-row items-center justify-between pt-3">
         <View className="flex-row items-center">
           <MaterialCommunityIcons name="dumbbell" size={16} color={C.muted} />
 
@@ -323,60 +249,41 @@ function ProgramCard({
         </View>
 
         <View className="flex-row items-center">
-          <Txt weight="semibold" className="text-xs text-brand">
+          <Txt weight="semibold" className="text-xs text-ink">
             View
           </Txt>
 
-          <MaterialCommunityIcons
-            name="chevron-right"
-            size={20}
-            color={C.brand}
-          />
+          <MaterialCommunityIcons name="chevron-right" size={20} color={C.ink} />
         </View>
       </View>
     </Pressable>
   );
 }
 
-function HistoryCard({
-  item,
-  onPress,
-}: {
-  item: HistoryItem;
-  onPress: () => void;
-}) {
+function HistoryCard({ item, onPress }: { item: HistoryItem; onPress: () => void }) {
   const date = new Date(item.started_at);
 
   return (
-    <Pressable
-      onPress={onPress}
-      className="mb-3 flex-row items-center rounded-[22px] bg-panel p-4"
-    >
+    <Pressable onPress={onPress} className="mb-3 flex-row items-center rounded-[22px] bg-panel p-4">
       <View className="h-14 w-14 items-center justify-center rounded-2xl bg-elevated">
-        <Txt weight="extra" className="text-lg text-red-500 leading-[22px]">
+        <Txt weight="semibold" className="text-lg text-ink leading-[22px]">
           {date.getDate()}
         </Txt>
 
-        <Txt className="text-[11px] text-red-400">
+        <Txt className="text-[11px] text-muted">
           {date.toLocaleDateString(undefined, { month: "short" })}
         </Txt>
       </View>
 
       <View className="ml-3 flex-1">
-        <Txt weight="bold" className="text-[15px]" numberOfLines={1}>
+        <Txt weight="semibold" className="text-[15px]" numberOfLines={1}>
           {item.name}
         </Txt>
 
         <View className="mt-1 flex-row items-center">
-          <MaterialCommunityIcons
-            name="clock-outline"
-            size={14}
-            color={C.muted}
-          />
+          <MaterialCommunityIcons name="clock-outline" size={14} color={C.muted} />
 
-          <Txt className="ml-1 text-xs text-muted">
-            {formatDuration(item.elapsed_seconds)}
-          </Txt>
+          <Txt className="ml-1 text-xs text-muted">{formatDuration(item.elapsed_seconds)}</Txt>
         </View>
       </View>
 
@@ -396,9 +303,7 @@ export default function TrainScreen() {
   const orderKey = `fitsync.train-order.v1.${user?.id ?? "signed-out"}`;
   const [menu, setMenu] = useState<MenuTarget | null>(null);
   const [renaming, setRenaming] = useState<WorkoutTemplate | null>(null);
-  const [reordering, setReordering] = useState<"programs" | "routines" | null>(
-    null,
-  );
+  const [reordering, setReordering] = useState<"programs" | "routines" | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [programs, setPrograms] = useState<SavedProgram[]>([]);
@@ -418,8 +323,7 @@ export default function TrainScreen() {
       AsyncStorage.getItem(orderKey),
     ]);
 
-    const [templatesResult, historyResult, programsResult, orderResult] =
-      results;
+    const [templatesResult, historyResult, programsResult, orderResult] = results;
     let savedOrder: { programs?: string[]; routines?: string[] } = {};
     if (orderResult.status === "fulfilled" && orderResult.value) {
       try {
@@ -535,10 +439,7 @@ export default function TrainScreen() {
             ...p.training_program_days,
           ]
             .sort((a, b) => a.day_number - b.day_number)
-            .map(
-              (day) =>
-                `Day ${day.day_number}: ${day.training_routines?.name ?? "Rest"}`,
-            )
+            .map((day) => `Day ${day.day_number}: ${day.training_routines?.name ?? "Rest"}`)
             .join("\n")}`,
         });
       } else {
@@ -557,10 +458,7 @@ export default function TrainScreen() {
         });
       }
     } catch (e) {
-      Alert.alert(
-        "Could not share",
-        e instanceof Error ? e.message : "Please try again.",
-      );
+      Alert.alert("Could not share", e instanceof Error ? e.message : "Please try again.");
     } finally {
       setActionBusy(false);
     }
@@ -605,7 +503,9 @@ export default function TrainScreen() {
   };
 
   const programWidth =
-    programs.length > 1 ? Math.min(300, screenWidth * 0.78) : screenWidth - 40;
+    programs.length > 1
+      ? Math.min(300, (Math.min(screenWidth, 672) - 48) * 0.9)
+      : Math.min(screenWidth, 672) - 48;
 
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
@@ -616,284 +516,260 @@ export default function TrainScreen() {
   return (
     <>
       <ScreenEntrance style={{ flex: 1 }}>
-    <ScrollView
-        className="flex-1 bg-bg"
-        showsVerticalScrollIndicator={false}
-        refreshControl={
-          <RefreshControl
-            refreshing={refreshing}
-            onRefresh={() => void onRefresh()}
-            tintColor={C.brand}
+        <ScrollView
+          className="flex-1 bg-bg"
+          showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl
+              refreshing={refreshing}
+              onRefresh={() => void onRefresh()}
+              tintColor={C.brand}
+            />
+          }
+          contentContainerClassName="w-full max-w-2xl self-center px-6 pt-6 pb-48"
+        >
+          {/* Header */}
+
+          <PageHeading
+            eyebrow={today}
+            title="Your next rep."
+            subtitle="A little structure. A little room for real life."
           />
-        }
-        contentContainerStyle={{
-          paddingHorizontal: 20,
-          paddingTop: 26,
-          paddingBottom: 150,
-        }}
-      >
-        {/* Header */}
+          <WorkoutSyncNotice />
 
-        <View className="mb-2">
-          <Txt className="text-sm text-muted">{today}</Txt>
+          {/* Hero: resume or start */}
 
-          <Txt weight="semibold" className="mt-1 text-[36px] tracking-tight">
-            Train
-          </Txt>
-        </View>
-
-        <WorkoutSyncNotice />
-      <CoachHomeCard />
-      <ActiveProgramCard />
-
-        {/* Hero: resume or start */}
-
-        {session ? (
-          <Pressable
-            onPress={() => router.push("/workout")}
-            className="mb-3 rounded-[28px] bg-brand/10 p-5"
-          >
-            <View className="flex-row items-center justify-between">
-              <View>
-                <View className="flex-row items-center">
-                  <View className="h-2.5 w-2.5 rounded-full bg-green-500" />
-
-                  <Txt
-                    weight="semibold"
-                    className="ml-2 text-xs text-green-500"
-                  >
-                    Workout in progress
+          {session ? (
+            <Pressable
+              accessibilityRole="button"
+              onPress={() => router.push("/workout")}
+              className="mb-4 rounded-[28px] bg-panel p-6"
+            >
+              <View className="flex-row items-center gap-2">
+                <View className="h-1.5 w-1.5 rounded-full bg-brand" />
+                <Txt weight="medium" className="text-[11px] tracking-[1px] text-muted">
+                  WORKOUT IN PROGRESS
+                </Txt>
+              </View>
+              <Txt
+                weight="medium"
+                numberOfLines={2}
+                className="mt-5 text-2xl leading-8 tracking-[-0.7px]"
+              >
+                {session.name}
+              </Txt>
+              <View className="mt-6 flex-row items-center justify-between">
+                <Txt className="text-xs text-muted">Right where you left it.</Txt>
+                <View className="min-h-12 flex-row items-center gap-2 rounded-full bg-ink px-5">
+                  <Txt weight="semibold" className="text-xs text-black">
+                    Resume
                   </Txt>
+                  <MaterialCommunityIcons name="play" size={18} color={C.bg} />
                 </View>
-                <Txt
-                  weight="bold"
-                  className="mt-2 text-[23px]"
-                  numberOfLines={1}
-                >
-                  {session.name}
-                </Txt>
               </View>
-
-              <View className="mt-5 flex-row items-center self-start rounded-full bg-white px-5 py-3">
-                <MaterialCommunityIcons name="play" size={20} color={"black"} />
-
-                <Txt weight="bold" className="ml-2 text-sm text-bg">
-                  Resume
+            </Pressable>
+          ) : (
+            <Pressable
+              accessibilityRole="button"
+              accessibilityState={{ disabled: busy, busy }}
+              onPress={() => void handleStart()}
+              disabled={busy}
+              className="mb-4 overflow-hidden rounded-[28px] bg-ink p-7"
+            >
+              <View className="flex-row items-center justify-between">
+                <Txt weight="medium" className="text-[11px] tracking-[1.5px] text-black/60">
+                  MAKE TIME FOR YOU
                 </Txt>
+                <MaterialCommunityIcons name="dumbbell" size={25} color={C.bg} />
               </View>
-            </View>
-          </Pressable>
-        ) : (
-          <Pressable
-            onPress={() => void handleStart()}
-            disabled={busy}
-            className="mb-3 flex-row items-center justify-between overflow-hidden rounded-[28px] bg-brand p-6"
-          >
-            <MaterialCommunityIcons
-              name="dumbbell"
-              size={170}
-              color={C.bg}
-              style={{
-                position: "absolute",
-                right: -28,
-                bottom: -34,
-                opacity: 0.12,
-                transform: [{ rotate: "-18deg" }],
-              }}
-            />
-            <View className="flex-1 pr-3">
-              <Txt weight="bold" className="text-[22px] leading-8 text-bg">
-                Start a workout!
+              <Txt
+                weight="medium"
+                className="mt-6 text-[30px] leading-[37px] tracking-[-1px] text-black"
+              >
+                Start with{"\n"}the next set.
               </Txt>
-
-              <Txt className="mt-1 max-w-[230px] text-xs text-bg/75">
-                Begin with an empty session and add exercises as you go.
+              <Txt className="mt-4 max-w-xs text-sm leading-6 text-black/60">
+                Begin a session and add your exercises as you go.
               </Txt>
-            </View>
+              <View className="mt-6 flex-row items-center justify-between">
+                <Txt weight="semibold" className="text-sm text-black">
+                  Start a workout
+                </Txt>
+                {busy ? (
+                  <ActivityIndicator color={C.bg} size="small" />
+                ) : (
+                  <View className="h-11 w-11 items-center justify-center rounded-full bg-black">
+                    <MaterialCommunityIcons name="arrow-top-right" size={21} color={C.ink} />
+                  </View>
+                )}
+              </View>
+            </Pressable>
+          )}
 
-            <View className="flex-row mt-3 items-center self-start rounded-full bg-bg px-5 py-3">
-              {busy ? (
-                <ActivityIndicator color={C.brand} size="small" />
-              ) : (
-                <MaterialCommunityIcons name="play" size={18} color={"white"} />
-              )}
+          {/* Quick actions */}
 
-              <Txt weight="bold" className="ml-2 text-white">
-                Start
-              </Txt>
-            </View>
-          </Pressable>
-        )}
-
-        {/* Quick actions */}
-
-        <View className="mb-9 flex-row gap-3">
-          <QuickTile
-            icon="animation"
-            title="Explore"
-            subtitle="Programs and routines"
-            onPress={() => router.push("/explore")}
-          />
-
-          <QuickTile
-            icon="plus"
-            title="New routine"
-            subtitle="Build your own"
-            onPress={() => router.push("/workout/create")}
-          />
-        </View>
-
-        {/* Error */}
-
-        {Boolean(error) && !loading ? (
-          <Pressable
-            onPress={() => void onRefresh()}
-            className="mb-6 flex-row items-center rounded-2xl border border-border bg-panel p-4"
-          >
-            <MaterialCommunityIcons
-              name="cloud-off-outline"
-              size={22}
-              color={C.muted}
+          <View className="mb-9 flex-row gap-3">
+            <QuickTile
+              icon="animation"
+              title="Explore"
+              subtitle="Programs and routines"
+              onPress={() => router.push("/explore")}
             />
 
-            <Txt className="ml-3 flex-1 text-sm text-muted">
-              {error} Tap to try again.
-            </Txt>
-          </Pressable>
-        ) : null}
-
-        {/* Loading skeletons */}
-
-        {loading ? (
-          <View>
-            <Skeleton height={170} />
-            <Skeleton height={80} />
-            <Skeleton height={80} />
+            <QuickTile
+              icon="plus"
+              title="New routine"
+              subtitle="Build your own"
+              onPress={() => router.push("/workout/create")}
+            />
           </View>
-        ) : (
-          <>
-            {/* Programs */}
 
-            <View className="mb-9">
-              <SectionHeading
-                title="Programs"
-                action={programs.length ? "Find more" : undefined}
-                onAction={() => router.push("/explore")}
-              />
+          <View className="mb-5">
+            <SectionHeading title="Training with direction" />
+            <CoachHomeCard />
+            <ActiveProgramCard />
+          </View>
 
-              {programs.length === 0 ? (
-                <EmptyState
-                  icon="calendar-check-outline"
-                  title="Find your first program"
-                  description="Pick a plan that matches your goals and schedule."
-                  action="Explore programs"
-                  onPress={() => router.push("/explore")}
+          {/* Error */}
+
+          {Boolean(error) && !loading ? (
+            <Pressable
+              onPress={() => void onRefresh()}
+              className="mb-6 flex-row items-center rounded-2xl bg-panel p-4"
+            >
+              <MaterialCommunityIcons name="cloud-off-outline" size={22} color={C.muted} />
+
+              <Txt className="ml-3 flex-1 text-sm text-muted">{error} Tap to try again.</Txt>
+            </Pressable>
+          ) : null}
+
+          {/* Loading skeletons */}
+
+          {loading ? (
+            <View>
+              <Skeleton height={170} />
+              <Skeleton height={80} />
+              <Skeleton height={80} />
+            </View>
+          ) : (
+            <>
+              {/* Programs */}
+
+              <View className="mb-9">
+                <SectionHeading
+                  title="Programs"
+                  action={programs.length ? "Find more" : undefined}
+                  onAction={() => router.push("/explore")}
                 />
-              ) : (
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  decelerationRate="fast"
-                  snapToInterval={programWidth + 12}
-                  style={{ marginHorizontal: -20 }}
-                  contentContainerStyle={{ paddingHorizontal: 20, gap: 12 }}
-                >
-                  {programs.map((item) => (
-                    <ProgramCard
+
+                {programs.length === 0 ? (
+                  <EmptyState
+                    icon="calendar-check-outline"
+                    title="Find your rhythm."
+                    description="Pick a plan that matches your goals and schedule."
+                    action="Explore programs"
+                    onPress={() => router.push("/explore")}
+                  />
+                ) : (
+                  <ScrollView
+                    horizontal
+                    showsHorizontalScrollIndicator={false}
+                    decelerationRate="fast"
+                    snapToInterval={programWidth + 12}
+                    className="-mx-6"
+                    contentContainerClassName="gap-3 px-6"
+                  >
+                    {programs.map((item) => (
+                      <ProgramCard
+                        key={item.id}
+                        item={item}
+                        width={programWidth}
+                        onOptions={() => {
+                          if (!actionBusy) setMenu({ kind: "program", item });
+                        }}
+                        onPress={() => {
+                          if (!item.training_programs?.id) return;
+
+                          router.push({
+                            pathname: "/explore/programs/[id]",
+                            params: { id: item.training_programs.id },
+                          });
+                        }}
+                      />
+                    ))}
+                  </ScrollView>
+                )}
+              </View>
+
+              {/* Routines */}
+
+              <View className="mb-9">
+                <SectionHeading title="Routines" />
+
+                {templates.length === 0 ? (
+                  <EmptyState
+                    icon="dumbbell"
+                    title="Your routine starts here."
+                    description="Create your own workout or save one from Explore."
+                    action="Create routine"
+                    onPress={() => router.push("/workout/create")}
+                  />
+                ) : (
+                  templates.map((template) => (
+                    <RoutineCard
+                      key={template.id}
+                      template={template}
+                      onStart={() => void handleStart(template.id)}
+                      onOptions={() => {
+                        if (!actionBusy) setMenu({ kind: "routine", item: template });
+                      }}
+                      disabled={busy || Boolean(session)}
+                    />
+                  ))
+                )}
+              </View>
+
+              {/* History */}
+
+              <View>
+                <SectionHeading title="Recent workouts" />
+
+                {history.length === 0 ? (
+                  <EmptyState
+                    icon="history"
+                    title="A place for the work."
+                    description="Finish a session and it will show up in your history."
+                  />
+                ) : (
+                  history.slice(0, 10).map((item) => (
+                    <HistoryCard
                       key={item.id}
                       item={item}
-                      width={programWidth}
-                      onOptions={() => {
-                        if (!actionBusy) setMenu({ kind: "program", item });
-                      }}
-                      onPress={() => {
-                        if (!item.training_programs?.id) return;
-
+                      onPress={() =>
                         router.push({
-                          pathname: "/explore/programs/[id]",
-                          params: { id: item.training_programs.id },
-                        });
-                      }}
+                          pathname: "/workout/history/[id]",
+                          params: { id: item.id },
+                        })
+                      }
                     />
-                  ))}
-                </ScrollView>
-              )}
-            </View>
-
-            {/* Routines */}
-
-            <View className="mb-9">
-              <SectionHeading title="Routines" />
-
-              {templates.length === 0 ? (
-                <EmptyState
-                  icon="dumbbell"
-                  title="No routines yet"
-                  description="Create your own workout or save one from Explore."
-                  action="Create routine"
-                  onPress={() => router.push("/workout/create")}
-                />
-              ) : (
-                templates.map((template) => (
-                  <RoutineCard
-                    key={template.id}
-                    template={template}
-                    onStart={() => void handleStart(template.id)}
-                    onOptions={() => {
-                      if (!actionBusy)
-                        setMenu({ kind: "routine", item: template });
-                    }}
-                    disabled={busy || Boolean(session)}
-                  />
-                ))
-              )}
-            </View>
-
-            {/* History */}
-
-            <View>
-              <SectionHeading title="Recent workouts" />
-
-              {history.length === 0 ? (
-                <EmptyState
-                  icon="history"
-                  title="Your first workout starts here"
-                  description="Finish a session and it will show up in your history."
-                />
-              ) : (
-                history.slice(0, 10).map((item) => (
-                  <HistoryCard
-                    key={item.id}
-                    item={item}
-                    onPress={() =>
-                      router.push({
-                        pathname: "/workout/history/[id]",
-                        params: { id: item.id },
-                      })
-                    }
-                  />
-                ))
-              )}
-            </View>
-          </>
-        )}
-      </ScrollView>
-    </ScreenEntrance>
+                  ))
+                )}
+              </View>
+            </>
+          )}
+        </ScrollView>
+      </ScreenEntrance>
       {actionBusy && (
         <View
           pointerEvents="auto"
           className="absolute inset-0 items-center justify-center bg-black/40"
         >
-          <ActivityIndicator color={C.brand} />
+          <ActivityIndicator color={C.ink} />
         </View>
       )}
       {menu && (
         <TrainActions
-          title={
-            menu.kind === "routine"
-              ? menu.item.name
-              : menu.item.training_programs.name
-          }
+          title={menu.kind === "routine" ? menu.item.name : menu.item.training_programs.name}
           onClose={() => setMenu(null)}
           actions={[
             ...(menu.kind === "routine" && menu.item.can_rename
@@ -908,10 +784,7 @@ export default function TrainScreen() {
             {
               label: "Reorder",
               icon: "sort",
-              run: () =>
-                setReordering(
-                  menu.kind === "routine" ? "routines" : "programs",
-                ),
+              run: () => setReordering(menu.kind === "routine" ? "routines" : "programs"),
             },
             {
               label: "Share",
@@ -923,9 +796,7 @@ export default function TrainScreen() {
               icon: "trash-can-outline",
               danger: true,
               run: () =>
-                menu.kind === "routine"
-                  ? handleDelete(menu.item.id)
-                  : deleteProgram(menu.item),
+                menu.kind === "routine" ? handleDelete(menu.item.id) : deleteProgram(menu.item),
             },
           ]}
         />
@@ -937,9 +808,7 @@ export default function TrainScreen() {
           onSave={async (name) => {
             await workoutApi.renameTemplate(renaming.id, name);
             setTemplates((rows) =>
-              rows.map((row) =>
-                row.id === renaming.id ? { ...row, name } : row,
-              ),
+              rows.map((row) => (row.id === renaming.id ? { ...row, name } : row)),
             );
           }}
         />

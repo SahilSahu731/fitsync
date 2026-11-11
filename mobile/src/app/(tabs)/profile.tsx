@@ -1,327 +1,292 @@
-import { useBilling } from "@/src/features/billing/billing-context";
-import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
-import { useAppAlert } from "@/src/components/app-dialog";
-
 import React, { useState } from "react";
-
-import {
-  Image,
-  ScrollView,
-  View
-} from "react-native";
-
+import { ActivityIndicator, Image, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-
+import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
+import { useAppAlert } from "@/src/components/app-dialog";
+import { PageHeading, SectionHeading, Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
-import { Txt } from "@/src/components/ui";
 import { useSession } from "@/src/context/session";
+import { useBilling } from "@/src/features/billing/billing-context";
+import { weightValue } from "@/src/features/progress/model";
 
-function SettingRow({
-  icon,
-  title,
-  subtitle,
-  onPress
-}: {
-  icon: keyof typeof MaterialCommunityIcons.glyphMap;
+type Setting = {
+  icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
   title: string;
   subtitle: string;
-  onPress: () => void;
-}) {
+  route:
+    | "/calendar"
+    | "/coach"
+    | "/health-sync"
+    | "/wellness"
+    | "/edit-profile"
+    | "/settings"
+    | "/billing";
+};
+function SettingRow({ item, onPress }: { item: Setting; onPress: () => void }) {
   return (
     <Pressable
+      accessibilityRole="button"
       onPress={onPress}
-      className="mb-3 flex-row items-center rounded-2xl bg-panel p-4"
+      className="min-h-20 flex-row items-center gap-4 py-5"
     >
-      <View className="mr-4 h-12 w-12 items-center justify-center rounded-xl">
-        <MaterialCommunityIcons
-          name={icon}
-          size={28}
-          color={"white"}
-        />
-      </View>
-
-      <View className="flex-1">
-        <Txt weight="semibold" className="text-[18px]">
-          {title}
+      <MaterialCommunityIcons name={item.icon} size={23} color={C.muted} />
+      <View className="min-w-0 flex-1">
+        <Txt weight="medium" className="text-sm">
+          {item.title}
         </Txt>
-
-        <Txt className="mt-1 text-sm text-muted">
-          {subtitle}
-        </Txt>
+        <Txt className="mt-1 text-xs leading-5 text-muted">{item.subtitle}</Txt>
       </View>
-
-      <MaterialCommunityIcons
-        name="chevron-right"
-        size={26}
-        color={"white"}
-      />
+      <MaterialCommunityIcons name="chevron-right" size={19} color={C.muted} />
     </Pressable>
   );
 }
+const groups: { title: string; items: Setting[] }[] = [
+  {
+    title: "Your everyday",
+    items: [
+      {
+        icon: "calendar-month-outline",
+        title: "Training calendar",
+        subtitle: "The week ahead, and the work you’ve done",
+        route: "/calendar",
+      },
+      {
+        icon: "calendar-check-outline",
+        title: "Your personal plan",
+        subtitle: "Built around your goal, time and equipment",
+        route: "/coach",
+      },
+      {
+        icon: "heart-pulse",
+        title: "Connected health",
+        subtitle: "Import steps, sleep and weight on your terms",
+        route: "/health-sync",
+      },
+      {
+        icon: "food-apple-outline",
+        title: "Meals & accountability",
+        subtitle: "Meal ideas, shopping lists and commitments",
+        route: "/wellness",
+      },
+    ],
+  },
+  {
+    title: "Make it yours",
+    items: [
+      {
+        icon: "account-edit-outline",
+        title: "Personal information",
+        subtitle: "Your photo, details and fitness profile",
+        route: "/edit-profile",
+      },
+      {
+        icon: "cog-outline",
+        title: "Settings & preferences",
+        subtitle: "Units, reminders, sound and app experience",
+        route: "/settings",
+      },
+      {
+        icon: "credit-card-outline",
+        title: "Membership & billing",
+        subtitle: "Your subscription and store settings",
+        route: "/billing",
+      },
+    ],
+  },
+];
 
 export default function ProfileScreen() {
   const Alert = useAppAlert();
   const router = useRouter();
-  const { user, profile, signOut } = useSession();
+  const { user, profile, settings, signOut } = useSession();
   const { isPro } = useBilling();
-
   const [busy, setBusy] = useState(false);
-
-  const logout = () => {
-    Alert.alert(
-      "Sign out?",
-      "You can sign in again with your Google account.",
-      [
-        {
-          text: "Cancel",
-          style: "cancel"
-        },
-        {
-          text: "Sign out",
-          onPress: async () => {
-            setBusy(true);
-
-            try {
-              await signOut();
-              router.replace("/(auth)/sign-in");
-            } finally {
-              setBusy(false);
-            }
+  const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
+  const unit = settings?.weightUnit ?? "kg";
+  const goals: Record<string, string> = {
+    muscle: "Build muscle",
+    strength: "Get stronger",
+    fat_loss: "Lose body fat",
+    fitness: "Feel fitter",
+  };
+  const logout = () =>
+    Alert.alert("Sign out?", "Your account and saved progress will be here when you return.", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Sign out",
+        onPress: async () => {
+          setBusy(true);
+          try {
+            await signOut();
+            router.replace("/(auth)/sign-in");
+          } catch (error) {
+            Alert.alert(
+              "Could not sign out",
+              error instanceof Error ? error.message : "Please try again.",
+            );
+          } finally {
+            setBusy(false);
           }
-        }
-      ]
-    );
-  };
-
-  const goalNames: Record<string, string> = {
-    muscle: "Build Muscle",
-    strength: "Get Stronger",
-    fat_loss: "Fat Loss",
-    fitness: "General Fitness"
-  };
-
+        },
+      },
+    ]);
   return (
-    <ScreenEntrance style={{ flex: 1 }}>
-    <ScrollView
-      className="flex-1 bg-bg"
-      contentContainerStyle={{
-        paddingHorizontal: 22,
-        paddingTop: 24,
-        paddingBottom: 150
-      }}
-    >
-      <View className="flex-row items-center justify-between">
-        <View>
-          <Txt
-            weight="extra"
-            className="mt-1 text-[26px]"
-          >
-            My Profile
-          </Txt>
-        </View>
-
-        <Pressable
-          onPress={() => router.push("/settings")}
-          className="h-12 w-12 items-center justify-center"
-        >
-          <MaterialCommunityIcons
-            name="cog"
-            size={25}
-            color={C.ink}
-          />
-        </Pressable>
-      </View>
-
-      {/* Profile card */}
-
-      <View className="mt-7 rounded-[30px] bg-panel p-6">
-        <View className="flex-row items-center">
-          <View className="h-[86px] w-[86px] overflow-hidden rounded-full bg-brand">
-            {user?.avatarUrl ? (
+    <ScreenEntrance className="flex-1 bg-bg">
+      <ScrollView
+        className="flex-1"
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="w-full max-w-2xl self-center px-6 pt-6 pb-44"
+      >
+        <PageHeading
+          eyebrow="A little more you"
+          title="Your FitSync."
+          action={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Open settings"
+              onPress={() => router.push("/settings")}
+              className="h-12 w-12 items-center justify-center rounded-full bg-panel"
+            >
+              <MaterialCommunityIcons name="cog-outline" size={23} color={C.ink} />
+            </Pressable>
+          }
+        />
+        <View className="mb-8 flex-row items-center gap-5">
+          <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-elevated">
+            {user?.avatarUrl && failedAvatar !== user.avatarUrl ? (
               <Image
                 source={{ uri: user.avatarUrl }}
+                onError={() => setFailedAvatar(user.avatarUrl ?? null)}
                 className="h-full w-full"
                 resizeMode="cover"
               />
             ) : (
-              <View className="h-full w-full items-center justify-center">
-                <Txt
-                  weight="extra"
-                  className="text-3xl text-bg"
-                >
-                  {(user?.name || "A")[0].toUpperCase()}
-                </Txt>
-              </View>
+              <Txt weight="medium" className="text-3xl">
+                {(user?.name || "A")[0].toUpperCase()}
+              </Txt>
             )}
           </View>
-
-          <View className="ml-4 flex-1">
-            <Txt
-              weight="extra"
-              className="text-[25px]"
-            >
+          <View className="min-w-0 flex-1">
+            <Txt weight="medium" className="text-2xl leading-8 tracking-[-0.7px]">
               {user?.name || "Athlete"}
-              {/* <View className="ml-3 flex items-center justify-center px-3 py-0.5 rounded-full bg-[#e6b516]">
-                <Txt className="text-sm ">Basic</Txt>
-              </View> */}
             </Txt>
-
-            <Txt
-              className="mt-1 text-xs text-muted"
-              numberOfLines={1}
-            >
+            <Txt numberOfLines={1} className="mt-1 text-xs text-muted">
               {user?.email}
             </Txt>
-
-            <Txt
-              weight="bold"
-              className="mt-2 text-[11px] tracking-[1px] text-brand"
-            >
-              {isPro ? "FITSYNC PRO" : "FITSYNC ATHLETE"}
-            </Txt>
+            <View className="mt-3 flex-row items-center gap-2">
+              <View className={`h-1.5 w-1.5 rounded-full ${isPro ? "bg-brand" : "bg-white/50"}`} />
+              <Txt weight="medium" className="text-[11px] tracking-[1px] text-muted">
+                {isPro ? "FITSYNC PRO" : "FITSYNC ATHLETE"}
+              </Txt>
+            </View>
           </View>
         </View>
-
-        {user?.bio ? (
-          <Txt className="mt-5 text-sm leading-6 text-muted">
-            {user.bio}
-          </Txt>
-        ) : null}
-
+        {!!user?.bio && <Txt className="mb-6 text-sm leading-6 text-muted">{user.bio}</Txt>}
         <Pressable
+          accessibilityRole="button"
           onPress={() => router.push("/edit-profile")}
-          className="mt-5 flex-row items-center justify-center rounded-xl border border-brand py-3"
+          className="min-h-12 flex-row items-center justify-center gap-3 rounded-full bg-panel"
         >
-          <MaterialCommunityIcons
-            name="pencil"
-            size={18}
-            color={C.brand}
-          />
-
-          <Txt
-            weight="bold"
-            className="ml-2 text-sm text-brand"
-          >
-            EDIT PROFILE
+          <Txt weight="medium" className="text-xs">
+            Edit your profile
           </Txt>
+          <MaterialCommunityIcons name="arrow-top-right" size={16} color={C.ink} />
         </Pressable>
-      </View>
-
-      {/* Measurements */}
-
-      <Txt
-        weight="extra"
-        className="mb-4 mt-8 text-xl"
-      >
-        Your Stats
-      </Txt>
-
-      <View className="flex-row gap-3">
-        {[
-          [
-            profile?.weightKg?.toString() || "–",
-            "WEIGHT (KG)"
-          ],
-          [
-            profile?.heightCm?.toString() || "–",
-            "HEIGHT (CM)"
-          ],
-          [
-            profile?.trainingDays?.toString() || "–",
-            "DAYS/WEEK"
-          ]
-        ].map(([value, label]) => (
-          <View
-            key={label}
-            className="flex-1 rounded-2xl bg-panel p-3"
-          >
-            <Txt
-              weight="extra"
-              className="text-[24px]"
-            >
-              {value}
+        <View className="mt-9">
+          <SectionHeading title="Your starting point" />
+          <View className="flex-row gap-3">
+            {[
+              {
+                value: profile?.weightKg
+                  ? weightValue(profile.weightKg, unit).toLocaleString(undefined, {
+                      maximumFractionDigits: 1,
+                    })
+                  : "—",
+                label: `Weight · ${unit}`,
+              },
+              { value: profile?.heightCm?.toString() || "—", label: "Height · cm" },
+              { value: profile?.trainingDays?.toString() || "—", label: "Days / week" },
+            ].map((stat) => (
+              <View key={stat.label} className="min-w-0 flex-1 rounded-2xl bg-panel px-4 py-5">
+                <Txt
+                  weight="medium"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  className="text-[26px] tracking-[-1px]"
+                >
+                  {stat.value}
+                </Txt>
+                <Txt className="mt-2 text-[11px] text-muted">{stat.label}</Txt>
+              </View>
+            ))}
+          </View>
+          <View className="mt-3 flex-row items-center gap-4 rounded-2xl bg-panel px-5 py-5">
+            <MaterialCommunityIcons name="bullseye-arrow" size={25} color={C.muted} />
+            <View className="flex-1">
+              <Txt className="text-[11px] text-muted">The direction you chose</Txt>
+              <Txt weight="medium" className="mt-1 text-base">
+                {goals[profile?.goal || "fitness"] ?? "Your fitness, your way"}
+              </Txt>
+            </View>
+          </View>
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          onPress={() => router.push("/pro")}
+          className="mt-8 rounded-[28px] bg-ink p-6"
+        >
+          <View className="flex-row items-center justify-between">
+            <Txt weight="medium" className="text-[11px] tracking-[1.5px] text-black/60">
+              FITSYNC PRO
             </Txt>
-
-            <Txt className="mt-2 text-[10px] text-muted">
-              {label}
+            <MaterialCommunityIcons name="star-four-points-outline" size={23} color={C.bg} />
+          </View>
+          <Txt weight="medium" className="mt-5 text-2xl leading-8 tracking-[-0.7px] text-black">
+            {isPro ? "A little more flexibility." : "Room for real life."}
+          </Txt>
+          <Txt className="mt-3 text-xs leading-6 text-black/60">
+            {isPro
+              ? "Your membership helps your plan adapt with you."
+              : "Adapt your plan, move a missed session and find your next step."}
+          </Txt>
+          <View className="mt-5 flex-row items-center gap-2">
+            <Txt weight="semibold" className="text-xs text-black">
+              {isPro ? "Your Pro membership" : "Explore the possibilities"}
             </Txt>
+            <MaterialCommunityIcons name="arrow-top-right" size={16} color={C.bg} />
+          </View>
+        </Pressable>
+        {groups.map((group) => (
+          <View key={group.title} className="mt-9">
+            <SectionHeading title={group.title} />
+            <View className="rounded-[28px] bg-panel px-5">
+              {group.items.map((item) => (
+                <SettingRow key={item.route} item={item} onPress={() => router.push(item.route)} />
+              ))}
+            </View>
           </View>
         ))}
-      </View>
-
-      {/* Goal */}
-
-      <View className="mt-4 flex-row items-center rounded-2xl bg-brand p-5">
-        <MaterialCommunityIcons
-          name="bullseye-arrow"
-          color={C.bg}
-          size={30}
-        />
-
-        <View className="ml-4 flex-1">
-          <Txt
-            weight="medium"
-            className="text-sm text-bg"
-          >
-            Current Fitness Goal
-          </Txt>
-
-          <Txt
-            weight="extra"
-            className="mt-1 text-xl text-bg"
-          >
-            {goalNames[profile?.goal || "muscle"]}
-          </Txt>
-        </View>
-      </View>
-
-      <Txt
-        weight="extra"
-        className="mb-4 mt-8 text-xl"
-      >
-        Account
-      </Txt>
-
-      <SettingRow icon="star-four-points-outline" title={isPro ? "Your Pro membership" : "FitSync Pro"} subtitle="Personal plans, adaptations and weekly coaching" onPress={() => router.push("/pro")} />
-      <SettingRow icon="credit-card-outline" title="Membership & billing" subtitle="Renewal, receipts and payment settings" onPress={() => router.push("/billing")} />
-      <SettingRow icon="calendar-month-outline" title="Training calendar" subtitle="Your planned sessions and completed workouts" onPress={() => router.push("/calendar")} />
-      <SettingRow icon="calendar-check-outline" title="Your personal plan" subtitle="Training that fits your goal and schedule" onPress={() => router.push("/coach")} />
-      <SettingRow icon="heart-pulse" title="Connect health data" subtitle="Import steps, sleep and weight with your permission" onPress={() => router.push("/health-sync")} />
-      <SettingRow icon="food-apple-outline" title="Meals & accountability" subtitle="Meal ideas, shopping lists and private commitments" onPress={() => router.push("/wellness")} />
-      <SettingRow
-        icon="account-edit"
-        title="Personal information"
-        subtitle="Name, photo, body details, goals"
-        onPress={() => router.push("/edit-profile")}
-      />
-
-      <SettingRow
-        icon="cog"
-        title="Settings"
-        subtitle="Training preferences and account management"
-        onPress={() => router.push("/settings")}
-      />
-
-      <Pressable
-        disabled={busy}
-        onPress={logout}
-        className="mt-3 flex-row mb-8 items-center justify-center rounded-2xl border border-[#693C35] bg-[#f03434] py-4"
-      >
-        <MaterialCommunityIcons
-          name="logout"
-          size={20}
-          color="#FFFFFF"
-        />
-
-        <Txt
-          weight="bold"
-          className="ml-3 text-[#FFFFFF]"
+        <Pressable
+          accessibilityRole="button"
+          disabled={busy}
+          accessibilityState={{ disabled: busy, busy }}
+          onPress={logout}
+          className="mt-9 min-h-14 flex-row items-center justify-center gap-3 rounded-full bg-panel"
         >
-          SIGN OUT
+          {busy ? (
+            <ActivityIndicator color={C.ink} />
+          ) : (
+            <MaterialCommunityIcons name="logout" size={18} color={C.muted} />
+          )}
+          <Txt weight="medium" className="text-sm text-muted">
+            {busy ? "Signing out…" : "Sign out"}
+          </Txt>
+        </Pressable>
+        <Txt className="mt-7 text-center text-[11px] text-muted">
+          Your training. Your habits. In sync.
         </Txt>
-      </Pressable>
-    </ScrollView>
+      </ScrollView>
     </ScreenEntrance>
   );
 }

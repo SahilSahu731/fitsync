@@ -260,7 +260,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
         </div>
         {!editing && (
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => open(null)}
           >
             <Icon name="plus" size={18} />
@@ -270,7 +270,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
       </div>
       {error && (
         <div
-          className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+          className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!"
           role="alert"
         >
           {error}
@@ -289,7 +289,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
       )}
       {notice && (
         <div
-          className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-brand! bg-brand/20! text-ink!"
+          className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink bg-white/10! text-ink!"
           role="status"
         >
           {notice}
@@ -324,12 +324,12 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
           <div className="grid gap-5 md:grid-cols-2">
             {visible.map((row) => (
               <article
-                className="rounded-lg border border-line bg-panel flex flex-col justify-between gap-6 p-6 [&_h2]:my-3 [&_h2]:text-2xl [&_p]:mb-3 [&_p]:text-muted"
+                className="rounded-3xl bg-panel flex flex-col justify-between gap-6 p-6 [&_h2]:my-3 [&_h2]:text-2xl [&_p]:mb-3 [&_p]:text-muted"
                 key={row.id}
               >
                 <div>
                   <span
-                    className={`inline-flex w-fit items-center whitespace-nowrap rounded-sm bg-surface px-2.5 py-1 text-xs font-semibold text-ink ${row.published ? "bg-brand/40! text-ink!" : "bg-surface! text-muted! ring-1 ring-line"}`}
+                    className={`inline-flex w-fit items-center whitespace-nowrap rounded-full bg-white/6 px-3 py-1 text-xs font-semibold text-ink ${row.published ? "bg-brand/40! text-ink!" : "bg-surface! text-muted! "}`}
                   >
                     {kind === "categories"
                       ? `Position ${row.position}`
@@ -349,7 +349,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
                 </div>
                 <div className="flex flex-wrap items-center gap-3">
                   <button
-                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink min-h-10! px-4! py-2! text-sm!"
+                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface!  min-h-10! px-4! py-2! text-sm!"
                     onClick={() => open(row)}
                   >
                     Edit {singular}
@@ -395,7 +395,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
           </button>
           <form onSubmit={save}>
             <fieldset className="m-0 min-w-0 border-0 p-0" disabled={busy}>
-              <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+              <section className="rounded-3xl bg-panel p-5 sm:p-7">
                 <h2>Details</h2>
                 <div className="grid gap-5 sm:grid-cols-2">
                   {field("Name", "name")}
@@ -479,7 +479,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
                 </div>
                 <div className="mt-6 flex flex-wrap items-center gap-4">
                   <button
-                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                     type="submit"
                   >
                     {busy ? "Saving…" : "Save details"}
@@ -501,7 +501,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
                 setBusy={setBusy}
               />
             ) : (
-              <div className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+              <div className="rounded-3xl bg-panel p-5 sm:p-7">
                 <p>
                   Save the draft first, then add{" "}
                   {kind === "routines" ? "exercises" : "schedule days"}.
@@ -594,7 +594,7 @@ function CatalogContents({
       }
     : {};
   return (
-    <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+    <section className="rounded-3xl bg-panel p-5 sm:p-7">
       <h2>{routine ? "Exercises" : "Weekly schedule · repeats each week"}</h2>
       <p>
         {record.published
@@ -603,7 +603,7 @@ function CatalogContents({
       </p>
       {error && (
         <div
-          className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+          className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!"
           role="alert"
         >
           {error}
@@ -651,7 +651,7 @@ function CatalogContents({
           />
         ) : (
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface! "
             onClick={() => setAdding(true)}
           >
             + Add exercise
@@ -704,7 +704,7 @@ function ContentRow({
   };
   return (
     <form
-      className="mb-5 border-b border-line py-6 [&>div]:my-4"
+      className="mb-5  py-6 [&>div]:my-4"
       data-unsaved={dirty}
       onSubmit={async (e) => {
         e.preventDefault();
@@ -801,7 +801,7 @@ function ContentRow({
         <div className="flex flex-wrap items-center gap-3">
           <button
             type="submit"
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink min-h-10! px-4! py-2! text-sm!"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface!  min-h-10! px-4! py-2! text-sm!"
           >
             Save {routine ? "exercise" : "day"}
           </button>

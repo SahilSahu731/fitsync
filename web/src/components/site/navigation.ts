@@ -1,6 +1,6 @@
 // Shared navigation and footer destinations. Keep unpublished destinations empty.
 export const mainLinks = [
-  { href: "/features", label: "Why FitSync", description: "Get to know your training companion." },
+  { href: "/features", label: "The app", description: "Get to know your training companion." },
   { href: "/programs", label: "Training", description: "Find a program that fits your week." },
   { href: "/exercises", label: "Exercises", description: "Learn the movement. Make it yours." },
 ];
@@ -16,10 +16,10 @@ export const footerGroups = [
     ],
   },
   {
-    title: "Find your rhythm",
+    title: "Make it yours",
     links: [
-      { href: "/#how-it-works", label: "How it works" },
-      { href: "/#movement", label: "Ways to move" },
+      { href: "/#how-it-works", label: "Our approach" },
+      { href: "/#health", label: "Everyday health" },
       { href: "/#your-rhythm", label: "Plan your week" },
       { href: "/#questions", label: "Common questions" },
     ],

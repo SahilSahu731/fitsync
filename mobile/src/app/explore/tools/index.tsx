@@ -27,7 +27,7 @@ export default function ExploreToolsScreen() {
         onBack={() => router.back()}
       />
 
-      {toolsError && <Pressable onPress={reloadTools}><Txt className="mb-4 text-brand">{toolsError} Tap to retry.</Txt></Pressable>}
+      {toolsError && <Pressable onPress={reloadTools}><Txt className="mb-4 text-ink">{toolsError} Tap to retry.</Txt></Pressable>}
       {!toolsError && !TOOLS.length && <Txt className="text-muted">{toolsLoading ? "Loading tools…" : "No published tools yet."}</Txt>}
       <View className="gap-3">
         {Array.from(

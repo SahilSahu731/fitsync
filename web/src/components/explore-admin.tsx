@@ -238,7 +238,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
         </div>
         {!value && (
           <button
-            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+            className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
             onClick={() => open(fresh())}
           >
             + Create {kind === "mobility" ? "session" : kind === "learn" ? "article" : "tool"}
@@ -247,7 +247,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
       </div>
       {error && (
         <div
-          className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+          className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!"
           role="alert"
         >
           {error}{" "}
@@ -268,7 +268,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
       )}
       {notice && (
         <div
-          className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-brand! bg-brand/20! text-ink!"
+          className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink bg-white/10! text-ink!"
           role="status"
         >
           {notice}
@@ -302,7 +302,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                 )
                 .map((row) => (
                   <article
-                    className="rounded-lg border border-line bg-panel overflow-hidden [&>img]:h-44 [&>img]:w-full [&>img]:object-cover [&>div]:p-6 [&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-2xl [&_p]:mb-5"
+                    className="rounded-3xl bg-panel overflow-hidden [&>img]:h-44 [&>img]:w-full [&>img]:object-cover [&>div]:p-6 [&_h2]:mt-4 [&_h2]:mb-2 [&_h2]:text-2xl [&_p]:mb-5"
                     key={row.id}
                   >
                     {row.cover_url && (
@@ -310,14 +310,14 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                     )}
                     <div>
                       <span
-                        className={`inline-flex w-fit items-center whitespace-nowrap rounded-sm bg-surface px-2.5 py-1 text-xs font-semibold text-ink ${row.published ? "bg-brand/40! text-ink!" : "bg-surface! text-muted! ring-1 ring-line"}`}
+                        className={`inline-flex w-fit items-center whitespace-nowrap rounded-full bg-white/6 px-3 py-1 text-xs font-semibold text-ink ${row.published ? "bg-brand/40! text-ink!" : "bg-surface! text-muted! "}`}
                       >
                         {row.published ? "Published" : "Draft"}
                       </span>
                       <h2>{row.title}</h2>
                       <p>{row.summary}</p>
                       <button
-                        className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink min-h-10! px-4! py-2! text-sm!"
+                        className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface!  min-h-10! px-4! py-2! text-sm!"
                         onClick={() => open(row)}
                       >
                         Edit content
@@ -349,7 +349,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
               ← All content
             </button>
             <button
-              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink min-h-10! px-4! py-2! text-sm!"
+              className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface!  min-h-10! px-4! py-2! text-sm!"
               onClick={() => setPreview(!preview)}
             >
               {preview ? "Edit content" : "Preview"}
@@ -357,7 +357,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
             <span>{dirty ? "Unsaved changes" : value.published ? "Published" : "Draft"}</span>
           </div>
           {preview ? (
-            <article className="rounded-lg border border-line bg-panel mx-auto my-5 max-w-4xl p-6 sm:p-8 [&_section]:mt-8 [&_p]:my-4 [&_p]:leading-8 [&_p]:whitespace-pre-line [&_a]:underline [&_h1]:mt-6 [&_h2]:text-2xl">
+            <article className="rounded-3xl bg-panel mx-auto my-5 max-w-4xl p-6 sm:p-8 [&_section]:mt-8 [&_p]:my-4 [&_p]:leading-8 [&_p]:whitespace-pre-line [&_a]:underline [&_h1]:mt-6 [&_h2]:text-2xl">
               {value.cover_url && (
                 <Image
                   unoptimized
@@ -446,7 +446,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
               }}
             >
               <fieldset className="m-0 min-w-0 border-0 p-0" disabled={busy}>
-                <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+                <section className="rounded-3xl bg-panel p-5 sm:p-7">
                   <h2>Details</h2>
                   <div className="grid gap-5 sm:grid-cols-2">
                     {text("Title", "title")}
@@ -521,7 +521,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                   </div>
                 </section>
                 {kind === "mobility" && (
-                  <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+                  <section className="rounded-3xl bg-panel p-5 sm:p-7">
                     <h2>Session movements</h2>
                     {value.steps.map((step, index) => {
                       const patch = (p: Partial<Step>) =>
@@ -529,7 +529,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                           steps: value.steps.map((s, i) => (i === index ? { ...s, ...p } : s)),
                         });
                       return (
-                        <div className="mb-5 border-b border-line py-6 [&>div]:my-4" key={index}>
+                        <div className="mb-5  py-6 [&>div]:my-4" key={index}>
                           <h3>Movement {index + 1}</h3>
                           <div className="grid gap-5 sm:grid-cols-2">
                             <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2">
@@ -607,7 +607,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                     })}
                     <button
                       type="button"
-                      className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+                      className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface! "
                       onClick={() => update({ steps: [...value.steps, emptyStep()] })}
                     >
                       + Add movement
@@ -615,7 +615,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                   </section>
                 )}
                 {kind === "learn" && (
-                  <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+                  <section className="rounded-3xl bg-panel p-5 sm:p-7">
                     <h2>Article sections</h2>
                     <p>Add sections for key takeaways, practical next steps, and source links.</p>
                     {value.body.map((section, index) => {
@@ -624,7 +624,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                           body: value.body.map((s, i) => (i === index ? { ...s, ...p } : s)),
                         });
                       return (
-                        <div className="mb-5 border-b border-line py-6 [&>div]:my-4" key={index}>
+                        <div className="mb-5  py-6 [&>div]:my-4" key={index}>
                           <div className="grid gap-5 sm:grid-cols-2">
                             <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2 col-span-full">
                               <span>Heading</span>
@@ -725,24 +725,24 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                     })}
                     <button
                       type="button"
-                      className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+                      className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface! "
                       onClick={() => update({ body: [...value.body, emptySection()] })}
                     >
                       + Add article section
                     </button>
                   </section>
                 )}
-                <div className="sticky bottom-4 z-10 rounded-md border border-line bg-panel p-4 shadow-lg flex flex-wrap items-center gap-3">
+                <div className="sticky bottom-4 z-10 rounded-xl bg-panel p-4 shadow-lg flex flex-wrap items-center gap-3">
                   <button
                     type="button"
-                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink"
+                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface! "
                     onClick={() => void save(false)}
                   >
                     {value.published ? "Unpublish & save draft" : "Save draft"}
                   </button>
                   <button
                     type="submit"
-                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     {busy ? "Saving…" : value.published ? "Save published changes" : "Publish"}
                   </button>

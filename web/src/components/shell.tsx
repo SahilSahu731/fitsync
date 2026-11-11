@@ -68,8 +68,8 @@ export function Workspace({
   const name = account?.user.name;
 
   return (
-    <div className="min-h-screen bg-surface lg:flex">
-      <aside className="z-40 flex flex-wrap items-center gap-x-5 gap-y-4 border-r border-line bg-background px-5 py-5 text-ink lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col lg:items-stretch lg:gap-0 lg:p-6">
+    <div className="min-h-screen bg-background lg:flex">
+      <aside className="z-40 flex flex-wrap items-center gap-x-5 gap-y-4  bg-background px-5 py-5 text-ink lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col lg:items-stretch lg:gap-0 lg:p-6">
         <Brand />
         <p className="ml-auto text-xs font-medium text-white/50 lg:mt-12 lg:mb-3 lg:ml-3">
           {workspaceLabel}
@@ -87,7 +87,7 @@ export function Workspace({
                 aria-current={active ? "page" : undefined}
                 className={`flex shrink-0 items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium transition-colors ${focusRing} ${
                   active
-                    ? "bg-brand text-background"
+                    ? "bg-white/10 text-white"
                     : "text-white/70 hover:bg-white/10 hover:text-white"
                 }`}
               >
@@ -99,7 +99,7 @@ export function Workspace({
         </nav>
 
         <div className="mt-auto hidden flex-col gap-1 pt-10 lg:flex">
-          <div className="mb-4 rounded-lg border border-white/15 bg-white/5 p-4">
+          <div className="mb-4 rounded-2xl bg-white/5 p-4">
             <Icon name={admin ? "shield" : "chart"} className="mb-3 text-brand" />
             <strong className="text-sm">
               {admin ? "One library. Every platform." : "Keep showing up."}
@@ -131,7 +131,7 @@ export function Workspace({
       </aside>
 
       <div className="min-w-0 flex-1 lg:ml-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4 border-b border-line bg-background/90 px-5 backdrop-blur-xl text-sm text-muted sm:px-8">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between gap-4  bg-background/90 px-5 backdrop-blur-xl text-sm text-muted sm:px-8">
           <Link href="/" className={`rounded-sm transition-colors hover:text-ink ${focusRing}`}>
             {admin ? "FitSync administration" : "My FitSync"}
           </Link>
@@ -140,7 +140,7 @@ export function Workspace({
             <Avatar name={name} />
           </span>
         </header>
-        <main className="mx-auto max-w-400 px-5 py-9 sm:px-8 lg:p-10" id="main">
+        <main className="mx-auto max-w-400 px-5 py-9 sm:px-8 lg:px-12 lg:py-12" id="main">
           <AccessGate adminOnly={admin}>{children}</AccessGate>
         </main>
       </div>

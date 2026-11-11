@@ -1,21 +1,16 @@
 import React, { useCallback, useState } from "react";
 import {
   ActivityIndicator,
-  Linking,
   NativeScrollEvent,
   NativeSyntheticEvent,
   Pressable,
   ScrollView,
   View,
-  useWindowDimensions
+  useWindowDimensions,
 } from "react-native";
 
 import { Image } from "expo-image";
-import {
-  useFocusEffect,
-  useLocalSearchParams,
-  useRouter
-} from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { VideoView, useVideoPlayer } from "expo-video";
@@ -24,11 +19,7 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/src/constants/theme";
 import { Txt } from "@/src/components/ui";
 
-import {
-  Exercise,
-  getExercise,
-  pretty
-} from "@/src/features/exercises/api";
+import { Exercise, getExercise, pretty } from "@/src/features/exercises/api";
 
 /* -------------------------------------------------------------------------- */
 /*  Tabs                                                                       */
@@ -40,19 +31,13 @@ const TABS: { key: TabKey; label: string }[] = [
   { key: "about", label: "About" },
   { key: "how", label: "How to" },
   { key: "history", label: "History" },
-  { key: "records", label: "Records" }
+  { key: "records", label: "Records" },
 ];
 
-function TabBar({
-  value,
-  onChange
-}: {
-  value: TabKey;
-  onChange: (key: TabKey) => void;
-}) {
+function TabBar({ value, onChange }: { value: TabKey; onChange: (key: TabKey) => void }) {
   return (
-    <View className="mx-6 mt-6 flex-row border-b border-border">
-      {TABS.map(tab => {
+    <View className="mx-6 mt-6 flex-row">
+      {TABS.map((tab) => {
         const active = tab.key === value;
 
         return (
@@ -61,12 +46,9 @@ function TabBar({
             onPress={() => onChange(tab.key)}
             accessibilityRole="tab"
             accessibilityState={{ selected: active }}
-            className={`-mb-px flex-1 items-center border-b-2 py-3 ${active ? "border-brand" : "border-transparent"}`}
+            className={`-mb-px flex-1 items-center  py-3 ${active ? "" : ""}`}
           >
-            <Txt
-              weight="medium"
-              className={`text- ${active ? "text-brand" : "text-muted"}`}
-            >
+            <Txt weight="medium" className={`text- ${active ? "text-ink" : "text-muted"}`}>
               {tab.label}
             </Txt>
           </Pressable>
@@ -91,7 +73,7 @@ function Hero({ images }: { images: Exercise["media"] }) {
   if (images.length === 0) {
     return (
       <View className="h-[320px] items-center justify-center bg-panel">
-        <MaterialCommunityIcons name="dumbbell" size={64} color={C.brand} />
+        <MaterialCommunityIcons name="dumbbell" size={64} color={C.ink} />
       </View>
     );
   }
@@ -104,7 +86,7 @@ function Hero({ images }: { images: Exercise["media"] }) {
         showsHorizontalScrollIndicator={false}
         onMomentumScrollEnd={onScrollEnd}
       >
-        {images.map(image => (
+        {images.map((image) => (
           <View key={image.id} style={{ width }} className="bg-panel">
             <Image
               source={{ uri: image.url }}
@@ -121,7 +103,7 @@ function Hero({ images }: { images: Exercise["media"] }) {
           {images.map((image, i) => (
             <View
               key={image.id}
-              className={`h-1.5 rounded-full ${i === index ? "w-5 bg-brand" : "w-1.5 bg-border"}`}
+              className={`h-1.5 rounded-full ${i === index ? "w-5 bg-ink" : "w-1.5 bg-border"}`}
             />
           ))}
         </View>
@@ -135,7 +117,7 @@ function Hero({ images }: { images: Exercise["media"] }) {
 /* -------------------------------------------------------------------------- */
 
 function DemoVideo({ url }: { url: string }) {
-  const player = useVideoPlayer(url, p => {
+  const player = useVideoPlayer(url, (p) => {
     p.loop = true;
     p.muted = true;
     p.play();
@@ -154,7 +136,7 @@ function DemoVideo({ url }: { url: string }) {
 function Fact({
   icon,
   label,
-  value
+  value,
 }: {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   label: string;
@@ -162,7 +144,7 @@ function Fact({
 }) {
   return (
     <View className="mb-3 w-[48.5%] rounded-2xl bg-panel p-4">
-      <MaterialCommunityIcons name={icon} size={24} color={C.brand} />
+      <MaterialCommunityIcons name={icon} size={24} color={C.ink} />
       <Txt className="mt-3 text-sm text-muted">{label}</Txt>
       <Txt weight="semibold" numberOfLines={2} className="mt-0.5 text-[15px]">
         {value}
@@ -173,9 +155,7 @@ function Fact({
 
 function MuscleChip({ label, primary }: { label: string; primary?: boolean }) {
   return (
-    <View
-      className={`rounded-full border px-3.5 py-2 ${primary ? "border-brand bg-brand" : "border-border bg-panel"}`}
-    >
+    <View className={`rounded-full  px-3.5 py-2 ${primary ? " bg-ink" : " bg-panel"}`}>
       <Txt weight="semibold" className={`text-xs ${primary ? "text-bg" : "text-ink"}`}>
         {label}
       </Txt>
@@ -185,7 +165,7 @@ function MuscleChip({ label, primary }: { label: string; primary?: boolean }) {
 
 function Heading({ children }: { children: string }) {
   return (
-    <Txt weight="extra" className="mb-3 mt-8 text-xl">
+    <Txt weight="semibold" className="mb-3 mt-8 text-xl">
       {children}
     </Txt>
   );
@@ -201,8 +181,8 @@ function Steps({ items }: { items: string[] }) {
 
       {items.map((item, i) => (
         <View key={i} className="mb-3 flex-row">
-          <View className="mr-3 mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-brand">
-            <Txt weight="extra" className="text-xs text-bg">
+          <View className="mr-3 mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-ink">
+            <Txt weight="semibold" className="text-xs text-bg">
               {i + 1}
             </Txt>
           </View>
@@ -219,7 +199,7 @@ function Notes({
   title,
   items,
   icon,
-  color
+  color,
 }: {
   title: string;
   items: string[];
@@ -232,12 +212,9 @@ function Notes({
     <View>
       <Heading>{title}</Heading>
 
-      <View className="rounded-2xl border border-border bg-panel px-4 py-1">
+      <View className="rounded-2xl bg-panel px-4 py-1">
         {items.map((item, i) => (
-          <View
-            key={i}
-            className={`flex-row py-3.5 ${i > 0 ? "border-t border-border" : ""}`}
-          >
+          <View key={i} className={`flex-row py-3.5 ${i > 0 ? " " : ""}`}>
             <MaterialCommunityIcons
               name={icon}
               size={20}
@@ -257,16 +234,10 @@ function Notes({
 /* -------------------------------------------------------------------------- */
 
 function AboutTab({ exercise }: { exercise: Exercise }) {
-  const hasCredits = exercise.media.some(
-    m => m.credit || m.license || m.sourceUrl
-  );
-
   return (
     <View>
       {!!exercise.description && (
-        <Txt className="text-[15px] leading-6">
-          {exercise.description}
-        </Txt>
+        <Txt className="text-[15px] leading-6">{exercise.description}</Txt>
       )}
 
       <View className="mt-6 flex-row flex-wrap justify-between">
@@ -283,18 +254,17 @@ function AboutTab({ exercise }: { exercise: Exercise }) {
       <Heading>Target muscles</Heading>
 
       <View className="flex-row flex-wrap" style={{ gap: 8 }}>
-        {exercise.primaryMuscles.map(m => (
+        {exercise.primaryMuscles.map((m) => (
           <MuscleChip key={`p-${m}`} label={pretty(m)} primary />
         ))}
 
-        {exercise.secondaryMuscles.map(m => (
+        {exercise.secondaryMuscles.map((m) => (
           <MuscleChip key={`s-${m}`} label={pretty(m)} />
         ))}
 
-        {exercise.primaryMuscles.length === 0 &&
-          exercise.secondaryMuscles.length === 0 && (
-            <Txt className="text-sm text-muted">Not applicable</Txt>
-          )}
+        {exercise.primaryMuscles.length === 0 && exercise.secondaryMuscles.length === 0 && (
+          <Txt className="text-sm text-muted">Not applicable</Txt>
+        )}
       </View>
 
       {exercise.secondaryMuscles.length > 0 && (
@@ -314,7 +284,7 @@ function AboutTab({ exercise }: { exercise: Exercise }) {
           {exercise.media.map(media => (
             <View
               key={media.id}
-              className="mb-3 rounded-2xl border border-border bg-panel p-4"
+              className="mb-3 rounded-2xl bg-panel p-4"
             >
               <Txt weight="semibold">{pretty(media.kind)}</Txt>
 
@@ -328,7 +298,7 @@ function AboutTab({ exercise }: { exercise: Exercise }) {
 
               {!!media.sourceUrl && (
                 <Pressable onPress={() => Linking.openURL(media.sourceUrl as string)}>
-                  <Txt weight="semibold" className="mt-2 text-xs text-brand">
+                  <Txt weight="semibold" className="mt-2 text-xs text-ink">
                     View original source
                   </Txt>
                 </Pressable>
@@ -342,7 +312,7 @@ function AboutTab({ exercise }: { exercise: Exercise }) {
 }
 
 function HowToTab({ exercise }: { exercise: Exercise }) {
-  const video = exercise.media.find(m => m.kind === "video");
+  const video = exercise.media.find((m) => m.kind === "video");
 
   const nothing =
     !video &&
@@ -372,15 +342,32 @@ function HowToTab({ exercise }: { exercise: Exercise }) {
 
       <Steps items={exercise.instructions} />
 
-      <Notes title="Technique tips" items={exercise.tips} icon="check-circle-outline" color={C.brand} />
-      <Notes title="Common mistakes" items={exercise.mistakes} icon="close-circle-outline" color={C.muted} />
-      <Notes title="Safety notes" items={exercise.safetyNotes} icon="shield-alert-outline" color={C.muted} />
+      <Notes
+        title="Technique tips"
+        items={exercise.tips}
+        icon="check-circle-outline"
+        color={C.ink}
+      />
+      <Notes
+        title="Common mistakes"
+        items={exercise.mistakes}
+        icon="close-circle-outline"
+        color={C.muted}
+      />
+      <Notes
+        title="Safety notes"
+        items={exercise.safetyNotes}
+        icon="shield-alert-outline"
+        color={C.muted}
+      />
 
       {!!exercise.breathingTip && (
-        <View className="mt-8 flex-row rounded-2xl border border-border bg-panel p-4">
-          <MaterialCommunityIcons name="weather-windy" size={22} color={C.brand} />
+        <View className="mt-8 flex-row rounded-2xl bg-panel p-4">
+          <MaterialCommunityIcons name="weather-windy" size={22} color={C.ink} />
           <View className="ml-3 flex-1">
-            <Txt weight="bold" className="text-[15px]">Breathing</Txt>
+            <Txt weight="semibold" className="text-[15px]">
+              Breathing
+            </Txt>
             <Txt className="mt-1 text-sm leading-6 text-muted">{exercise.breathingTip}</Txt>
           </View>
         </View>
@@ -392,7 +379,7 @@ function HowToTab({ exercise }: { exercise: Exercise }) {
 function EmptyState({
   icon,
   title,
-  text
+  text,
 }: {
   icon: keyof typeof MaterialCommunityIcons.glyphMap;
   title: string;
@@ -404,7 +391,9 @@ function EmptyState({
         <MaterialCommunityIcons name={icon} size={28} color={"white"} />
       </View>
 
-      <Txt weight="bold" className="mt-5 text-base">{title}</Txt>
+      <Txt weight="semibold" className="mt-5 text-base">
+        {title}
+      </Txt>
       <Txt className="mt-1 text-center text-sm leading-5 text-muted">{text}</Txt>
     </View>
   );
@@ -426,20 +415,17 @@ const RECORD_TILES = [
   { label: "Heaviest weight", icon: "weight-kilogram" },
   { label: "Most reps", icon: "repeat" },
   { label: "Best set volume", icon: "chart-bar" },
-  { label: "Estimated 1RM", icon: "trophy-outline" }
+  { label: "Estimated 1RM", icon: "trophy-outline" },
 ] as const;
 
 function RecordsTab() {
   return (
     <View>
       <View className="flex-row flex-wrap justify-between">
-        {RECORD_TILES.map(tile => (
-          <View
-            key={tile.label}
-            className="mb-3 w-[48.5%] rounded-2xl bg-panel p-4"
-          >
+        {RECORD_TILES.map((tile) => (
+          <View key={tile.label} className="mb-3 w-[48.5%] rounded-2xl bg-panel p-4">
             <MaterialCommunityIcons name={tile.icon} size={20} color={"white"} />
-            <Txt weight="extra" className="mt-3 text-2xl text-white">
+            <Txt weight="semibold" className="mt-3 text-2xl text-white">
               None
             </Txt>
             <Txt className="mt-0.5 text-xs text-muted">{tile.label}</Txt>
@@ -476,27 +462,25 @@ export default function ExerciseDetails() {
       setError("");
 
       getExercise(id)
-        .then(result => active && setExercise(result))
-        .catch(e => active && setError(e.message))
+        .then((result) => active && setExercise(result))
+        .catch((e) => active && setError(e.message))
         .finally(() => active && setLoading(false));
 
       return () => {
         active = false;
       };
-    }, [id])
+    }, [id]),
   );
 
-  const images = exercise?.media.filter(m => m.kind === "image") ?? [];
+  const images = exercise?.media.filter((m) => m.kind === "image") ?? [];
 
   return (
     <View className="flex-1 bg-bg">
-      <ScrollView contentContainerStyle={{ paddingBottom: 60 }} showsVerticalScrollIndicator={false}>
-        {loading && (
-          <ActivityIndicator
-            className="mt-40"
-            color={C.brand}
-          />
-        )}
+      <ScrollView
+        contentContainerStyle={{ paddingBottom: 60 }}
+        showsVerticalScrollIndicator={false}
+      >
+        {loading && <ActivityIndicator className="mt-40" color={C.ink} />}
 
         {!!error && (
           <Txt className="px-6 text-center" style={{ marginTop: insets.top + 90 }}>
@@ -508,8 +492,8 @@ export default function ExerciseDetails() {
           <>
             <Hero images={images} />
 
-            <View className="px-6 pt-6 ">
-              <Txt weight="bold" className="text-[28px] leading-[34px]">
+            <View className="px-6 pt-6">
+              <Txt weight="semibold" className="text-[28px] leading-[34px]">
                 {exercise.name}
               </Txt>
 
@@ -518,8 +502,8 @@ export default function ExerciseDetails() {
               </Txt>
 
               {exercise.status !== "published" && (
-                <View className="mt-3 self-start rounded-full border border-brand px-3 py-1">
-                  <Txt weight="semibold" className="text-xs text-brand">
+                <View className="mt-3 self-start rounded-full px-3 py-1">
+                  <Txt weight="semibold" className="text-xs text-ink">
                     {pretty(exercise.status)} (admin preview)
                   </Txt>
                 </View>

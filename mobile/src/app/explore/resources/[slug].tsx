@@ -75,13 +75,13 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
   return (
     <View>
       <View className="mt-5 rounded-[26px] bg-panel p-5">
-        <Txt className="text-xs uppercase tracking-widest text-brand">
+        <Txt className="text-xs uppercase tracking-widest text-ink">
           {complete
             ? "Session complete"
             : `Movement ${index + 1} of ${steps.length}`}
         </Txt>
 
-        <Txt weight="bold" className="mt-3 text-[25px]">
+        <Txt weight="semibold" className="mt-3 text-[25px]">
           {complete ? "Nice work!" : steps[index].title}
         </Txt>
 
@@ -90,10 +90,10 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
           {steps[index].instruction}
         </Txt>
 
-        {steps[index].modification && <View className="mt-4 rounded-xl bg-elevated p-4"><Txt weight="bold" className="text-sm text-brand">Make it easier</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{steps[index].modification}</Txt></View>}
+        {steps[index].modification && <View className="mt-4 rounded-xl bg-elevated p-4"><Txt weight="semibold" className="text-sm text-ink">Make it easier</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{steps[index].modification}</Txt></View>}
         {steps[index].video_url && <ExternalLink label="Watch demonstration" url={steps[index].video_url!} />}
         <View className="mt-4 h-2 overflow-hidden rounded-full bg-elevated"><View style={{ height: "100%", width: `${complete ? 100 : Math.round((index + (steps[index].seconds - remaining) / steps[index].seconds) / steps.length * 100)}%`, backgroundColor: C.brand }} /></View>
-        <Txt weight="bold" className="mt-6 text-center text-[54px]">
+        <Txt weight="semibold" className="mt-6 text-center text-[54px]">
           {formatClock(remaining)}
         </Txt>
 
@@ -121,7 +121,7 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
               setClock(current => ({ ...current, running: !current.running }));
             }}
             accessibilityRole="button"
-            className="h-14 flex-1 flex-row items-center justify-center rounded-2xl bg-brand"
+            className="h-14 flex-1 flex-row items-center justify-center rounded-2xl bg-ink"
           >
             <MaterialCommunityIcons
               name={complete ? "restart" : running ? "pause" : "play"}
@@ -129,7 +129,7 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
               color={C.bg}
             />
 
-            <Txt weight="bold" className="ml-2 text-bg">
+            <Txt weight="semibold" className="ml-2 text-bg">
               {complete
                 ? "Restart"
                 : running
@@ -155,7 +155,7 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
         </View>
       </View>
 
-      <Txt weight="bold" className="mb-3 mt-7 text-xl">
+      <Txt weight="semibold" className="mb-3 mt-7 text-xl">
         Movement list
       </Txt>
 
@@ -168,11 +168,11 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
         >
           <View
             className={`h-9 w-9 items-center justify-center rounded-xl ${
-              idx === index ? "bg-brand" : "bg-elevated"
+              idx === index ? "bg-ink" : "bg-elevated"
             }`}
           >
             <Txt
-              weight="bold"
+              weight="semibold"
               className={idx === index ? "text-bg" : "text-ink"}
             >
               {idx + 1}
@@ -191,7 +191,7 @@ function MobilitySession({ resource }: { resource: ExploreResource }) {
             <MaterialCommunityIcons
               name="circle-small"
               size={24}
-              color={C.brand}
+              color={C.ink}
             />
           ) : null}
         </Pressable>
@@ -270,7 +270,7 @@ export default function ExploreResourceDetail() {
         onBack={() => router.back()}
       />
 
-      {loading ? <ActivityIndicator color={C.brand} className="mt-8" /> : null}
+      {loading ? <ActivityIndicator color={C.ink} className="mt-8" /> : null}
 
       {error ? (
         <View className="rounded-2xl bg-panel p-5">
@@ -278,9 +278,9 @@ export default function ExploreResourceDetail() {
 
           <Pressable
             onPress={() => setRetry((r) => r + 1)}
-            className="mt-4 self-start rounded-full bg-brand px-4 py-2"
+            className="mt-4 self-start rounded-full bg-ink px-4 py-2"
           >
-            <Txt weight="bold" className="text-bg">
+            <Txt weight="semibold" className="text-bg">
               Retry
             </Txt>
           </Pressable>
@@ -291,8 +291,8 @@ export default function ExploreResourceDetail() {
         <>
           {resource.cover_url && <Image source={{ uri: resource.cover_url }} style={{ width: "100%", height: 210, borderRadius: 22, marginBottom: 20 }} contentFit="cover" accessibilityLabel={resource.title} />}
           <View className="flex-row flex-wrap gap-2">
-            <View className="rounded-full bg-brand/10 px-3 py-2">
-              <Txt className="text-xs text-brand">
+            <View className="rounded-full bg-white/5 px-3 py-2">
+              <Txt className="text-xs text-ink">
                 {resource.duration_minutes} min{" "}
                 {resource.kind === "guide" ? "read" : "session"}
               </Txt>
@@ -311,7 +311,7 @@ export default function ExploreResourceDetail() {
             <View className="mt-7 gap-6">
               {(resource.body ?? []).map((section, i) => (
                 <View key={`${i}-${section.heading}`}>
-                  <Txt weight="bold" className="text-[22px]">
+                  <Txt weight="semibold" className="text-[22px]">
                     {section.heading}
                   </Txt>
 
@@ -349,5 +349,5 @@ function ExternalLink({ label, url }: { label: string; url: string }) {
     if (/^\/explore\/resources\/[a-z0-9-]+$/.test(url)) { router.push({ pathname: "/explore/resources/[slug]", params: { slug: url.split("/").pop()! } }); return; }
     if (!url.startsWith("https://")) return;
     void Linking.openURL(url).catch(() => setError("Could not open this link."));
-  }}><Txt className="mt-3 text-sm text-brand">{label} ↗</Txt></Pressable>{error && <Txt className="text-xs text-muted">{error}</Txt>}</View>;
+  }}><Txt className="mt-3 text-sm text-ink">{label} ↗</Txt></Pressable>{error && <Txt className="text-xs text-muted">{error}</Txt>}</View>;
 }

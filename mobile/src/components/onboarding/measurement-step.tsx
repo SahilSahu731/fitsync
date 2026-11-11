@@ -17,9 +17,7 @@ export function MeasurementStep({
   onUnitChange: (unit: "kg" | "lb") => void;
 }) {
   if (kind === "height")
-    return (
-      <HeightPicker value={draft.heightCm} onChange={heightCm => update({ heightCm })} />
-    );
+    return <HeightPicker value={draft.heightCm} onChange={(heightCm) => update({ heightCm })} />;
   const pounds = weightUnit === "lb";
   return (
     <View>
@@ -43,10 +41,7 @@ export function MeasurementStep({
           update({
             weightKg: Math.max(
               25,
-              Math.min(
-                350,
-                Number((pounds ? value / 2.2046226218 : value).toFixed(4)),
-              ),
+              Math.min(350, Number((pounds ? value / 2.2046226218 : value).toFixed(4))),
             ),
           })
         }

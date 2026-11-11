@@ -205,7 +205,7 @@ export function HeightPicker({
   return (
     <View>
       {/* Glass height-gauge slab */}
-      <View className="flex-row gap-4 overflow-hidden rounded-[36px] border border-white/15 bg-white/[0.06] p-4">
+      <View className="flex-row gap-4 overflow-hidden rounded-[36px] bg-white/[0.06] p-4">
         <LinearGradient
           pointerEvents="none"
           colors={["rgba(255,255,255,0.2)", "rgba(255,255,255,0.04)", "rgba(255,255,255,0)"]}
@@ -216,14 +216,11 @@ export function HeightPicker({
         <View className="min-w-0 flex-1 justify-between">
           <View>
             <View className="flex-row items-center gap-2 pb-3">
-              <MaterialCommunityIcons name="human-male-height" size={18} color={C.brand} />
+              <MaterialCommunityIcons name="human-male-height" size={18} color={C.ink} />
               <Txt className="text-sm text-white/60">Your height</Txt>
             </View>
 
-            <View
-              className="rounded-3xl border border-white/10 px-3 py-4"
-              style={{ backgroundColor: GLASS_DARK }}
-            >
+            <View className="rounded-3xl px-3 py-4" style={{ backgroundColor: GLASS_DARK }}>
               <TextInput
                 accessibilityLabel="Height in centimeters"
                 value={text ?? String(live)}
@@ -241,14 +238,14 @@ export function HeightPicker({
                 returnKeyType="done"
                 selectTextOnFocus
                 maxLength={3}
-                className="w-full p-0 font-inter-semibold text-[56px] leading-[66px] text-white"
+                className="w-full p-0 font-poppins-semibold text-[56px] leading-[66px] text-white"
                 style={{
                   textShadowColor: C.brand,
                   textShadowRadius: 16,
                   textShadowOffset: { width: 0, height: 0 },
                 }}
               />
-              <Txt weight="medium" className="text-lg text-brand">
+              <Txt weight="medium" className="text-lg text-ink">
                 cm
               </Txt>
               <Txt className="mt-1 text-sm text-white/50">
@@ -273,7 +270,7 @@ export function HeightPicker({
                     disabled={disabled}
                     onPress={() => nudge(direction)}
                     hitSlop={6}
-                    className={`h-11 w-11 items-center justify-center rounded-full border border-white/15 bg-white/10 active:bg-white/20 ${disabled ? "opacity-30" : ""}`}
+                    className={`h-11 w-11 items-center justify-center rounded-full   bg-white/10 active:bg-white/20 ${disabled ? "opacity-30" : ""}`}
                   >
                     <MaterialCommunityIcons
                       name={direction < 0 ? "minus" : "plus"}
@@ -290,7 +287,7 @@ export function HeightPicker({
 
         {/* Ruler window */}
         <View
-          className="overflow-hidden rounded-3xl border border-white/10"
+          className="overflow-hidden rounded-3xl"
           style={{ width: WINDOW_W, height: WINDOW_H, backgroundColor: GLASS_DARK }}
           accessible
           accessibilityRole="adjustable"
@@ -342,7 +339,7 @@ export function HeightPicker({
           {/* Needle */}
           <View
             pointerEvents="none"
-            className="absolute left-0 top-1/2 -mt-[1.5px] h-[3px] w-[60px] rounded-r-full bg-brand"
+            className="absolute left-0 top-1/2 -mt-[1.5px] h-[3px] w-[60px] rounded-r-full bg-ink"
             style={{
               shadowColor: C.brand,
               shadowOpacity: 0.9,

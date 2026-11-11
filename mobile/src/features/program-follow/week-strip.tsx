@@ -27,9 +27,9 @@ export function WeekStrip({
         const color = selected
           ? C.bg
           : done
-            ? "#86EFAC"
+            ? "#D4D4D4"
             : inProgress
-              ? "#93C5FD"
+              ? "#BEBEBE"
               : C.ink;
         const status = done
           ? "Logged"
@@ -76,7 +76,7 @@ export function WeekStrip({
               {done ? (
                 <MaterialCommunityIcons name="check" size={23} color={color} />
               ) : (
-                <Txt weight="bold" style={{ color, fontSize: 17 }}>
+                <Txt weight="semibold" style={{ color, fontSize: 17 }}>
                   {Number(day.date.slice(-2))}
                 </Txt>
               )}
@@ -95,9 +95,9 @@ export function WeekStrip({
                   marginVertical: 3.5,
                   borderRadius: 2,
                   backgroundColor: done
-                    ? "#86EFAC"
+                    ? "#D4D4D4"
                     : inProgress
-                      ? "#93C5FD"
+                      ? "#BEBEBE"
                       : C.brand,
                 }}
               />

@@ -65,17 +65,17 @@ export function AthleteArt({
           y1="58"
           x2="270"
           y2="58"
-          stroke="#F8F7F4"
+          stroke="#FFFFFF"
           strokeWidth="7"
           strokeLinecap="round"
         />
 
         <Rect x="29" y="23" width="20" height="70" rx="5" fill="#C5F460"/>
-        <Rect x="17" y="35" width="11" height="46" rx="3" fill="#F8F7F4"/>
+        <Rect x="17" y="35" width="11" height="46" rx="3" fill="#FFFFFF"/>
         <Rect x="269" y="23" width="20" height="70" rx="5" fill="#C5F460"/>
-        <Rect x="291" y="35" width="11" height="46" rx="3" fill="#F8F7F4"/>
+        <Rect x="291" y="35" width="11" height="46" rx="3" fill="#FFFFFF"/>
 
-        <Circle cx="163" cy="99" r="28" fill="#F8F7F4"/>
+        <Circle cx="163" cy="99" r="28" fill="#FFFFFF"/>
 
         <Path
           d="M146 93C148 69 180 74 184 95"
@@ -93,7 +93,7 @@ export function AthleteArt({
         <Path
           d="M137 145L95 109 77 64M185 146L224 109 244 65"
           fill="none"
-          stroke="#F8F7F4"
+          stroke="#FFFFFF"
           strokeWidth="18"
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -102,7 +102,7 @@ export function AthleteArt({
         <Path
           d="M150 208L130 261M185 207L207 263"
           fill="none"
-          stroke="#F8F7F4"
+          stroke="#FFFFFF"
           strokeWidth="20"
           strokeLinecap="round"
         />

@@ -138,7 +138,7 @@ export default function CreateWorkoutScreen() {
           {saving ? (
             <ActivityIndicator color={C.bg} />
           ) : (
-            <Txt weight="bold" className="text-bg">
+            <Txt weight="semibold" className="text-bg">
               Save
             </Txt>
           )}
@@ -165,9 +165,9 @@ export default function CreateWorkoutScreen() {
             accessibilityLabel="Routine name"
             placeholder="e.g. Upper body A"
             placeholderTextColor={C.muted}
-            className="min-h-12 font-inter-bold text-2xl text-ink"
+            className="min-h-12 font-poppins-bold text-2xl text-ink"
           />
-          <View className="mt-3 flex-row items-center border-t border-border pt-3">
+          <View className="mt-3 flex-row items-center pt-3">
             <MaterialCommunityIcons
               name="note-text"
               size={22}
@@ -182,7 +182,7 @@ export default function CreateWorkoutScreen() {
               accessibilityLabel="Routine notes"
               placeholder="Goals or notes for this session"
               placeholderTextColor={C.muted}
-              className="ml-2 min-h-11 flex-1 text-sm text-ink"
+              className="font-poppins-regular ml-2 min-h-11 flex-1 text-sm text-ink"
             />
           </View>
         </View>
@@ -211,8 +211,8 @@ export default function CreateWorkoutScreen() {
           )}
         </View>
         {!exercises.length && (
-          <View className="mb-5 items-center rounded-2xl border border-dashed border-border px-6 py-9">
-            <MaterialCommunityIcons name="dumbbell" size={42} color={C.brand} />
+          <View className="mb-5 items-center rounded-2xl px-6 py-9">
+            <MaterialCommunityIcons name="dumbbell" size={42} color={C.ink} />
             <Txt weight="semibold" className="mt-4 text-lg">
               Start with your exercises
             </Txt>
@@ -248,7 +248,7 @@ export default function CreateWorkoutScreen() {
                     name={item.exercise.name}
                   />
                   <View className="ml-3 flex-1">
-                    <Txt weight="bold" className="text-lg" numberOfLines={2}>
+                    <Txt weight="semibold" className="text-lg" numberOfLines={2}>
                       {item.exercise.name}
                     </Txt>
                     <Txt className="mt-1 text-sm text-muted">
@@ -377,7 +377,7 @@ export default function CreateWorkoutScreen() {
                       onPress={() => addSet(item.id)}
                       className="min-h-11 justify-center px-3"
                     >
-                      <Txt weight="semibold" className="text-brand">
+                      <Txt weight="semibold" className="text-ink">
                         + Add set
                       </Txt>
                     </Pressable>
@@ -390,10 +390,10 @@ export default function CreateWorkoutScreen() {
         <Pressable
           disabled={saving || exercises.length >= 50}
           onPress={() => setPicker(true)}
-          className="flex-row items-center justify-center rounded-2xl bg-brand py-3"
+          className="flex-row items-center justify-center rounded-2xl bg-ink py-3"
         >
           <MaterialCommunityIcons name="plus" size={26} color={C.bg} />
-          <Txt weight="bold" className="ml-2 text-bg text-lg">
+          <Txt weight="semibold" className="ml-2 text-bg text-lg">
             Add exercises
           </Txt>
         </Pressable>
@@ -536,7 +536,7 @@ function RoutineDetails({
         placeholder="Technique cues or setup notes"
         placeholderTextColor={C.muted}
         accessibilityLabel="Exercise notes"
-        className="mt-5 min-h-2 rounded-xl bg-bg p-4 text-ink"
+        className="font-poppins-regular mt-5 min-h-2 rounded-xl bg-bg p-4 text-ink"
       />
       {!!error && <Txt className="mt-3 text-red-300">{error}</Txt>}
       <Pressable
@@ -552,9 +552,9 @@ function RoutineDetails({
           }
           onSave({ rest, notes });
         }}
-        className="mt-5 items-center rounded-xl bg-brand p-4"
+        className="mt-5 items-center rounded-xl bg-ink p-4"
       >
-        <Txt weight="bold" className="text-bg">
+        <Txt weight="semibold" className="text-bg">
           Save details
         </Txt>
       </Pressable>

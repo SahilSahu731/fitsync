@@ -124,8 +124,8 @@ export function BrandReveal({
             }
           ]}
         >
-          <Txt weight="extra" style={styles.wordmark}>
-            FIT<Txt weight="extra" style={styles.accent}>SYNC</Txt>
+          <Txt weight="semibold" style={styles.wordmark}>
+            FIT<Txt weight="semibold" style={styles.accent}>SYNC</Txt>
           </Txt>
           <Txt weight="medium" style={styles.tagline}>BUILT FOR THE NEXT REP.</Txt>
         </Animated.View>

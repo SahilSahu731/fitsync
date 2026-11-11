@@ -67,19 +67,19 @@ export default function RoutineCategoryScreen() {
       </Txt>
 
       {loading ? (
-        <ActivityIndicator color={C.brand} />
+        <ActivityIndicator color={C.ink} />
       ) : error ? (
         <Txt className="text-muted">{error}</Txt>
       ) : routines.length === 0 ? (
         <View className="rounded-2xl bg-panel p-6">
-          <View className="mb-4 items-center justify-center rounded-3xl ">
+          <View className="mb-4 items-center justify-center rounded-3xl">
             <Image
               source={require("../../../../assets/images/not-found.png")}
               contentFit="contain"
               style={{ width: 200, height: 150, borderRadius: 30 }}
             />
           </View>
-          <Txt weight="bold">More routines coming soon</Txt>
+          <Txt weight="semibold">More routines coming soon</Txt>
           <Txt className="mt-2 text-sm text-muted">
             No published routines are available in this category yet.
           </Txt>

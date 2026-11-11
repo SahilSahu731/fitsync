@@ -17,7 +17,7 @@ import { useSession } from "@/src/context/session";
 
 function SettingsHeader({ title }: { title: string }) {
   return (
-    <Txt weight="extra" className="mb-4 mt-8 text-[20px]">
+    <Txt weight="semibold" className="mb-4 mt-8 text-[20px]">
       {title}
     </Txt>
   );
@@ -116,7 +116,7 @@ export default function SettingsScreen() {
        <SettingsHeader title="Training" />
 
       <View className="rounded-2xl bg-panel p-5">
-        <Txt weight="bold" className="">
+        <Txt weight="semibold" className="">
           Preferred weight unit
         </Txt>
 
@@ -141,7 +141,7 @@ export default function SettingsScreen() {
       </View>
 
       <View className="mt-3 rounded-2xl bg-panel p-5">
-        <Txt weight="bold" className="text-base">
+        <Txt weight="semibold" className="text-base">
           Default rest timer
         </Txt>
 
@@ -168,14 +168,14 @@ export default function SettingsScreen() {
       <ExperienceSettings />
       <SettingsHeader title="Your schedule & membership" />
       <View className="overflow-hidden rounded-2xl bg-panel">
-        {[{ title: "Training calendar", detail: "Plans, completed workouts, and calendar export", icon: "calendar-month-outline" as const, route: "/calendar" as const }, { title: "Membership & billing", detail: "Subscription, payment methods, and receipts", icon: "credit-card-outline" as const, route: "/billing" as const }].map((item, index) => <Pressable key={item.route} onPress={() => router.push(item.route)} className={`min-h-20 flex-row items-center gap-4 p-5 ${index === 0 ? "border-b border-border" : ""}`}><MaterialCommunityIcons name={item.icon} size={24} color={C.brand} /><View className="flex-1"><Txt weight="semibold" className="text-base">{item.title}</Txt><Txt className="mt-1 text-xs leading-5 text-muted">{item.detail}</Txt></View><MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} /></Pressable>)}
+        {[{ title: "Training calendar", detail: "Plans, completed workouts, and calendar export", icon: "calendar-month-outline" as const, route: "/calendar" as const }, { title: "Membership & billing", detail: "Subscription, payment methods, and receipts", icon: "credit-card-outline" as const, route: "/billing" as const }].map((item, index) => <Pressable key={item.route} onPress={() => router.push(item.route)} className={`min-h-20 flex-row items-center gap-4 p-5 ${index === 0 ? " " : ""}`}><MaterialCommunityIcons name={item.icon} size={24} color={C.ink} /><View className="flex-1"><Txt weight="semibold" className="text-base">{item.title}</Txt><Txt className="mt-1 text-xs leading-5 text-muted">{item.detail}</Txt></View><MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} /></Pressable>)}
       </View>
       {/* Notification preference */}
 
       <SettingsHeader title="Notifications" />
 
       <View className="flex-row items-center rounded-2xl bg-panel p-5">
-        <View className="mr-4 h-12 w-12 items-center justify-center ">
+        <View className="mr-4 h-12 w-12 items-center justify-center">
           <MaterialCommunityIcons
             name="bell-outline"
             size={23}
@@ -184,7 +184,7 @@ export default function SettingsScreen() {
         </View>
 
         <View className="flex-1">
-          <Txt weight="bold" className="text-sm">
+          <Txt weight="semibold" className="text-sm">
             Workout reminders
           </Txt>
 
@@ -214,7 +214,7 @@ export default function SettingsScreen() {
         silences daily program reminders on all your devices.
       </Txt>
 
-      {program && <Pressable onPress={() => setRemindersOpen(true)} className="self-start py-3"><Txt className="text-sm text-brand">Change reminder time</Txt></Pressable>}
+      {program && <Pressable onPress={() => setRemindersOpen(true)} className="self-start py-3"><Txt className="text-sm text-ink">Change reminder time</Txt></Pressable>}
       {remindersOpen && program && <ProgramSetup enrollment={program.enrollment} onClose={() => setRemindersOpen(false)} onSaved={() => setRemindersOpen(false)} />}
 
       {/* Personal setup */}
@@ -225,10 +225,10 @@ export default function SettingsScreen() {
         onPress={() => router.push("/edit-profile")}
         className="mb-3 flex-row items-center rounded-2xl bg-panel p-5"
       >
-        <MaterialCommunityIcons name="account-edit" color={C.brand} size={23} />
+        <MaterialCommunityIcons name="account-edit" color={C.ink} size={23} />
 
         <View className="ml-4 flex-1">
-          <Txt weight="bold">Edit personal information</Txt>
+          <Txt weight="semibold">Edit personal information</Txt>
 
           <Txt className="mt-1 text-xs text-muted">
             Profile, weight, height, fitness goals
@@ -246,10 +246,10 @@ export default function SettingsScreen() {
         onPress={restartOnboarding}
         className="flex-row items-center rounded-2xl bg-panel p-5"
       >
-        <MaterialCommunityIcons name="refresh" color={C.brand} size={23} />
+        <MaterialCommunityIcons name="refresh" color={C.ink} size={23} />
 
         <View className="ml-4 flex-1">
-          <Txt weight="bold">Redo onboarding</Txt>
+          <Txt weight="semibold">Redo onboarding</Txt>
 
           <Txt className="mt-1 text-xs text-muted">
             Start fitness setup again
@@ -270,11 +270,11 @@ export default function SettingsScreen() {
       <View className="rounded-2xl bg-panel">
         <Pressable
           onPress={logout}
-          className="flex-row items-center border-b border-border p-5"
+          className="flex-row items-center p-5"
         >
           <MaterialCommunityIcons name="logout" color={C.ink} size={23} />
 
-          <Txt weight="bold" className="ml-4 flex-1">
+          <Txt weight="semibold" className="ml-4 flex-1">
             Sign out
           </Txt>
 
@@ -295,7 +295,7 @@ export default function SettingsScreen() {
             size={23}
           />
 
-          <Txt weight="bold" className="ml-4 flex-1 text-[#FF8278]">
+          <Txt weight="semibold" className="ml-4 flex-1 text-[#FF8278]">
             Delete account
           </Txt>
 

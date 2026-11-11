@@ -30,17 +30,17 @@ export function ProgramProgress({
   return (
     <View>
       <View className="mb-5">
-        <Txt className="text-[10px] tracking-widest text-brand">
+        <Txt className="text-[11px] tracking-widest text-ink">
           YOUR TRAINING STORY
         </Txt>
-        <Txt weight="bold" className="mt-2 text-[29px]">
+        <Txt weight="semibold" className="mt-2 text-[29px]">
           Small steps. Real progress.
         </Txt>
       </View>
       <View className="flex-row items-center gap-5 rounded-[26px] bg-panel p-5">
         <ProgressRing percent={a.progressPercent} />
         <View className="flex-1">
-          <Txt weight="bold" className="text-4xl">
+          <Txt weight="semibold" className="text-4xl">
             {a.completed}
             <Txt className="text-xl text-muted">/{a.planned}</Txt>
           </Txt>
@@ -60,28 +60,28 @@ export function ProgramProgress({
         ].map((item, index) => (
           <View
             key={item.label}
-            className={`min-w-0 flex-1 px-3 ${index > 0 ? "border-l border-border" : ""}`}
+            className={`min-w-0 flex-1 px-3 ${index > 0 ? " " : ""}`}
           >
             <Txt
-              weight="bold"
+              weight="semibold"
               numberOfLines={1}
               adjustsFontSizeToFit
               className="text-center text-2xl"
             >
               {item.value}
             </Txt>
-            <Txt className="mt-1.5 text-center text-[9px] tracking-widest text-muted">
+            <Txt className="mt-1.5 text-center text-[11px] tracking-widest text-muted">
               {item.label}
             </Txt>
           </View>
         ))}
       </View>
       {e.status === "active" && summary.toMilestone > 0 && (
-        <View className="mb-6 flex-row items-center gap-3 rounded-2xl bg-brand/10 px-4 py-3">
+        <View className="mb-6 flex-row items-center gap-3 rounded-2xl bg-white/5 px-4 py-3">
           <MaterialCommunityIcons
             name="flag-checkered"
             size={24}
-            color={C.brand}
+            color={C.ink}
           />
           <View className="flex-1">
             <Txt weight="semibold" className="text-sm">
@@ -95,10 +95,10 @@ export function ProgramProgress({
         </View>
       )}
       <View className="mb-3 flex-row items-center justify-between">
-        <Txt weight="bold" className="text-lg">
+        <Txt weight="semibold" className="text-lg">
           Your weekly rhythm
         </Txt>
-        <Txt className="text-[10px] text-muted">Tap a week</Txt>
+        <Txt className="text-[11px] text-muted">Tap a week</Txt>
       </View>
       <ScrollView
         horizontal
@@ -123,8 +123,8 @@ export function ProgramProgress({
               alignItems: "center",
             }}
           >
-            <Txt className="text-[10px] text-muted">WEEK {item.week}</Txt>
-            <Txt weight="bold" className="my-3 text-xl">
+            <Txt className="text-[11px] text-muted">WEEK {item.week}</Txt>
+            <Txt weight="semibold" className="my-3 text-xl">
               {item.completed}
               <Txt className="text-xs text-muted">/{item.planned}</Txt>
             </Txt>
@@ -153,11 +153,11 @@ export function ProgramProgress({
       </Txt>
 
       <View className="mb-3 mt-7 flex-row items-center justify-between">
-        <Txt weight="bold" className="text-lg">
+        <Txt weight="semibold" className="text-lg">
           Recent workouts
         </Txt>
         {summary.averageMinutes !== null && (
-          <Txt className="text-[10px] text-muted">
+          <Txt className="text-[11px] text-muted">
             {summary.averageMinutes} min / workout avg
           </Txt>
         )}
@@ -174,10 +174,10 @@ export function ProgramProgress({
                 params: { id: slot.sessionId! },
               })
             }
-            className={`flex-row items-center gap-3 py-4 ${index > 0 ? "border-t border-border" : ""}`}
+            className={`flex-row items-center gap-3 py-4 ${index > 0 ? " " : ""}`}
           >
-            <View className="h-10 w-10 items-center justify-center rounded-full bg-brand/10">
-              <MaterialCommunityIcons name="check" size={21} color={C.brand} />
+            <View className="h-10 w-10 items-center justify-center rounded-full bg-white/5">
+              <MaterialCommunityIcons name="check" size={21} color={C.ink} />
             </View>
             <View className="flex-1">
               <Txt weight="semibold" className="text-sm">
@@ -203,7 +203,7 @@ export function ProgramProgress({
           </Pressable>
         ))
       ) : (
-        <View className="rounded-2xl border border-dashed border-border p-5">
+        <View className="rounded-2xl p-5">
           <Txt className="text-sm leading-6 text-muted">
             Your first completed workout starts the story. Log a session and it
             will appear here.
@@ -215,8 +215,8 @@ export function ProgramProgress({
         <ProInsights detail={detail} unit={unit} />
       ) : (
         <View
-          className="mt-6 rounded-[22px] border p-5"
-          style={{ borderColor: "#B6AAFF30", backgroundColor: "#19171F" }}
+          className="mt-6 rounded-[22px] p-5"
+          style={{ borderColor: "#B3B3B330", backgroundColor: "#19171F" }}
         >
           <View className="flex-row items-center justify-between">
             <Txt weight="semibold">Go deeper with Pro insights</Txt>
@@ -234,7 +234,7 @@ export function ProgramProgress({
         accessibilityRole="button"
         accessibilityState={{ expanded: journal }}
         onPress={() => setJournal(!journal)}
-        className="mt-7 flex-row items-center justify-between border-t border-border py-4"
+        className="mt-7 flex-row items-center justify-between py-4"
       >
         <Txt weight="semibold" className="text-sm">
           Program journal
@@ -248,7 +248,7 @@ export function ProgramProgress({
       {journal &&
         detail.events.map((event) => (
           <View key={event.id} className="mb-4 flex-row items-start gap-3">
-            <View className="mt-2 h-1 w-1 rounded-full bg-brand" />
+            <View className="mt-2 h-1 w-1 rounded-full bg-ink" />
             <View className="flex-1">
               <Txt className="text-sm">
                 {event.event_type === "started"
@@ -272,7 +272,7 @@ export function ProgramProgress({
             </View>
           </View>
         ))}
-      <Txt className="mt-2 text-[10px] leading-4 text-muted">
+      <Txt className="mt-2 text-[11px] leading-4 text-muted">
         Only completed sets in finished program workouts count. Volume is weight
         × reps; bodyweight and timed sets may add no volume.
       </Txt>

@@ -47,7 +47,7 @@ export function WorkoutDrawer({
         >
           <View className="mb-3 h-1 w-10 self-center rounded-full bg-muted/40" />
           <View className="mb-5 flex-row items-center justify-between">
-            <Txt weight="bold" className="flex-1 text-xl">
+            <Txt weight="semibold" className="flex-1 text-xl">
               {title}
             </Txt>
             <Pressable
@@ -213,7 +213,7 @@ export function NumberEntry({
 
   return (
     <View className="min-w-0 flex-1">
-      <Txt className="mb-1 text-[10px] tracking-wider text-muted">
+      <Txt className="mb-1 text-[11px] tracking-wider text-muted">
         {label}
       </Txt>
       <View
@@ -229,7 +229,7 @@ export function NumberEntry({
           keyboardType={step < 1 ? "decimal-pad" : "number-pad"}
           selectTextOnFocus
           editable={!disabled}
-          className={`min-w-0 flex-1 text-center font-inter-bold text-ink ${compact ? "h-11 px-1 text-base" : "h-14 px-2 text-xl"}`}
+          className={`min-w-0 flex-1 text-center font-poppins-bold text-ink ${compact ? "h-11 px-1 text-base" : "h-14 px-2 text-xl"}`}
         />
         <View
           className={`bg-panel ${compact ? "h-11 w-8" : "h-14 w-12"}`}
@@ -241,7 +241,7 @@ export function NumberEntry({
             onPressIn={() => startHold(1)}
             onPressOut={endHold}
             hitSlop={{ left: 8, right: 8 }}
-            className="flex-1 items-center justify-center active:bg-brand/10"
+            className="flex-1 items-center justify-center active:bg-white/5"
           >
             <MaterialCommunityIcons
               name="chevron-up"
@@ -256,7 +256,7 @@ export function NumberEntry({
             onPressIn={() => startHold(-1)}
             onPressOut={endHold}
             hitSlop={{ left: 8, right: 8 }}
-            className="flex-1 items-center justify-center active:bg-brand/10"
+            className="flex-1 items-center justify-center active:bg-white/5"
           >
             <MaterialCommunityIcons
               name="chevron-down"
@@ -280,7 +280,7 @@ export function NumberEntry({
               color={disabled ? C.muted : C.ink}
             />
           </Pressable>
-          <Txt className="text-[10px] text-muted">
+          <Txt className="text-[11px] text-muted">
             {step < 1 ? `${step} kg` : `±${step}`}
           </Txt>
           <Pressable

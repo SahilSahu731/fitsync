@@ -323,7 +323,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
         <div>
           {options.map((item) => (
             <label
-              className={`flex cursor-pointer items-center gap-2 rounded-md border border-line px-3 py-2 text-sm transition-colors hover:bg-surface [&_input]:size-3.5 ${value[key].includes(item.code) ? "border-ink! bg-brand/25!" : ""}`}
+              className={`flex cursor-pointer items-center gap-2 rounded-xl px-3 py-2 text-sm transition-colors hover:bg-surface [&_input]:size-3.5 ${value[key].includes(item.code) ? "border-ink! bg-brand/25!" : ""}`}
               key={item.code}
             >
               <input
@@ -387,7 +387,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
         <h2>Couldn’t load the editor</h2>
         <p role="alert">{error}</p>
         <button
-          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
+          className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
           onClick={() => setRetry(retry + 1)}
         >
           Try again
@@ -421,7 +421,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
         </div>
         {saved && (
           <span
-            className={`inline-flex w-fit items-center whitespace-nowrap rounded-sm bg-surface px-2.5 py-1 text-xs font-semibold text-ink ${badgeClasses[saved.status] ?? ""}`}
+            className={`inline-flex w-fit items-center whitespace-nowrap rounded-full bg-white/6 px-3 py-1 text-xs font-semibold text-ink ${badgeClasses[saved.status] ?? ""}`}
           >
             {pretty(saved.status)}
           </span>
@@ -431,9 +431,11 @@ export function ExerciseEditor({ id }: { id?: string }) {
         <fieldset disabled={busy} className="m-0 min-w-0 border-0 p-0">
           <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,1fr)_18rem]">
             <div className="flex min-w-0 flex-col gap-6">
-              <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+              <section className="rounded-3xl bg-panel p-5 sm:p-7">
                 <div className="mb-6 flex items-start gap-4 [&>span]:flex [&>span]:size-9 [&>span]:shrink-0 [&>span]:items-center [&>span]:justify-center [&>span]:rounded-md [&>span]:bg-brand [&>span]:text-background [&>span]:text-sm [&>span]:font-semibold [&_h2]:text-xl [&_p]:mt-2 [&_p]:text-sm [&_p]:text-muted">
-                  <span>01</span>
+                  <span>
+                    <Icon name="dumbbell" size={18} />
+                  </span>
                   <div>
                     <h2>The essentials</h2>
                     <p>Give your exercise a name and a place in the library.</p>
@@ -534,9 +536,11 @@ export function ExerciseEditor({ id }: { id?: string }) {
                   )}
                 </div>
               </section>
-              <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+              <section className="rounded-3xl bg-panel p-5 sm:p-7">
                 <div className="mb-6 flex items-start gap-4 [&>span]:flex [&>span]:size-9 [&>span]:shrink-0 [&>span]:items-center [&>span]:justify-center [&>span]:rounded-md [&>span]:bg-brand [&>span]:text-background [&>span]:text-sm [&>span]:font-semibold [&_h2]:text-xl [&_p]:mt-2 [&_p]:text-sm [&_p]:text-muted">
-                  <span>02</span>
+                  <span>
+                    <Icon name="image" size={18} />
+                  </span>
                   <div>
                     <h2>Muscles & equipment</h2>
                     <p>Help athletes find the right exercise for their training.</p>
@@ -546,9 +550,11 @@ export function ExerciseEditor({ id }: { id?: string }) {
                 {multiselect("Secondary muscles", "secondaryMuscles", tax.muscleGroups)}
                 {multiselect("Equipment", "equipment", tax.equipmentTypes)}
               </section>
-              <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+              <section className="rounded-3xl bg-panel p-5 sm:p-7">
                 <div className="mb-6 flex items-start gap-4 [&>span]:flex [&>span]:size-9 [&>span]:shrink-0 [&>span]:items-center [&>span]:justify-center [&>span]:rounded-md [&>span]:bg-brand [&>span]:text-background [&>span]:text-sm [&>span]:font-semibold [&_h2]:text-xl [&_p]:mt-2 [&_p]:text-sm [&_p]:text-muted">
-                  <span>03</span>
+                  <span>
+                    <Icon name="check" size={18} />
+                  </span>
                   <div>
                     <h2>Coach the movement</h2>
                     <p>Keep instructions clear and easy to follow.</p>
@@ -578,7 +584,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
                   </label>
                 </div>
               </section>
-              <section className="rounded-lg border border-line bg-panel p-5 sm:p-7">
+              <section className="rounded-3xl bg-panel p-5 sm:p-7">
                 <div className="mb-6 flex items-start gap-4 [&>span]:flex [&>span]:size-9 [&>span]:shrink-0 [&>span]:items-center [&>span]:justify-center [&>span]:rounded-md [&>span]:bg-brand [&>span]:text-background [&>span]:text-sm [&>span]:font-semibold [&_h2]:text-xl [&_p]:mt-2 [&_p]:text-sm [&_p]:text-muted">
                   <span>04</span>
                   <div>
@@ -591,7 +597,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
                     {saved.media.map((media) => (
                       <div
                         key={media.id}
-                        className="overflow-hidden rounded-md border border-line [&>img]:h-40 [&>img]:w-full [&>img]:bg-surface [&>img]:object-contain [&>video]:h-40 [&>video]:w-full [&>video]:bg-surface [&>video]:object-contain [&>div]:flex [&>div]:items-center [&>div]:justify-between [&>div]:gap-2 [&>div]:px-3 [&>div]:py-2 [&>div]:text-xs [&>div]:text-muted"
+                        className="overflow-hidden rounded-xl [&>img]:h-40 [&>img]:w-full [&>img]:bg-surface [&>img]:object-contain [&>video]:h-40 [&>video]:w-full [&>video]:bg-surface [&>video]:object-contain [&>div]:flex [&>div]:items-center [&>div]:justify-between [&>div]:gap-2 [&>div]:px-3 [&>div]:py-2 [&>div]:text-xs [&>div]:text-muted"
                       >
                         {media.kind === "video" ? (
                           <video controls src={media.url} preload="metadata" />
@@ -728,7 +734,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
               </section>
             </div>
             <aside className="xl:sticky xl:top-5 [&>div[role=alert]]:mt-4">
-              <div className="rounded-lg border border-line bg-panel p-6 [&_h2]:text-xl [&>p]:mt-3 [&>p]:mb-6 [&>p]:text-sm [&>p]:text-muted [&>small]:mt-4 [&>small]:block [&>small]:text-center [&>small]:text-xs [&>small]:text-muted">
+              <div className="rounded-3xl bg-panel p-6 [&_h2]:text-xl [&>p]:mt-3 [&>p]:mb-6 [&>p]:text-sm [&>p]:text-muted [&>small]:mt-4 [&>small]:block [&>small]:text-center [&>small]:text-xs [&>small]:text-muted">
                 <h2>Publish settings</h2>
                 <p>Choose when this exercise is ready for athletes.</p>
                 <label className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2">
@@ -742,7 +748,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
                     <option value="archived">Archived — hidden from library</option>
                   </select>
                 </label>
-                <div className="mt-6 border-t border-line pt-5 [&_p]:mb-3 [&_p]:flex [&_p]:items-center [&_p]:gap-2 [&_p]:text-xs [&_p]:text-muted">
+                <div className="mt-6  pt-5 [&_p]:mb-3 [&_p]:flex [&_p]:items-center [&_p]:gap-2 [&_p]:text-xs [&_p]:text-muted">
                   <p>
                     <Icon name="check" size={16} />
                     Drafts can be saved without media
@@ -757,7 +763,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
                   </p>
                 </div>
                 <button
-                  className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 mt-3 w-full"
+                  className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 mt-3 w-full"
                   disabled={busy}
                   type="submit"
                 >
@@ -770,7 +776,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
                 </button>
                 {saved && (
                   <Link
-                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-md bg-brand px-5 py-3 text-base font-semibold text-background transition-colors hover:bg-brand-hover active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink! ring-1 ring-inset ring-line hover:bg-surface! hover:ring-ink mt-3 w-full"
+                    className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50 bg-panel! text-ink!  hover:bg-surface!  mt-3 w-full"
                     href={`/exercises/${saved.slug}`}
                   >
                     Preview exercise
@@ -787,7 +793,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
               </div>
               {error && (
                 <div
-                  className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-ink/25! bg-surface! text-ink!"
+                  className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink  bg-surface! text-ink!"
                   role="alert"
                 >
                   {error}
@@ -795,7 +801,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
               )}
               {message && (
                 <div
-                  className="mb-5 flex flex-wrap items-start gap-3 rounded-md border border-line bg-surface p-4 text-sm leading-7 text-ink border-brand! bg-brand/20! text-ink!"
+                  className="mb-5 flex flex-wrap items-start gap-3 rounded-2xl bg-surface p-4 text-sm leading-7 text-ink bg-white/10! text-ink!"
                   role="status"
                 >
                   {message}

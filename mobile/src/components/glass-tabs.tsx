@@ -33,9 +33,9 @@ export function TabGlassSurface() {
     return () => { active = false; listener.remove(); };
   }, []);
   const canBlur = !reduceTransparency && (Platform.OS !== "android" || Number(Platform.Version) >= 31);
-  return <View pointerEvents="none" className={`absolute inset-0 ${canBlur ? "bg-[#101011]/35" : "bg-panel"}`}>
+  return <View pointerEvents="none" className={`absolute inset-0 ${canBlur ? "bg-[#000000]/35" : "bg-panel"}`}>
     {canBlur && <BlurView blurTarget={context?.target} blurMethod="dimezisBlurViewSdk31Plus" intensity={65} tint="systemUltraThinMaterialDark" style={{ position: "absolute", inset: 0 }} />}
     <LinearGradient colors={["#FFFFFF12", "#FFFFFF02", "#00000020"]} start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }} style={{ position: "absolute", inset: 0 }} />
-    <View className="absolute inset-x-6 top-0 h-px bg-white/20" />
+
   </View>;
 }

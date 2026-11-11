@@ -9,7 +9,7 @@ import { useProgramResource } from "./use-program-resource";
 
 export function ExercisePreview({ templateId }: { templateId: string }) {
   const { data, loading, error, refresh } = useProgramResource(useCallback(() => workoutApi.template(templateId), [templateId]));
-  if (!data) return <View className="py-4">{loading ? <ActivityIndicator color={C.brand} /> : <Pressable accessibilityRole="button" onPress={() => void refresh()}><Txt className="text-sm text-muted">{error || "Could not load exercises."}</Txt><Txt className="mt-2 text-sm text-brand">Retry preview</Txt></Pressable>}</View>;
+  if (!data) return <View className="py-4">{loading ? <ActivityIndicator color={C.ink} /> : <Pressable accessibilityRole="button" onPress={() => void refresh()}><Txt className="text-sm text-muted">{error || "Could not load exercises."}</Txt><Txt className="mt-2 text-sm text-ink">Retry preview</Txt></Pressable>}</View>;
   const exercises = [...data.workout_template_exercises].sort((a, b) => a.position - b.position);
   const totalSets = exercises.reduce((sum, item) => sum + (item.workout_template_sets?.length ?? 0), 0);
   return <View className="mt-3">

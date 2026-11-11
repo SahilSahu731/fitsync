@@ -130,7 +130,7 @@ export default function OnboardingScreen() {
         className="flex-1 items-center justify-center bg-bg"
       >
         <ActivityIndicator
-          color={C.brand}
+          color={C.ink}
           accessibilityLabel="Loading your setup"
         />
       </View>

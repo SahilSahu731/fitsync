@@ -58,7 +58,7 @@ function NumberField({
         accessibilityLabel={label}
         placeholder="0"
         placeholderTextColor={C.muted}
-        className="h-14 rounded-xl border border-border bg-panel px-4 text-lg text-ink"
+        className="font-poppins-regular h-14 rounded-xl bg-panel px-4 text-lg text-ink"
       />
     </View>
   );
@@ -75,12 +75,12 @@ function Result({
 }) {
   return (
     <View className="mt-5 rounded-2xl bg-panel p-5">
-      <Txt className="text-xs uppercase tracking-widest text-brand">
+      <Txt className="text-xs uppercase tracking-widest text-ink">
         {label}
       </Txt>
 
       <Txt
-        weight="bold"
+        weight="semibold"
         className="mt-3 text-[33px]"
       >
         {value}
@@ -128,11 +128,11 @@ export default function ExploreCalculator() {
           {loading ? "Loading calculator…" : error || "This calculator is not published."}
         </Txt>
 
-        {error && <Pressable onPress={reload}><Txt className="text-brand">Retry</Txt></Pressable>}
+        {error && <Pressable onPress={reload}><Txt className="text-ink">Retry</Txt></Pressable>}
         <Pressable
           onPress={() => router.back()}
         >
-          <Txt className="mt-3 text-brand">
+          <Txt className="mt-3 text-ink">
             Go back
           </Txt>
         </Pressable>
@@ -195,7 +195,7 @@ export default function ExploreCalculator() {
       />
 
       {tool.cover_url && <Image source={{ uri: tool.cover_url }} style={{ width: "100%", height: 190, borderRadius: 20, marginBottom: 20 }} resizeMode="cover" accessibilityLabel={tool.name} />}
-      {tool.explanation && <View className="mb-5 rounded-2xl bg-panel p-5"><Txt weight="bold">How it works</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{tool.explanation}</Txt><Txt weight="bold" className="mt-4">Worked example</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{tool.example}</Txt></View>}
+      {tool.explanation && <View className="mb-5 rounded-2xl bg-panel p-5"><Txt weight="semibold">How it works</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{tool.explanation}</Txt><Txt weight="semibold" className="mt-4">Worked example</Txt><Txt className="mt-2 text-sm leading-6 text-muted">{tool.example}</Txt></View>}
       {tool.calculator_key && EXTRA_CALCULATORS[tool.calculator_key] && <ExtraCalculator key={tool.calculator_key} id={tool.calculator_key} />}
       {tool.calculator_key === "one-rep-max" ? (
         <>
@@ -282,7 +282,7 @@ export default function ExploreCalculator() {
           {plates ? (
             <View className="mt-5 rounded-2xl bg-panel p-5">
               <Txt
-                weight="bold"
+                weight="semibold"
                 className="mb-3 text-lg"
               >
                 Each side of the bar
@@ -356,7 +356,7 @@ export default function ExploreCalculator() {
                       Step {index + 1}
                     </Txt>
 
-                    <Txt weight="bold">
+                    <Txt weight="semibold">
                       {value.toFixed(1)} kg
                     </Txt>
                   </View>
@@ -373,5 +373,5 @@ function ExtraCalculator({ id }: { id: string }) {
   const definition = EXTRA_CALCULATORS[id];
   const [values, setValues] = useState<Record<string, string>>(() => Object.fromEntries(definition.fields.map(f => [f.key, f.initial])));
   const result = calculateExtra(id, values);
-  return <View>{definition.fields.map(f => f.key === "direction" ? <View key={f.key} className="mb-5 flex-row gap-3">{["1", "2"].map(direction => <Pressable key={direction} accessibilityRole="button" accessibilityState={{ selected: values.direction === direction }} onPress={() => setValues(v => ({ ...v, direction }))} className={`flex-1 rounded-xl p-4 ${values.direction === direction ? "bg-brand" : "bg-panel"}`}><Txt weight="bold" className={values.direction === direction ? "text-bg" : "text-ink"}>{id === "weight-converter" ? direction === "1" ? "kg → lb" : "lb → kg" : direction === "1" ? "km → miles" : "miles → km"}</Txt></Pressable>)}</View> : <NumberField key={f.key} label={f.label} value={values[f.key]} onChange={next => setValues(v => ({ ...v, [f.key]: next }))} />)}<Result label="Result" value={result ?? "Enter valid values"} /></View>;
+  return <View>{definition.fields.map(f => f.key === "direction" ? <View key={f.key} className="mb-5 flex-row gap-3">{["1", "2"].map(direction => <Pressable key={direction} accessibilityRole="button" accessibilityState={{ selected: values.direction === direction }} onPress={() => setValues(v => ({ ...v, direction }))} className={`flex-1 rounded-xl p-4 ${values.direction === direction ? "bg-ink" : "bg-panel"}`}><Txt weight="semibold" className={values.direction === direction ? "text-bg" : "text-ink"}>{id === "weight-converter" ? direction === "1" ? "kg → lb" : "lb → kg" : direction === "1" ? "km → miles" : "miles → km"}</Txt></Pressable>)}</View> : <NumberField key={f.key} label={f.label} value={values[f.key]} onChange={next => setValues(v => ({ ...v, [f.key]: next }))} />)}<Result label="Result" value={result ?? "Enter valid values"} /></View>;
 }

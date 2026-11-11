@@ -1,6 +1,5 @@
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Txt } from "@/src/components/ui";
 import { type SetType } from "../api";
 import { SET_TYPES, setAppearance } from "../set-types";
@@ -22,7 +21,7 @@ export function SetTypePicker({
   return (
     <>
       <View style={{ width: 40 }}>
-        <Txt className="mb-1 text-center text-[10px] text-muted">{number}</Txt>
+        <Txt className="mb-1 text-center text-[11px] text-muted">{number}</Txt>
         <Pressable
           disabled={disabled}
           accessibilityLabel={`Set ${number}: ${selected.label}. Choose set type`}
@@ -30,7 +29,7 @@ export function SetTypePicker({
           style={{ backgroundColor: `${selected.color}20` }}
           className="h-11 flex-row items-center justify-center rounded-lg"
         >
-          <Txt weight="bold" style={{ color: selected.color }}>
+          <Txt weight="semibold" style={{ color: selected.color }}>
             {selected.letter}
           </Txt>
           {/* <MaterialCommunityIcons
@@ -41,10 +40,7 @@ export function SetTypePicker({
         </Pressable>
       </View>
       {open && (
-        <WorkoutDrawer
-          title={`Choose Set ${number} type`}
-          onClose={() => setOpen(false)}
-        >
+        <WorkoutDrawer title={`Choose Set ${number} type`} onClose={() => setOpen(false)}>
           {SET_TYPES.map((item) => (
             <Pressable
               key={item.value}
@@ -68,15 +64,10 @@ export function SetTypePicker({
                 <Txt weight="semibold" className="text-xl" style={{ color: item.color }}>
                   {item.label}
                 </Txt>
-                <Txt className="mt-1 text-sm text-muted">
-                  {item.description}
-                </Txt>
+                <Txt className="mt-1 text-sm text-muted">{item.description}</Txt>
               </View>
               {value === item.value && (
-                <View
-                  style={{ backgroundColor: item.color }}
-                  className="h-2 w-2 rounded-full"
-                />
+                <View style={{ backgroundColor: item.color }} className="h-2 w-2 rounded-full" />
               )}
             </Pressable>
           ))}

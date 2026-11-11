@@ -26,9 +26,9 @@ import {
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
-const GREEN = "#4ADE80";
-const BLUE = "#60A5FA";
-const GOLD = "#FACC15";
+const GREEN = "#B8B8B8";
+const BLUE = "#9C9C9C";
+const GOLD = "#C9C9C9";
 const RED = "#F87171";
 
 const LEVEL_COLOR: Record<string, string> = {
@@ -57,11 +57,11 @@ function StatTile({
         <MaterialCommunityIcons name={icon} size={20} color={color} />
       </View>
 
-      <Txt weight="extra" className="mt-2.5 text-xl">
+      <Txt weight="semibold" className="mt-2.5 text-xl">
         {value}
       </Txt>
 
-      <Txt className="mt-0.5 text-[10px] tracking-wider text-muted">
+      <Txt className="mt-0.5 text-[11px] tracking-wider text-muted">
         {label}
       </Txt>
     </View>
@@ -192,7 +192,7 @@ export default function ProgramDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-bg">
         {BackButton}
-        <ActivityIndicator color={C.brand} />
+        <ActivityIndicator color={C.ink} />
       </View>
     );
   }
@@ -206,7 +206,7 @@ export default function ProgramDetailScreen() {
           size={44}
           color={C.muted}
         />
-        <Txt weight="bold" className="mt-4 text-lg">
+        <Txt weight="semibold" className="mt-4 text-lg">
           Program unavailable
         </Txt>
         <Txt className="mt-1 text-center text-sm text-muted">
@@ -214,9 +214,9 @@ export default function ProgramDetailScreen() {
         </Txt>
         <Pressable
           onPress={() => load()}
-          className="mt-5 rounded-full bg-brand px-6 py-3"
+          className="mt-5 rounded-full bg-ink px-6 py-3"
         >
-          <Txt weight="bold" className="text-bg">
+          <Txt weight="semibold" className="text-bg">
             Try again
           </Txt>
         </Pressable>
@@ -251,7 +251,7 @@ export default function ProgramDetailScreen() {
               <MaterialCommunityIcons
                 name="weight-lifter"
                 size={84}
-                color={C.brand}
+                color={C.ink}
                 style={{ opacity: 0.4 }}
               />
             </View>
@@ -266,11 +266,11 @@ export default function ProgramDetailScreen() {
             <MaterialCommunityIcons
               name="check-decagram"
               size={20}
-              color={C.brand}
+              color={C.ink}
             />
             <Txt
               weight="semibold"
-              className="ml-1.5 text-sm tracking-wider text-brand"
+              className="ml-1.5 text-sm tracking-wider text-ink"
             >
               By {program.author}
             </Txt>
@@ -295,7 +295,7 @@ export default function ProgramDetailScreen() {
             <Tag
               icon="target"
               label={program.goal.replace(/_/g, " ")}
-              color={C.brand}
+              color={C.ink}
             />
             <Tag
               icon="dumbbell"
@@ -308,7 +308,7 @@ export default function ProgramDetailScreen() {
           <View className="mt-6 flex-row gap-3">
             <StatTile
               icon="calendar-week"
-              color={C.brand}
+              color={C.ink}
               value={`${program.days_per_week}`}
               label="DAYS / WEEK"
             />
@@ -329,7 +329,7 @@ export default function ProgramDetailScreen() {
           {/* About */}
           {program.description ? (
             <>
-              <Txt weight="bold" className="mb-2 mt-9 text-[22px]">
+              <Txt weight="semibold" className="mb-2 mt-9 text-[22px]">
                 About this program
               </Txt>
 
@@ -340,7 +340,7 @@ export default function ProgramDetailScreen() {
           ) : null}
 
           {/* Weekly schedule */}
-          <Txt weight="bold" className="mt-9 text-[22px]">
+          <Txt weight="semibold" className="mt-9 text-[22px]">
             Weekly schedule
           </Txt>
 
@@ -362,7 +362,7 @@ export default function ProgramDetailScreen() {
               return (
                 <View
                   key={day.id}
-                  className="mb-3 flex-row items-center rounded-[22px] border-border p-4"
+                  className="mb-3 flex-row items-center rounded-[22px] p-4"
                 >
                   <View className="h-12 w-12 items-center justify-center rounded-2xl bg-blue-400/15">
                     <MaterialCommunityIcons
@@ -376,7 +376,7 @@ export default function ProgramDetailScreen() {
                     <Txt className="text-[11px] tracking-wider text-muted">
                       Day {day.day_number}
                     </Txt>
-                    <Txt weight="bold" className="text-lg">
+                    <Txt weight="semibold" className="text-lg">
                       {day.label}
                     </Txt>
                     <Txt className="mt-0.5 text-sm text-muted">
@@ -404,7 +404,7 @@ export default function ProgramDetailScreen() {
                   className="flex-row items-center p-4"
                 >
                   <View className="h-12 w-12 items-center justify-center rounded-2xl bg-green-400/30">
-                    <Txt weight="extra" className="text-lg text-green-500">
+                    <Txt weight="semibold" className="text-lg text-ink">
                       {day.day_number}
                     </Txt>
                   </View>
@@ -413,7 +413,7 @@ export default function ProgramDetailScreen() {
                     <Txt className="text-[11px] tracking-wider text-muted">
                       Day {day.day_number}
                     </Txt>
-                    <Txt weight="bold" className="text-lg" numberOfLines={1}>
+                    <Txt weight="semibold" className="text-lg" numberOfLines={1}>
                       {day.label}
                     </Txt>
 
@@ -458,7 +458,7 @@ export default function ProgramDetailScreen() {
                       }
                       accessibilityRole="button"
                       accessibilityLabel={`${open ? "Hide" : "Show"} exercises for ${day.label}`}
-                      className="flex-row items-center justify-between border-t border-border px-4 py-3"
+                      className="flex-row items-center justify-between px-4 py-3"
                     >
                       <View className="flex-row items-center">
                         <MaterialCommunityIcons
@@ -487,12 +487,12 @@ export default function ProgramDetailScreen() {
                             className={`flex-row items-center py-2.5 ${
                               index === exercises.length - 1
                                 ? ""
-                                : "border-b border-border"
+                                : " "
                             }`}
                           >
                             <View className="h-6 w-6 items-center justify-center rounded-full bg-elevated">
                               <Txt
-                                weight="bold"
+                                weight="semibold"
                                 className="text-[11px] text-muted"
                               >
                                 {index + 1}
@@ -507,7 +507,7 @@ export default function ProgramDetailScreen() {
                             </Txt>
 
                             <View className="ml-2 rounded-full bg-elevated px-2.5 py-1">
-                              <Txt weight="bold" className="text-xs">
+                              <Txt weight="semibold" className="text-xs">
                                 {item.sets} ×{" "}
                                 {item.min_reps === item.max_reps
                                   ? item.min_reps
@@ -530,10 +530,10 @@ export default function ProgramDetailScreen() {
 
       {/* Follow the plan, or bookmark it for later. */}
       <View
-        className="absolute bottom-0 left-0 right-0 border-t border-border bg-bg px-5 pt-4"
+        className="absolute bottom-0 left-0 right-0 bg-bg px-5 pt-4"
         style={{ paddingBottom: Math.max(insets.bottom, 16) }}
       >
-        <Pressable accessibilityRole="button" onPress={() => following?.enrollment.program_id === program.id ? router.push({ pathname: "/programs/[id]", params: { id: following.enrollment.id } }) : setFollowOpen(true)} className="mb-2 h-14 flex-row items-center justify-center rounded-full bg-brand"><MaterialCommunityIcons name="calendar-check-outline" size={22} color={C.bg} /><Txt weight="bold" className="ml-2 text-base text-bg">{following?.enrollment.program_id === program.id ? "View my progress" : "Follow program"}</Txt></Pressable>
+        <Pressable accessibilityRole="button" onPress={() => following?.enrollment.program_id === program.id ? router.push({ pathname: "/programs/[id]", params: { id: following.enrollment.id } }) : setFollowOpen(true)} className="mb-2 h-14 flex-row items-center justify-center rounded-full bg-ink"><MaterialCommunityIcons name="calendar-check-outline" size={22} color={C.bg} /><Txt weight="semibold" className="ml-2 text-base text-bg">{following?.enrollment.program_id === program.id ? "View my progress" : "Follow program"}</Txt></Pressable>
         <Pressable
           onPress={() => void handleSave()}
           disabled={saving || saved}
@@ -551,7 +551,7 @@ export default function ProgramDetailScreen() {
                 color={saved ? GREEN : C.muted}
               />
               <Txt
-                weight="bold"
+                weight="semibold"
                 className="ml-2 text-base"
                 style={{ color: saved ? GREEN : C.muted }}
               >

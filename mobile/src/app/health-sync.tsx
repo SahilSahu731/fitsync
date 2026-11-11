@@ -15,14 +15,14 @@ export default function HealthSyncScreen() {
   const manage = async () => { setSettingsError(""); try { await getHealthAdapter().openSettings(); } catch { setSettingsError(`Open ${provider} in your device settings to review FitSync access.`); } };
   return <SafeAreaView className="flex-1 bg-bg" edges={["top", "bottom"]}>
     <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 48 }}>
-      <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} className="mb-7 h-11 w-11 items-center justify-center rounded-full border border-border"><MaterialCommunityIcons name="arrow-left" size={22} color={C.ink} /></Pressable>
-      <View className="mb-5 h-16 w-16 items-center justify-center rounded-[22px] bg-brand/10"><MaterialCommunityIcons name="heart-pulse" size={32} color={C.brand} /></View>
-      <Txt weight="bold" className="text-[32px] leading-[38px]">Less logging.{"\n"}More of your picture.</Txt>
+      <Pressable accessibilityRole="button" accessibilityLabel="Go back" onPress={() => router.back()} className="mb-7 h-11 w-11 items-center justify-center rounded-full"><MaterialCommunityIcons name="arrow-left" size={22} color={C.ink} /></Pressable>
+      <View className="mb-5 h-16 w-16 items-center justify-center rounded-[22px] bg-white/5"><MaterialCommunityIcons name="heart-pulse" size={32} color={C.ink} /></View>
+      <Txt weight="semibold" className="text-[32px] leading-[38px]">Less logging.{"\n"}More of your picture.</Txt>
       <Txt className="mb-7 mt-4 text-base leading-6 text-muted">Bring steps, sleep and body weight from {provider} into your progress journal.</Txt>
       <Card className="mb-5">
-        <Txt weight="bold" className="text-lg">You choose what to share</Txt>
+        <Txt weight="semibold" className="text-lg">You choose what to share</Txt>
         <Txt className="mt-3 text-sm leading-6 text-muted">FitSync requests read access only. Imports cover the last seven days and join the progress saved to your FitSync account, including cloud sync. We do not write to {provider}.</Txt>
-        <View className="mt-5 gap-4">{[{ icon: "shoe-print", title: "Steps", detail: "Daily totals from your connected devices" }, { icon: "moon-waning-crescent", title: "Sleep", detail: "Recorded asleep time, grouped by wake date" }, { icon: "scale-bathroom", title: "Body weight", detail: "Your latest recorded weight each day" }].map(item => <View key={item.title} className="flex-row items-center gap-3"><MaterialCommunityIcons name={item.icon as "shoe-print"} size={21} color={C.brand} /><View className="flex-1"><Txt weight="semibold" className="text-sm">{item.title}</Txt><Txt className="mt-1 text-xs text-muted">{item.detail}</Txt></View></View>)}</View>
+        <View className="mt-5 gap-4">{[{ icon: "shoe-print", title: "Steps", detail: "Daily totals from your connected devices" }, { icon: "moon-waning-crescent", title: "Sleep", detail: "Recorded asleep time, grouped by wake date" }, { icon: "scale-bathroom", title: "Body weight", detail: "Your latest recorded weight each day" }].map(item => <View key={item.title} className="flex-row items-center gap-3"><MaterialCommunityIcons name={item.icon as "shoe-print"} size={21} color={C.ink} /><View className="flex-1"><Txt weight="semibold" className="text-sm">{item.title}</Txt><Txt className="mt-1 text-xs text-muted">{item.detail}</Txt></View></View>)}</View>
       </Card>
       <Card className="mb-6">
         <Txt weight="semibold" className="text-base">{health.settings.enabled ? "Import is enabled" : "Import is off"}</Txt>
@@ -36,7 +36,7 @@ export default function HealthSyncScreen() {
       {(health.error || settingsError) && <Txt accessibilityRole="alert" className="mb-5 text-sm leading-6" style={{ color: "#FF929C" }}>{health.error || settingsError}</Txt>}
       {health.result && <Card className="mb-5"><Txt weight="semibold">{health.result.imported} daily entries updated</Txt><Txt className="mt-2 text-xs leading-5 text-muted">{health.result.unchanged} unchanged · {health.result.protectedEntries} manual entries preserved</Txt>{health.result.warnings.map((warning, index) => <Txt key={index} className="mt-2 text-xs leading-5 text-muted">{warning}</Txt>)}{!health.result.imported && !health.result.unchanged && !health.result.protectedEntries && <Txt className="mt-3 text-sm text-muted">No readable records were found. Check connected devices and permissions, then retry.</Txt>}</Card>}
       <PrimaryButton title={health.settings.enabled ? "Import last seven days" : `Connect ${provider}`} loading={health.busy} disabled={!health.ownerId || !health.availability?.available} onPress={() => void health.importNow(!health.settings.enabled)} />
-      <Pressable accessibilityRole="button" onPress={() => void manage()} className="mt-4 min-h-12 items-center justify-center rounded-2xl border border-border px-4 py-4"><Txt weight="semibold" className="text-sm">Manage device permissions</Txt></Pressable>
+      <Pressable accessibilityRole="button" onPress={() => void manage()} className="mt-4 min-h-12 items-center justify-center rounded-2xl px-4 py-4"><Txt weight="semibold" className="text-sm">Manage device permissions</Txt></Pressable>
       {health.settings.enabled && <Pressable accessibilityRole="button" disabled={health.busy} onPress={() => Alert.alert("Stop health imports?", "Existing journal entries stay saved. You can revoke system access separately in your device’s health settings.", [{ text: "Keep importing", style: "cancel" }, { text: "Stop imports", onPress: () => void health.disconnect() }])} className="mt-3 min-h-12 items-center justify-center px-4 py-4"><Txt className="text-sm text-muted">Stop importing for this account</Txt></Pressable>}
     </ScrollView>
   </SafeAreaView>;

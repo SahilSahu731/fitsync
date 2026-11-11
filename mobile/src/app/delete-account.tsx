@@ -89,7 +89,7 @@ export default function DeleteAccountScreen() {
       >
         <Pressable
           onPress={() => router.back()}
-          className="mb-10 h-11 w-11 items-center justify-center rounded-full border border-border"
+          className="mb-10 h-11 w-11 items-center justify-center rounded-full"
         >
           <MaterialCommunityIcons
             name="arrow-left"
@@ -107,12 +107,12 @@ export default function DeleteAccountScreen() {
         </View>
 
         <Txt
-          weight="extra"
+          weight="semibold"
           className="mt-8 text-[37px] leading-[41px]"
         >
           DELETE YOUR{"\n"}
           <Txt
-            weight="extra"
+            weight="semibold"
             className="text-[37px] text-[#FF8278]"
           >
             ACCOUNT.
@@ -125,9 +125,9 @@ export default function DeleteAccountScreen() {
           will be removed from our database.
         </Txt>
 
-        <View className="mt-8 rounded-2xl border border-[#5D3435] bg-[#25191A] p-5">
+        <View className="mt-8 rounded-2xl bg-[#25191A] p-5">
           <Txt
-            weight="bold"
+            weight="semibold"
             className="text-sm text-[#FF9B89]"
           >
             WHAT WILL BE DELETED?
@@ -157,10 +157,10 @@ export default function DeleteAccountScreen() {
           ))}
         </View>
 
-        {entitlement.source === "revenuecat" && <View className="mt-6 rounded-2xl bg-panel p-5"><Txt className="text-sm leading-6">Deleting your account does not cancel your store subscription.</Txt><Pressable className="mt-3" onPress={() => void manage().catch(error => Alert.alert("Subscription", error.message))}><Txt weight="semibold" className="text-brand">Manage or cancel subscription</Txt></Pressable></View>}
+        {entitlement.source === "revenuecat" && <View className="mt-6 rounded-2xl bg-panel p-5"><Txt className="text-sm leading-6">Deleting your account does not cancel your store subscription.</Txt><Pressable className="mt-3" onPress={() => void manage().catch(error => Alert.alert("Subscription", error.message))}><Txt weight="semibold" className="text-ink">Manage or cancel subscription</Txt></Pressable></View>}
 
         <Txt
-          weight="bold"
+          weight="semibold"
           className="mb-3 mt-8 text-xs tracking-[1px] text-muted"
         >
           TYPE DELETE TO CONFIRM
@@ -173,9 +173,9 @@ export default function DeleteAccountScreen() {
           autoCorrect={false}
           placeholder="DELETE"
           placeholderTextColor={C.muted}
-          className="h-14 rounded-2xl border border-border bg-panel px-4 text-base text-ink"
+          className="font-poppins-regular h-14 rounded-2xl bg-panel px-4 text-base text-ink"
           style={{
-            fontFamily: "Inter_700Bold"
+            fontFamily: "Poppins_700Bold"
           }}
         />
 
@@ -185,7 +185,7 @@ export default function DeleteAccountScreen() {
           className={`mt-6 h-14 items-center justify-center rounded-2xl ${confirmation === "DELETE" ? "bg-[#F0665E]" : "bg-elevated"}`}
         >
           <Txt
-            weight="extra"
+            weight="semibold"
             className="text-sm"
             style={{
               color:
@@ -205,7 +205,7 @@ export default function DeleteAccountScreen() {
           className="mt-5 items-center py-3"
         >
           <Txt
-            weight="bold"
+            weight="semibold"
             className="text-sm text-muted"
           >
             KEEP MY ACCOUNT
