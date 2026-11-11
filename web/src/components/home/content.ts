@@ -1,5 +1,3 @@
-// Edit homepage copy, image paths, and illustrative data here.
-// Section layout and styling live in the neighboring *-section.tsx files.
 export const homeImages = {
   studio: "/art/training-studio.webp",
   athlete: "/art/athlete-motion.webp",
@@ -7,14 +5,86 @@ export const homeImages = {
 };
 
 export const heroContent = {
-  eyebrow: "FOR THE EVERYDAY ATHLETE",
+  eyebrow: "TRAIN. TRACK. ADAPT.",
   title: "Train smarter.",
   secondLine: "Show up",
   accent: "stronger.",
   description:
-    "A little structure. A lot more possibility. Find your training, build your rhythm, and keep your good thing going.",
+    "Follow a program, log every set, and track 31 health metrics. Get a free four-week starter plan built around your goal, equipment and schedule.",
   primary: { label: "Get started free", href: "/register" },
   secondary: { label: "Explore training", href: "/programs" },
+};
+
+export const stats = [
+  ["4 weeks", "free starter plan, built for you"],
+  ["31", "health metrics you can track"],
+  ["14", "built-in fitness calculators"],
+  ["1 account", "across web and mobile"],
+] as const;
+
+export const pillars = [
+  {
+    art: "log",
+    title: "Log every set",
+    text: "Record weight, reps and effort as you train, with a rest timer and a full workout history to look back on.",
+    href: "/features",
+    action: "See how logging works",
+  },
+  {
+    art: "program",
+    title: "Follow a program",
+    text: "Pick a published program and start on a date you choose. Reminders arrive at your time, and missed sessions stay available.",
+    href: "/programs",
+    action: "Browse programs",
+  },
+  {
+    art: "coach",
+    title: "Get a starter plan",
+    text: "A four-week plan from your goal, experience, equipment, session length and training days. No guesswork, no made-up exercises.",
+    href: "/features",
+    action: "How plans are built",
+  },
+  {
+    art: "progress",
+    title: "See real progress",
+    text: "Sessions, volume, estimated 1RM and weekly consistency, plus activity, nutrition, body and recovery metrics. Export your data any time.",
+    href: "/features",
+    action: "Explore progress",
+  },
+  {
+    art: "explore",
+    title: "Learn and recover",
+    text: "Guided mobility sessions, short articles and 14 calculators, so warm-ups and rest days count too.",
+    href: "/exercises",
+    action: "Explore the library",
+  },
+  {
+    art: "sync",
+    title: "Bring your health data",
+    text: "Optionally import steps, sleep and weight from Health Connect on Android or Apple Health on iOS. Import is read-only.",
+    href: "/features",
+    action: "About health import",
+  },
+] as const;
+
+export const planTiers = {
+  free: [
+    "Workout logging and full history",
+    "Free four-week starter plan",
+    "Follow programs with reminders",
+    "All 31 health metrics and targets",
+    "Exercise library, mobility and tools",
+    "Raw data export",
+  ],
+  pro: [
+    "Shorten a session to the time you have",
+    "Switch to gym, dumbbells or bodyweight",
+    "Swap an exercise within the same movement pattern",
+    "Choose an easier day when you need one",
+    "Progression suggestions",
+    "Move a missed session and the rest of the schedule",
+    "A weekly review with clear next actions",
+  ],
 };
 
 export const movementLabels = [
@@ -115,23 +185,33 @@ export const workoutExamples = [
 
 export const questions = [
   {
-    question: "Can I get started for free?",
+    question: "What is free and what is Pro?",
     answer:
-      "Yes. Create a FitSync account to start exploring. Workout logging, daily tracking, your starting plan, and progress history are available in the mobile app. Optional Pro features add plan adjustments and deeper guidance.",
+      "Free includes workout logging and history, a four-week starter plan, program following with reminders, all 31 health metrics and targets, the exercise library, and data export. Optional Pro adds plan adaptation: shorter sessions, equipment changes, easier days, exercise swaps, progression suggestions, rescheduling and a weekly review.",
+  },
+  {
+    question: "How is my starter plan created?",
+    answer:
+      "From your saved goal, experience, equipment, session length and training days. Beginners get up to three strength days a week and other levels up to four. Plans only use published exercises, never guess a starting weight, and week four reduces sets.",
   },
   {
     question: "Do I need a gym or special equipment?",
     answer:
-      "No. Explore exercises for a full gym, a pair of dumbbells, or just your bodyweight. Use the equipment and experience filters to find movements that suit your setup.",
+      "No. Plans and the exercise library work for a full gym, a pair of dumbbells or just your bodyweight. Filter by equipment and experience to find movements that fit.",
+  },
+  {
+    question: "Can I follow more than one program?",
+    answer:
+      "One active program at a time. If you switch, your old enrollment, journal and workout logs are kept. Missed sessions stay available, and days with nothing scheduled are recovery days.",
+  },
+  {
+    question: "Which health data can FitSync import?",
+    answer:
+      "Steps, sleep and body weight, from Health Connect on Android and Apple Health on iOS, for the last seven days. It is optional and read-only: FitSync does not write to your health records.",
   },
   {
     question: "How do the website and mobile app work together?",
     answer:
-      "Explore exercises and programs, learn techniques, and manage your profile on the website. Log sessions and daily check-ins in the mobile app, with the same FitSync account.",
-  },
-  {
-    question: "What if I’m just getting started?",
-    answer:
-      "Start with the beginner filters, preview the movements, then choose a program with a schedule you can repeat. Your starting point is a starting point, not a finish line.",
+      "Explore exercises and programs, learn technique and manage your profile on the website. Log workouts and daily check-ins in the mobile app with the same account.",
   },
 ];

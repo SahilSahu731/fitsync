@@ -1,5 +1,23 @@
 # Welcome to your Expo app 👋
 
+## Development QR says host unreachable
+
+When your phone cannot open the computer's Metro address, use tunnel mode from
+`mobile/`:
+
+```bash
+npm run start:tunnel
+```
+
+Keep the terminal running and scan the new QR in the installed FitSync development
+app. Both devices need internet access. The project includes `@expo/ngrok` as a
+local development dependency, so Expo does not need to install it globally. Run
+`npm ci` first after a fresh checkout. No APK rebuild is needed for this tooling
+change.
+
+The tunnel forwards Metro, not the backend API. If the app opens but API requests
+fail, `EXPO_PUBLIC_API_URL` must also point to an address reachable from the phone.
+
 ## Android minimum SDK build failure
 
 FitSync requires Android 8.0 (API 26) or newer. Health Connect's native SDK requires

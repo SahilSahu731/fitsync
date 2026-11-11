@@ -1,6 +1,6 @@
 # FitSync homepage refresh
 
-The homepage now composes eight independent sections from `web/src/components/home/`. Shared copy and illustrative data live in `content.ts`. The component map and editing instructions are in `web/src/components/home/README.md`.
+The homepage now composes eight independent components from `web/src/components/home/`. Shared copy and illustrative data live in `content.ts`. The component map and editing instructions are in `web/src/components/home/README.md`.
 
 The design keeps forest black, Inter, chalk white, and the existing lime brand. It combines a photographic studio background, a functional example phone, custom SVG movement studies, an interactive weekly schedule, the 3D equipment studio, native FAQs, and a lime/photo closing section. Animation definitions live in `globals.css`; the homepage has no embedded style block or inline CSS.
 

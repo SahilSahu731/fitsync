@@ -70,6 +70,7 @@
   "devDependencies": {
     "@emnapi/core": "^1.11.3",
     "@emnapi/runtime": "^1.11.3",
+    "@expo/ngrok": "^4.1.0",
     "@types/express": "^5.0.6",
     "@types/jsonwebtoken": "^9.0.10",
     "@types/multer": "^2.3.0",
@@ -88,6 +89,7 @@
     "typecheck": "tsc --noEmit",
     "test:native": "node --test tests/native-modules.test.mjs",
     "start:clean": "expo start --dev-client --clear",
+    "start:tunnel": "expo start --dev-client --tunnel --clear",
     "build:android:dev": "npx eas-cli@latest build --platform android --profile development",
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",

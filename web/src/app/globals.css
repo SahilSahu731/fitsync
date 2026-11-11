@@ -1,8 +1,7 @@
 @import "tailwindcss";
-@import "@fontsource-variable/inter";
 
 @theme {
-  --font-sans: "Inter Variable", Inter, Arial, sans-serif;
+  --font-sans: "Poppins", Arial, sans-serif;
   --color-brand: #c5f460;
   --color-brand-hover: #b3e34f;
   --color-background: #0b0e0b;
@@ -15,6 +14,8 @@
   --animate-home-reveal: home-reveal 800ms cubic-bezier(0.16, 1, 0.3, 1) both;
   --animate-home-marquee: home-marquee 38s linear infinite;
   --animate-home-draw: home-draw 2.5s ease-out both;
+  --animate-home-float: home-float 7s ease-in-out infinite;
+  --animate-hero-float: hero-float 7s ease-in-out infinite;
 
   @keyframes home-reveal {
     from {
@@ -37,6 +38,20 @@
     }
     to {
       stroke-dashoffset: 0;
+    }
+  }
+  @keyframes home-float {
+    50% {
+      transform: translateY(-12px);
+    }
+  }
+  @keyframes hero-float {
+    0%,
+    100% {
+      transform: translateY(0) rotate(-1deg);
+    }
+    50% {
+      transform: translateY(-10px) rotate(0.5deg);
     }
   }
 }
