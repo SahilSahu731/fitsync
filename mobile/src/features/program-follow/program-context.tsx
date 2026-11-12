@@ -11,7 +11,7 @@ type Context = { active: FollowedProgram | null; loading: boolean; error: string
 const ProgramContext = createContext<Context | null>(null);
 export function ProgramProvider({ children }: { children: React.ReactNode }) {
   const { user, ready } = useSession();
-  const { session } = useWorkout();
+  const { session, dataRevision } = useWorkout();
   const [snapshot, setSnapshot] = useState<{ userId: string; active: FollowedProgram | null; error: string } | null>(null);
   const generation = useRef(0);
   const userId = user?.id;
@@ -32,7 +32,7 @@ export function ProgramProvider({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     void refresh();
     return invalidate;
-  }, [refresh, invalidate, session?.id]);
+  }, [refresh, invalidate, session?.id, dataRevision]);
   useEffect(() => {
     if (!userId || !ready) return;
     const subscription = AppState.addEventListener("change", state => { if (state === "active") void refresh(); });

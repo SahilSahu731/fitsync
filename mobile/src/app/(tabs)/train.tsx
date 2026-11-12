@@ -4,13 +4,14 @@ import { CoachHomeCard } from "@/src/features/coaching/home-card";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
 import { ActiveProgramCard } from "@/src/features/program-follow/active-program-card";
 import { useAppAlert } from "@/src/components/app-dialog";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 
 import {
   ActivityIndicator,
   RefreshControl,
   ScrollView,
   Share,
+  TextInput,
   View,
   useWindowDimensions,
 } from "react-native";
@@ -35,6 +36,8 @@ import {
   ReorderTraining,
 } from "@/src/features/workouts/components/train-actions";
 import { Image } from "expo-image";
+import { TrainingSection } from "@/src/features/workouts/components/training-section";
+import { trainingWeek, workoutSummary } from "@/src/features/workouts/summary";
 import { RoutineCard } from "@/src/features/workouts/components/routine-card";
 
 function ordered<T extends { id: string }>(rows: T[], ids: string[]) {
@@ -74,6 +77,8 @@ function QuickTile({
   return (
     <Pressable
       onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={`${title}. ${subtitle}`}
       className="min-w-0 flex-1 flex-row items-center gap-2 rounded-[18px] bg-panel p-3.5"
     >
       <MaterialCommunityIcons name={icon} size={20} color={C.ink} />
@@ -130,11 +135,6 @@ function EmptyState({
   );
 }
 
-// Drop-in replacement for ProgramCard in your Train screen.
-// Imports needed in the screen:
-//   import { ..., Image, StyleSheet, ... } from "react-native";
-
-// Fixes the URL shapes that commonly fail to render on devices.
 function coverUri(url?: string | null) {
   const value = url?.trim();
 
@@ -183,7 +183,7 @@ function ProgramCard({
               source={{ uri: uri as string }}
               resizeMode="cover"
               style={{ width: "100%", height: 140 }}
-              onError={(event) => {
+              onError={() => {
                 console.warn("Program cover failed to load:", uri);
                 setCoverFailed(true);
               }}
@@ -262,7 +262,7 @@ function ProgramCard({
 }
 
 function HistoryCard({ item, onPress }: { item: HistoryItem; onPress: () => void }) {
-  const date = new Date(item.started_at);
+  const date = new Date(item.finished_at ?? item.started_at);
 
   return (
     <Pressable onPress={onPress} className="mb-3 flex-row items-center rounded-[22px] bg-panel p-4">
@@ -294,11 +294,25 @@ function HistoryCard({ item, onPress }: { item: HistoryItem; onPress: () => void
 }
 
 export default function TrainScreen() {
+  const { user } = useSession();
+  return <TrainAccountScreen key={user?.id ?? "signed-out"} />;
+}
+
+function TrainAccountScreen() {
   const Alert = useAppAlert();
   const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
 
-  const { session, start, busy } = useWorkout();
+  const {
+    session,
+    start,
+    busy,
+    loading: workoutLoading,
+    pendingCompletion,
+    completedWorkout,
+    dataRevision,
+    refresh: refreshWorkout,
+  } = useWorkout();
 
   const { user } = useSession();
   const orderKey = `fitsync.train-order.v1.${user?.id ?? "signed-out"}`;
@@ -309,12 +323,15 @@ export default function TrainScreen() {
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [programs, setPrograms] = useState<SavedProgram[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
-
+  const [routineSearch, setRoutineSearch] = useState("");
+  const [historyLimit, setHistoryLimit] = useState(5);
+  const sequence = useRef(0);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState("");
 
   const load = useCallback(async () => {
+    const request = ++sequence.current;
     setError("");
 
     const results = await Promise.allSettled([
@@ -324,6 +341,7 @@ export default function TrainScreen() {
       AsyncStorage.getItem(orderKey),
     ]);
 
+    if (request !== sequence.current) return;
     const [templatesResult, historyResult, programsResult, orderResult] = results;
     let savedOrder: { programs?: string[]; routines?: string[] } = {};
     if (orderResult.status === "fulfilled" && orderResult.value) {
@@ -366,6 +384,7 @@ export default function TrainScreen() {
     useCallback(() => {
       let active = true;
 
+      void refreshWorkout().catch(() => {});
       void load().finally(() => {
         if (active) setLoading(false);
       });
@@ -373,13 +392,18 @@ export default function TrainScreen() {
       return () => {
         active = false;
       };
-    }, [load]),
+    }, [load, refreshWorkout]),
   );
+
+  useEffect(() => {
+    if (dataRevision > 0) void Promise.resolve().then(load);
+  }, [dataRevision, load]);
 
   const onRefresh = async () => {
     setRefreshing(true);
 
     try {
+      await refreshWorkout().catch(() => {});
       await load();
     } finally {
       setRefreshing(false);
@@ -387,6 +411,7 @@ export default function TrainScreen() {
   };
 
   const handleStart = async (templateId?: string) => {
+    if (busy || workoutLoading || pendingCompletion) return;
     if (session) {
       router.push("/workout");
       return;
@@ -508,6 +533,25 @@ export default function TrainScreen() {
       ? Math.min(300, (Math.min(screenWidth, 672) - 48) * 0.9)
       : Math.min(screenWidth, 672) - 48;
 
+  const visibleHistory =
+    completedWorkout && !history.some((item) => item.id === completedWorkout.id)
+      ? [
+          {
+            id: completedWorkout.id,
+            name: completedWorkout.name,
+            started_at: completedWorkout.started_at,
+            finished_at: completedWorkout.finished_at!,
+            elapsed_seconds: completedWorkout.elapsed_seconds ?? 0,
+          },
+          ...history,
+        ]
+      : history;
+  const week = trainingWeek(visibleHistory);
+  const activeSummary = workoutSummary(session);
+  const startDisabled = busy || workoutLoading || pendingCompletion;
+  const matchingTemplates = templates.filter((item) =>
+    item.name.toLowerCase().includes(routineSearch.trim().toLowerCase()),
+  );
   const today = new Date().toLocaleDateString(undefined, {
     weekday: "long",
     day: "numeric",
@@ -531,12 +575,24 @@ export default function TrainScreen() {
         >
           {/* Header */}
 
-          <PageHeading
-            eyebrow={today}
-            title="Your next rep."
-            subtitle="A little structure. A little room for real life."
-          />
+          <PageHeading eyebrow={today} title="Let’s train." subtitle="Your session, your pace." />
           <WorkoutSyncNotice />
+          {!loading && !error && (
+            <View className="mb-5 flex-row rounded-[22px] bg-panel px-4 py-4">
+              {[
+                { value: week.workouts, label: "Workouts" },
+                { value: week.minutes, label: "Minutes" },
+                { value: week.days, label: "Active days" },
+              ].map((stat) => (
+                <View key={stat.label} className="flex-1 items-center">
+                  <Txt weight="semibold" className="text-xl">
+                    {stat.value}
+                  </Txt>
+                  <Txt className="mt-1 text-[11px] text-muted">{stat.label} this week</Txt>
+                </View>
+              ))}
+            </View>
+          )}
 
           {/* Hero: resume or start */}
 
@@ -560,7 +616,10 @@ export default function TrainScreen() {
                 {session.name}
               </Txt>
               <View className="mt-6 flex-row items-center justify-between">
-                <Txt className="text-xs text-muted">Right where you left it.</Txt>
+                <Txt className="text-xs text-muted">
+                  {activeSummary.completedSets}/{activeSummary.totalSets} sets ·{" "}
+                  {activeSummary.exercises} exercises
+                </Txt>
                 <View className="min-h-12 flex-row items-center gap-2 rounded-full bg-ink px-5">
                   <Txt weight="semibold" className="text-xs text-black">
                     Resume
@@ -572,31 +631,35 @@ export default function TrainScreen() {
           ) : (
             <Pressable
               accessibilityRole="button"
-              accessibilityState={{ disabled: busy, busy }}
+              accessibilityState={{ disabled: startDisabled, busy: busy || workoutLoading }}
               onPress={() => void handleStart()}
-              disabled={busy}
-              className="mb-4 overflow-hidden rounded-[28px] bg-ink p-7"
+              disabled={startDisabled}
+              className={`mb-4 overflow-hidden rounded-[28px] bg-ink p-5 ${startDisabled ? "opacity-60" : ""}`}
             >
               <View className="flex-row items-center justify-between">
                 <Txt weight="medium" className="text-[11px] tracking-[1.5px] text-black/60">
-                  MAKE TIME FOR YOU
+                  READY WHEN YOU ARE
                 </Txt>
                 <MaterialCommunityIcons name="dumbbell" size={25} color={C.bg} />
               </View>
               <Txt
                 weight="medium"
-                className="mt-6 text-[30px] leading-[37px] tracking-[-1px] text-black"
+                className="mt-4 text-[27px] leading-[34px] tracking-[-1px] text-black"
               >
-                Start with{"\n"}the next set.
+                Start a workout
               </Txt>
-              <Txt className="mt-4 max-w-xs text-sm leading-6 text-black/60">
-                Begin a session and add your exercises as you go.
+              <Txt className="mt-2 max-w-xs text-sm leading-6 text-black/60">
+                Choose exercises as you go, or open a saved routine below.
               </Txt>
               <View className="mt-6 flex-row items-center justify-between">
                 <Txt weight="semibold" className="text-sm text-black">
-                  Start a workout
+                  {pendingCompletion
+                    ? "Waiting for workout sync"
+                    : workoutLoading
+                      ? "Restoring your workout…"
+                      : "Start empty workout"}
                 </Txt>
-                {busy ? (
+                {busy || workoutLoading ? (
                   <ActivityIndicator color={C.bg} size="small" />
                 ) : (
                   <View className="h-11 w-11 items-center justify-center rounded-full bg-black">
@@ -609,7 +672,7 @@ export default function TrainScreen() {
 
           {/* Quick actions */}
 
-          <View className="mb-9 flex-row gap-3">
+          <View className="mb-6 flex-row gap-3">
             <QuickTile
               icon="animation"
               title="Explore"
@@ -625,10 +688,10 @@ export default function TrainScreen() {
             />
           </View>
 
-          <View className="mb-5">
-            <SectionHeading title="Training with direction" />
-            <CoachHomeCard />
-            <ActiveProgramCard />
+          <View className="mb-2">
+            <SectionHeading title="Your plans" />
+            <CoachHomeCard compact />
+            <ActiveProgramCard hideEmpty />
           </View>
 
           {/* Error */}
@@ -656,12 +719,21 @@ export default function TrainScreen() {
             <>
               {/* Programs */}
 
-              <View className="mb-9">
-                <SectionHeading
-                  title="Programs"
-                  action={programs.length ? "Find more" : undefined}
-                  onAction={() => router.push("/explore")}
-                />
+              <TrainingSection
+                key={`programs-${user?.id}`}
+                title="Programs"
+                subtitle="Your saved multiweek plans"
+                count={programs.length}
+                icon="calendar-week"
+              >
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => router.push("/explore/programs")}
+                  className="mb-3 min-h-11 flex-row items-center justify-between px-1"
+                >
+                  <Txt className="text-sm text-muted">Find a program</Txt>
+                  <MaterialCommunityIcons name="plus" size={20} color={C.ink} />
+                </Pressable>
 
                 {programs.length === 0 ? (
                   <EmptyState
@@ -700,12 +772,40 @@ export default function TrainScreen() {
                     ))}
                   </ScrollView>
                 )}
-              </View>
+              </TrainingSection>
 
               {/* Routines */}
 
-              <View className="mb-9">
-                <SectionHeading title="Routines" />
+              <TrainingSection
+                key={`routines-${user?.id}`}
+                title="Routines"
+                subtitle="Reusable workouts, ready to start"
+                count={templates.length}
+                icon="dumbbell"
+              >
+                {templates.length > 0 && (
+                  <View className="mb-4 flex-row items-center gap-2 rounded-2xl bg-panel px-4">
+                    <MaterialCommunityIcons name="magnify" size={20} color={C.muted} />
+                    <TextInput
+                      accessibilityLabel="Search saved routines"
+                      value={routineSearch}
+                      onChangeText={setRoutineSearch}
+                      placeholder="Search routines"
+                      placeholderTextColor={C.muted}
+                      className="min-h-12 flex-1 font-poppins-regular text-ink"
+                    />
+                    {!!routineSearch && (
+                      <Pressable
+                        accessibilityRole="button"
+                        accessibilityLabel="Clear routine search"
+                        onPress={() => setRoutineSearch("")}
+                        className="h-11 w-11 items-center justify-center"
+                      >
+                        <MaterialCommunityIcons name="close" size={18} color={C.muted} />
+                      </Pressable>
+                    )}
+                  </View>
+                )}
 
                 {templates.length === 0 ? (
                   <EmptyState
@@ -716,7 +816,7 @@ export default function TrainScreen() {
                     onPress={() => router.push("/workout/create")}
                   />
                 ) : (
-                  templates.map((template) => (
+                  matchingTemplates.map((template) => (
                     <RoutineCard
                       key={template.id}
                       template={template}
@@ -724,25 +824,30 @@ export default function TrainScreen() {
                       onOptions={() => {
                         if (!actionBusy) setMenu({ kind: "routine", item: template });
                       }}
-                      disabled={busy || Boolean(session)}
+                      disabled={startDisabled || Boolean(session)}
                     />
                   ))
                 )}
-              </View>
+                {templates.length > 0 && matchingTemplates.length === 0 && (
+                  <Txt className="px-2 py-5 text-sm text-muted">
+                    No routines match “{routineSearch}”.
+                  </Txt>
+                )}
+              </TrainingSection>
 
               {/* History */}
 
-              <View>
+              <View className="mt-6">
                 <SectionHeading title="Recent workouts" />
 
-                {history.length === 0 ? (
+                {visibleHistory.length === 0 ? (
                   <EmptyState
                     icon="history"
                     title="A place for the work."
                     description="Finish a session and it will show up in your history."
                   />
                 ) : (
-                  history.slice(0, 10).map((item) => (
+                  visibleHistory.slice(0, historyLimit).map((item) => (
                     <HistoryCard
                       key={item.id}
                       item={item}
@@ -754,6 +859,17 @@ export default function TrainScreen() {
                       }
                     />
                   ))
+                )}
+                {visibleHistory.length > historyLimit && (
+                  <Pressable
+                    accessibilityRole="button"
+                    onPress={() => setHistoryLimit((value) => value + 10)}
+                    className="min-h-12 items-center justify-center rounded-2xl bg-panel"
+                  >
+                    <Txt weight="medium" className="text-sm">
+                      Show more workouts ({visibleHistory.length - historyLimit})
+                    </Txt>
+                  </Pressable>
                 )}
               </View>
             </>

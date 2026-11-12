@@ -1,5 +1,6 @@
-import { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
+import { useWorkout } from "@/src/features/workouts/workout-context";
 import { useSession } from "@/src/context/session";
 import { HttpError } from "@/src/services/api";
 import { coachingForOwner, type CoachingPlan, type CoachingState } from "./api";
@@ -7,6 +8,7 @@ import { mutationId } from "./model";
 
 export function useCoaching() {
   const { user } = useSession();
+  const { dataRevision } = useWorkout();
   const api = useMemo(() => coachingForOwner(user?.id), [user?.id]);
   const identity = useRef(user?.id);
   useLayoutEffect(() => { identity.current = user?.id; return () => { identity.current = undefined; }; }, [user?.id]);
@@ -30,6 +32,7 @@ export function useCoaching() {
     } finally { if (identity.current === user.id && sequence.current === id) setLoading(false); }
   }, [api, user]);
   useFocusEffect(useCallback(() => { void refresh(); return () => { sequence.current++; }; }, [refresh]));
+  useEffect(() => { if (dataRevision > 0) void Promise.resolve().then(refresh); }, [dataRevision, refresh]);
   const mutate = async <T,>(key: string, action: (requestId: string) => Promise<T>, apply?: (result: T) => CoachingPlan | null) => {
     if (!user || locked.current) return null;
     const account = user.id;

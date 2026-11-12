@@ -1,21 +1,14 @@
 import React, { useEffect, useState } from "react";
-
 import { Keyboard, View } from "react-native";
-
 import { Redirect, Tabs } from "expo-router";
-
 import { useSafeAreaInsets } from "react-native-safe-area-context";
-
 import { useSession } from "@/src/context/session";
-
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
-
 import { TabBarMotionProvider, useTabBarMotion } from "@/src/components/tab-bar-motion";
 import type { TabArtworkName } from "@/src/components/tab-artwork";
 import { AnimatedTabBar, AnimatedTabButton } from "@/src/components/animated-tabs";
 import { TabGlassProvider, TabGlassScene } from "@/src/components/glass-tabs";
 import { useExperience } from "@/src/features/experience/experience-context";
-
 import { C } from "@/src/constants/theme";
 
 const ARTWORK = {
@@ -41,10 +34,10 @@ type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tab
 
 function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
-  const { user } = useSession();
   const { feedback } = useExperience();
-
+  const { user } = useSession();
   const { expand } = useTabBarMotion();
+
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(() => {
     const show = Keyboard.addListener("keyboardDidShow", () => setKeyboardOpen(true));
@@ -63,14 +56,15 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
   return (
     <View
       pointerEvents="box-none"
-      className="absolute inset-x-4 gap-3"
-      style={{
-        bottom: Math.max(insets.bottom, 12),
-      }}
+      className="absolute inset-x-3"
+      style={{ bottom: Math.max(insets.bottom, 8) }}
     >
-      <View className="w-full max-w-md self-center gap-3">
+      <View className="w-full max-w-sm self-center gap-2">
         <ActiveWorkoutBar inline />
-        <AnimatedTabBar selectedIndex={selectedIndex} count={routes.length}>
+        <AnimatedTabBar
+          selectedIndex={selectedIndex}
+          labels={routes.map((route) => TITLES[route.name as TabId])}
+        >
           {routes.map((route, index) => {
             const id = route.name as TabId;
             const focused = route.key === state.routes[state.index]?.key;
@@ -83,13 +77,13 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
                 artwork={ARTWORK[id]}
                 avatarUrl={id === "profile" ? user?.avatarUrl : undefined}
                 onPress={() => {
-                  expand();
                   const event = navigation.emit({
                     type: "tabPress",
                     target: route.key,
                     canPreventDefault: true,
                   });
                   if (!focused && !event.defaultPrevented) {
+                    expand();
                     feedback("selection");
                     navigation.navigate(route.name, route.params);
                   }
@@ -107,17 +101,9 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
 export default function TabsLayout() {
   const { ready, user, profile } = useSession();
 
-  if (!ready) {
-    return null;
-  }
-
-  if (!user) {
-    return <Redirect href="/(auth)/sign-in" />;
-  }
-
-  if (!profile) {
-    return <Redirect href="/onboarding" />;
-  }
+  if (!ready) return null;
+  if (!user) return <Redirect href="/(auth)/sign-in" />;
+  if (!profile) return <Redirect href="/onboarding" />;
 
   return (
     <TabBarMotionProvider>
@@ -128,19 +114,11 @@ export default function TabsLayout() {
           screenOptions={{
             headerShown: false,
             tabBarHideOnKeyboard: true,
-            sceneStyle: {
-              backgroundColor: C.bg,
-            },
+            sceneStyle: { backgroundColor: C.bg },
           }}
         >
           {TAB_IDS.map((id) => (
-            <Tabs.Screen
-              key={id}
-              name={id}
-              options={{
-                title: TITLES[id],
-              }}
-            />
+            <Tabs.Screen key={id} name={id} options={{ title: TITLES[id] }} />
           ))}
         </Tabs>
       </TabGlassProvider>

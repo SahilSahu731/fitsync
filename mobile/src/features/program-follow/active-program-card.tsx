@@ -12,10 +12,11 @@ import { useProgram } from "./program-context";
 import { focusAction, programFocus } from "./program-view";
 import { WorkoutAction } from "./workout-action";
 
-export function ActiveProgramCard() {
+export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }) {
   const { isPro } = useBilling();
   const { active, loading, error, refresh } = useProgram();
   useFocusEffect(useCallback(() => { void refresh(); }, [refresh]));
+  if (!active && !loading && !error && hideEmpty) return null;
   if (!active) return (
     <View className="mb-4 mt-3 rounded-[24px] bg-panel p-4">
       {loading ? <View className="flex-row items-center gap-3"><ActivityIndicator color={C.ink} /><Txt className="text-sm text-muted">Finding your place in the plan…</Txt></View> : error ? (

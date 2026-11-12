@@ -172,6 +172,11 @@ export const workoutApi = {
       }
     ),
 
+  removeSet: (sessionId: string, setId: string, expectedOwnerId?: string) =>
+    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/sets/${setId}`, {
+      method: "DELETE", expectedOwnerId,
+    }),
+
   updateSet: (
     sessionId: string,
     setId: string,

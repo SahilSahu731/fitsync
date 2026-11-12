@@ -1,25 +1,50 @@
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState, type RefObject } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  type RefObject,
+} from "react";
 import { AccessibilityInfo, Platform, View } from "react-native";
 import { BlurTargetView, BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import { useFocusEffect } from "expo-router";
+import { cssInterop } from "nativewind";
 
-type BlurContextValue = { target: RefObject<View | null> | undefined; setTarget: (value: RefObject<View | null>) => void };
-const Context = createContext<BlurContextValue | null>(null);
+const GlassTarget = cssInterop(BlurTargetView, { className: "style" });
+const GlassBlur = cssInterop(BlurView, { className: "style" });
+const GlassShine = cssInterop(LinearGradient, { className: "style" });
+
+type BlurContext = {
+  target: RefObject<View | null> | undefined;
+  setTarget: (value: RefObject<View | null>) => void;
+};
+const Context = createContext<BlurContext | null>(null);
+
 export function TabGlassProvider({ children }: { children: React.ReactNode }) {
   const [target, setTarget] = useState<RefObject<View | null>>();
   const value = useMemo(() => ({ target, setTarget }), [target]);
   return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 
-// Only the screen content is sampled. The floating bar is outside the target,
-// which avoids a recursive blur and keeps scrolling lists live on Android.
+// The bar samples only the screen, so the blur never includes itself.
 export function TabGlassScene({ children }: { children: React.ReactNode }) {
-  const local = useRef<View | null>(null);
+  const target = useRef<View | null>(null);
   const context = useContext(Context);
   const setTarget = context?.setTarget;
-  useFocusEffect(useCallback(() => { setTarget?.(local); }, [setTarget]));
-  return <BlurTargetView ref={local} style={{ flex: 1 }} collapsable={false}>{children}</BlurTargetView>;
+  useFocusEffect(
+    useCallback(() => {
+      setTarget?.(target);
+    }, [setTarget]),
+  );
+  return (
+    <GlassTarget ref={target} className="flex-1" collapsable={false}>
+      {children}
+    </GlassTarget>
+  );
 }
 
 export function TabGlassSurface() {
@@ -28,14 +53,50 @@ export function TabGlassSurface() {
   useEffect(() => {
     if (Platform.OS !== "ios") return;
     let active = true;
-    void AccessibilityInfo.isReduceTransparencyEnabled().then(value => { if (active) setReduceTransparency(value); }).catch(() => {});
-    const listener = AccessibilityInfo.addEventListener("reduceTransparencyChanged", setReduceTransparency);
-    return () => { active = false; listener.remove(); };
+    let preferenceChanged = false;
+    void AccessibilityInfo.isReduceTransparencyEnabled()
+      .then((value) => {
+        if (active && !preferenceChanged) setReduceTransparency(value);
+      })
+      .catch(() => {});
+    const listener = AccessibilityInfo.addEventListener("reduceTransparencyChanged", (value) => {
+      preferenceChanged = true;
+      if (active) setReduceTransparency(value);
+    });
+    return () => {
+      active = false;
+      listener.remove();
+    };
   }, []);
-  const canBlur = !reduceTransparency && (Platform.OS !== "android" || Number(Platform.Version) >= 31);
-  return <View pointerEvents="none" className={`absolute inset-0 ${canBlur ? "bg-[#000000]/35" : "bg-panel"}`}>
-    {canBlur && <BlurView blurTarget={context?.target} blurMethod="dimezisBlurViewSdk31Plus" intensity={65} tint="systemUltraThinMaterialDark" style={{ position: "absolute", inset: 0 }} />}
-    <LinearGradient colors={["#FFFFFF12", "#FFFFFF02", "#00000020"]} start={{ x: 0, y: 0 }} end={{ x: 0.6, y: 1 }} style={{ position: "absolute", inset: 0 }} />
 
-  </View>;
+  const canBlur = !reduceTransparency && (Platform.OS !== "android" || Boolean(context?.target));
+
+  return (
+    <View
+      pointerEvents="none"
+      className="absolute inset-0"
+      style={{ backgroundColor: canBlur ? "rgba(18,20,24,0.18)" : "#24262B" }}
+    >
+      {canBlur && (
+        <GlassBlur
+          blurTarget={context?.target}
+          blurMethod={
+            Number(Platform.Version) >= 31 ? "dimezisBlurViewSdk31Plus" : "dimezisBlurView"
+          }
+          blurReductionFactor={2}
+          intensity={60}
+          tint={Platform.OS === "ios" ? "systemUltraThinMaterialDark" : "dark"}
+          className="absolute inset-0"
+        />
+      )}
+      {!reduceTransparency && (
+        <GlassShine
+          colors={["rgba(255,255,255,0.14)", "rgba(255,255,255,0.025)", "rgba(255,255,255,0.07)"]}
+          start={{ x: 0.1, y: 0 }}
+          end={{ x: 0.9, y: 1 }}
+          className="absolute inset-0"
+        />
+      )}
+    </View>
+  );
 }

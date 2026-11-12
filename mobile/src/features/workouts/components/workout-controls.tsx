@@ -31,15 +31,8 @@ export function WorkoutDrawer({
       navigationBarTranslucent
       onRequestClose={onClose}
     >
-      <KeyboardAvoidingView
-        behavior="padding"
-        className="flex-1 justify-end bg-black/70"
-      >
-        <Pressable
-          className="flex-1"
-          onPress={onClose}
-          accessibilityLabel="Close drawer"
-        />
+      <KeyboardAvoidingView behavior="padding" className="flex-1 justify-end bg-black/70">
+        <Pressable className="flex-1" onPress={onClose} accessibilityLabel="Close drawer" />
         <SafeAreaView
           edges={["bottom"]}
           style={{ maxHeight: "88%" }}
@@ -83,6 +76,7 @@ type NumberEntryProps = {
   max?: number;
   disabled?: boolean;
   compact?: boolean;
+  showStepper?: boolean;
 };
 
 const HOLD_DELAY_MS = 400;
@@ -102,6 +96,7 @@ export function NumberEntry({
   max = 1000,
   disabled = false,
   compact = false,
+  showStepper = true,
 }: NumberEntryProps) {
   const live = useRef({
     value,
@@ -136,9 +131,7 @@ export function NumberEntry({
     const o = live.current;
     if (o.disabled) return;
     const base = Number(holdValue.current ?? o.value) || 0;
-    const next = formatNumber(
-      Math.min(o.max, Math.max(0, base + direction * o.step)),
-    );
+    const next = formatNumber(Math.min(o.max, Math.max(0, base + direction * o.step)));
     holdValue.current = next;
     o.onChange(next);
   };
@@ -213,9 +206,7 @@ export function NumberEntry({
 
   return (
     <View className="min-w-0 flex-1">
-      <Txt className="mb-1 text-[11px] tracking-wider text-muted">
-        {label}
-      </Txt>
+      <Txt className="mb-1 text-[11px] tracking-wider text-muted">{label}</Txt>
       <View
         {...pan.panHandlers}
         className={`flex-row items-center overflow-hidden rounded-xl bg-bg ${disabled ? "opacity-60" : ""}`}
@@ -231,40 +222,32 @@ export function NumberEntry({
           editable={!disabled}
           className={`min-w-0 flex-1 text-center font-poppins-bold text-ink ${compact ? "h-11 px-1 text-base" : "h-14 px-2 text-xl"}`}
         />
-        <View
-          className={`bg-panel ${compact ? "h-11 w-8" : "h-14 w-12"}`}
-        >
-          <Pressable
-            disabled={disabled}
-            accessibilityRole="button"
-            accessibilityLabel={`Increase ${label}`}
-            onPressIn={() => startHold(1)}
-            onPressOut={endHold}
-            hitSlop={{ left: 8, right: 8 }}
-            className="flex-1 items-center justify-center active:bg-white/5"
-          >
-            <MaterialCommunityIcons
-              name="chevron-up"
-              size={iconSize}
-              color={iconColor}
-            />
-          </Pressable>
-          <Pressable
-            disabled={disabled}
-            accessibilityRole="button"
-            accessibilityLabel={`Decrease ${label}`}
-            onPressIn={() => startHold(-1)}
-            onPressOut={endHold}
-            hitSlop={{ left: 8, right: 8 }}
-            className="flex-1 items-center justify-center active:bg-white/5"
-          >
-            <MaterialCommunityIcons
-              name="chevron-down"
-              size={iconSize}
-              color={iconColor}
-            />
-          </Pressable>
-        </View>
+        {showStepper && (
+          <View className={`bg-panel ${compact ? "h-11 w-8" : "h-14 w-12"}`}>
+            <Pressable
+              disabled={disabled}
+              accessibilityRole="button"
+              accessibilityLabel={`Increase ${label}`}
+              onPressIn={() => startHold(1)}
+              onPressOut={endHold}
+              hitSlop={{ left: 8, right: 8 }}
+              className="flex-1 items-center justify-center active:bg-white/5"
+            >
+              <MaterialCommunityIcons name="chevron-up" size={iconSize} color={iconColor} />
+            </Pressable>
+            <Pressable
+              disabled={disabled}
+              accessibilityRole="button"
+              accessibilityLabel={`Decrease ${label}`}
+              onPressIn={() => startHold(-1)}
+              onPressOut={endHold}
+              hitSlop={{ left: 8, right: 8 }}
+              className="flex-1 items-center justify-center active:bg-white/5"
+            >
+              <MaterialCommunityIcons name="chevron-down" size={iconSize} color={iconColor} />
+            </Pressable>
+          </View>
+        )}
       </View>
       {!compact && (
         <View className="mt-1 flex-row items-center justify-between">
@@ -274,26 +257,16 @@ export function NumberEntry({
             onPress={() => adjust(-1)}
             className="h-9 w-11 items-center justify-center"
           >
-            <MaterialCommunityIcons
-              name="minus"
-              size={20}
-              color={disabled ? C.muted : C.ink}
-            />
+            <MaterialCommunityIcons name="minus" size={20} color={disabled ? C.muted : C.ink} />
           </Pressable>
-          <Txt className="text-[11px] text-muted">
-            {step < 1 ? `${step} kg` : `±${step}`}
-          </Txt>
+          <Txt className="text-[11px] text-muted">{step < 1 ? `${step} kg` : `±${step}`}</Txt>
           <Pressable
             disabled={disabled}
             accessibilityLabel={`Increase ${label} by one step`}
             onPress={() => adjust(1)}
             className="h-9 w-11 items-center justify-center"
           >
-            <MaterialCommunityIcons
-              name="plus"
-              size={20}
-              color={disabled ? C.muted : C.ink}
-            />
+            <MaterialCommunityIcons name="plus" size={20} color={disabled ? C.muted : C.ink} />
           </Pressable>
         </View>
       )}

@@ -9,7 +9,7 @@ import { useBilling } from "@/src/features/billing/billing-context";
 import { nextSession, displayDate } from "./model";
 import { useCoaching } from "./use-coaching";
 
-export function CoachHomeCard() {
+export function CoachHomeCard({ compact = false }: { compact?: boolean }) {
   const { data, loading, error } = useCoaching();
   const { isPro } = useBilling();
   const next = nextSession(data?.plan ?? null);
@@ -18,9 +18,13 @@ export function CoachHomeCard() {
       accessibilityRole="button"
       accessibilityLabel="Open your personal plan"
       onPress={() => router.push("/coach")}
-      className="mb-5 overflow-hidden rounded-[26px] bg-panel p-5"
+      className={
+        compact
+          ? "mb-3 overflow-hidden rounded-[22px] bg-panel p-4"
+          : "mb-5 overflow-hidden rounded-[26px] bg-panel p-5"
+      }
     >
-      <View className="mb-4 flex-row items-center gap-2">
+      <View className={`${compact ? "mb-2" : "mb-4"} flex-row items-center gap-2`}>
         <MaterialCommunityIcons name="star-four-points-outline" size={18} color={C.ink} />
         <Txt weight="semibold" className="flex-1 text-xs tracking-[1.5px] text-ink">
           YOUR PERSONAL PLAN
@@ -33,10 +37,13 @@ export function CoachHomeCard() {
       </View>
       <View className="flex-row items-center gap-4">
         <View className="flex-1">
-          <Txt weight="semibold" className="text-[23px] leading-7">
+          <Txt
+            weight="semibold"
+            className={compact ? "text-base leading-6" : "text-[23px] leading-7"}
+          >
             {next?.name ?? (data?.plan ? "Every session counts." : "Your next step starts here.")}
           </Txt>
-          <Txt className="mt-2 text-sm leading-5 text-muted">
+          <Txt className={`${compact ? "mt-1 text-xs" : "mt-2 text-sm"} leading-5 text-muted`}>
             {error
               ? "Open your plan to reconnect."
               : next

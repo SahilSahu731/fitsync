@@ -137,6 +137,14 @@ router.post(
     })
 );
 
+router.delete("/sessions/:id/sets/:setId", asyncHandler(async (req, res) => {
+    res.json(await service.removeSet(
+        getAuth(req).userId,
+        idSchema.parse(req.params.id),
+        idSchema.parse(req.params.setId)
+    ));
+}));
+
 router.patch(
     "/sessions/:id/sets/:setId",
     asyncHandler(async (req, res) => {

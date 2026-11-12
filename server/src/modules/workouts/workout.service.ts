@@ -549,6 +549,27 @@ export async function addSet(
     return getSession(userId, sessionId);
 }
 
+export async function removeSet(userId: string, sessionId: string, setId: string) {
+    await assertActive(userId, sessionId);
+    const { data: exercises, error: exerciseError } = await db
+        .from("workout_session_exercises")
+        .select("id")
+        .eq("session_id", sessionId);
+    checkDbError(exerciseError, "find workout exercises");
+    const ids = (exercises ?? []).map(exercise => exercise.id);
+    if (!ids.length) throw new ApiError(404, "Set not found.");
+
+    const { data, error } = await db
+        .from("workout_logged_sets")
+        .delete()
+        .eq("id", setId)
+        .in("session_exercise_id", ids)
+        .select("id");
+    checkDbError(error, "remove workout set");
+    if (!data?.length) throw new ApiError(404, "Set not found.");
+    return getSession(userId, sessionId);
+}
+
 export async function updateSet(
     userId: string,
     sessionId: string,
@@ -625,7 +646,12 @@ export async function finishWorkout(
     if (session.status === status) return getSession(userId, sessionId);
     if (session.status !== "active") throw new ApiError(409, "This workout has already ended.");
 
-    const finishedAt = new Date();
+    const uploadedAt = new Date();
+    // Offline uploads keep the time the session ended, rather than moving the
+    // workout into the upload day's history, streaks, and program analytics.
+    const finishedAt = elapsedSeconds === undefined
+        ? uploadedAt
+        : new Date(Math.min(uploadedAt.getTime(), new Date(session.started_at).getTime() + elapsedSeconds * 1000));
     const elapsed = elapsedSeconds ??
         Math.floor(
             (finishedAt.getTime() -
@@ -639,7 +665,7 @@ export async function finishWorkout(
             notes,
             finished_at: finishedAt.toISOString(),
             elapsed_seconds: elapsed,
-            updated_at: finishedAt.toISOString()
+            updated_at: uploadedAt.toISOString()
         })
         .eq("id", sessionId)
         .eq("user_id", userId)
@@ -657,7 +683,8 @@ export async function listHistory(userId: string) {
         .select("id, name, started_at, finished_at, elapsed_seconds")
         .eq("user_id", userId)
         .eq("status", "completed")
-        .order("started_at", { ascending: false })
+        .order("finished_at", { ascending: false })
+        .order("id", { ascending: false })
         .limit(100);
 
     checkDbError(error, "list workout history");

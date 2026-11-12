@@ -40,3 +40,19 @@ test('account change stops uploads before sending and keeps the previous account
 test('corrupt persisted data is preserved and cannot be silently overwritten',async()=>{
  const {api,storage}=setup();storage.set('fitsync.workout.draft.v1.alice','{"version":99}');await assert.rejects(()=>api.cacheWorkout('alice',session()),/kept on this device/);assert.equal(storage.get('fitsync.workout.draft.v1.alice'),'{"version":99}');
 });
+
+test('finishing advances the journal revision, survives a stale refresh and preserves the original finish on retry', async () => {
+ const {api}=setup(); await api.cacheWorkout('alice',session());
+ await assert.rejects(api.queueFinish('alice',100), /at least one set/);
+ await api.queueSet('alice','set',{completed:true});
+ await api.flushWorkoutDraft('alice',()=>true,noop);
+ const before=await api.readWorkoutDraft('alice');
+ await api.queueFinish('alice',1200);
+ const finished=await api.readWorkoutDraft('alice');
+ assert.equal(finished.revision,before.revision+1);
+ await api.cacheWorkout('alice',session(),before.revision);
+ assert.equal((await api.readWorkoutDraft('alice')).finish.elapsedSeconds,1200);
+ await api.queueFinish('alice',1500);
+ assert.equal((await api.readWorkoutDraft('alice')).finish.elapsedSeconds,1200);
+ await assert.rejects(api.queueSet('alice','set',{reps:15}),/reopen/i);
+});

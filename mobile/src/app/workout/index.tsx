@@ -17,6 +17,7 @@ import { WorkoutDrawer } from "@/src/features/workouts/components/workout-contro
 import { ExerciseImage } from "@/src/features/workouts/components/exercise-image";
 import { TrainActions, ReorderTraining } from "@/src/features/workouts/components/train-actions";
 import { type SessionExercise } from "@/src/features/workouts/api";
+import { workoutSummary } from "@/src/features/workouts/summary";
 import { SetRow } from "@/src/features/workouts/components/set-row";
 
 function formatTime(seconds: number) {
@@ -46,6 +47,8 @@ export default function LiveWorkoutScreen() {
     pendingSaves,
     syncError,
     updateNotes,
+    refresh,
+    pendingCompletion,
   } = useWorkout();
 
   useWorkoutAwake(!!session);
@@ -53,6 +56,8 @@ export default function LiveWorkoutScreen() {
   const [now, setNow] = useState(() => Date.now());
   const [focusedExercise, setFocusedExercise] = useState<string>();
   const [notesOpen, setNotesOpen] = useState(false);
+  const [finishReview, setFinishReview] = useState(false);
+  const [restOpen, setRestOpen] = useState(false);
   const [exerciseMenu, setExerciseMenu] = useState<SessionExercise | null>(null);
   const [reordering, setReordering] = useState(false);
   const [collapsed, setCollapsed] = useState<string[]>([]);
@@ -73,33 +78,26 @@ export default function LiveWorkoutScreen() {
 
   const restRemaining = restTimer ? Math.max(0, Math.ceil((restTimer.endsAt - now) / 1000)) : 0;
 
-  const completedSets = exercises.reduce(
-    (total, item) =>
-      total + item.workout_logged_sets.filter((set) => set.completed_at !== null).length,
-    0,
-  );
-
-  const totalSets = exercises.reduce((total, item) => total + item.workout_logged_sets.length, 0);
+  const { completedSets, totalSets, volume, completedExercises } = workoutSummary(session);
 
   const handleFinish = () => {
-    Alert.alert("Finish workout?", "Your completed sets will be saved to your history.", [
-      { text: "Keep training", style: "cancel" },
-      {
-        text: "Finish",
-        onPress: async () => {
-          try {
-            await finish();
-            feedback("workout");
-            router.replace("/(tabs)/train");
-          } catch (error) {
-            Alert.alert(
-              "Could not finish",
-              error instanceof Error ? error.message : "Please try again.",
-            );
-          }
-        },
-      },
-    ]);
+    if (!completedSets) {
+      Alert.alert("No sets logged yet", "Log at least one set before finishing your workout.");
+      return;
+    }
+    setFinishReview(true);
+  };
+  const confirmFinish = async () => {
+    const id = session?.id;
+    if (!id || busy) return;
+    try {
+      await finish();
+      setFinishReview(false);
+      feedback("workout");
+      router.replace({ pathname: "/workout/history/[id]", params: { id } });
+    } catch (error) {
+      Alert.alert("Could not finish", error instanceof Error ? error.message : "Please try again.");
+    }
   };
 
   const handleDiscard = () => {
@@ -159,7 +157,7 @@ export default function LiveWorkoutScreen() {
         <MaterialCommunityIcons name="dumbbell" size={50} color={C.ink} />
 
         <Txt weight="semibold" className="mt-5 text-2xl">
-          No active workout
+          {pendingCompletion ? "Workout saved" : "No active workout"}
         </Txt>
 
         <Pressable
@@ -167,7 +165,7 @@ export default function LiveWorkoutScreen() {
           className="mt-6 rounded-2xl bg-ink px-8 py-4"
         >
           <Txt weight="semibold" className="text-bg">
-            GO TO WORKOUTS
+            Back to Train
           </Txt>
         </Pressable>
       </View>
@@ -206,82 +204,30 @@ export default function LiveWorkoutScreen() {
         </Pressable>
       </View>
 
-      <View className="mx-5 mb-3 flex-row items-center rounded-2xl bg-panel p-4">
-        <View className="flex-1">
-          <View className="flex-row justify-between">
-            <Txt weight="medium" className="text-sm text-muted">
-              Your session
-            </Txt>
-            <Txt weight="semibold" className="text-ink">
-              {completedSets}/{totalSets}
-            </Txt>
-          </View>
-          <View className="mt-3 h-1 overflow-hidden rounded-full bg-elevated">
-            <View
-              className="h-full rounded-full bg-ink"
-              style={{
-                width: `${totalSets ? (completedSets / totalSets) * 100 : 0}%`,
-              }}
-            />
-          </View>
-          <Txt className="mt-3 text-sm text-white">
-            {exercises.length} exercises ·{" "}
-            {Math.round(
-              exercises.reduce(
-                (total, e) =>
-                  total +
-                  e.workout_logged_sets.reduce(
-                    (sum, s) => sum + (s.completed_at ? (s.weight_kg ?? 0) * (s.reps ?? 0) : 0),
-                    0,
-                  ),
-                0,
-              ),
-            ).toLocaleString()}{" "}
-            kg volume
-          </Txt>
-          <Txt className="mt-1 text-[12px] text-white">
-            {pendingSaves
-              ? `${pendingSaves} update${pendingSaves > 1 ? "s" : ""} saved on this device · syncing…`
-              : syncError
-                ? "Saved on this device · cloud connection unavailable"
-                : "Updates saved to your account"}
-          </Txt>
-        </View>
-        <MuscleFocus exercises={exercises} currentId={focusedExercise} />
-      </View>
-      <Pressable
-        onPress={() => setNotesOpen(true)}
-        className="mx-5 mb-4 flex-row items-center gap-2 rounded-xl bg-panel px-4 py-3"
-      >
-        <MaterialCommunityIcons name="note-text-outline" color={"white"} size={22} />
-        <Txt className="flex-1 text-white" numberOfLines={1}>
-          {session.notes || "Add workout notes · energy, goals, how you feel"}
-        </Txt>
-        <MaterialCommunityIcons name="chevron-right" size={22} color={"white"} />
-      </Pressable>
-
       {restRemaining > 0 && (
-        <View className="mx-5 mb-4 flex-row items-center rounded-2xl bg-white/5 p-4">
-          <MaterialCommunityIcons name="timer-outline" size={28} color={"red"} />
-
-          <View className="ml-3 flex-1">
-            <Txt weight="semibold">Rest Timer</Txt>
-            <Txt weight="semibold" className="text-[26px] text-red-600">
+        <View className="mx-5 mb-3 flex-row items-center gap-3 rounded-2xl bg-panel px-4 py-3">
+          <MaterialCommunityIcons name="timer-outline" size={22} color={C.ink} />
+          <View className="flex-1">
+            <Txt className="text-xs text-muted">Rest</Txt>
+            <Txt weight="semibold" className="text-xl">
               {formatTime(restRemaining)}
             </Txt>
           </View>
-
           <Pressable
+            accessibilityRole="button"
             accessibilityLabel="Add thirty seconds rest"
             onPress={() => startRest(restRemaining + 30)}
-            className="mr-2 rounded-xl bg-ink/40 px-3 py-3"
+            className="min-h-11 items-center justify-center rounded-xl bg-elevated px-3"
           >
-            <Txt>+30s</Txt>
+            <Txt className="text-sm">+30s</Txt>
           </Pressable>
-          <Pressable onPress={stopRest} className="rounded-xl bg-red-400/60 px-4 py-3">
-            <Txt weight="medium" className="text-sm">
-              Skip
-            </Txt>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Skip rest timer"
+            onPress={stopRest}
+            className="min-h-11 items-center justify-center rounded-xl bg-elevated px-3"
+          >
+            <Txt className="text-sm">Skip</Txt>
           </Pressable>
         </View>
       )}
@@ -289,15 +235,103 @@ export default function LiveWorkoutScreen() {
       <ScrollView
         className="flex-1"
         keyboardShouldPersistTaps="handled"
+        keyboardDismissMode="on-drag"
         contentContainerStyle={{
           paddingHorizontal: 20,
           paddingBottom: 120,
         }}
       >
-        <Txt className="mb-4 text-xs text-muted">
-          Values are prefilled targets. Adjust to what you performed, then tap Log set to save. New
-          sets reuse the previous set’s values.
-        </Txt>
+        <View className="mb-4 rounded-[22px] bg-panel p-4">
+          <View className="flex-row items-center gap-3">
+            <View className="flex-1">
+              <Txt weight="medium" className="text-sm">
+                {completedSets} of {totalSets} sets logged
+              </Txt>
+              <Txt className="mt-1 text-xs text-muted">
+                {completedExercises}/{exercises.length} exercises ·{" "}
+                {Math.round(volume).toLocaleString()} kg working volume
+              </Txt>
+            </View>
+            <MuscleFocus exercises={exercises} currentId={focusedExercise} />
+          </View>
+          <View
+            accessibilityRole="progressbar"
+            accessibilityLabel="Sets logged"
+            accessibilityValue={{ min: 0, max: Math.max(1, totalSets), now: completedSets }}
+            className="mt-3 h-1 overflow-hidden rounded-full bg-elevated"
+          >
+            <View
+              className="h-full rounded-full bg-ink"
+              style={{ width: `${totalSets ? (completedSets / totalSets) * 100 : 0}%` }}
+            />
+          </View>
+          <View className="mt-3 flex-row items-center gap-2">
+            <MaterialCommunityIcons
+              name={
+                syncError
+                  ? "cloud-off-outline"
+                  : pendingSaves
+                    ? "cloud-upload-outline"
+                    : "cloud-check-outline"
+              }
+              size={15}
+              color={C.muted}
+            />
+            <Txt className="flex-1 text-[11px] text-muted">
+              {syncError
+                ? "Saved on this device · connection unavailable"
+                : pendingSaves
+                  ? "Saved on this device · syncing…"
+                  : "Synced to your account"}
+            </Txt>
+            {syncError && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => void refresh().catch(() => {})}
+                className="min-h-11 justify-center px-2"
+              >
+                <Txt className="text-xs">Retry</Txt>
+              </Pressable>
+            )}
+          </View>
+        </View>
+        <View className="mb-4 flex-row gap-2">
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setNotesOpen(true)}
+            className="min-h-12 flex-1 flex-row items-center gap-2 rounded-2xl bg-panel px-4 py-3"
+          >
+            <MaterialCommunityIcons name="note-text-outline" color={C.ink} size={19} />
+            <Txt className="flex-1 text-xs" numberOfLines={1}>
+              {session.notes || "Workout notes"}
+            </Txt>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Start a rest timer"
+            onPress={() => setRestOpen(true)}
+            className="min-h-12 flex-row items-center gap-2 rounded-2xl bg-panel px-4 py-3"
+          >
+            <MaterialCommunityIcons name="timer-outline" color={C.ink} size={19} />
+            <Txt className="text-xs">Rest timer</Txt>
+          </Pressable>
+        </View>
+        {exercises.length ? (
+          <Txt className="mb-4 text-xs leading-5 text-muted">
+            Edit values as you go; they save automatically. Tap the circle to log a set. Tap a
+            logged check to undo and edit it.
+          </Txt>
+        ) : (
+          <View className="mb-5 items-center rounded-[26px] bg-panel px-6 py-8">
+            <MaterialCommunityIcons name="dumbbell" size={38} color={C.ink} />
+            <Txt weight="medium" className="mt-4 text-lg">
+              Build today’s workout
+            </Txt>
+            <Txt className="mt-2 text-center text-sm leading-6 text-muted">
+              Add exercises, record your sets, and keep your progress together here.
+            </Txt>
+          </View>
+        )}
         {exercises.map((exercise) => {
           const sets = [...exercise.workout_logged_sets].sort((a, b) => a.position - b.position);
 
@@ -313,7 +347,9 @@ export default function LiveWorkoutScreen() {
                         : [...rows, exercise.id],
                     );
                   }}
-                  accessibilityLabel={`Expand or collapse ${exercise.exercise_name}`}
+                  accessibilityRole="button"
+                  accessibilityState={{ expanded: !collapsed.includes(exercise.id) }}
+                  accessibilityLabel={`${exercise.exercise_name}, ${sets.filter((set) => !!set.completed_at).length} of ${sets.length} sets logged`}
                   className="min-w-0 flex-1 flex-row items-center"
                 >
                   <ExerciseImage uri={exercise.image_url} name={exercise.exercise_name} />
@@ -322,7 +358,7 @@ export default function LiveWorkoutScreen() {
                       {exercise.exercise_name}
                     </Txt>
                     <Txt className="mt-1 text-sm text-muted">
-                      {sets.length} sets ·{" "}
+                      {sets.filter((set) => !!set.completed_at).length}/{sets.length} sets ·{" "}
                       {exercise.tracking_type === "reps"
                         ? "Bodyweight + optional load"
                         : exercise.tracking_type === "reps_weight"
@@ -337,7 +373,7 @@ export default function LiveWorkoutScreen() {
                   />
                 </Pressable>
                 <Pressable
-                  disabled={busy || pendingSaves > 0}
+                  disabled={busy}
                   onPress={() => {
                     setFocusedExercise(exercise.id);
                     setExerciseMenu(exercise);
@@ -376,6 +412,8 @@ export default function LiveWorkoutScreen() {
                       );
                     }}
                     disabled={busy}
+                    accessibilityRole="button"
+                    accessibilityLabel={`Add set to ${exercise.exercise_name}`}
                     className="mx-3 mb-4 mt-2 flex-row items-center justify-center rounded-xl py-3"
                   >
                     <MaterialCommunityIcons name="plus" size={20} color={C.ink} />
@@ -391,6 +429,8 @@ export default function LiveWorkoutScreen() {
         })}
 
         <Pressable
+          accessibilityRole="button"
+          disabled={busy}
           onPress={() => router.push("/workout/add-exercise")}
           className="mb-4 flex-row items-center justify-center rounded-2xl bg-ink py-5"
         >
@@ -401,7 +441,12 @@ export default function LiveWorkoutScreen() {
           </Txt>
         </Pressable>
 
-        <Pressable onPress={handleDiscard} className="items-center py-5">
+        <Pressable
+          accessibilityRole="button"
+          disabled={busy}
+          onPress={handleDiscard}
+          className="items-center py-5"
+        >
           <Txt weight="semibold" className="text-muted">
             Discard workout
           </Txt>
@@ -412,6 +457,15 @@ export default function LiveWorkoutScreen() {
           title={exerciseMenu.exercise_name}
           onClose={() => setExerciseMenu(null)}
           actions={[
+            {
+              label: "Exercise instructions",
+              icon: "information-outline",
+              run: () =>
+                router.push({
+                  pathname: "/exercise/[id]",
+                  params: { id: exerciseMenu.exercise_id },
+                }),
+            },
             {
               label: "Add set",
               icon: "plus-circle-outline",
@@ -451,6 +505,74 @@ export default function LiveWorkoutScreen() {
           onClose={() => setReordering(false)}
           onSave={reorderExercises}
         />
+      )}
+      {restOpen && (
+        <WorkoutDrawer title="Rest timer" onClose={() => setRestOpen(false)}>
+          <Txt className="mb-4 text-sm text-muted">
+            Start a break whenever you need one. Logging a set starts its own rest timer.
+          </Txt>
+          <View className="flex-row flex-wrap gap-3">
+            {[30, 60, 90, 120, 180, 300].map((seconds) => (
+              <Pressable
+                key={seconds}
+                accessibilityRole="button"
+                accessibilityLabel={`Rest for ${seconds} seconds`}
+                onPress={() => {
+                  startRest(seconds);
+                  setRestOpen(false);
+                }}
+                className="min-h-14 min-w-20 flex-1 items-center justify-center rounded-2xl bg-elevated px-4"
+              >
+                <Txt weight="medium">{seconds < 60 ? `${seconds}s` : `${seconds / 60} min`}</Txt>
+              </Pressable>
+            ))}
+          </View>
+        </WorkoutDrawer>
+      )}
+      {finishReview && (
+        <WorkoutDrawer
+          title="Finish your workout"
+          onClose={() => {
+            if (!busy) setFinishReview(false);
+          }}
+        >
+          <Txt weight="medium" className="text-xl">
+            {session.name}
+          </Txt>
+          <Txt className="mt-3 text-sm text-muted">
+            {formatTime(Math.max(0, elapsed))} · {completedSets} logged sets ·{" "}
+            {Math.round(volume).toLocaleString()} kg working volume
+          </Txt>
+          <Txt className="mt-4 text-sm leading-6 text-muted">
+            {totalSets > completedSets
+              ? `${totalSets - completedSets} unlogged set${totalSets - completedSets === 1 ? "" : "s"} will be left out of your results. `
+              : "Every set is logged. "}
+            Your completed sets and notes will be saved to history.
+          </Txt>
+          {!!session.notes && (
+            <Txt className="mt-4 text-sm" numberOfLines={4}>
+              {session.notes}
+            </Txt>
+          )}
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => void confirmFinish()}
+            className="mt-6 min-h-14 items-center justify-center rounded-full bg-ink"
+          >
+            <Txt weight="semibold" className="text-bg">
+              {busy ? "Saving…" : "Save & finish workout"}
+            </Txt>
+          </Pressable>
+          <Pressable
+            accessibilityRole="button"
+            disabled={busy}
+            onPress={() => setFinishReview(false)}
+            className="mt-2 min-h-12 items-center justify-center"
+          >
+            <Txt className="text-sm text-muted">Keep training</Txt>
+          </Pressable>
+        </WorkoutDrawer>
       )}
       {notesOpen && (
         <WorkoutNotes

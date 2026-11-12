@@ -6,7 +6,7 @@ import React, {
   useEffect,
   useMemo,
 } from "react";
-import { ScrollView, type ScrollViewProps } from "react-native";
+import { Platform, ScrollView, type ScrollViewProps } from "react-native";
 import { useFocusEffect } from "expo-router";
 import Animated, {
   ReduceMotion,
@@ -25,6 +25,7 @@ export const TAB_SPRING = {
   overshootClamping: true,
   reduceMotion: ReduceMotion.System,
 };
+
 type Motion = {
   compact: SharedValue<number>;
   target: SharedValue<number>;
@@ -71,19 +72,26 @@ export const TabScrollView = forwardRef<ScrollView, Props>(function TabScrollVie
   const offset = useSharedValue(0);
   const distance = useSharedValue(0);
   const active = useSharedValue(false);
+  const dragging = useSharedValue(false);
+  const momentum = useSharedValue(false);
   useFocusEffect(
     useCallback(() => {
       active.set(true);
       distance.set(0);
+      dragging.set(false);
+      momentum.set(false);
       expand?.();
       return () => {
         active.set(false);
       };
-    }, [active, distance, expand]),
+    }, [active, distance, dragging, momentum, expand]),
   );
 
   const handler = useAnimatedScrollHandler({
     onBeginDrag: (event) => {
+      if (!active.get()) return;
+      dragging.set(true);
+      momentum.set(false);
       offset.set(
         Math.max(
           0,
@@ -97,6 +105,19 @@ export const TabScrollView = forwardRef<ScrollView, Props>(function TabScrollVie
     },
     onScroll: (event) => {
       if (!active.get() || !compact || !target) return;
+      // Native scroll restoration after a tab switch must not compact the newly focused tab.
+      if (Platform.OS !== "web" && !dragging.get() && !momentum.get()) {
+        offset.set(
+          Math.max(
+            0,
+            Math.min(
+              event.contentOffset.y,
+              Math.max(0, event.contentSize.height - event.layoutMeasurement.height),
+            ),
+          ),
+        );
+        return;
+      }
       const next = nextTabScroll(
         { offset: offset.get(), distance: distance.get(), compact: target.get() === 1 },
         event.contentOffset.y,
@@ -109,6 +130,18 @@ export const TabScrollView = forwardRef<ScrollView, Props>(function TabScrollVie
         target.set(destination);
         compact.set(reduced ? destination : withSpring(destination, TAB_SPRING));
       }
+    },
+    onEndDrag: () => {
+      if (!active.get()) return;
+      dragging.set(false);
+    },
+    onMomentumBegin: () => {
+      if (!active.get()) return;
+      momentum.set(true);
+    },
+    onMomentumEnd: () => {
+      if (!active.get()) return;
+      momentum.set(false);
     },
   });
   return <Animated.ScrollView {...props} ref={ref} onScroll={handler} scrollEventThrottle={16} />;
