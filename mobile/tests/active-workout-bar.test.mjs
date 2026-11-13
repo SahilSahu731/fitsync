@@ -14,7 +14,14 @@ function fixture(initialProps = { inline: true }) {
       name: "Push Day",
       started_at: "2026-11-13T12:00:00Z",
       workout_session_exercises: [
-        { workout_logged_sets: [{ completed_at: "2026-11-13T12:01:00Z" }, { completed_at: null }] },
+        {
+          exercise_name: "Bench Press",
+          position: 0,
+          workout_logged_sets: [
+            { position: 0, completed_at: "2026-11-13T12:01:00Z" },
+            { position: 1, completed_at: null },
+          ],
+        },
       ],
     },
     restTimer: null,
@@ -227,11 +234,11 @@ test("the existing layout uses the tab bar glass surface and preserves icon styl
   const tree = bar.render();
   assert.equal(find(tree, "TabGlassSurface").length, 1);
   const surface = find(tree, "View").find(
-    (node) => node.props.className === "overflow-hidden rounded-[24px]",
+    (node) => /^overflow-hidden rounded-\[\d+px\]$/.test(node.props.className ?? ""),
   );
   assert.ok(surface, "an opaque background must not cover the glass surface");
   assert.match(text(tree), /Push Day/);
-  assert.match(text(tree), /1 sets completed/);
+  assert.match(text(tree), /Bench Press · Set 2/);
   assert.match(text(tree), /10:00/);
   const trash = button(tree, "Discard");
   assert.equal(trash.props.className, "items-end bg-red-700/40 rounded-full p-2");
@@ -245,10 +252,10 @@ test("the existing layout uses the tab bar glass surface and preserves icon styl
 test("existing timer, positioning and route visibility behavior stays intact", () => {
   const bar = fixture();
   bar.workout.restTimer = { endsAt: NOW + 30000 };
-  assert.match(text(bar.render()), /Rest 0:30/);
+  assert.match(text(bar.render()), /Bench Press · Set 2/);
   bar.tick(1000);
   assert.match(text(bar.render()), /10:01/);
-  assert.match(text(bar.render()), /Rest 0:29/);
+  assert.match(text(bar.render()), /Bench Press · Set 2/);
   assert.equal(bar.render({ inline: false }), null);
   assert.equal(bar.intervals.size, 0);
   bar.route.pathname = "/profile";

@@ -130,25 +130,25 @@ export function PageHeading({
   action?: React.ReactNode;
 }) {
   return (
-    <View className="mb-5">
+    <View className="mb-4">
       <View className="flex-row items-center justify-between gap-4">
         <View className="min-w-0 flex-1">
           {eyebrow && (
-            <Txt weight="medium" className="mb-1 text-[12px] text-muted">
+            <Txt weight="medium" className="mb-1 text-[10px] text-muted">
               {eyebrow}
             </Txt>
           )}
           <Txt
             accessibilityRole="header"
             weight="medium"
-            className="text-[36px] leading-[44px] tracking-[-1.5px]"
+            className="text-[34px] leading-[48px] tracking-[-1.5px]"
           >
             {title}
           </Txt>
         </View>
         {action}
       </View>
-      {subtitle && <Txt className="mt-1 max-w-sm text-sm leading-6 text-muted">{subtitle}</Txt>}
+      {subtitle && <Txt className="max-w-sm text-xs text-muted">{subtitle}</Txt>}
     </View>
   );
 }

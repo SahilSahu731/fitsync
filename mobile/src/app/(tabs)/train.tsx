@@ -82,7 +82,7 @@ function QuickTile({
       accessibilityLabel={`${title}. ${subtitle}`}
       className="min-w-0 flex-1 flex-row items-center gap-2 rounded-[18px] bg-panel p-3.5"
     >
-      <MaterialCommunityIcons name={icon} size={20} color={C.ink} />
+      <MaterialCommunityIcons name={icon} size={20} color={"#333"} />
       <Txt weight="medium" className="flex-1 text-[14px]">
         {title}
       </Txt>
@@ -573,7 +573,7 @@ function TrainAccountScreen() {
               tintColor={C.brand}
             />
           }
-          contentContainerClassName="w-full max-w-2xl self-center px-6 pt-6 pb-48"
+          contentContainerClassName="w-full max-w-2xl self-center px-6 pt-2 pb-48"
         >
           {/* Header */}
 
@@ -584,15 +584,15 @@ function TrainAccountScreen() {
               <View className="mb-2 flex-row gap-1.5">
                 <MaterialCommunityIcons
                   name="update"
-                  size={16}
+                  size={14}
                   color={"white"}
                   accessible={false}
                 />
-                <Txt weight="medium" className="text-[12px]">
+                <Txt weight="medium" className="text-[10px]">
                   This Week
                 </Txt>
               </View>
-              <View className="flex-row gap-2.5">
+              <View className="flex-row gap-2">
                 {[
                   {
                     value: week.workouts,
@@ -624,7 +624,7 @@ function TrainAccountScreen() {
                     <View
                       accessible
                       accessibilityLabel={`${stat.value} ${stat.label.toLowerCase()} this week`}
-                      className="overflow-hidden rounded-[22px] border p-3.5"
+                      className="overflow-hidden rounded-[22px] border p-3"
                       style={{
                         backgroundColor: stat.background,
                       }}
@@ -641,7 +641,7 @@ function TrainAccountScreen() {
                         >
                           <MaterialCommunityIcons
                             name={stat.icon}
-                            size={20}
+                            size={18}
                             color={stat.color}
                             accessible={false}
                           />
@@ -651,7 +651,7 @@ function TrainAccountScreen() {
                           numberOfLines={1}
                           adjustsFontSizeToFit
                           minimumFontScale={0.65}
-                          className="text-[24px] leading-[34px]"
+                          className="text-[20px] leading-[34px]"
                           style={{ color: stat.color }}
                         >
                           {stat.value}
@@ -661,7 +661,7 @@ function TrainAccountScreen() {
                         numberOfLines={1}
                         adjustsFontSizeToFit
                         minimumFontScale={0.8}
-                        className="mt-0.5 text-[11px] leading-4 text-white/70"
+                        className="mt-0.5 text-[9px] leading-4 text-white/70"
                       >
                         {stat.label}
                       </Txt>
@@ -678,14 +678,14 @@ function TrainAccountScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/workout")}
-              className="mb-3 overflow-hidden rounded-3xl border bg-panel p-6"
+              className="mb-3 overflow-hidden bg-[#83300f] rounded-3xl border p-4"
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-2 rounded-full bg-white/5 px-3 py-1.5">
                   <View className=" items-center justify-center rounded-full bg-brand/30">
                     <View className="h-1.5 w-1.5 rounded-full bg-green-400" />
                   </View>
-                  <Txt weight="medium" className="text-[12px] text-green-500">
+                  <Txt weight="medium" className="text-[10px] text-green-500">
                     In Progress
                   </Txt>
                 </View>
@@ -697,27 +697,29 @@ function TrainAccountScreen() {
                 </Txt>
               </View>
 
-              <Txt
-                weight="medium"
-                numberOfLines={2}
-                className="mt-2 text-[28px] leading-[34px] tracking-[-1px]"
-              >
-                {session.name}
-              </Txt>
+              <View className="flex-row items-center justify-between">
+                <Txt
+                  weight="medium"
+                  numberOfLines={2}
+                  className="mt-2 text-[28px] leading-[34px] tracking-[-1px]"
+                >
+                  {session.name}
+                </Txt>
 
-              <View className="mt-4 ml-1 flex-row gap-8">
-                <View>
-                  <Txt weight="medium" className="text-2xl tracking-[-0.5px]">
-                    {activeSummary.completedSets}
-                    <Txt className="text-base text-muted">/{activeSummary.totalSets}</Txt>
-                  </Txt>
-                  <Txt className="mt-0.5 text-[11px] text-muted">Sets done</Txt>
-                </View>
-                <View>
-                  <Txt weight="medium" className="text-2xl tracking-[-0.5px]">
-                    {activeSummary.exercises}
-                  </Txt>
-                  <Txt className="mt-0.5 text-[11px] text-muted">Exercises</Txt>
+                <View className="mt-4 ml-1 flex-row gap-8">
+                  <View>
+                    <Txt weight="medium" className="text-lg tracking-[-0.5px]">
+                      {activeSummary.completedSets}
+                      <Txt className="text-base text-muted">/{activeSummary.totalSets}</Txt>
+                    </Txt>
+                    <Txt className="mt-0.5 text-[9px] text-muted">Sets done</Txt>
+                  </View>
+                  <View>
+                    <Txt weight="medium" className="text-lg tracking-[-0.5px]">
+                      {activeSummary.exercises}
+                    </Txt>
+                    <Txt className="mt-0.5 text-[9px] text-muted">Exercises</Txt>
+                  </View>
                 </View>
               </View>
 

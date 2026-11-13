@@ -9,7 +9,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Txt } from "@/src/components/ui";
 import { useAppAlert } from "@/src/components/app-dialog";
 import { TabGlassSurface } from "@/src/components/glass-tabs";
-import { C } from "@/src/constants/theme";
+// import { C } from "@/src/constants/theme";
 import { useWorkout } from "../workout-context";
 
 function formatTime(seconds: number) {
@@ -29,7 +29,7 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
   const segments = useSegments();
   const insets = useSafeAreaInsets();
   const hidden = pathname.startsWith("/workout") || (!inline && segments[0] === "(tabs)");
-  const { session, restTimer, discard, busy } = useWorkout();
+  const { session, discard, busy } = useWorkout();
   const discardRequested = useRef(false);
 
   const [now, setNow] = useState(() => Date.now());
@@ -50,13 +50,20 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
 
   const elapsed = Math.max(0, Math.floor((now - new Date(session.started_at).getTime()) / 1000));
 
-  const remaining = restTimer ? Math.max(0, Math.ceil((restTimer.endsAt - now) / 1000)) : 0;
-
-  const completedSets = session.workout_session_exercises.reduce(
-    (total, exercise) =>
-      total + exercise.workout_logged_sets.filter((set) => set.completed_at !== null).length,
-    0,
-  );
+  const currentExercise = [...session.workout_session_exercises]
+    .sort((a, b) => a.position - b.position)
+    .find((exercise) =>
+      !exercise.workout_logged_sets.length ||
+      exercise.workout_logged_sets.some((set) => !set.completed_at),
+    );
+  const currentSetIndex = [...(currentExercise?.workout_logged_sets ?? [])]
+    .sort((a, b) => a.position - b.position)
+    .findIndex((set) => !set.completed_at);
+  const exerciseExcerpt = currentExercise
+    ? `${currentExercise.exercise_name} · ${currentSetIndex >= 0 ? `Set ${currentSetIndex + 1}` : "Add a set"}`
+    : session.workout_session_exercises.length
+      ? "All sets completed"
+      : "Add an exercise to begin";
 
   const confirmDiscard = () => {
     if (busy || discardRequested.current) return;
@@ -102,29 +109,28 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
         }}
       >
         <TabGlassSurface />
-        <View className="flex-row items-center px-4 py-4">
+        <View className="flex-row items-center px-3 py-2">
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Resume ${session.name}`}
             onPress={() => router.push("/workout")}
             className="flex-1 flex-row items-center"
           >
-           <View className="items-end bg-blue-600/60 rounded-full p-2">
-            <MaterialCommunityIcons name="chevron-up" size={28} color={"white"} />
+           <View className="items-end bg-orange-600/60 rounded-full p-2">
+            <MaterialCommunityIcons name="chevron-up" size={22} color={"white"} />
           </View>
 
           <View className="ml-3 flex-1">
-            <Txt weight="semibold" className="text-base" numberOfLines={1}>
+            <Txt weight="semibold" className="" numberOfLines={1}>
               {session.name}
             </Txt>
 
-            <Txt className="text-sm text-muted">
-              {completedSets} sets completed
-              {remaining > 0 ? ` · Rest ${formatTime(remaining)}` : ""}
+            <Txt className="text-xs text-muted" numberOfLines={1}>
+              {exerciseExcerpt}
             </Txt>
           </View>
 
-          <Txt weight="semibold" className="text-red-500 text-lg mr-4">
+          <Txt weight="semibold" className="text-[#3edc4b] text-sm mr-4">
             {formatTime(elapsed)}
           </Txt>
           </Pressable>
@@ -136,7 +142,7 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
             onPress={confirmDiscard}
             className="items-end bg-red-700/40 rounded-full p-2"
           >
-            <MaterialCommunityIcons name="trash-can" size={24} color={"white"} />
+            <MaterialCommunityIcons name="trash-can" size={20} color={"white"} />
           </Pressable>
         </View>
         <View
