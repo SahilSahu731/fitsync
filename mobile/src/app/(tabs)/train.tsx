@@ -39,6 +39,7 @@ import { Image } from "expo-image";
 import { TrainingSection } from "@/src/features/workouts/components/training-section";
 import { trainingWeek, workoutSummary } from "@/src/features/workouts/summary";
 import { RoutineCard } from "@/src/features/workouts/components/routine-card";
+import { StartWorkoutDialog } from "@/src/features/workouts/components/start-workout-dialog";
 
 function ordered<T extends { id: string }>(rows: T[], ids: string[]) {
   const rank = new Map(ids.map((id, index) => [id, index]));
@@ -82,7 +83,7 @@ function QuickTile({
       className="min-w-0 flex-1 flex-row items-center gap-2 rounded-[18px] bg-panel p-3.5"
     >
       <MaterialCommunityIcons name={icon} size={20} color={C.ink} />
-      <Txt weight="semibold" className="flex-1 text-[14px]">
+      <Txt weight="medium" className="flex-1 text-[14px]">
         {title}
       </Txt>
 
@@ -320,6 +321,7 @@ function TrainAccountScreen() {
   const [renaming, setRenaming] = useState<WorkoutTemplate | null>(null);
   const [reordering, setReordering] = useState<"programs" | "routines" | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
+  const [showStartDialog, setShowStartDialog] = useState(false);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [programs, setPrograms] = useState<SavedProgram[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -575,22 +577,98 @@ function TrainAccountScreen() {
         >
           {/* Header */}
 
-          <PageHeading eyebrow={today} title="Let’s train." subtitle="Your session, your pace." />
+          <PageHeading eyebrow={today} title="Let's train." subtitle="Your session, your pace." />
           <WorkoutSyncNotice />
           {!loading && !error && (
-            <View className="mb-5 flex-row rounded-[22px] bg-panel px-4 py-4">
-              {[
-                { value: week.workouts, label: "Workouts" },
-                { value: week.minutes, label: "Minutes" },
-                { value: week.days, label: "Active days" },
-              ].map((stat) => (
-                <View key={stat.label} className="flex-1 items-center">
-                  <Txt weight="semibold" className="text-xl">
-                    {stat.value}
-                  </Txt>
-                  <Txt className="mt-1 text-[11px] text-muted">{stat.label} this week</Txt>
-                </View>
-              ))}
+            <View className="mb-3">
+              <View className="mb-2 flex-row gap-1.5">
+                <MaterialCommunityIcons
+                  name="update"
+                  size={16}
+                  color={"white"}
+                  accessible={false}
+                />
+                <Txt weight="medium" className="text-[12px]">
+                  This Week
+                </Txt>
+              </View>
+              <View className="flex-row gap-2.5">
+                {[
+                  {
+                    value: week.workouts,
+                    label: "Workouts",
+                    icon: "dumbbell" as const,
+                    color: "#C5F460",
+                    background: "#171D10",
+                  },
+                  {
+                    value: week.minutes,
+                    label: "Minutes",
+                    icon: "timer-outline" as const,
+                    color: "#7DCFFF",
+                    background: "#101B24",
+                  },
+                  {
+                    value: week.days,
+                    label: "Active days",
+                    icon: "calendar-check-outline" as const,
+                    color: "#FFB38A",
+                    background: "#211812",
+                  },
+                ].map((stat, index) => (
+                  <ScreenEntrance
+                    key={stat.label}
+                    delay={80 + index * 80}
+                    style={{ flex: 1, minWidth: 0 }}
+                  >
+                    <View
+                      accessible
+                      accessibilityLabel={`${stat.value} ${stat.label.toLowerCase()} this week`}
+                      className="overflow-hidden rounded-[22px] border p-3.5"
+                      style={{
+                        backgroundColor: stat.background,
+                      }}
+                    >
+                      <View className="flex-row items-center gap-2">
+                        <View
+                          className="rounded-xl"
+                          style={{
+                            shadowColor: stat.color,
+                            shadowOffset: { width: 0, height: 2 },
+                            shadowOpacity: 0.18,
+                            shadowRadius: 8,
+                          }}
+                        >
+                          <MaterialCommunityIcons
+                            name={stat.icon}
+                            size={20}
+                            color={stat.color}
+                            accessible={false}
+                          />
+                        </View>
+                        <Txt
+                          weight="semibold"
+                          numberOfLines={1}
+                          adjustsFontSizeToFit
+                          minimumFontScale={0.65}
+                          className="text-[24px] leading-[34px]"
+                          style={{ color: stat.color }}
+                        >
+                          {stat.value}
+                        </Txt>
+                      </View>
+                      <Txt
+                        numberOfLines={1}
+                        adjustsFontSizeToFit
+                        minimumFontScale={0.8}
+                        className="mt-0.5 text-[11px] leading-4 text-white/70"
+                      >
+                        {stat.label}
+                      </Txt>
+                    </View>
+                  </ScreenEntrance>
+                ))}
+              </View>
             </View>
           )}
 
@@ -600,31 +678,68 @@ function TrainAccountScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/workout")}
-              className="mb-4 rounded-[28px] bg-panel p-6"
+              className="mb-3 overflow-hidden rounded-3xl border bg-panel p-6"
             >
-              <View className="flex-row items-center gap-2">
-                <View className="h-1.5 w-1.5 rounded-full bg-brand" />
-                <Txt weight="medium" className="text-[11px] tracking-[1px] text-muted">
-                  WORKOUT IN PROGRESS
+              <View className="flex-row items-center justify-between">
+                <View className="flex-row items-center gap-2 rounded-full bg-white/5 px-3 py-1.5">
+                  <View className=" items-center justify-center rounded-full bg-brand/30">
+                    <View className="h-1.5 w-1.5 rounded-full bg-green-400" />
+                  </View>
+                  <Txt weight="medium" className="text-[12px] text-green-500">
+                    In Progress
+                  </Txt>
+                </View>
+                <Txt weight="medium" className="text-xs text-muted">
+                  {activeSummary.totalSets > 0
+                    ? Math.round((activeSummary.completedSets / activeSummary.totalSets) * 100)
+                    : 0}
+                  %
                 </Txt>
               </View>
+
               <Txt
                 weight="medium"
                 numberOfLines={2}
-                className="mt-5 text-2xl leading-8 tracking-[-0.7px]"
+                className="mt-2 text-[28px] leading-[34px] tracking-[-1px]"
               >
                 {session.name}
               </Txt>
-              <View className="mt-6 flex-row items-center justify-between">
-                <Txt className="text-xs text-muted">
-                  {activeSummary.completedSets}/{activeSummary.totalSets} sets ·{" "}
-                  {activeSummary.exercises} exercises
-                </Txt>
-                <View className="min-h-12 flex-row items-center gap-2 rounded-full bg-ink px-5">
-                  <Txt weight="semibold" className="text-xs text-black">
-                    Resume
+
+              <View className="mt-4 ml-1 flex-row gap-8">
+                <View>
+                  <Txt weight="medium" className="text-2xl tracking-[-0.5px]">
+                    {activeSummary.completedSets}
+                    <Txt className="text-base text-muted">/{activeSummary.totalSets}</Txt>
                   </Txt>
-                  <MaterialCommunityIcons name="play" size={18} color={C.bg} />
+                  <Txt className="mt-0.5 text-[11px] text-muted">Sets done</Txt>
+                </View>
+                <View>
+                  <Txt weight="medium" className="text-2xl tracking-[-0.5px]">
+                    {activeSummary.exercises}
+                  </Txt>
+                  <Txt className="mt-0.5 text-[11px] text-muted">Exercises</Txt>
+                </View>
+              </View>
+
+              <View className="mt-5 flex-row gap-1">
+                {Array.from({ length: Math.min(Math.max(activeSummary.totalSets, 1), 24) }).map(
+                  (_, i) => (
+                    <View
+                      key={i}
+                      className={`h-1.5 flex-1 rounded-full ${
+                        i < Math.min(activeSummary.completedSets, 24) ? "bg-brand" : "bg-white/10"
+                      }`}
+                    />
+                  ),
+                )}
+              </View>
+
+              <View className="mt-6 min-h-14 flex-row items-center justify-between rounded-full bg-ink pl-6 pr-2">
+                <Txt weight="semibold" className="text-sm text-black">
+                  Resume workout
+                </Txt>
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-black">
+                  <MaterialCommunityIcons name="play" size={20} color={C.ink} />
                 </View>
               </View>
             </Pressable>
@@ -632,40 +747,50 @@ function TrainAccountScreen() {
             <Pressable
               accessibilityRole="button"
               accessibilityState={{ disabled: startDisabled, busy: busy || workoutLoading }}
-              onPress={() => void handleStart()}
+              onPress={() => setShowStartDialog(true)}
               disabled={startDisabled}
-              className={`mb-4 overflow-hidden rounded-[28px] bg-ink p-5 ${startDisabled ? "opacity-60" : ""}`}
+              className={`mb-3 overflow-hidden rounded-3xl bg-ink p-4 ${startDisabled ? "opacity-60" : ""}`}
             >
-              <View className="flex-row items-center justify-between">
-                <Txt weight="medium" className="text-[11px] tracking-[1.5px] text-black/60">
-                  READY WHEN YOU ARE
-                </Txt>
-                <MaterialCommunityIcons name="dumbbell" size={25} color={C.bg} />
+              <View pointerEvents="none" className="absolute -right-6 -top-4 opacity-[0.07]">
+                <MaterialCommunityIcons
+                  name="dumbbell"
+                  size={190}
+                  color="#000"
+                  style={{ transform: [{ rotate: "-24deg" }] }}
+                />
               </View>
+
+              <View className="self-start rounded-full bg-black/10 px-3 py-1.5">
+                <Txt weight="medium" className="text-[12px] text-black/70">
+                  Ready when you are
+                </Txt>
+              </View>
+
               <Txt
                 weight="medium"
-                className="mt-4 text-[27px] leading-[34px] tracking-[-1px] text-black"
+                className="mt-2 text-[34px] leading-[38px] tracking-[-1.5px] text-black"
               >
                 Start a workout
               </Txt>
-              <Txt className="mt-2 max-w-xs text-sm leading-6 text-black/60">
-                Choose exercises as you go, or open a saved routine below.
+              <Txt className="mt-1 ml-1 max-w-[260px] text-sm leading-5 text-black/60">
+                Pick exercises as you go, or open a saved routine below.
               </Txt>
-              <View className="mt-6 flex-row items-center justify-between">
-                <Txt weight="semibold" className="text-sm text-black">
+
+              <View className="mt-5 min-h-14 flex-row items-center justify-between rounded-full bg-black pl-6 pr-2">
+                <Txt weight="semibold" className="text-sm text-white">
                   {pendingCompletion
                     ? "Waiting for workout sync"
                     : workoutLoading
                       ? "Restoring your workout…"
                       : "Start empty workout"}
                 </Txt>
-                {busy || workoutLoading ? (
-                  <ActivityIndicator color={C.bg} size="small" />
-                ) : (
-                  <View className="h-11 w-11 items-center justify-center rounded-full bg-black">
-                    <MaterialCommunityIcons name="arrow-top-right" size={21} color={C.ink} />
-                  </View>
-                )}
+                <View className="h-10 w-10 items-center justify-center rounded-full bg-brand">
+                  {busy || workoutLoading ? (
+                    <ActivityIndicator color="#000" size="small" />
+                  ) : (
+                    <MaterialCommunityIcons name="play-speed" size={24} color="#000" />
+                  )}
+                </View>
               </View>
             </Pressable>
           )}
@@ -876,6 +1001,17 @@ function TrainAccountScreen() {
           )}
         </TabScrollView>
       </ScreenEntrance>
+      {showStartDialog && (
+        <StartWorkoutDialog
+          disabled={startDisabled}
+          onStart={start}
+          onStarted={() => {
+            setShowStartDialog(false);
+            router.push("/workout");
+          }}
+          onClose={() => setShowStartDialog(false)}
+        />
+      )}
       {actionBusy && (
         <View
           pointerEvents="auto"

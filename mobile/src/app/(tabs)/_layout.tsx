@@ -14,18 +14,18 @@ import { C } from "@/src/constants/theme";
 const ARTWORK = {
   index: "home",
   train: "train",
-  library: "library",
+  stats: "stats",
   progress: "progress",
-  profile: "profile",
+  library: "library",
 } as const satisfies Record<string, TabArtworkName>;
 type TabId = keyof typeof ARTWORK;
 
 const TITLES: Record<TabId, string> = {
   index: "Home",
   train: "Train",
-  library: "Library",
+  stats: "Stats",
   progress: "Progress",
-  profile: "Me",
+  library: "Library",
 };
 
 const TAB_IDS = Object.keys(ARTWORK) as TabId[];
@@ -35,7 +35,6 @@ type TabBarProps = Parameters<NonNullable<React.ComponentProps<typeof Tabs>["tab
 function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const { feedback } = useExperience();
-  const { user } = useSession();
   const { expand } = useTabBarMotion();
 
   const [keyboardOpen, setKeyboardOpen] = useState(false);
@@ -48,7 +47,7 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
     };
   }, []);
 
-  const routes = state.routes.filter((route) => TAB_IDS.includes(route.name as TabId));
+  const routes = TAB_IDS.flatMap((id) => state.routes.filter((route) => route.name === id));
   const selectedIndex = routes.findIndex((route) => route.key === state.routes[state.index]?.key);
 
   if (keyboardOpen || !routes.length) return null;
@@ -75,7 +74,6 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
                 focused={focused}
                 label={TITLES[id]}
                 artwork={ARTWORK[id]}
-                avatarUrl={id === "profile" ? user?.avatarUrl : undefined}
                 onPress={() => {
                   const event = navigation.emit({
                     type: "tabPress",

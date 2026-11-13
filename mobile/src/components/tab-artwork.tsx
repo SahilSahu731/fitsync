@@ -1,30 +1,43 @@
-import React, { useState } from "react";
+import React from "react";
 import { View } from "react-native";
-import { Image } from "expo-image";
-import Svg, { Path } from "react-native-svg";
-import HomeArtwork from "@/assets/tabs/home.svg";
-import TrainArtwork from "@/assets/tabs/train.svg";
-import LibraryArtwork from "@/assets/tabs/library.svg";
-import ProgressArtwork from "@/assets/tabs/progress.svg";
-import ProfileArtwork from "@/assets/tabs/profile.svg";
+import Svg, { G, Path, Rect } from "react-native-svg";
 
+// Native equivalents of assets/tabs/*.svg. Pixel tests keep the artwork in sync.
 const ARTWORK = {
-  home: HomeArtwork,
-  train: TrainArtwork,
-  library: LibraryArtwork,
-  progress: ProgressArtwork,
-  profile: ProfileArtwork,
-};
-
-// A local vector remains visible while the editable asset or profile photo loads.
-const FALLBACK_PATHS = {
-  home: "m3.5 10 7-5.8a2.3 2.3 0 0 1 3 0l7 5.8v8.2a2.3 2.3 0 0 1-2.3 2.3H5.8a2.3 2.3 0 0 1-2.3-2.3ZM9 20.5v-6a1.5 1.5 0 0 1 1.5-1.5h3a1.5 1.5 0 0 1 1.5 1.5v6",
-  train: "M8 12h8M5 7.5h3v9H5zM16 7.5h3v9h-3zM3 10v4M21 10v4",
-  library:
-    "M12 6.5C9.4 4.8 6.5 4.3 3.3 4.9v12.9c3.2-.7 6.1-.1 8.7 1.7V6.5c2.6-1.7 5.5-2.2 8.7-1.6v12.9c-3.2-.7-6.1-.1-8.7 1.7M6 8.5l3 .5M6 11.5l3 .5",
-  progress: "M4 5.5V20h16M6.3 15.6l4.3-4.4 3.3 2.2 4.5-6.2",
-  profile:
-    "M20.5 12a8.5 8.5 0 1 1-17 0 8.5 8.5 0 0 1 17 0ZM14.6 9.4a2.6 2.6 0 1 1-5.2 0 2.6 2.6 0 0 1 5.2 0ZM6.8 18.6c.5-3.5 2.5-5 5.2-5s4.7 1.5 5.2 5",
+  home: (
+    <>
+      <Path d="m3.5 10 7.2-5.8a2.1 2.1 0 0 1 2.6 0l7.2 5.8" />
+      <Path d="M5.5 8.4v10.1a2 2 0 0 0 2 2h9a2 2 0 0 0 2-2V8.4" />
+      <Path d="M9.5 20.5v-6a1 1 0 0 1 1-1h3a1 1 0 0 1 1 1v6" />
+    </>
+  ),
+  train: (
+    <G transform="rotate(-40 12 12)">
+      <Path d="M8 12h8M3 10v4M21 10v4" />
+      <Rect x={5} y={7} width={3} height={10} rx={1} />
+      <Rect x={16} y={7} width={3} height={10} rx={1} />
+    </G>
+  ),
+  stats: (
+    <>
+      <Rect x={4} y={12} width={3.5} height={8} rx={1} />
+      <Rect x={10.25} y={4} width={3.5} height={16} rx={1} />
+      <Rect x={16.5} y={8} width={3.5} height={12} rx={1} />
+    </>
+  ),
+  progress: (
+    <>
+      <Path d="M4 19.5h16" />
+      <Path d="m4 15.5 5.5-5.5 4 3.5L20 6" />
+      <Path d="M15 6h5v5" />
+    </>
+  ),
+  library: (
+    <>
+      <Path d="M12 6.3C9.4 4.7 6.4 4.4 3.5 5.2v13c2.9-.8 5.9-.5 8.5 1.1 2.6-1.6 5.6-1.9 8.5-1.1v-13C17.6 4.4 14.6 4.7 12 6.3Z" />
+      <Path d="M12 6.3v13M6.75 9l2.25.4M15 9.4l2.25-.4M6.75 12l2.25.4M15 12.4l2.25-.4" />
+    </>
+  ),
 };
 
 export type TabArtworkName = keyof typeof ARTWORK;
@@ -32,24 +45,9 @@ type TabArtworkProps = {
   name: TabArtworkName;
   color: string;
   size?: number;
-  avatarUrl?: string | null;
 };
 
-export function TabArtwork(props: TabArtworkProps) {
-  return (
-    <NativeTabArtwork
-      key={`${props.name}:${ARTWORK[props.name]}:${props.avatarUrl ?? ""}`}
-      {...props}
-    />
-  );
-}
-
-function NativeTabArtwork({ name, color, size = 24, avatarUrl }: TabArtworkProps) {
-  const [loaded, setLoaded] = useState(false);
-  const [photoFailed, setPhotoFailed] = useState(false);
-  const [artworkFailed, setArtworkFailed] = useState(false);
-  const showPhoto = Boolean(avatarUrl && !photoFailed);
-
+export function TabArtwork({ name, color, size = 24 }: TabArtworkProps) {
   return (
     <View
       pointerEvents="none"
@@ -58,43 +56,19 @@ function NativeTabArtwork({ name, color, size = 24, avatarUrl }: TabArtworkProps
       className="shrink-0 items-center justify-center"
       style={{ width: size, height: size }}
     >
-      {!loaded && (
-        <Svg
-          width={size}
-          height={size}
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke={color}
-          strokeWidth={1.7}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          accessible={false}
-        >
-          <Path d={FALLBACK_PATHS[name]} />
-        </Svg>
-      )}
-      {(showPhoto || !artworkFailed) && (
-        <Image
-          source={showPhoto ? { uri: avatarUrl! } : ARTWORK[name]}
-          tintColor={showPhoto ? undefined : color}
-          contentFit={showPhoto ? "cover" : "contain"}
-          cachePolicy="memory-disk"
-          transition={0}
-          onDisplay={() => setLoaded(true)}
-          onError={() => {
-            setLoaded(false);
-            if (showPhoto) setPhotoFailed(true);
-            else setArtworkFailed(true);
-          }}
-          accessible={false}
-          style={{
-            position: "absolute",
-            width: size,
-            height: size,
-            borderRadius: showPhoto ? size / 2 : 0,
-          }}
-        />
-      )}
+      <Svg
+        width={size}
+        height={size}
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke={color}
+        strokeWidth={1.5}
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        accessible={false}
+      >
+        {ARTWORK[name]}
+      </Svg>
     </View>
   );
 }

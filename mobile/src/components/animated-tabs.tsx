@@ -17,7 +17,7 @@ import { TAB_ICON_SIZE, TAB_LABEL_GAP, TAB_PADDING, tabBarLayout } from "./tab-b
 import { TabArtwork, type TabArtworkName } from "./tab-artwork";
 
 // Icon colours: white when idle (on the glass), black when selected (on the white pill).
-const ICON_IDLE = "#FFFFFF";
+const ICON_IDLE = "#E8E4E3";
 const ICON_ACTIVE = "#000000";
 const PILL_BG = "#F2F2F4";
 
@@ -82,7 +82,7 @@ export function AnimatedTabBar({
             <View
               pointerEvents="none"
               className="absolute inset-0 rounded-full"
-              style={{ borderWidth: 1, borderColor: "rgba(255,255,255,0.16)" }}
+              style={{ borderWidth: 1, borderColor: "rgba(255,255,255,0.1)" }}
             />
           </View>
         </Animated.View>
@@ -96,7 +96,6 @@ export function AnimatedTabButton({
   focused,
   label,
   artwork,
-  avatarUrl,
   onPress,
   onLongPress,
 }: {
@@ -104,7 +103,6 @@ export function AnimatedTabButton({
   focused: boolean;
   label: string;
   artwork: TabArtworkName;
-  avatarUrl?: string | null;
   onPress: () => void;
   onLongPress: () => void;
 }) {
@@ -179,11 +177,7 @@ export function AnimatedTabButton({
           className="items-center justify-center"
           style={[{ width: TAB_ICON_SIZE, height: TAB_ICON_SIZE }, symbolMotion]}
         >
-          <TabArtwork
-            name={artwork}
-            color={focused ? ICON_ACTIVE : ICON_IDLE}
-            avatarUrl={avatarUrl}
-          />
+          <TabArtwork name={artwork} color={focused ? ICON_ACTIVE : ICON_IDLE} />
         </Animated.View>
 
         <Animated.View

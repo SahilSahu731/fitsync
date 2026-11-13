@@ -87,7 +87,7 @@ export default function HomeScreen() {
           <MotionPressable
             accessibilityRole="button"
             accessibilityLabel="Open your profile"
-            onPress={() => router.push("/(tabs)/profile")}
+            onPress={() => router.push("/profile")}
             className="h-12 w-12 items-center justify-center rounded-full bg-panel"
           >
             <Txt weight="medium" className="text-lg">

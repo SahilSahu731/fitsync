@@ -92,7 +92,7 @@ export function ProScreen() {
           accessibilityRole="button"
           accessibilityLabel="Go back"
           disabled={billing.busy}
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/profile"))}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace("/profile"))}
           className="h-11 w-11 items-center justify-center rounded-full bg-panel"
         >
           <MaterialCommunityIcons name="arrow-left" size={23} color={C.ink} />
