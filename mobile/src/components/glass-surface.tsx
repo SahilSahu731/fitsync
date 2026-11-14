@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { LayoutChangeEvent, Platform, StyleSheet, View } from "react-native";
+import { LayoutChangeEvent, StyleSheet, View } from "react-native";
 import { BlurView } from "expo-blur";
 import { LinearGradient } from "expo-linear-gradient";
 import Animated, {
@@ -53,7 +53,8 @@ export function GlassSurface({
       <BlurView
         intensity={intensity}
         tint="dark"
-        experimentalBlurMethod={Platform.OS === "android" ? "dimezisBlurView" : undefined}
+        // This surface has no separate Android target, so keep its translucent fallback explicit.
+        blurMethod="none"
         style={StyleSheet.absoluteFill}
       />
       <LinearGradient

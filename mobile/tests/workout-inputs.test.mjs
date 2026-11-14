@@ -153,3 +153,41 @@ test("reorder handle keeps its responder when its index changes mid-drag", () =>
   assert.deepEqual(moves, [[0, 30, 200], [2, 170, 340]]);
   assert.equal(ended, 3);
 });
+
+test("set rows use empty and checked circles, with pending additions locking only their own controls", () => {
+  const appearance = load("../src/features/workouts/set-types.ts");
+  let pendingSetIds = [];
+  const jsx = (type, props) => ({ type, props });
+  const React = {
+    memo: component => component,
+    useState: value => [typeof value === "function" ? value() : value, () => {}],
+    useRef: value => ({ current: value }),
+    useEffect() {},
+  };
+  const { SetRow } = load("../src/features/workouts/components/set-row.tsx", {
+    react: React, "react/jsx-runtime": { jsx, jsxs: jsx },
+    "react-native": { View: "View", Pressable: "Pressable", ActivityIndicator: "Spinner" },
+    "@react-native-async-storage/async-storage": {},
+    "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
+    "@/src/constants/theme": { C: {} },
+    "@/src/components/ui": { Txt: "Txt" },
+    "@/src/components/app-dialog": { useAppAlert: () => ({}) },
+    "@/src/features/experience/experience-context": { useExperience: () => ({}) },
+    "../workout-context": { useWorkout: () => ({ busy: false, pendingSetIds }) },
+    "./workout-controls": { NumberEntry: "Entry", WorkoutDrawer: "Drawer" },
+    "./set-type-picker": { SetTypePicker: "Picker" },
+    "../set-types": appearance,
+  });
+  const find = (node, type) => !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(child => find(child, type)) : [...(node.type === type ? [node] : []), ...find(node.props?.children, type)];
+  const row = completed => SetRow({ exerciseId: "exercise", number: 1, restSeconds: 90, set: { id: "row", set_type: "normal", reps: 8, weight_kg: 20, completed_at: completed ? "done" : null } });
+  let tree = row(false);
+  assert.equal(find(tree, "Icon").some(icon => icon.props.name === "circle-outline"), true);
+  assert.equal(find(tree, "Picker")[0].props.value, "normal");
+  assert.equal(find(tree, "Entry").every(entry => !entry.props.disabled), true);
+  tree = row(true);
+  assert.equal(find(tree, "Icon").some(icon => icon.props.name === "check-circle"), true);
+  pendingSetIds = ["another-row"];
+  assert.equal(find(row(false), "Entry").every(entry => !entry.props.disabled), true);
+  pendingSetIds = ["row"];
+  assert.equal(find(row(false), "Entry").every(entry => entry.props.disabled), true);
+});

@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { LayoutChangeEvent, Platform, StyleSheet, View } from "react-native";
+import { LayoutChangeEvent, StyleSheet, View } from "react-native";
 import { router } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable } from "@/src/components/motion";
@@ -64,7 +64,8 @@ function GlassSurface({
       <BlurView
         intensity={intensity}
         tint="dark"
-        experimentalBlurMethod={Platform.OS === "android" ? "dimezisBlurView" : undefined}
+        // Android blur requires a separate target; this card uses the translucent fallback.
+        blurMethod="none"
         style={StyleSheet.absoluteFill}
       />
 

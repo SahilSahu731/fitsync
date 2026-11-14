@@ -1,5 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
-import type { WorkoutSession, workoutApi } from "./api";
+import type { WorkoutSession, WorkoutSet, workoutApi } from "./api";
 import { optimisticSet, replaceSet } from "./set-state";
 type SetPatch = Parameters<typeof workoutApi.updateSet>[2];
 export type WorkoutDraft = {
@@ -106,6 +106,49 @@ export function queueNotes(ownerId: string, value: string, expectedSessionId?: s
       revision,
       session: { ...old.session, notes: value },
       notes: { revision, value },
+    };
+  });
+}
+
+/** Merge only the created row; a server snapshot must never replace newer local edits. */
+export function commitAddedSet(
+  ownerId: string,
+  sessionId: string,
+  exerciseId: string,
+  created: WorkoutSet,
+  defaults: WorkoutSet,
+) {
+  return changeWorkoutDraft(ownerId, (old) => {
+    if (!old || old.finish || old.session.id !== sessionId)
+      throw new Error("This workout changed. Reopen it before adding sets.");
+    const exercise = old.session.workout_session_exercises.find((item) => item.id === exerciseId);
+    if (!exercise) throw new Error("Exercise no longer exists.");
+    if (exercise.workout_logged_sets.some((set) => set.id === created.id)) return old;
+    const patch: SetPatch = {};
+    if (created.weight_kg !== defaults.weight_kg) patch.weightKg = defaults.weight_kg;
+    if (created.reps !== defaults.reps) patch.reps = defaults.reps;
+    if (created.duration_seconds !== defaults.duration_seconds)
+      patch.durationSeconds = defaults.duration_seconds;
+    if (created.distance_meters !== defaults.distance_meters)
+      patch.distanceMeters = defaults.distance_meters;
+    const revision = old.revision + 1;
+    return {
+      ...old,
+      revision,
+      session: {
+        ...old.session,
+        workout_session_exercises: old.session.workout_session_exercises.map((item) =>
+          item.id === exerciseId
+            ? {
+                ...item,
+                workout_logged_sets: [...item.workout_logged_sets, optimisticSet(created, patch)],
+              }
+            : item,
+        ),
+      },
+      sets: Object.keys(patch).length
+        ? { ...old.sets, [created.id]: { revision, patch } }
+        : old.sets,
     };
   });
 }

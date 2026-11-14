@@ -4,6 +4,7 @@ import React, {
   useContext,
   useEffect,
   useLayoutEffect,
+  useMemo,
   useRef,
   useState,
 } from "react";
@@ -18,9 +19,10 @@ import {
 } from "./notifications";
 import { loadExercisePicker } from "../exercises/picker-cache";
 import { completedWorkout as completeSession } from "./summary";
-import { workoutApi, type WorkoutSession, type SetType } from "./api";
+import { workoutApi, type WorkoutSession, type WorkoutSet, type SetType } from "./api";
 import {
   cacheWorkout,
+  commitAddedSet,
   draftPending,
   flushWorkoutDraft,
   queueFinish,
@@ -35,6 +37,8 @@ type WorkoutContextType = {
   session: WorkoutSession | null;
   loading: boolean;
   busy: boolean;
+  addingSetExerciseIds: string[];
+  pendingSetIds: string[];
   restTimer: RestTimer | null;
   refresh: () => Promise<void>;
   ensureSynced: () => Promise<void>;
@@ -84,6 +88,11 @@ function WorkoutAccountProvider({
   const refreshSequence = useRef(0);
   const operationLock = useRef(false);
   const pendingWrites = useRef(new Set<Promise<unknown>>());
+  const addingSets = useRef(new Map<string, Promise<void>>());
+  const addSequence = useRef(0);
+  const [pendingAdds, setPendingAdds] = useState<
+    { exerciseId: string; sessionId: string; set: WorkoutSet }[]
+  >([]);
   const restWrites = useRef(Promise.resolve());
   const [dataRevision, setDataRevision] = useState(0);
   const [lastCompleted, setLastCompleted] = useState<WorkoutSession | null>(null);
@@ -92,7 +101,30 @@ function WorkoutAccountProvider({
     draft: null,
   });
   const draft = snapshot.ownerId === ownerId ? snapshot.draft : null;
-  const session = draft?.finish ? null : (draft?.session ?? null);
+  const activeSession = draft?.finish ? null : (draft?.session ?? null);
+  const session = useMemo(
+    () =>
+      !activeSession || !pendingAdds.length
+        ? activeSession
+        : {
+            ...activeSession,
+            workout_session_exercises: activeSession.workout_session_exercises.map((exercise) => {
+              const pending = pendingAdds.filter(
+                (add) => add.sessionId === activeSession.id && add.exerciseId === exercise.id,
+              );
+              return pending.length
+                ? {
+                    ...exercise,
+                    workout_logged_sets: [
+                      ...exercise.workout_logged_sets,
+                      ...pending.map((add) => add.set),
+                    ],
+                  }
+                : exercise;
+            }),
+          },
+    [activeSession, pendingAdds],
+  );
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
   const [syncError, setSyncError] = useState(false);
@@ -165,7 +197,7 @@ function WorkoutAccountProvider({
       if (saved && owner.current === ownerId) setLoading(false);
       await sync();
       if (owner.current !== ownerId) return;
-      if (operationLock.current) return;
+      if (operationLock.current || addingSets.current.size) return;
       const before = await readWorkoutDraft(ownerId);
       const revision = mutationRevision.current;
       const remote = await workoutApi.active(ownerId);
@@ -173,7 +205,8 @@ function WorkoutAccountProvider({
         owner.current !== ownerId ||
         refreshSequence.current !== request ||
         mutationRevision.current !== revision ||
-        operationLock.current
+        operationLock.current ||
+        addingSets.current.size
       )
         return;
       const next = await cacheWorkout(ownerId, remote, before?.revision ?? 0);
@@ -271,7 +304,60 @@ function WorkoutAccountProvider({
     await run(() => workoutApi.addExercises(session.id, ids));
   };
   const addSet = async (id: string, type: SetType = "normal") => {
-    if (session) await run(() => workoutApi.addSet(session.id, id, type));
+    if (!ownerId || !activeSession) throw new Error("No active workout.");
+    if (operationLock.current) throw new Error("A workout change is already in progress.");
+    const existing = addingSets.current.get(id);
+    if (existing) return existing;
+    const exercise = activeSession.workout_session_exercises.find((item) => item.id === id);
+    if (!exercise) throw new Error("Exercise no longer exists.");
+    const previous = [...exercise.workout_logged_sets].sort((a, b) => b.position - a.position)[0];
+    const preview: WorkoutSet = {
+      id: `pending-set-${++addSequence.current}`,
+      position: (previous?.position ?? -1) + 1,
+      set_type: type,
+      weight_kg: previous?.weight_kg ?? null,
+      reps: previous?.reps ?? null,
+      duration_seconds: previous?.duration_seconds ?? null,
+      distance_meters: previous?.distance_meters ?? null,
+      rpe: null,
+      rir: null,
+      completed_at: null,
+      notes: "",
+    };
+    mutationRevision.current++;
+    setPendingAdds((rows) => [
+      ...rows,
+      { exerciseId: id, sessionId: activeSession.id, set: preview },
+    ]);
+    const knownIds = new Set(exercise.workout_logged_sets.map((set) => set.id));
+    const operation = Promise.resolve()
+      .then(async () => {
+        if (owner.current !== ownerId) throw new Error("Account changed.");
+        const response = await workoutApi.addSet(activeSession.id, id, type, ownerId);
+        if (owner.current !== ownerId) throw new Error("Account changed.");
+        // Older servers still return the complete session; accept both response shapes.
+        const created =
+          "workout_session_exercises" in response
+            ? response.workout_session_exercises
+                .find((item) => item.id === id)
+                ?.workout_logged_sets.filter((set) => !knownIds.has(set.id))
+                .sort((a, b) => b.position - a.position)[0]
+            : response;
+        if (!created) throw new Error("The new set could not be confirmed. Refresh your workout.");
+        const next = await commitAddedSet(ownerId, activeSession.id, id, created, preview);
+        mutationRevision.current++;
+        apply(ownerId, next);
+        void sync().catch(() => {});
+      })
+      .finally(() => {
+        addingSets.current.delete(id);
+        pendingWrites.current.delete(operation);
+        if (owner.current === ownerId)
+          setPendingAdds((rows) => rows.filter((row) => row.set.id !== preview.id));
+      });
+    addingSets.current.set(id, operation);
+    pendingWrites.current.add(operation);
+    return operation;
   };
   const removeSet = async (id: string) => {
     if (session) await run(() => workoutApi.removeSet(session.id, id, ownerId));
@@ -373,6 +459,8 @@ function WorkoutAccountProvider({
         session,
         loading,
         busy,
+        addingSetExerciseIds: pendingAdds.map((add) => add.exerciseId),
+        pendingSetIds: pendingAdds.map((add) => add.set.id),
         restTimer,
         refresh,
         ensureSynced: requireSynced,
@@ -388,7 +476,7 @@ function WorkoutAccountProvider({
         completedWorkout: draft?.finish
           ? completeSession(draft.session, draft.finish.elapsedSeconds)
           : lastCompleted,
-        pendingSaves: draftPending(draft),
+        pendingSaves: draftPending(draft) + pendingAdds.length,
         syncError,
         pendingCompletion: !!draft?.finish,
         updateNotes,

@@ -47,7 +47,19 @@ const session = () => ({
   workout_session_exercises: [
     {
       id: "exercise",
-      workout_logged_sets: [{ id: "set", reps: 8, weight_kg: 20, completed_at: null }],
+      workout_logged_sets: [
+        {
+          id: "set",
+          position: 0,
+          set_type: "normal",
+          duration_seconds: null,
+          distance_meters: null,
+          notes: "",
+          reps: 8,
+          weight_kg: 20,
+          completed_at: null,
+        },
+      ],
     },
   ],
 });
@@ -111,6 +123,9 @@ async function fixture(options = {}) {
         },
       ];
     },
+    useMemo(callback) {
+      return callback();
+    },
     useCallback(callback, dependencies) {
       const index = cursor++;
       const previous = slots[index];
@@ -140,10 +155,30 @@ async function fixture(options = {}) {
       remote = null;
       return completed;
     },
-    addSet: async () => {
+    addSet: async (_sessionId, _exerciseId, type, ownerId) => {
+      calls.push(["addSet", type, ownerId]);
       await options.structureGate?.promise;
-      remote = { ...remote, name: "Updated structure" };
-      return remote;
+      if (options.rejectAdd) throw Error("Connection failed");
+      const created = {
+        ...remote.workout_session_exercises[0].workout_logged_sets[0],
+        id: "added",
+        position: 1,
+        set_type: type,
+        completed_at: null,
+      };
+      remote = {
+        ...remote,
+        workout_session_exercises: [
+          {
+            ...remote.workout_session_exercises[0],
+            workout_logged_sets: [
+              ...remote.workout_session_exercises[0].workout_logged_sets,
+              created,
+            ],
+          },
+        ],
+      };
+      return options.legacyAddResponse ? remote : created;
     },
   };
   const provider = load(
@@ -280,5 +315,108 @@ test("refresh cannot replace a structural workout change while it is in flight",
   structureGate.resolve();
   await change;
   await harness.settle();
-  assert.equal(harness.context.session.name, "Updated structure");
+  assert.equal(
+    harness.context.session.workout_session_exercises[0].workout_logged_sets[1].id,
+    "added",
+  );
+});
+
+test("adding a set shows a pending row immediately while existing controls and edits stay available", async () => {
+  const structureGate = deferred();
+  const setGate = deferred();
+  const harness = await fixture({ structureGate, setGate });
+  // A slow upload must not delay creating the new row.
+  await harness.context.updateSet("set", { reps: 11 });
+  await harness.settle();
+  const addition = harness.context.addSet("exercise");
+  await harness.settle();
+  assert.equal(harness.context.busy, false);
+  assert.equal(harness.context.addingSetExerciseIds[0], "exercise");
+  assert.equal(harness.context.pendingSetIds.length, 1);
+  const rows = harness.context.session.workout_session_exercises[0].workout_logged_sets;
+  assert.equal(rows.length, 2);
+  assert.equal(rows[1].set_type, "normal");
+  assert.equal(rows[1].completed_at, null);
+  assert.equal(rows[1].reps, 11);
+  assert.equal(
+    harness.calls.filter((call) => Array.isArray(call) && call[0] === "addSet").length,
+    1,
+  );
+  await harness.context.updateSet("set", { reps: 15, completed: true });
+  await harness.context.updateNotes("Keep this note");
+  structureGate.resolve();
+  await addition;
+  await harness.settle();
+  const saved = await harness.offline.readWorkoutDraft("owner");
+  assert.equal(saved.session.workout_session_exercises[0].workout_logged_sets[0].reps, 15);
+  assert.ok(saved.session.workout_session_exercises[0].workout_logged_sets[0].completed_at);
+  assert.equal(saved.session.notes, "Keep this note");
+  assert.equal(harness.context.pendingSetIds.length, 0);
+  assert.equal(
+    harness.context.session.workout_session_exercises[0].workout_logged_sets[1].id,
+    "added",
+  );
+  assert.equal(
+    harness.context.session.workout_session_exercises[0].workout_logged_sets[1].reps,
+    11,
+  );
+  setGate.resolve();
+  await harness.settle();
+});
+
+test("duplicate add taps create one row, including with an older server response", async () => {
+  const structureGate = deferred();
+  const harness = await fixture({ structureGate, legacyAddResponse: true });
+  const first = harness.context.addSet("exercise");
+  const second = harness.context.addSet("exercise");
+  await harness.settle();
+  assert.equal(
+    harness.calls.filter((call) => Array.isArray(call) && call[0] === "addSet").length,
+    1,
+  );
+  structureGate.resolve();
+  await Promise.all([first, second]);
+  await harness.settle();
+  assert.equal(harness.context.session.workout_session_exercises[0].workout_logged_sets.length, 2);
+});
+
+test("a failed addition removes only its pending row and retains edits made during the request", async () => {
+  const structureGate = deferred();
+  const harness = await fixture({ structureGate, rejectAdd: true });
+  const addition = harness.context.addSet("exercise");
+  const failure = assert.rejects(addition, /Connection failed/);
+  await harness.settle();
+  await harness.context.updateSet("set", { reps: 14 });
+  structureGate.resolve();
+  await failure;
+  await harness.settle();
+  assert.equal(harness.context.busy, false);
+  assert.equal(harness.context.pendingSetIds.length, 0);
+  assert.equal(harness.context.session.workout_session_exercises[0].workout_logged_sets.length, 1);
+  assert.equal(
+    harness.context.session.workout_session_exercises[0].workout_logged_sets[0].reps,
+    14,
+  );
+});
+
+test("finish waits for a pending addition and keeps its confirmed row in the saved session", async () => {
+  const structureGate = deferred();
+  const finishGate = deferred();
+  const harness = await fixture({ structureGate, finishGate });
+  await harness.context.updateSet("set", { completed: true });
+  await harness.settle();
+  const addition = harness.context.addSet("exercise");
+  await harness.settle();
+  const finishing = harness.context.finish();
+  await tick();
+  assert.equal(harness.calls.includes("finish"), false);
+  structureGate.resolve();
+  await Promise.all([addition, finishing]);
+  await harness.settle();
+  const rows = harness.context.completedWorkout.workout_session_exercises[0].workout_logged_sets;
+  assert.equal(rows.length, 2);
+  assert.equal(rows[1].id, "added");
+  assert.equal(rows[1].completed_at, null);
+  finishGate.resolve();
+  await harness.settle();
 });

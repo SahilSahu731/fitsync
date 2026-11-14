@@ -77,6 +77,8 @@ type NumberEntryProps = {
   disabled?: boolean;
   compact?: boolean;
   showStepper?: boolean;
+  showLabel?: boolean;
+  allowDrag?: boolean;
 };
 
 const HOLD_DELAY_MS = 400;
@@ -97,6 +99,8 @@ export function NumberEntry({
   disabled = false,
   compact = false,
   showStepper = true,
+  showLabel = true,
+  allowDrag = true,
 }: NumberEntryProps) {
   const live = useRef({
     value,
@@ -206,10 +210,10 @@ export function NumberEntry({
 
   return (
     <View className="min-w-0 flex-1">
-      <Txt className="mb-1 text-[11px] tracking-wider text-muted">{label}</Txt>
+      {showLabel && <Txt className="mb-1 text-[11px] tracking-wider text-muted">{label}</Txt>}
       <View
-        {...pan.panHandlers}
-        className={`flex-row items-center overflow-hidden rounded-xl bg-bg ${disabled ? "opacity-60" : ""}`}
+        {...(allowDrag ? pan.panHandlers : {})}
+        className={`flex-row items-center overflow-hidden rounded-xl bg-bg ${disabled ? "opacity-80" : ""}`}
       >
         <TextInput
           accessibilityLabel={label}
@@ -218,12 +222,16 @@ export function NumberEntry({
           onChangeText={onChange}
           onEndEditing={(e) => onCommit?.(e.nativeEvent.text)}
           keyboardType={step < 1 ? "decimal-pad" : "number-pad"}
+          keyboardAppearance="dark"
+          placeholder="—"
+          placeholderTextColor={C.muted}
+          underlineColorAndroid="transparent"
           selectTextOnFocus
           editable={!disabled}
-          className={`min-w-0 flex-1 text-center font-poppins-bold text-ink ${compact ? "h-11 px-1 text-base" : "h-14 px-2 text-xl"}`}
+          className={`min-w-0 flex-1 text-center font-poppins-semibold text-ink ${compact ? "h-12 px-1 text-base" : "h-14 px-2 text-xl"}`}
         />
         {showStepper && (
-          <View className={`bg-panel ${compact ? "h-11 w-8" : "h-14 w-12"}`}>
+          <View className={`bg-panel ${compact ? "h-12 w-8" : "h-14 w-12"}`}>
             <Pressable
               disabled={disabled}
               accessibilityRole="button"

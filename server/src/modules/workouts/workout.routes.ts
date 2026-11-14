@@ -131,7 +131,8 @@ router.post(
                 getAuth(req).userId,
                 idSchema.parse(req.params.id),
                 idSchema.parse(req.params.exerciseItemId),
-                input
+                input,
+                req.query.compact === "true"
             )
         );
     })

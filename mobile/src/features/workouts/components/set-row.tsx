@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { Pressable, TextInput, View, useWindowDimensions } from "react-native";
+import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useExperience } from "@/src/features/experience/experience-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -20,6 +20,7 @@ export const SetRow = React.memo(function SetRow({
   trackingType = "reps_weight",
   onFocus,
   exerciseId,
+  isNext = false,
 }: {
   exerciseId: string;
   set: WorkoutSet;
@@ -27,10 +28,11 @@ export const SetRow = React.memo(function SetRow({
   restSeconds: number;
   trackingType?: string;
   onFocus?: (exerciseId: string) => void;
+  isNext?: boolean;
 }) {
-  const { updateSet, removeSet, startRest, busy } = useWorkout();
+  const { updateSet, removeSet, startRest, busy, pendingSetIds = [] } = useWorkout();
+  const creating = pendingSetIds.includes(set.id);
   const Alert = useAppAlert();
-  const { width } = useWindowDimensions();
   const { feedback } = useExperience();
   const [weight, setWeight] = useState(
     set.weight_kg == null ? (trackingType === "reps" ? "0" : "") : String(set.weight_kg),
@@ -42,7 +44,7 @@ export const SetRow = React.memo(function SetRow({
   const [distance, setDistance] = useState(
     set.distance_meters == null ? "" : String(set.distance_meters),
   );
-  const [type, setType] = useState(set.set_type);
+  const [type, setType] = useState(set.set_type ?? "normal");
   const [notes, setNotes] = useState(set.notes ?? "");
   const [rpe, setRpe] = useState(set.rpe?.toString() ?? "");
   const [rir, setRir] = useState(set.rir?.toString() ?? "");
@@ -75,7 +77,7 @@ export const SetRow = React.memo(function SetRow({
     setCompleted(!!set.completed_at);
   }, [set.completed_at]);
   useEffect(() => {
-    setType(set.set_type);
+    setType(set.set_type ?? "normal");
   }, [set.set_type]);
   useEffect(() => {
     if (!drawer) {
@@ -100,7 +102,7 @@ export const SetRow = React.memo(function SetRow({
   const weighted = !timed;
   const focus = () => onFocus?.(exerciseId);
   async function save(patch: Patch, toggle = false) {
-    if (inFlight.current || busy) return;
+    if (inFlight.current || busy || creating) return;
     onFocus?.(exerciseId);
     setError("");
     inFlight.current = true;
@@ -172,14 +174,17 @@ export const SetRow = React.memo(function SetRow({
   }
   const appearance = setAppearance(type);
   return (
-    <View className="mb-2 rounded-xl bg-elevated px-2 py-2">
-      <View className="flex-row flex-wrap items-end gap-2">
+    <View
+      className={`mb-2 rounded-2xl border bg-black/15 px-2 pt-2 ${completed ? "border-[#94DBB2]/50" : isNext ? "border-[#ADC7F0]/60" : "border-transparent"}`}
+    >
+      <View className="flex-row items-end gap-2">
         <SetTypePicker
+          table
           value={type}
           number={number}
-          disabled={saving || busy}
+          disabled={saving || busy || creating}
           onChange={async (next) => {
-            if (inFlight.current || busy) return;
+            if (inFlight.current || busy || creating) return;
             focus();
             const previous = type;
             setType(next);
@@ -200,9 +205,11 @@ export const SetRow = React.memo(function SetRow({
         {weighted && (
           <NumberEntry
             compact
-            showStepper={width >= 360}
+            showStepper={false}
+            showLabel={false}
+            allowDrag={false}
             onFocus={focus}
-            label={trackingType === "reps" ? "Added kg" : "Kg"}
+            label={`Set ${number}, ${trackingType === "reps" ? "added weight" : "weight"} in kg`}
             value={weight}
             onChange={(value) => {
               const next = value.replace(",", ".");
@@ -211,44 +218,50 @@ export const SetRow = React.memo(function SetRow({
             }}
             step={0.5}
             max={100000}
-            disabled={saving || busy || completed}
+            disabled={saving || busy || creating || completed}
           />
         )}
         {!timed && (
           <NumberEntry
             compact
-            showStepper={width >= 360}
+            showStepper={false}
+            showLabel={false}
+            allowDrag={false}
             onFocus={focus}
-            label="Reps"
+            label={`Set ${number}, reps`}
             value={reps}
             onChange={(value) => {
               setReps(value);
               persistMetric("reps", value, 1000, true);
             }}
-            disabled={saving || busy || completed}
+            disabled={saving || busy || creating || completed}
           />
         )}
         {timed && (
           <NumberEntry
             compact
-            showStepper={width >= 360}
+            showStepper={false}
+            showLabel={false}
+            allowDrag={false}
             onFocus={focus}
-            label="Seconds"
+            label={`Set ${number}, duration in seconds`}
             value={duration}
             onChange={(value) => {
               setDuration(value);
               persistMetric("durationSeconds", value, 86400, true);
             }}
             max={86400}
-            disabled={saving || busy || completed}
+            disabled={saving || busy || creating || completed}
           />
         )}
         {trackingType === "distance_duration" && (
           <NumberEntry
             compact
-            showStepper={width >= 360}
+            showStepper={false}
+            showLabel={false}
+            allowDrag={false}
             onFocus={focus}
-            label="Meters · optional"
+            label={`Set ${number}, distance in meters, optional`}
             step={0.1}
             value={distance}
             onChange={(value) => {
@@ -257,14 +270,18 @@ export const SetRow = React.memo(function SetRow({
               persistMetric("distanceMeters", next, 1000000);
             }}
             max={1000000}
-            disabled={saving || busy || completed}
+            disabled={saving || busy || creating || completed}
           />
         )}
         <Pressable
           accessibilityRole="checkbox"
-          accessibilityState={{ checked: completed, disabled: saving || busy, busy: saving }}
+          accessibilityState={{
+            checked: completed,
+            disabled: saving || busy || creating,
+            busy: saving,
+          }}
           accessibilityLabel={completed ? `Undo completed set ${number}` : `Log set ${number}`}
-          disabled={saving || busy}
+          disabled={saving || busy || creating}
           onPress={() => {
             if (completed) {
               void save({ completed: false }, true);
@@ -273,40 +290,45 @@ export const SetRow = React.memo(function SetRow({
             const values = metrics();
             if (values) void save({ ...values, setType: type, completed: !completed }, true);
           }}
-          className={`h-11 w-12 items-center justify-center rounded-lg ${completed ? "bg-ink" : "bg-white/10"}`}
+          className={`h-12 w-12 items-center justify-center rounded-xl ${completed ? "bg-white/10" : "bg-transparent"} ${saving || busy || creating ? "opacity-60" : ""}`}
         >
-          <MaterialCommunityIcons
-            name={completed ? "check" : "circle-outline"}
-            size={20}
-            color={completed ? C.bg : C.muted}
-          />
+          {saving ? (
+            <ActivityIndicator size="small" color={C.ink} />
+          ) : (
+            <MaterialCommunityIcons
+              name={completed ? "check-circle" : "circle-outline"}
+              size={25}
+              color={completed ? "#BFECD0" : C.muted}
+            />
+          )}
         </Pressable>
       </View>
       <Pressable
+        accessibilityRole="button"
         onPress={() => {
           focus();
           setDrawer("details");
         }}
-        disabled={saving || busy}
+        disabled={saving || busy || creating}
         accessibilityLabel={`Edit rest, notes and effort for set ${number}`}
-        className="mt-1 min-h-9 flex-row items-center gap-1"
+        className="min-h-11 flex-row items-center gap-1.5 px-1"
       >
         <MaterialCommunityIcons name="timer-outline" size={14} color={C.muted} />
-        <Txt className="text-xs text-muted">{Number(rest) ? `${rest}s` : "Off"}</Txt>
+        <Txt className="text-[10px] text-muted">{Number(rest) ? `${rest}s rest` : "No rest"}</Txt>
         <MaterialCommunityIcons
           name={set.notes ? "note-text" : "note-text-outline"}
           size={14}
           color={set.notes ? appearance.color : C.muted}
         />
-        <Txt className="flex-1 text-xs text-muted" numberOfLines={1}>
+        <Txt className="flex-1 text-[10px] text-muted" numberOfLines={1}>
           {set.notes ||
             [set.rpe != null ? `RPE ${set.rpe}` : "", set.rir != null ? `RIR ${set.rir}` : ""]
               .filter(Boolean)
               .join(" · ") ||
-            "Notes & effort"}
+            "Set options"}
         </Txt>
-        <Txt className="text-[11px] text-muted">
-          {saving ? "Saving…" : completed ? "Logged" : ""}
+        <Txt className={`text-[10px] ${completed ? "text-[#BFECD0]" : "text-muted"}`}>
+          {creating ? "Adding…" : saving ? "Saving…" : completed ? "Logged" : isNext ? "Next" : ""}
         </Txt>
         <MaterialCommunityIcons name="chevron-down" size={14} color={C.muted} />
       </Pressable>
@@ -365,9 +387,9 @@ export const SetRow = React.memo(function SetRow({
           </View>
           {!!error && <Txt className="mt-3 text-red-300">{error}</Txt>}
           <Pressable
-            disabled={saving || busy}
+            disabled={saving || busy || creating}
             onPress={async () => {
-              if (inFlight.current || busy) return;
+              if (inFlight.current || busy || creating) return;
               if (
                 !validNumber(rest, 900, true) ||
                 (rpe !== "" && (!validNumber(rpe, 10) || Number(rpe) < 1)) ||
@@ -403,7 +425,7 @@ export const SetRow = React.memo(function SetRow({
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Remove set ${number}`}
-            disabled={saving || busy}
+            disabled={saving || busy || creating}
             onPress={() => {
               Alert.alert(
                 "Remove set?",

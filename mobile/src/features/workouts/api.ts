@@ -162,12 +162,14 @@ export const workoutApi = {
   addSet: (
     sessionId: string,
     exerciseItemId: string,
-    setType: SetType = "normal"
+    setType: SetType = "normal",
+    expectedOwnerId?: string
   ) =>
-    apiRequest<WorkoutSession>(
-      `/workouts/sessions/${sessionId}/exercises/${exerciseItemId}/sets`,
+    apiRequest<WorkoutSet | WorkoutSession>(
+      `/workouts/sessions/${sessionId}/exercises/${exerciseItemId}/sets?compact=true`,
       {
         method: "POST",
+        expectedOwnerId,
         json: { setType, weightKg: null, reps: null }
       }
     ),

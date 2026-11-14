@@ -143,15 +143,15 @@ export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }
       >
         <View className="flex-1">
           <View className="mb-2 flex-row items-center gap-2">
-            <Txt weight="semibold" className="text-[11px] tracking-widest text-ink">
-              YOUR PROGRAM
+            <Txt weight="medium" className="text-[8px]  text-ink">
+              Your Program
             </Txt>
             {isPro && <ProBadge />}
           </View>
           <Txt weight="semibold" numberOfLines={2} className="text-[22px] leading-7">
             {e.program_name}
           </Txt>
-          <Txt className="mt-1 text-xs text-muted">
+          <Txt className="mt-1 text-xs">
             Week {active.week} of {e.duration_weeks}
           </Txt>
 
@@ -191,7 +191,7 @@ export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }
               }}
             />
             <View className="flex-1">
-              <Txt className="text-[11px] tracking-widest text-muted">{focus.eyebrow}</Txt>
+              <Txt className="text-[11px] tracking-widest text-white">{focus.eyebrow}</Txt>
               <Txt weight="semibold" numberOfLines={2} className="mt-0.5 text-base">
                 {focus.title}
               </Txt>
@@ -202,7 +202,7 @@ export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }
               onPress={open}
               className="h-10 w-10 items-center justify-center rounded-full border border-white/15 bg-white/10"
             >
-              <MaterialCommunityIcons name="arrow-top-right" size={20} color={C.ink} />
+              <MaterialCommunityIcons name="play" size={20} color={C.ink} />
             </Pressable>
           </View>
 
@@ -221,7 +221,7 @@ export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }
               <Txt weight="semibold" className="text-sm">
                 {preview ? "See the week ahead" : "View your plan"}
               </Txt>
-              <MaterialCommunityIcons name="arrow-right" size={18} color={C.ink} />
+              <MaterialCommunityIcons name="play" size={18} color={C.ink} />
             </Pressable>
           )}
         </View>

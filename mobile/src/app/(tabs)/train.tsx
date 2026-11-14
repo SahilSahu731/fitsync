@@ -688,7 +688,7 @@ function TrainAccountScreen() {
             <Pressable
               accessibilityRole="button"
               onPress={() => router.push("/workout")}
-              className="mb-3 overflow-hidden bg-[#83300f] rounded-3xl border p-4"
+              className="mb-3 overflow-hidden bg-[#1c4565] rounded-3xl border p-4"
             >
               <View className="flex-row items-center justify-between">
                 <View className="flex-row items-center gap-2 rounded-full bg-white/5 px-3 py-1.5">
@@ -856,7 +856,7 @@ function TrainAccountScreen() {
 
               <TrainingSection
                 key={`programs-${user?.id}`}
-                title="Programs"
+                title="Saved Programs"
                 count={programs.length}
                 icon="calendar-week"
                 accent="#7DCFFF"
@@ -913,7 +913,7 @@ function TrainAccountScreen() {
 
               <TrainingSection
                 key={`routines-${user?.id}`}
-                title="Routines"
+                title="Saved Routines"
                 count={templates.length}
                 icon="dumbbell"
               >

@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 import { Pressable, View } from "react-native";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Txt } from "@/src/components/ui";
 import { type SetType } from "../api";
 import { SET_TYPES, setAppearance } from "../set-types";
@@ -10,33 +11,36 @@ export function SetTypePicker({
   number,
   onChange,
   disabled = false,
+  table = false,
 }: {
   value: SetType;
   number: number;
   onChange: (value: SetType) => void;
   disabled?: boolean;
+  table?: boolean;
 }) {
   const [open, setOpen] = useState(false);
   const selected = setAppearance(value);
   return (
     <>
-      <View style={{ width: 40 }}>
-        <Txt className="mb-1 text-center text-[11px] text-muted">{number}</Txt>
+      <View style={{ width: 44 }}>
+        {!table && <Txt className="mb-1 text-center text-[11px] text-muted">{number}</Txt>}
         <Pressable
+          accessibilityRole="button"
           disabled={disabled}
           accessibilityLabel={`Set ${number}: ${selected.label}. Choose set type`}
           onPress={() => setOpen(true)}
-          style={{ backgroundColor: `${selected.color}20` }}
-          className="h-11 flex-row items-center justify-center rounded-lg"
+          style={{ backgroundColor: `${selected.color}10` }}
+          className="h-12 items-center justify-center rounded-xl"
         >
-          <Txt weight="semibold" style={{ color: selected.color }}>
-            {selected.letter}
-          </Txt>
-          {/* <MaterialCommunityIcons
-            name="chevron-down"
-            size={15}
-            color={selected.color}
-          /> */}
+          <View className="flex-row items-center gap-0.5">
+            <Txt weight="semibold" className="text-base" style={{ color: selected.color }}>
+              {selected.letter}
+            </Txt>
+            {table && (
+              <MaterialCommunityIcons name="chevron-down" size={11} color={selected.color} />
+            )}
+          </View>
         </Pressable>
       </View>
       {open && (

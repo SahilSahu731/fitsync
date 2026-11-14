@@ -507,7 +507,8 @@ export async function addSet(
         setType: string;
         weightKg: number | null;
         reps: number | null;
-    }
+    },
+    compact = false
 ) {
     await assertActive(userId, sessionId);
 
@@ -532,7 +533,7 @@ export async function addSet(
 
     const position = sets?.length ? sets[0].position + 1 : 0;
 
-    const { error: insertError } = await db
+    const { data: created, error: insertError } = await db
         .from("workout_logged_sets")
         .insert({
             session_exercise_id: exerciseItemId,
@@ -542,11 +543,13 @@ export async function addSet(
             reps: input.reps ?? sets?.[0]?.reps ?? null,
             duration_seconds: sets?.[0]?.duration_seconds ?? null,
             distance_meters: sets?.[0]?.distance_meters ?? null
-        });
+        })
+        .select("*")
+        .single();
 
     checkDbError(insertError, "add workout set");
 
-    return getSession(userId, sessionId);
+    return compact ? created : getSession(userId, sessionId);
 }
 
 export async function removeSet(userId: string, sessionId: string, setId: string) {
