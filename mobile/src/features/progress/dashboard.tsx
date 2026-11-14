@@ -45,6 +45,7 @@ import {
   displayUnit,
 } from "./tracking-cards";
 import { PlusPreview } from "./plus";
+import { TrainingTrends } from "./training-trends";
 
 type ProgressView = "overview" | "health" | "history";
 const VIEWS = [
@@ -164,6 +165,10 @@ export function ProgressDashboard() {
       )
     : METRIC_GROUPS[group].metrics;
   const syncIssue = progress.storageError || progress.workoutError || progress.syncError;
+  const hasTrainingHistory = Boolean(journal.workoutsUpdatedAt || data.allTime.workouts);
+  const trainingLoading = progress.loading || (!hasTrainingHistory && progress.refreshing);
+  const canShowTraining =
+    !trainingLoading && (!(progress.storageError || progress.workoutError) || hasTrainingHistory);
   const canLog = !progress.loading && !progress.storageError;
   const metricProps = {
     daily,
@@ -358,7 +363,7 @@ export function ProgressDashboard() {
             </MotionPressable>
           ))}
         </View>
-        {progress.loading && (
+        {trainingLoading && (
           <View className="mt-4 flex-row items-center gap-3 rounded-2xl bg-panel p-4">
             <ActivityIndicator color={C.ink} />
             <Txt className="text-sm text-muted">Loading your progress…</Txt>
@@ -427,11 +432,12 @@ export function ProgressDashboard() {
                 <MotionPressable
                   key={period}
                   accessibilityRole="button"
+                  accessibilityLabel={`Last ${period} days`}
                   accessibilityState={{ selected: days === period }}
                   onPress={() => setDays(period)}
                   style={{
                     flex: 1,
-                    minHeight: 38,
+                    minHeight: 44,
                     borderRadius: 20,
                     backgroundColor: days === period ? C.elevated : "transparent",
                     alignItems: "center",
@@ -447,18 +453,23 @@ export function ProgressDashboard() {
                 </MotionPressable>
               ))}
             </View>
-            <TrainingHero
-              data={data}
-              days={days}
-              target={goals.weeklyWorkouts}
-              onGoals={() => setGoalEditor(true)}
-              onDay={(date) => {
-                setSelectedDate(date);
-                setHistoryDayOnly(true);
-                navigate("history");
-              }}
-            />
-            <TrainingStats data={data} unit={unit} />
+            {canShowTraining && (
+              <>
+                <TrainingHero
+                  data={data}
+                  days={days}
+                  target={goals.weeklyWorkouts}
+                  onGoals={() => setGoalEditor(true)}
+                  onDay={(date) => {
+                    setSelectedDate(date);
+                    setHistoryDayOnly(true);
+                    navigate("history");
+                  }}
+                />
+                <TrainingStats data={data} unit={unit} />
+                <TrainingTrends data={data} days={days} unit={unit} />
+              </>
+            )}
             <SectionTitle
               title="Daily tracking"
               action="All metrics"

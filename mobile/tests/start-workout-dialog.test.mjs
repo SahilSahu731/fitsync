@@ -436,7 +436,10 @@ test("the personal coach button opens coaching for Pro members and the upgrade p
   const calls = [];
   const billing = { isPro: false, loading: false };
   const screen = mount("../src/features/coaching/home-card.tsx", "CoachHomeButton", {
-    "react-native": { View: "View" },
+    "react-native": { View: "View", StyleSheet: { absoluteFill: {} } },
+    "react-native-reanimated": { __esModule: true, default: { View: "AnimatedView" }, useReducedMotion: () => true, useSharedValue: value => ({ value }), useAnimatedStyle: fn => fn(), FadeInDown: { duration: () => ({ springify: () => ({ damping: () => ({}) }) }) } },
+    "expo-linear-gradient": { LinearGradient: "Gradient" },
+    "expo-blur": { BlurView: "Blur" },
     "expo-router": { router: { push: (route) => calls.push(route) } },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
     "@/src/components/motion": { MotionPressable: "Pressable" },
@@ -446,13 +449,13 @@ test("the personal coach button opens coaching for Pro members and the upgrade p
     "./model": {},
     "./use-coaching": {},
   });
-  screen.render().props.onPress();
+  find(screen.render(), "Pressable")[0].props.onPress();
   billing.isPro = true;
-  screen.render().props.onPress();
+  find(screen.render(), "Pressable")[0].props.onPress();
   assert.deepEqual(calls, ["/pro", "/coach"]);
   billing.loading = true;
   const tree = screen.render();
-  assert.equal(tree.props.disabled, true);
-  tree.props.onPress();
+  assert.equal(find(tree, "Pressable")[0].props.disabled, true);
+  find(tree, "Pressable")[0].props.onPress();
   assert.deepEqual(calls, ["/pro", "/coach"]);
 });

@@ -1,6 +1,6 @@
 # Progress tracking
 
-The mobile Progress screen follows the Train and Library design: neutral rounded panels, readable section headings, and a single mint accent. Its three views are Overview, Health, and History. Health contains Activity, Nutrition, Body, and Recovery categories. The daily selector controls check-ins and the optional history-day filter; chart ranges and workout comparisons always end today. Detailed exercise performance and consistency live in the Training details sheet.
+The five mobile tabs are Home, Train, Progress, Library, and Pro. Progress combines the former Stats and Progress screens. Its three views are Overview, Health, and History. Overview includes workout totals, workout/volume/minutes trends, period comparisons, active training days, and average workout duration. Health contains Activity, Nutrition, Body, and Recovery categories. The daily selector controls check-ins and the optional history-day filter; chart ranges and workout comparisons always end today. Detailed exercise performance, personal records, and consistency live in the Training details sheet. Old `/stats` links redirect to Progress. Pro opens the training and analytics hub described in [pro-hub.md](pro-hub.md); membership and purchases live at `/membership`. The earlier [feature proposal](pro-feature-proposal.md) remains a roadmap for capabilities outside this implementation.
 
 ## Free tracking
 
@@ -18,7 +18,7 @@ Check-ins replace a metric's displayed daily value by appending a correction to 
 
 ## FitSync Pro
 
-The Progress Pro card opens the working subscription screen. Pro adds personal-plan adaptations, explained progression, weekly coaching reviews, weekly meal menus and shopping lists. Recipe browsing, manual logs, history, export and private commitments remain available without Pro. Purchase access is checked by the authenticated server; there is no client premium switch. See [billing.md](billing.md) and [pro-release.md](pro-release.md).
+The Progress Pro card opens the Pro hub, with membership and purchase controls available from its header. Pro adds personal-plan adaptations, explained progression, weekly coaching reviews, weekly meal menus and shopping lists. Recipe browsing, manual logs, history, export and private commitments remain available without Pro. Purchase access is checked by the authenticated server; there is no client premium switch. See [billing.md](billing.md) and [pro-release.md](pro-release.md).
 
 Optional Health Connect / HealthKit imports read steps, sleep and weight after explicit permission, retain source attribution and preserve manual overrides. Opt-in foreground imports run at launch and on returning to the app; there is no background service. See [health-sync.md](health-sync.md). Native permissions and store purchases need a new configured development/release build and real-device verification.
 

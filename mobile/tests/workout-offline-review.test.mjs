@@ -211,6 +211,7 @@ function finishFixture(concurrentStatus, initialStatus = "active") {
     "../../config/supabase.js": { db },
     "../../common/errors.js": { ApiError, checkDbError: error => { if (error) throw error; } },
     "../program-follow/program.service.js": { resolveProgramSlot: async () => null, programError: error => { if (error) throw error; } },
+    "../exercises/exercise.visibility.js": { exerciseVisibility: owner => `owner_user_id.is.null,owner_user_id.eq.${owner}` },
     "./workout.order.js": { planPositionChanges: () => [] }
   });
   return { service, updates: () => updates };

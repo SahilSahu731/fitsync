@@ -65,7 +65,7 @@ test("the bar exposes only the five requested tabs in order", () => {
     screens
       .filter((screen) => screen.props.options.href !== null)
       .map((screen) => screen.props.options.title),
-    ["Home", "Train", "Stats", "Progress", "Library"],
+    ["Home", "Train", "Progress", "Library", "Pro"],
   );
   assert.equal(
     screens.some((screen) => screen.props.name === "profile"),
@@ -73,7 +73,7 @@ test("the bar exposes only the five requested tabs in order", () => {
   );
   // A restored navigation state may list routes in a different order.
   const state = {
-    routes: ["profile", "library", "progress", "stats", "train", "index"].map((name) => ({
+    routes: ["stats", "pro", "library", "progress", "train", "index"].map((name) => ({
       name,
       key: name,
     })),
@@ -89,12 +89,12 @@ test("the bar exposes only the five requested tabs in order", () => {
   const buttons = find(rendered, "TabButton");
   assert.deepEqual(
     buttons.map((button) => button.props.label),
-    ["Home", "Train", "Stats", "Progress", "Library"],
+    ["Home", "Train", "Progress", "Library", "Pro"],
   );
   assert.equal(find(rendered, "TabBar")[0].props.selectedIndex, 2);
   assert.equal(buttons[2].props.focused, true);
   assert.ok(buttons.every((button) => button.props.avatarUrl === undefined));
-  buttons[4].props.onPress();
+  buttons[3].props.onPress();
   assert.deepEqual(calls, ["expand", "feedback", "library"]);
   prevented = true;
   buttons[0].props.onPress();
@@ -124,7 +124,7 @@ function workout(id, date) {
     ],
   };
 }
-function statsFixture() {
+function progressFixture() {
   const state = [];
   let cursor = 0;
   const calls = [];
@@ -133,17 +133,21 @@ function statsFixture() {
     journal: {
       workouts: [workout("recent", "2026-11-12"), workout("older", "2026-10-24")],
       workoutsUpdatedAt: today,
+      events: [],
+      pending: [],
     },
     goals: { weeklyWorkouts: 3 },
     loading: false,
     refreshing: false,
     storageError: "",
     workoutError: "",
+    syncError: "",
     refresh: () => calls.push("refresh"),
   };
-  const exports = load("../src/features/progress/stats-dashboard.tsx", {
+  const exports = load("../src/features/progress/dashboard.tsx", {
     react: {
       useMemo: (fn) => fn(),
+      useRef: (value) => ({ current: value }),
       useState(initial) {
         const index = cursor++;
         if (!(index in state)) state[index] = initial;
@@ -155,7 +159,12 @@ function statsFixture() {
         ];
       },
     },
-    "react-native": { ActivityIndicator: "Loading", RefreshControl: "Refresh", View: "View" },
+    "react-native": {
+      ActivityIndicator: "Loading",
+      RefreshControl: "Refresh",
+      View: "View",
+      TextInput: "Input",
+    },
     "expo-router": { useRouter: () => ({ push: (route) => calls.push(route) }) },
     "@/src/components/motion": { MotionPressable: "Pressable", ScreenEntrance: "Entrance" },
     "@/src/components/tab-bar-motion": { TabScrollView: "ScrollView" },
@@ -163,7 +172,12 @@ function statsFixture() {
     "@/src/constants/theme": { C: { ink: "#FFFFFF", bg: "#000000" } },
     "@/src/context/session": { useSession: () => session },
     "./analytics": analytics,
-    "./charts": { TrendChart: "Chart" },
+    "./training-trends": { TrainingTrends: "Trends" },
+    "./editors": { GoalsEditor: "Goals", MetricEditor: "Editor", Sheet: "Sheet" },
+    "./consistency": { ConsistencySection: "Consistency" },
+    "./metric-detail": { MetricDetail: "MetricDetail" },
+    "./walk-counter": { WalkCounter: "WalkCounter" },
+    "./plus": { PlusPreview: "PlusPreview" },
     "./model": { ...model, localDate: () => today },
     "./strength": { StrengthSection: "Strength" },
     "./tracking-cards": { compact: (value) => String(value), TrainingStats: "Totals" },
@@ -176,26 +190,157 @@ function statsFixture() {
     session,
     render() {
       cursor = 0;
-      return exports.StatsDashboard();
+      return exports.ProgressDashboard();
     },
   };
 }
 
-test("Stats filters saved workouts, converts volume units, and opens real workout details", () => {
-  const fixture = statsFixture();
+test("Progress shares its date range and saved workouts with the merged Stats charts", () => {
+  const fixture = progressFixture();
   let tree = fixture.render();
   assert.equal(find(tree, "Totals")[0].props.data.current.workouts, 2);
+  assert.equal(find(tree, "Trends")[0].props.data.current.workouts, 2);
   find(tree, "Pressable")
     .find((button) => button.props.accessibilityLabel === "Last 7 days")
     .props.onPress();
+  fixture.session.settings.weightUnit = "lb";
   tree = fixture.render();
   assert.equal(find(tree, "Totals")[0].props.data.current.workouts, 1);
+  const trends = find(tree, "Trends")[0].props;
+  assert.equal(trends.days, 7);
+  assert.equal(trends.unit, "lb");
+  assert.equal(trends.data.activity.length, 7);
+  assert.equal(find(tree, "Totals")[0].props.data, trends.data);
+
+  const walk = (node) => {
+    if (!node || typeof node !== "object") return [];
+    if (Array.isArray(node)) return node.flatMap(walk);
+    return [...(node.type?.name === "WorkoutRows" ? [node] : []), ...walk(node.props?.children)];
+  };
+  const historyTab = find(tree, "Pressable").find(
+    (button) =>
+      button.props.accessibilityRole === "tab" &&
+      button.props.children.props.children === "History",
+  );
+  historyTab.props.onPress();
+  tree = fixture.render();
+  const historyRows = walk(tree)[0];
+  assert.equal(
+    historyRows.props.workouts.length,
+    2,
+    "full history is preserved across range changes",
+  );
+  const renderedRows = historyRows.type(historyRows.props);
+  find(renderedRows, "Pressable")[0].props.onPress();
+  assert.equal(fixture.calls[0].pathname, "/workout/history/[id]");
+  assert.equal(fixture.calls[0].params.id, "recent");
+  assert.ok(
+    find(tree, "Input").some(
+      (input) => input.props.accessibilityLabel === "Search saved metrics or notes",
+    ),
+  );
+});
+
+test("Progress retains Health and its check-in controls alongside the merged training view", () => {
+  const fixture = progressFixture();
+  const tree = fixture.render();
+  find(tree, "Pressable")
+    .find(
+      (button) =>
+        button.props.accessibilityRole === "tab" &&
+        button.props.children.props.children === "Health",
+    )
+    .props.onPress();
+  const health = fixture.render();
+  assert.equal(find(health, "Trends").length, 0);
+  assert.ok(
+    find(health, "Input").some(
+      (input) => input.props.accessibilityLabel === "Search all health metrics",
+    ),
+  );
+  assert.ok(
+    find(health, "Pressable").some(
+      (button) => button.props.accessibilityLabel === "Log a health check-in",
+    ),
+  );
+});
+
+test("merged training distinguishes first sync, failures, cached data, and a real empty account", () => {
+  const fixture = progressFixture();
+  fixture.progress.journal = { workouts: [], events: [], pending: [] };
+  fixture.progress.refreshing = true;
+  assert.equal(find(fixture.render(), "Loading").length, 1);
+  assert.equal(find(fixture.render(), "Trends").length, 0);
+  fixture.progress.refreshing = false;
+  fixture.progress.workoutError = "Offline";
+  let tree = fixture.render();
+  assert.equal(find(tree, "Totals").length, 0);
+  find(tree, "Button")
+    .find((button) => button.props.label === "Retry")
+    .props.onPress();
+  assert.deepEqual(fixture.calls, ["refresh"]);
+  fixture.progress.journal = {
+    workouts: [workout("cached", "2026-11-12")],
+    events: [],
+    pending: [],
+    workoutsUpdatedAt: today,
+  };
+  assert.equal(find(fixture.render(), "Trends")[0].props.data.current.workouts, 1);
+  fixture.progress.workoutError = "";
+  fixture.progress.journal = { workouts: [], events: [], pending: [], workoutsUpdatedAt: today };
+  tree = fixture.render();
+  assert.equal(find(tree, "Totals")[0].props.data.current.workouts, 0);
+  assert.equal(find(tree, "Trends")[0].props.data.current.workouts, 0);
+});
+
+function trendsFixture(workouts = [workout("recent", "2026-11-12")]) {
+  const state = [];
+  let cursor = 0;
+  const exports = load("../src/features/progress/training-trends.tsx", {
+    react: {
+      useState(initial) {
+        const index = cursor++;
+        if (!(index in state)) state[index] = initial;
+        return [
+          state[index],
+          (value) => {
+            state[index] = value;
+          },
+        ];
+      },
+    },
+    "react-native": { View: "View" },
+    "expo-router": { useRouter: () => ({ push() {} }) },
+    "@/src/components/motion": { MotionPressable: "Pressable" },
+    "@/src/components/ui": { Txt: "Txt" },
+    "@/src/constants/theme": { C: { ink: "#FFFFFF", bg: "#000000" } },
+    "./analytics": analytics,
+    "./charts": { TrendChart: "Chart" },
+    "./model": model,
+    "./tracking-cards": { compact: String },
+    "./visuals": { Icon: "Icon", PanelCard: "Panel", SectionTitle: "Title", SmallButton: "Button" },
+  });
+  return {
+    render(unit = "kg") {
+      cursor = 0;
+      return exports.TrainingTrends({
+        data: analytics.buildProgress(workouts, [], 7, today, 3),
+        days: 7,
+        unit,
+      });
+    },
+  };
+}
+
+test("merged charts retain workout, volume, and duration series and convert weight units", () => {
+  const fixture = trendsFixture();
+  let tree = fixture.render();
   assert.equal(find(tree, "Chart")[0].props.points.length, 7);
+  assert.equal(find(tree, "Chart")[0].props.unit, "workouts");
   find(tree, "Pressable")
     .find((button) => button.props.accessibilityLabel === "Show volume trend")
     .props.onPress();
-  fixture.session.settings.weightUnit = "lb";
-  tree = fixture.render();
+  tree = fixture.render("lb");
   const chart = find(tree, "Chart")[0].props;
   assert.equal(chart.unit, "lb");
   assert.equal(
@@ -203,35 +348,26 @@ test("Stats filters saved workouts, converts volume units, and opens real workou
     model.weightValue(600, "lb"),
   );
   find(tree, "Pressable")
-    .find((button) => button.props.accessibilityLabel?.startsWith("View Workout recent"))
+    .find((button) => button.props.accessibilityLabel === "Show minutes trend")
     .props.onPress();
-  assert.equal(fixture.calls[0].pathname, "/workout/history/[id]");
-  assert.equal(fixture.calls[0].params.id, "recent");
+  tree = fixture.render();
+  assert.equal(find(tree, "Chart")[0].props.unit, "min");
+  assert.equal(
+    find(tree, "Chart")[0].props.points.reduce((sum, point) => sum + point.value, 0),
+    20,
+  );
 });
 
-test("Stats distinguishes initial loading, failed first sync, cached history, and a real empty account", () => {
-  const fixture = statsFixture();
-  fixture.progress.journal = { workouts: [] };
-  fixture.progress.refreshing = true;
-  assert.equal(find(fixture.render(), "Loading").length, 1);
-  assert.equal(find(fixture.render(), "Totals").length, 0);
-  fixture.progress.refreshing = false;
-  fixture.progress.workoutError = "Offline";
-  let tree = fixture.render();
-  assert.equal(find(tree, "Totals").length, 0);
-  find(tree, "Button")
-    .find((button) => button.props.label === "Try again")
-    .props.onPress();
-  assert.deepEqual(fixture.calls, ["refresh"]);
-  fixture.progress.journal = {
-    workouts: [workout("cached", "2026-11-12")],
-    workoutsUpdatedAt: today,
-  };
-  assert.equal(find(fixture.render(), "Totals")[0].props.data.current.workouts, 1);
-  fixture.progress.workoutError = "";
-  fixture.progress.journal = { workouts: [], workoutsUpdatedAt: today };
-  tree = fixture.render();
-  assert.equal(find(tree, "Totals")[0].props.data.current.workouts, 0);
+test("empty training trends offer a first workout without fabricating a chart", () => {
+  const tree = trendsFixture([]).render();
   assert.equal(find(tree, "Chart").length, 0);
   assert.ok(find(tree, "Button").some((button) => button.props.label === "Go to training"));
+});
+
+test("legacy Stats links redirect into the unified Progress tab", () => {
+  const exports = load("../src/app/stats.tsx", {
+    react: {},
+    "expo-router": { Redirect: "Redirect" },
+  });
+  assert.equal(exports.default().props.href, "/(tabs)/progress");
 });

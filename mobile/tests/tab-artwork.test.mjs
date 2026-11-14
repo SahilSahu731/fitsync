@@ -56,7 +56,7 @@ function svgXml(node) {
   return `<${tag} ${tag === "svg" ? 'xmlns="http://www.w3.org/2000/svg" ' : ""}${attributes}>${children}</${tag}>`;
 }
 
-for (const name of ["home", "train", "stats", "progress", "library"]) {
+for (const name of ["home", "train", "progress", "library", "pro"]) {
   test(`${name} renders white and black native vectors without SVG asset imports`, async () => {
     for (const color of ["#FFFFFF", "#000000", "#FFFFFF"]) {
       const vector = renderArtwork({ name, color });
@@ -71,13 +71,13 @@ for (const name of ["home", "train", "stats", "progress", "library"]) {
       assert.equal(info.width, 24);
       assert.equal(info.height, 24);
       const expected = color === "#FFFFFF" ? 255 : 0;
-      let opaquePixels = 0;
+      let strokeArea = 0;
       for (let offset = 0; offset < data.length; offset += 4) {
+        strokeArea += data[offset + 3] / 255;
         if (data[offset + 3] < 240) continue;
-        opaquePixels++;
         assert.deepEqual([...data.subarray(offset, offset + 3)], [expected, expected, expected]);
       }
-      assert.ok(opaquePixels > 30, `${name} must have clearly visible strokes at tab size`);
+      assert.ok(strokeArea > 30, `${name} must have clearly visible strokes at tab size`);
       const reference = readFileSync(
         new URL(`../assets/tabs/${name}.svg`, import.meta.url),
         "utf8",
@@ -99,7 +99,7 @@ test("custom icon sizes retain the same vector viewBox", () => {
   assert.equal(vector.props.viewBox, "0 0 24 24");
 });
 
-test("only the focused tab is black even while selection geometry is animating", () => {
+test("only the focused tab uses the active color even while selection geometry is animating", () => {
   const jsx = (type, props) => ({ type, props });
   const widths = { get: () => [34, 28, 42, 55, 18] };
   const layout = { get: () => tabModel.tabBarLayout(336, 0, [0.5, 0.5, 0, 0, 0], widths.get()) };
@@ -146,7 +146,7 @@ test("only the focused tab is black even while selection geometry is animating",
           ...(node.type === type ? [node] : []),
           ...[node.props?.children].flat().flatMap((child) => find(child, type)),
         ];
-  const names = ["home", "train", "stats", "progress", "library"];
+  const names = ["home", "train", "progress", "library", "pro"];
   for (let focused = 0; focused < 5; focused++) {
     names.forEach((name, index) => {
       const node = exports.AnimatedTabButton({
@@ -159,7 +159,7 @@ test("only the focused tab is black even while selection geometry is animating",
       });
       const icons = find(node, "TabArtwork");
       assert.equal(icons.length, 1, "a tab must not crossfade white and black image layers");
-      assert.equal(icons[0].props.color, focused === index ? "#000000" : "#FFFFFF");
+      assert.equal(icons[0].props.color, focused === index ? "#000000" : "#E8E4E3");
       assert.equal(icons[0].props.avatarUrl, undefined);
     });
   }

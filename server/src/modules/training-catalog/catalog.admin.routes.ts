@@ -17,6 +17,7 @@ const kinds = {
 const kindSchema = z.enum(["categories", "routines", "programs"]);
 function databaseError(error: { code?: string; message: string } | null) {
   if (error?.code === "23505") throw new ApiError(409, "That slug, exercise position, or schedule day is already in use.");
+  if (error?.code === "23514") throw new ApiError(409, error.message);
   if (error?.code === "23503") throw new ApiError(409, "This record is referenced elsewhere, or a selected record no longer exists.");
   checkDbError(error, "manage training catalog");
 }
@@ -46,7 +47,7 @@ async function publication(kind: "categories" | "routines" | "programs", id: str
 router.get("/exercises", asyncHandler(async (_req, res) => {
   const rows = [];
   for (let offset = 0; ; offset += 500) {
-    const { data, error } = await db.from("exercises").select("id,name,status").order("name").order("id").range(offset, offset + 499);
+    const { data, error } = await db.from("exercises").select("id,name,status").is("owner_user_id", null).order("name").order("id").range(offset, offset + 499);
     databaseError(error); rows.push(...(data ?? []));
     if (!data || data.length < 500) break;
   }

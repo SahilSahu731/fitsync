@@ -1,3 +1,4 @@
+import { exerciseVisibility } from "../exercises/exercise.visibility.js";
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
 import type { CreateTemplateInput } from "./workout.schema.js";
@@ -67,7 +68,9 @@ function templateImage(row: any): string | null {
 }
 
 export async function listTemplates(userId: string) {
-    const { data, error } = await db
+    const data: any[] = [];
+    for (let offset = 0; ; offset += 200) {
+        const { data: page, error } = await db
         .from("workout_templates")
         .select(`
       *,
@@ -80,9 +83,12 @@ export async function listTemplates(userId: string) {
       user_saved_program_routines(id, training_routines(image_url))
     `)
         .eq("user_id", userId)
-        .order("created_at", { ascending: false });
+        .order("created_at", { ascending: false }).order("id").range(offset, offset + 199);
 
-    checkDbError(error, "list workout templates");
+        checkDbError(error, "list workout templates");
+        data.push(...(page ?? []));
+        if ((page?.length ?? 0) < 200) break;
+    }
     return (data ?? []).map(row => {
         const { user_saved_routines, user_saved_program_routines, ...rest } = row as any;
         return {
@@ -128,7 +134,7 @@ export async function createTemplate(
         .from("exercises")
         .select("id")
         .in("id", exerciseIds)
-        .eq("status", "published");
+        .eq("status", "published").or(exerciseVisibility(userId));
 
     checkDbError(exerciseError, "validate exercises");
 
@@ -380,7 +386,7 @@ export async function addSessionExercises(
 ) {
     await assertActive(userId, sessionId);
     const [catalog, existing] = await Promise.all([
-        db.from("exercises").select("id,name,tracking_type").in("id", exerciseIds).eq("status", "published"),
+        db.from("exercises").select("id,name,tracking_type").in("id", exerciseIds).eq("status", "published").or(exerciseVisibility(userId)),
         db.from("workout_session_exercises").select("exercise_id,position").eq("session_id", sessionId)
     ]);
     checkDbError(catalog.error, "validate selected exercises");
@@ -433,7 +439,8 @@ export async function addSessionExercise(
         .from("exercises")
         .select("id, name, tracking_type")
         .eq("id", exerciseId)
-        .eq("status", "published")
+        .or(exerciseVisibility(userId))
+        .or(plannedSets ? `status.eq.published,and(status.eq.archived,owner_user_id.eq.${userId})` : "status.eq.published")
         .maybeSingle();
 
     checkDbError(exerciseError, "find exercise");

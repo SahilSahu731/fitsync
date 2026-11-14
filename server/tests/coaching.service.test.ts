@@ -9,7 +9,7 @@ function mockQueries(t: test.TestContext, results: { data?: any; error?: any }[]
   t.mock.method(db, "from", (table: string) => {
     const q: Query = { table, filters: {} }; queries.push(q); const result = results.shift(); assert.ok(result, `Unexpected query ${table}`);
     const done = () => Promise.resolve({ data: result.data ?? null, error: result.error ?? null });
-    const builder: any = { select(columns: string) { q.columns = columns; return builder; }, eq(key: string, value: unknown) { q.filters[key] = value; return builder; }, gte(key: string, value: unknown) { q.filters[key] = value; return builder; }, order() { return builder; }, range() { return builder; }, limit() { return builder; }, single: done, maybeSingle: done, then(resolve: any, reject: any) { return done().then(resolve, reject); } };
+    const builder: any = { select(columns: string) { q.columns = columns; return builder; }, eq(key: string, value: unknown) { q.filters[key] = value; return builder; }, is(key: string, value: unknown) { q.filters[key] = value; return builder; }, gte(key: string, value: unknown) { q.filters[key] = value; return builder; }, order() { return builder; }, range() { return builder; }, limit() { return builder; }, single: done, maybeSingle: done, then(resolve: any, reject: any) { return done().then(resolve, reject); } };
     return builder;
   }); return queries;
 }
@@ -57,4 +57,13 @@ test("missing deployment and database ownership errors remain clear API failures
   assert.throws(() => service.checked({ code: "PGRST202", message: "RPC missing" }, "test"), (e: any) => e.status === 503 && /migration/.test(e.message));
   assert.throws(() => service.checked({ code: "P0002", message: "Session not found." }, "test"), (e: any) => e.status === 404);
   assert.throws(() => service.checked({ code: "40001", message: "Plan changed" }, "test"), (e: any) => e.status === 409);
+});
+
+test("plan preview uses explicit preferences without saving or changing the active plan", async t => {
+  const exercises = ["squat", "push", "pull", "hinge", "lunge", "rotation", "carry"].map((pattern, i) => ({ id: `exercise-${i}`, name: pattern, tracking_type: "reps_weight", movement_pattern: pattern, difficulty: "beginner", equipment: ["barbell"], primary_muscles: ["chest"], status: "published" }));
+  const q = mockQueries(t, [{ data: { goal: "fitness", experience: "beginner", training_days: 2, minutes_per_workout: 30, equipment: "bodyweight" } }, { data: exercises }]);
+  const rpc = t.mock.method(db, "rpc", () => { throw new Error("Preview must not save"); });
+  const result = await service.previewPlan("owner", { startDate: "2026-11-14", timezone: "Asia/Kolkata", preferences: { goal: "strength", experience: "intermediate", trainingDays: 4, minutesPerWorkout: 60, equipment: "gym" } });
+  assert.equal(result.goal, "strength"); assert.equal(result.trainingDays, 4); assert.equal(result.sessions.length, 16); assert.equal(rpc.mock.callCount(), 0);
+  assert.equal(q[0].filters.user_id, "owner"); assert.equal(q[1].filters.owner_user_id, null);
 });

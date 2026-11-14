@@ -14,18 +14,18 @@ import { C } from "@/src/constants/theme";
 const ARTWORK = {
   index: "home",
   train: "train",
-  stats: "stats",
   progress: "progress",
   library: "library",
+  pro: "pro",
 } as const satisfies Record<string, TabArtworkName>;
 type TabId = keyof typeof ARTWORK;
 
 const TITLES: Record<TabId, string> = {
   index: "Home",
   train: "Train",
-  stats: "Stats",
   progress: "Progress",
   library: "Library",
+  pro: "Pro",
 };
 
 const TAB_IDS = Object.keys(ARTWORK) as TabId[];

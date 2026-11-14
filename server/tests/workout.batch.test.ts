@@ -21,6 +21,7 @@ function mockQueries(t: test.TestContext, results: { data?: any; error?: any }[]
     const builder: any = {
       select(columns: string) { query.columns = columns; return builder; },
       eq(key: string, value: unknown) { query.filters[key] = value; return builder; },
+      or(value: string) { query.filters.visibility = value; return builder; },
       in(key: string, value: unknown) { query.filters[key] = value; return builder; },
       insert(rows: unknown) { query.operation = "insert"; query.rows = rows; return builder; },
       delete() { query.operation = "delete"; return builder; },
@@ -46,6 +47,7 @@ test("batch preserves selection order, adds every initial set, and hydrates only
   assert.equal(queries.length, 7);
   assert.equal(queries[0].filters.user_id, "owner");
   assert.equal(queries[1].filters.status, "published");
+  assert.equal(queries[1].filters.visibility, "owner_user_id.is.null,owner_user_id.eq.owner");
   assert.deepEqual(queries[3].rows.map((row: any) => [row.exercise_id, row.position]), [["b", 4], ["a", 5]]);
   assert.deepEqual(queries[4].rows.map((row: any) => row.session_exercise_id), ["item-b", "item-a"]);
   assert.equal(queries[6].filters.user_id, "owner");

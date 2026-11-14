@@ -3,12 +3,13 @@ import { z } from "zod";
 import { asyncHandler } from "../../common/async-handler.js";
 import { getAuth, requireAuth } from "../../middleware/auth.js";
 import { requirePro } from "../billing/billing.middleware.js";
-import { createPlanSchema, adaptSchema, progressionSchema, rescheduleSchema, startSchema } from "./coaching.schema.js";
+import { createPlanSchema, previewPlanSchema, adaptSchema, progressionSchema, rescheduleSchema, startSchema } from "./coaching.schema.js";
 import * as service from "./coaching.service.js";
 
 const router = Router();
 router.use(requireAuth);
 router.get("/", asyncHandler(async (req, res) => { res.json(await service.state(getAuth(req).userId)); }));
+router.post("/plans/preview", asyncHandler(async (req, res) => { res.json(await service.previewPlan(getAuth(req).userId, previewPlanSchema.parse(req.body))); }));
 router.post("/plans", asyncHandler(async (req, res) => { res.status(201).json(await service.createPlan(getAuth(req).userId, createPlanSchema.parse(req.body))); }));
 router.post("/sessions/:id/start", asyncHandler(async (req, res) => { res.json(await service.startDay(getAuth(req).userId, z.uuid().parse(req.params.id), startSchema.parse(req.body).requestId)); }));
 router.post("/sessions/:id/adapt", requirePro, asyncHandler(async (req, res) => { res.json(await service.adaptDay(getAuth(req).userId, z.uuid().parse(req.params.id), adaptSchema.parse(req.body))); }));

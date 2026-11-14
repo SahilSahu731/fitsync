@@ -9,6 +9,8 @@ const REFRESH_KEY = "fitsync.refresh-token.v1";
 let accessToken: string | null = null;
 
 let sessionGeneration = 0;
+// A non-secret cache scope changes whenever the signed-in identity changes.
+export const apiSessionKey = () => sessionGeneration;
 let credentialWork: Promise<unknown> = Promise.resolve();
 let refreshInFlight: { generation: number; operation: Promise<boolean> } | null = null;
 

@@ -16,6 +16,8 @@ import {
   type MediaMetadata
 } from "./exercise.schema.js";
 
+import { exerciseVisibility } from "./exercise.visibility.js";
+
 const IMAGE_BUCKET = "exercise-images";
 
 export async function getTaxonomies() {
@@ -86,7 +88,7 @@ type CatalogMedia = {
   license: string;
 };
 
-function present(row: Record<string, any>) {
+export function present(row: Record<string, any>) {
   const media: CatalogMedia[] = row.media ?? [];
 
   const formattedMedia = media.map(item => ({
@@ -107,6 +109,7 @@ function present(row: Record<string, any>) {
 
   return {
     id: row.id,
+    isCustom: Boolean(row.owner_user_id),
     slug: row.slug,
     name: row.name,
     description: row.description,
@@ -141,11 +144,12 @@ function present(row: Record<string, any>) {
 
 export async function listExercises(
   input: ExerciseListInput,
-  admin: boolean
+  admin: boolean,
+  ownerId?: string
 ) {
   let query = db
     .from("exercise_catalog")
-    .select("*", { count: "exact" });
+    .select("*", { count: "exact" }).or(exerciseVisibility(ownerId));
 
   if (!(admin && input.includeDrafts === "true")) {
     query = query.eq("status", "published");
@@ -208,11 +212,11 @@ export async function listExercises(
 
 // Small, paginated index for instant client-side workout search.
 // Avoid loading instructions and other detail-only fields for every keystroke.
-export async function listExercisePicker(page: number, search = "") {
+export async function listExercisePicker(page: number, search = "", ownerId?: string) {
   const pageSize = 15;
   let query = db.from("exercise_catalog")
     .select("id,name,tracking_type,region_label,equipment,primary_muscles,secondary_muscles,media")
-    .eq("status", "published");
+    .eq("status", "published").or(exerciseVisibility(ownerId));
   const tokens = search.toLowerCase().replace(/[^a-z0-9-]+/g, " ").trim().split(/\s+/).filter(Boolean);
   for (const token of tokens) {
     query = query.or(`name.ilike.%${token}%,primary_muscles.cs.{${token}},secondary_muscles.cs.{${token}},equipment.cs.{${token}}`);
@@ -239,7 +243,8 @@ export async function listExercisePicker(page: number, search = "") {
 
 export async function getExercise(
   idOrSlug: string,
-  admin = false
+  admin = false,
+  ownerId?: string
 ) {
   const field = z.uuid().safeParse(idOrSlug).success
     ? "id"
@@ -248,7 +253,7 @@ export async function getExercise(
   let query = db
     .from("exercise_catalog")
     .select("*")
-    .eq(field, idOrSlug);
+    .eq(field, idOrSlug).or(exerciseVisibility(ownerId));
 
   if (!admin) {
     query = query.eq("status", "published");
@@ -265,7 +270,7 @@ export async function getExercise(
   return present(data);
 }
 
-async function validateTaxonomies(
+export async function validateTaxonomies(
   input: ExerciseInput
 ) {
   const tax = await getTaxonomies();

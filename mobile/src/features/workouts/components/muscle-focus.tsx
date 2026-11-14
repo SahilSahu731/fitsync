@@ -75,19 +75,27 @@ const regions: { name: string; back?: boolean; d: string }[] = [
     d: "M75 226 L91 226 89 254 78 277 71 258Z M109 226 L125 226 129 258 122 277 111 254Z",
   },
 ];
-function Body({
+export function Body({
   muscles,
   back = false,
   small = false,
+  size = 150,
+  selected,
+  intensity,
+  onSelect,
 }: {
   muscles: string[];
   back?: boolean;
   small?: boolean;
+  size?: number;
+  selected?: string;
+  intensity?: Record<string, number>;
+  onSelect?: (muscle: string) => void;
 }) {
   return (
     <Svg
-      width={small ? 38 : 150}
-      height={small ? 82 : 245}
+      width={small ? 38 : size}
+      height={small ? 82 : (size * 245) / 150}
       viewBox="25 8 150 298"
       accessibilityLabel={`${back ? "Back" : "Front"} muscle map`}
     >
@@ -104,9 +112,16 @@ function Body({
           <Path
             key={region.name}
             d={region.d}
-            fill={muscles.includes(region.name) ? "#C5F460" : "#3D3D46"}
-            stroke="#25252B"
-            strokeWidth="1"
+            fill={
+              muscles.includes(region.name)
+                ? intensity
+                  ? `rgba(212,248,154,${0.3 + Math.min(1, Math.max(0, intensity[region.name] ?? 0)) * 0.7})`
+                  : "#C5F460"
+                : "#3D3D46"
+            }
+            stroke={selected === region.name ? "#F0FFD9" : "#25252B"}
+            strokeWidth={selected === region.name ? 2 : 1}
+            onPress={onSelect ? () => onSelect(region.name) : undefined}
           />
         ))}
     </Svg>

@@ -103,7 +103,7 @@ async function main() {
     error: exerciseError
   } = await db
     .from("exercises")
-    .select("id,name,status")
+    .select("id,name,status").is("owner_user_id", null)
     .eq("status", "published");
 
   if (exerciseError) {

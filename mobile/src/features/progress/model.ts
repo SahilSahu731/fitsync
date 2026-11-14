@@ -170,6 +170,7 @@ export type ProgressWorkout = {
     id: string;
     exercise_id: string;
     exercise_name: string;
+    exercises?: { exercise_muscles?: { role: string; exercise_muscle_groups: { code: string } | null }[] };
     tracking_type: string;
     position: number;
     workout_logged_sets: LoggedSet[];

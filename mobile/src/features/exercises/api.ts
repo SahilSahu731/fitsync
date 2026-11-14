@@ -31,6 +31,7 @@ export type ExerciseMedia = {
 
 export type Exercise = {
   id: string;
+  isCustom?: boolean;
   slug: string;
   name: string;
   description: string;

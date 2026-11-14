@@ -6,7 +6,7 @@ const { renameTemplate } = await import("../src/modules/workouts/workout.service
 test("rename rejects missing, imported, and program routines; permits a personal routine", async t => {
   let rows: Record<string, unknown>[] = []; let writes = 0; const scopes: unknown[] = [];
   t.mock.method(db, "from", () => ({
-    select: () => ({ eq: (key: string, value: string) => { scopes.push([key, value]); return { order: async () => ({ data: rows, error: null }) }; } }),
+    select: () => ({ eq: (key: string, value: string) => { scopes.push([key, value]); const builder: any = { order: () => builder, range: async () => ({ data: rows, error: null }) }; return builder; } }),
     update: () => { writes++; return { eq: () => ({ eq: async (key: string, value: string) => { scopes.push([key, value]); return { error: null }; } }) }; },
   }));
   await assert.rejects(renameTemplate("owner", "routine", "New name"), /not found/);

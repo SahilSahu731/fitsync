@@ -191,3 +191,26 @@ test("set rows use empty and checked circles, with pending additions locking onl
   pendingSetIds = ["row"];
   assert.equal(find(row(false), "Entry").every(entry => entry.props.disabled), true);
 });
+
+test("private exercise picker caches are isolated across account changes and refreshed after edits", async () => {
+  let generation = 1,
+    revision = 1,
+    requests = 0;
+  const picker = load("../src/features/exercises/picker-cache.ts", {
+    "@/src/services/api": {
+      apiSessionKey: () => generation,
+      apiRequest: async () => {
+        requests++;
+        return { items: [{ id: `owner-${generation}-v${revision}` }], hasMore: false };
+      },
+    },
+  });
+  assert.equal((await picker.loadPickerPage("", 1)).items[0].id, "owner-1-v1");
+  generation = 2;
+  assert.equal(picker.cachedPickerPage("", 1), undefined);
+  assert.equal((await picker.loadPickerPage("", 1)).items[0].id, "owner-2-v1");
+  revision = 2;
+  picker.clearPickerCache();
+  assert.equal((await picker.loadPickerPage("", 1)).items[0].id, "owner-2-v2");
+  assert.equal(requests, 3);
+});

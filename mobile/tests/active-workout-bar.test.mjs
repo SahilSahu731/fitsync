@@ -242,10 +242,10 @@ test("the existing layout uses the tab bar glass surface and preserves icon styl
   assert.match(text(tree), /10:00/);
   const trash = button(tree, "Discard");
   assert.equal(trash.props.className, "items-end bg-red-700/40 rounded-full p-2");
-  assert.equal(find(trash, "Icon")[0].props.size, 24);
+  assert.equal(find(trash, "Icon")[0].props.size, 20);
   assert.equal(find(trash, "Icon")[0].props.color, "white");
   const chevron = find(tree, "Icon").find((node) => node.props.name === "chevron-up");
-  assert.equal(chevron.props.size, 28);
+  assert.equal(chevron.props.size, 22);
   assert.equal(chevron.props.color, "white");
 });
 

@@ -23,7 +23,7 @@ async function catalog(): Promise<Exercise[]> {
   const result: Exercise[] = [];
   // Supabase defaults to at most 1,000 rows. Read all published choices with a stable order.
   for (let offset = 0; offset < 10000; offset += 500) {
-    const page = await db.from("exercise_catalog").select("id,name,tracking_type,movement_pattern,difficulty,equipment,primary_muscles,status").eq("status", "published").order("id").range(offset, offset + 499);
+    const page = await db.from("exercise_catalog").select("id,name,tracking_type,movement_pattern,difficulty,equipment,primary_muscles,status").eq("status", "published").is("owner_user_id", null).order("id").range(offset, offset + 499);
     checkDbError(page.error, "load published coaching movements");
     result.push(...(page.data ?? []) as Exercise[]);
     if ((page.data?.length ?? 0) < 500) break;
@@ -66,11 +66,12 @@ async function prior(userId: string, requestId: string, action: string, requestD
   if (result.data.action !== action || !isDeepStrictEqual(result.data.request_data, requestData)) throw new ApiError(409, "This request key was already used for another change. Refresh and try again.");
   return result.data.result_id as string;
 }
-export async function createPlan(userId: string, input: { requestId: string; startDate: string; timezone: string; replacePlanId?: string }) {
+export async function createPlan(userId: string, input: { requestId: string; startDate: string; timezone: string; replacePlanId?: string; preferences?: Profile }) {
   const { requestId, ...requestData } = input;
   const existing = await prior(userId, requestId, "create", requestData);
   if (existing) return getPlan(userId, existing);
-  const [profile, exercises] = await Promise.all([loadProfile(userId), catalog()]);
+  const [savedProfile, exercises] = await Promise.all([loadProfile(userId), catalog()]);
+  const profile = input.preferences ?? savedProfile;
   if (!profile) throw new ApiError(409, "Complete your fitness setup before generating a personal plan.");
   let generated;
   try { generated = generatePlan(profile, exercises, input.startDate); } catch (error) { throw new ApiError(409, error instanceof Error ? error.message : "A suitable plan could not be generated."); }
@@ -78,6 +79,13 @@ export async function createPlan(userId: string, input: { requestId: string; sta
     p_plan: { ...generated, timezone: input.timezone, profile: { ...profile, trainingDays: generated.trainingDays } } });
   checked(result.error, "create coaching plan");
   return getPlan(userId, result.data);
+}
+export async function previewPlan(userId: string, input: { startDate: string; timezone: string; preferences: Profile }) {
+  const saved = await loadProfile(userId);
+  if (!saved) throw new ApiError(409, "Complete your fitness profile first.");
+  const exercises = await catalog();
+  try { return { ...generatePlan(input.preferences, exercises, input.startDate), timezone: input.timezone }; }
+  catch (error) { throw new ApiError(409, error instanceof Error ? error.message : "A suitable plan could not be built."); }
 }
 async function ownedDay(userId: string, dayId: string) {
   const plan = await getPlan(userId);

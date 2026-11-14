@@ -98,8 +98,8 @@ export type HistoryItem = {
 };
 
 export const workoutApi = {
-  templates: () =>
-    apiRequest<WorkoutTemplate[]>("/workouts/templates"),
+  templates: (expectedOwnerId?: string) =>
+    apiRequest<WorkoutTemplate[]>("/workouts/templates", { expectedOwnerId }),
 
   template: (id: string) =>
     apiRequest<WorkoutTemplate>(

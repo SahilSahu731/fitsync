@@ -184,7 +184,7 @@ export async function listSection(
                 "id,slug,name,region_label,difficulty,media",
                 { count: "exact" }
             )
-            .eq("status", "published");
+            .eq("status", "published").is("owner_user_id", null);
 
         if (q) {
             query = query.ilike("name", searchText(q));

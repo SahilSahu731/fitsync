@@ -1,5 +1,7 @@
 # FitSync billing
 
+The Pro tab is a training/analytics hub. Its membership controls open `/membership`, which retains the store purchase, restore and management flow described here. See [pro-hub.md](pro-hub.md) for the current feature scope.
+
 FitSync uses native App Store / Google Play purchases through RevenueCat. The mobile SDK displays store-supplied products/prices and completes purchases or restores. The Express server independently verifies the signed-in user's RevenueCat entitlement before allowing Pro coaching operations. A device flag, request body, receipt-shaped object or webhook product claim cannot grant Pro.
 
 ## Setup

@@ -1,9 +1,8 @@
 import React, { useState } from "react";
 import { ActivityIndicator, Linking, RefreshControl, ScrollView, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { MotionPressable } from "@/src/components/motion";
+import { MotionPressable, ScreenEntrance } from "@/src/components/motion";
 import { PrimaryButton, Txt } from "@/src/components/ui";
 import { useAppAlert } from "@/src/components/app-dialog";
 import { C } from "@/src/constants/theme";
@@ -11,6 +10,24 @@ import { useBilling } from "./billing-context";
 import { legalUrl } from "./model";
 
 const benefits = [
+  {
+    icon: "human" as const,
+    title: "Understand every muscle group",
+    description:
+      "Explore primary and supporting sets, training frequency, volume and the exercises behind each muscle's workload.",
+  },
+  {
+    icon: "trophy-outline" as const,
+    title: "Your complete training record",
+    description:
+      "Explore all-time graphs, exercise history, personal bests and genuine record improvements, plus all 31 health measurements.",
+  },
+  {
+    icon: "calculator-variant-outline" as const,
+    title: "Tools for your next session",
+    description:
+      "Calculate warm-up sets and plate loading, estimate a one-rep max and keep a private library of custom exercises.",
+  },
   {
     icon: "calendar-refresh-outline" as const,
     title: "A plan that fits your day",
@@ -86,16 +103,16 @@ export function ProScreen() {
     </MotionPressable>
   );
   return (
-    <SafeAreaView className="flex-1 bg-bg" edges={["bottom"]}>
+    <ScreenEntrance className="flex-1 bg-bg">
       <View className="flex-row items-center justify-between px-5 py-2">
         <MotionPressable
           accessibilityRole="button"
           accessibilityLabel="Go back"
           disabled={billing.busy}
-          onPress={() => (router.canGoBack() ? router.back() : router.replace("/profile"))}
+          onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/pro"))}
           className="h-11 w-11 items-center justify-center rounded-full bg-panel"
         >
-          <MaterialCommunityIcons name="arrow-left" size={23} color={C.ink} />
+          <MaterialCommunityIcons name="arrow-left" color={C.ink} size={22} />
         </MotionPressable>
         <Txt weight="semibold" className="text-sm">
           FITSYNC PRO
@@ -118,7 +135,7 @@ export function ProScreen() {
             tintColor={C.brand}
           />
         }
-        contentContainerClassName="w-full max-w-2xl self-center p-6 pb-12"
+        contentContainerClassName="w-full max-w-2xl self-center p-6 pb-24"
       >
         <View className="mb-6 mt-4 h-16 w-16 items-center justify-center rounded-[23px] bg-ink">
           <MaterialCommunityIcons name="star-four-points" size={34} color={C.bg} />
@@ -322,6 +339,6 @@ export function ProScreen() {
           )}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </ScreenEntrance>
   );
 }

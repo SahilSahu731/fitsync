@@ -4,6 +4,7 @@ import { ScrollView, View } from "react-native";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import { Sheet } from "./editors";
+import { HistoryChart } from "../pro/history-chart";
 import { TrendChart } from "./charts";
 import { average } from "./analytics";
 import {
@@ -27,6 +28,7 @@ export function MetricDetail({
   onClose,
   onEdit,
   onRangeChange,
+  paged = false,
 }: {
   initialMetric: Metric;
   metrics: MetricEvent[];
@@ -36,8 +38,10 @@ export function MetricDetail({
   unit: "kg" | "lb";
   onClose: () => void;
   onRangeChange?: (days: number) => void;
+  paged?: boolean;
   onEdit: (metric: Metric, date: string) => void;
 }) {
+  const Chart = paged ? HistoryChart : TrendChart;
   const [metric, setMetric] = useState(initialMetric);
   const [group, setGroup] = useState<MetricGroup>(() =>
     (Object.keys(METRIC_GROUPS) as MetricGroup[]).find((key) =>
@@ -147,7 +151,8 @@ export function MetricDetail({
       <Txt className="mb-5 mt-2 text-xs text-muted">
         {rows.length}/{days} days logged · {Math.round((rows.length / days) * 100)}% coverage
       </Txt>
-      <TrendChart
+      <Chart
+        key={metric + start}
         points={rows.map((entry) => ({ date: entry.date, value: convert(entry.value!) }))}
         color={C.ink}
         unit={labelUnit}

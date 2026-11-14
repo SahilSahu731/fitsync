@@ -37,7 +37,7 @@ router.get("/workouts", asyncHandler(async (req, res) => {
   const beforeId = z.uuid().optional().parse(req.query.beforeId);
   if (Boolean(before) !== Boolean(beforeId)) throw new ApiError(400, "Both workout cursor fields are required.");
   let query = db.from("workout_sessions")
-    .select("id,name,status,started_at,finished_at,elapsed_seconds,workout_session_exercises(id,exercise_id,exercise_name,tracking_type,position,workout_logged_sets(id,position,set_type,weight_kg,reps,duration_seconds,distance_meters,rpe,rir,completed_at))")
+    .select("id,name,status,started_at,finished_at,elapsed_seconds,workout_session_exercises(id,exercise_id,exercise_name,tracking_type,position,exercises(exercise_muscles(role,exercise_muscle_groups(code))),workout_logged_sets(id,position,set_type,weight_kg,reps,duration_seconds,distance_meters,rpe,rir,completed_at))")
     .eq("user_id", userId).eq("status", "completed").order("finished_at", { ascending: false }).order("id", { ascending: false }).limit(50);
   if (before && beforeId) query = query.or(`finished_at.lt.${before},and(finished_at.eq.${before},id.lt.${beforeId})`);
   const { data, error } = await query; checkDbError(error, "progress workouts");
