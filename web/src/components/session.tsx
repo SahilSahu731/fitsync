@@ -1,6 +1,7 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useState } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { api, ApiError } from "@/lib/api";
 import type { Account } from "@/lib/types";
 import { Icon } from "./icon";
@@ -38,13 +39,16 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
   useEffect(() => {
-    void reload();
+    const initial = setTimeout(() => void reload(), 0);
     const expired = () => {
       setAccount(null);
       setAdmin(false);
     };
     window.addEventListener("fitsync-session-expired", expired);
-    return () => window.removeEventListener("fitsync-session-expired", expired);
+    return () => {
+      clearTimeout(initial);
+      window.removeEventListener("fitsync-session-expired", expired);
+    };
   }, [reload]);
   async function logout() {
     await fetch("/api/auth/logout", { method: "POST" });
@@ -73,6 +77,7 @@ export function AccessGate({
   adminOnly?: boolean;
 }) {
   const { account, admin, loading, error, reload } = useSession();
+  const pathname = usePathname();
   if (loading)
     return (
       <div
@@ -112,7 +117,7 @@ export function AccessGate({
         </p>
         <Link
           className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          href={`/login?next=${adminOnly ? "/admin/exercises" : "/exercises"}`}
+          href={`/login?next=${encodeURIComponent(adminOnly ? "/admin/exercises" : pathname || "/user/home")}`}
         >
           Continue with Google <Icon name="arrow" size={16} />
         </Link>

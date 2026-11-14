@@ -274,12 +274,12 @@ export function ProAction({
 }
 export function ProPill({
   label,
-  selected,
+  selected = false,
   onPress,
   disabled = false,
 }: {
   label: string;
-  selected: boolean;
+  selected?: boolean;
   onPress: () => void;
   disabled?: boolean;
 }) {
@@ -325,11 +325,13 @@ export function ProButton({
   onPress,
   disabled = false,
   loading = false,
+  secondary = false,
 }: {
   title: string;
   onPress: () => void;
   disabled?: boolean;
   loading?: boolean;
+  secondary?: boolean;
 }) {
   return (
     <MotionPressable
@@ -338,12 +340,18 @@ export function ProButton({
       disabled={disabled || loading}
       onPress={onPress}
       className="min-h-14 flex-row items-center justify-center gap-2 rounded-full px-5"
-      style={{ backgroundColor: PRO.accent, opacity: disabled ? 0.4 : 1 }}
+      style={{ backgroundColor: secondary ? "#FFFFFF0C" : PRO.accent, opacity: disabled ? 0.4 : 1 }}
     >
-      <Txt weight="semibold" className="text-sm" style={{ color: C.bg }}>
+      <Txt weight="semibold" className="text-sm" style={{ color: secondary ? PRO.accent : C.bg }}>
         {loading ? "Working…" : title}
       </Txt>
-      {!loading && <MaterialCommunityIcons name="arrow-right" size={19} color={C.bg} />}
+      {!loading && (
+        <MaterialCommunityIcons
+          name="arrow-right"
+          size={19}
+          color={secondary ? PRO.accent : C.bg}
+        />
+      )}
     </MotionPressable>
   );
 }

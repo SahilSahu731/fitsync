@@ -1,5 +1,7 @@
 # FitSync Pro hub
 
+The daily companion additions, desktop planner, advanced workout methods and migrations 017–020 are documented in [pro-companion.md](pro-companion.md).
+
 The Pro tab is now a working hub rather than a subscription-only screen. Its four sections are Overview, Analytics, Trainer and Tools. Membership and store purchases live at `/membership`; all existing `/pro` links still open the Pro tab.
 
 ## Implemented user journeys

@@ -61,9 +61,10 @@ test("missing deployment and database ownership errors remain clear API failures
 
 test("plan preview uses explicit preferences without saving or changing the active plan", async t => {
   const exercises = ["squat", "push", "pull", "hinge", "lunge", "rotation", "carry"].map((pattern, i) => ({ id: `exercise-${i}`, name: pattern, tracking_type: "reps_weight", movement_pattern: pattern, difficulty: "beginner", equipment: ["barbell"], primary_muscles: ["chest"], status: "published" }));
-  const q = mockQueries(t, [{ data: { goal: "fitness", experience: "beginner", training_days: 2, minutes_per_workout: 30, equipment: "bodyweight" } }, { data: exercises }]);
+  const q = mockQueries(t, [{ data: { goal: "fitness", experience: "beginner", training_days: 2, minutes_per_workout: 30, equipment: "bodyweight" } }, { data: exercises }, { data: null }]);
   const rpc = t.mock.method(db, "rpc", () => { throw new Error("Preview must not save"); });
   const result = await service.previewPlan("owner", { startDate: "2026-11-14", timezone: "Asia/Kolkata", preferences: { goal: "strength", experience: "intermediate", trainingDays: 4, minutesPerWorkout: 60, equipment: "gym" } });
   assert.equal(result.goal, "strength"); assert.equal(result.trainingDays, 4); assert.equal(result.sessions.length, 16); assert.equal(rpc.mock.callCount(), 0);
   assert.equal(q[0].filters.user_id, "owner"); assert.equal(q[1].filters.owner_user_id, null);
+  assert.equal(q[2].table, "companion_records"); assert.equal(q[2].filters.user_id, "owner"); assert.equal(q[2].filters.id, "focus_active");
 });

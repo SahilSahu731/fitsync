@@ -41,6 +41,7 @@ const adminLinks: NavItem[] = [
 
 const userLinks: NavItem[] = [
   { href: "/user/home", label: "Overview", icon: "grid", exact: true },
+  { href: "/user/planner", label: "Training planner", icon: "dumbbell" },
   { href: "/programs", label: "Training library", icon: "dumbbell" },
   { href: "/exercises", label: "Exercise library", icon: "dumbbell" },
   { href: "/user/profile", label: "Fitness profile", icon: "user" },

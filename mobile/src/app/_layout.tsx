@@ -8,11 +8,16 @@ import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 import { Stack } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import * as SplashScreen from "expo-splash-screen";
-import { ProgramProvider, ProgramNotificationLinks } from "@/src/features/program-follow/program-context";
+import {
+  ProgramProvider,
+  ProgramNotificationLinks,
+} from "@/src/features/program-follow/program-context";
 import { HealthSyncBridge } from "@/src/features/health-sync/use-health-sync";
 import { BillingProvider } from "@/src/features/billing/billing-context";
 import { WorkoutProvider } from "@/src/features/workouts/workout-context";
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
+import { CompanionProvider } from "@/src/features/companion/companion-context";
+import { CompanionNativeBridge } from "@/src/features/companion/native-bridge";
 
 import { useFonts } from "expo-font";
 import { Poppins_400Regular } from "@expo-google-fonts/poppins/400Regular";
@@ -93,11 +98,10 @@ function Navigator() {
       </SafeAreaView>
 
       <ProgramNotificationLinks />
+      <CompanionNativeBridge />
       <ActiveWorkoutBar />
 
-      {showReveal ? (
-        <BrandReveal onReady={hideNativeSplash} onDone={finishReveal} />
-      ) : null}
+      {showReveal ? <BrandReveal onReady={hideNativeSplash} onDone={finishReveal} /> : null}
     </View>
   );
 }
@@ -107,22 +111,28 @@ export default function RootLayout() {
 
   return (
     <SafeAreaProvider>
-      <ExperienceProvider><MotionProvider>
-      {missingNativeModules.length ? (
-        <NativeBuildRequired missing={missingNativeModules} />
-      ) : (
-        <SessionProvider>
-          <BillingProvider>
-          <HealthSyncBridge />
-          <AppDialogProvider>
-            <WorkoutProvider>
-              <ProgramProvider><Navigator /></ProgramProvider>
-            </WorkoutProvider>
-          </AppDialogProvider>
-        </BillingProvider>
-        </SessionProvider>
-      )}
-      </MotionProvider></ExperienceProvider>
+      <ExperienceProvider>
+        <MotionProvider>
+          {missingNativeModules.length ? (
+            <NativeBuildRequired missing={missingNativeModules} />
+          ) : (
+            <SessionProvider>
+              <BillingProvider>
+                <HealthSyncBridge />
+                <AppDialogProvider>
+                  <WorkoutProvider>
+                    <CompanionProvider>
+                      <ProgramProvider>
+                        <Navigator />
+                      </ProgramProvider>
+                    </CompanionProvider>
+                  </WorkoutProvider>
+                </AppDialogProvider>
+              </BillingProvider>
+            </SessionProvider>
+          )}
+        </MotionProvider>
+      </ExperienceProvider>
     </SafeAreaProvider>
   );
 }

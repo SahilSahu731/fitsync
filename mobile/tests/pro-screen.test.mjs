@@ -79,6 +79,7 @@ function fixture() {
     "../progress/tracking-cards": { compact: String },
     "../progress/analytics": { workoutDate },
     "../workouts/api": { workoutApi: { templates: async () => [] } },
+    "../companion/today-card": { TodayForYouCard: "TodayForYou" },
     "./analytics": { buildProAnalytics },
     "./analytics-panels": { AnalyticsPanels: "Analytics" },
     "./training-tools": { TrainerPanel: "Trainer", TrainingTools: "Tools" },
@@ -185,6 +186,44 @@ test("membership expiration replaces deep analytics with the membership explanat
       (n) => n.props.title === "Explore membership",
     ),
   );
+});
+
+test("For you opens the daily companion and routes each shortcut to its matching screen", () => {
+  const f = fixture();
+  let tree = f.render();
+  assert.equal(find(tree, "TodayForYou").length, 1);
+  find(tree, "ProAction")
+    .find((node) => node.props.title === "Your daily Pro companion")
+    .props.onPress();
+  tree = f.render();
+  assert.equal(
+    find(tree, "ProPill").find((node) => node.props.label === "For you").props.selected,
+    true,
+  );
+  const walk = (node) =>
+    !node || typeof node !== "object"
+      ? []
+      : Array.isArray(node)
+        ? node.flatMap(walk)
+        : [
+            ...(node.type?.name === "CompanionShortcuts" ? [node] : []),
+            ...walk(node.props?.children),
+          ];
+  const child = walk(tree)[0];
+  assert.ok(child);
+  const shortcuts = child.type(child.props);
+  assert.equal(find(shortcuts, "TodayForYou").length, 1);
+  const actions = find(shortcuts, "ProAction");
+  assert.equal(new Set(actions.map(node => node.props.title)).size, actions.length);
+  for (const [title, tab] of [
+    ["Today’s readiness check-in", "readiness"],
+    ["A muscle focus that fits your plan", "focus"],
+    ["Your monthly training report", "reports"],
+    ["Your desktop planning workspace", "desktop"],
+  ]) {
+    actions.find((node) => node.props.title === title).props.onPress();
+    assert.equal(f.calls.at(-1), `/companion?tab=${tab}`);
+  }
 });
 test("independent training tools remain reachable while workout history is opening", () => {
   const f = fixture();

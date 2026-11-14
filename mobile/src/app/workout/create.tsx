@@ -22,19 +22,15 @@ import {
   routineInput,
   type DraftExercise,
   type DraftSet,
+  validTempo,
+  validSupersetGroup,
 } from "@/src/features/workouts/routine-draft";
 import { ExerciseImage } from "@/src/features/workouts/components/exercise-image";
 import { ExercisePicker } from "@/src/features/workouts/components/exercise-picker";
-import {
-  NumberEntry,
-  WorkoutDrawer,
-} from "@/src/features/workouts/components/workout-controls";
+import { NumberEntry, WorkoutDrawer } from "@/src/features/workouts/components/workout-controls";
 import { SetTypePicker } from "@/src/features/workouts/components/set-type-picker";
 // import { setAppearance } from "@/src/features/workouts/set-types";
-import {
-  ReorderTraining,
-  TrainActions,
-} from "@/src/features/workouts/components/train-actions";
+import { ReorderTraining, TrainActions } from "@/src/features/workouts/components/train-actions";
 
 export default function CreateWorkoutScreen() {
   const Alert = useAppAlert();
@@ -46,6 +42,7 @@ export default function CreateWorkoutScreen() {
   const [reordering, setReordering] = useState(false);
   const [menu, setMenu] = useState<string | null>(null);
   const [details, setDetails] = useState<string | null>(null);
+  const [setOptions, setSetOptions] = useState<{ exerciseId: string; setId: string } | null>(null);
   const [collapsed, setCollapsed] = useState<string[]>([]);
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
@@ -53,18 +50,14 @@ export default function CreateWorkoutScreen() {
   const selected = exercises.find((item) => item.id === menu);
   const detail = exercises.find((item) => item.id === details);
   const patch = (id: string, change: Partial<DraftExercise>) =>
-    setExercises((rows) =>
-      rows.map((row) => (row.id === id ? { ...row, ...change } : row)),
-    );
+    setExercises((rows) => rows.map((row) => (row.id === id ? { ...row, ...change } : row)));
   const patchSet = (id: string, setId: string, change: Partial<DraftSet>) =>
     setExercises((rows) =>
       rows.map((row) =>
         row.id === id
           ? {
               ...row,
-              sets: row.sets.map((set) =>
-                set.id === setId ? { ...set, ...change } : set,
-              ),
+              sets: row.sets.map((set) => (set.id === setId ? { ...set, ...change } : set)),
             }
           : row,
       ),
@@ -83,14 +76,10 @@ export default function CreateWorkoutScreen() {
       router.back();
       return;
     }
-    Alert.alert(
-      "Discard this draft?",
-      "Your unsaved routine changes will be lost.",
-      [
-        { text: "Keep editing", style: "cancel" },
-        { text: "Discard", style: "destructive", onPress: () => router.back() },
-      ],
-    );
+    Alert.alert("Discard this draft?", "Your unsaved routine changes will be lost.", [
+      { text: "Keep editing", style: "cancel" },
+      { text: "Discard", style: "destructive", onPress: () => router.back() },
+    ]);
   };
   const save = async () => {
     if (savingRef.current) return;
@@ -102,11 +91,7 @@ export default function CreateWorkoutScreen() {
       await workoutApi.createTemplate(input);
       router.replace("/(tabs)/train");
     } catch (e) {
-      setError(
-        e instanceof Error
-          ? e.message
-          : "Could not save your routine. Try again.",
-      );
+      setError(e instanceof Error ? e.message : "Could not save your routine. Try again.");
     } finally {
       savingRef.current = false;
       setSaving(false);
@@ -168,11 +153,7 @@ export default function CreateWorkoutScreen() {
             className="min-h-12 font-poppins-bold text-2xl text-ink"
           />
           <View className="mt-3 flex-row items-center pt-3">
-            <MaterialCommunityIcons
-              name="note-text"
-              size={22}
-              color={"white"}
-            />
+            <MaterialCommunityIcons name="note-text" size={22} color={"white"} />
             <TextInput
               value={description}
               onChangeText={setDescription}
@@ -202,11 +183,7 @@ export default function CreateWorkoutScreen() {
               accessibilityLabel="Reorder exercises"
               className="h-11 w-11 items-center justify-center rounded-xl bg-panel"
             >
-              <MaterialCommunityIcons
-                name="sort-variant"
-                color={C.ink}
-                size={23}
-              />
+              <MaterialCommunityIcons name="sort-variant" color={C.ink} size={23} />
             </Pressable>
           )}
         </View>
@@ -217,21 +194,16 @@ export default function CreateWorkoutScreen() {
               Start with your exercises
             </Txt>
             <Txt className="mt-2 text-center text-sm text-muted">
-              Choose multiple exercises, then set your targets. Saving a routine
-              won&apos;t start a workout.
+              Choose multiple exercises, then set your targets. Saving a routine won&apos;t start a
+              workout.
             </Txt>
           </View>
         )}
         {exercises.map((item) => {
-          const timed = ["duration", "distance_duration"].includes(
-            item.exercise.trackingType,
-          );
+          const timed = ["duration", "distance_duration"].includes(item.exercise.trackingType);
           const isCollapsed = collapsed.includes(item.id);
           return (
-            <View
-              key={item.id}
-              className="mb-5 overflow-hidden rounded-[24px] bg-panel"
-            >
+            <View key={item.id} className="mb-5 overflow-hidden rounded-[24px] bg-panel">
               <View className="flex-row items-center px-3 pb-3 pt-4">
                 <Pressable
                   className="min-w-0 flex-1 flex-row items-center"
@@ -243,17 +215,13 @@ export default function CreateWorkoutScreen() {
                     )
                   }
                 >
-                  <ExerciseImage
-                    uri={item.exercise.imageUrl}
-                    name={item.exercise.name}
-                  />
+                  <ExerciseImage uri={item.exercise.imageUrl} name={item.exercise.name} />
                   <View className="ml-3 flex-1">
                     <Txt weight="semibold" className="text-lg" numberOfLines={2}>
                       {item.exercise.name}
                     </Txt>
                     <Txt className="mt-1 text-sm text-muted">
-                      {item.sets.length} sets ·{" "}
-                      {timed ? "Time targets" : "Weight & reps"}
+                      {item.sets.length} sets · {timed ? "Time targets" : "Weight & reps"}
                     </Txt>
                   </View>
                   <MaterialCommunityIcons
@@ -268,11 +236,7 @@ export default function CreateWorkoutScreen() {
                   accessibilityLabel={`Options for ${item.exercise.name}`}
                   className="ml-1 h-11 w-11 items-center justify-center"
                 >
-                  <MaterialCommunityIcons
-                    name="dots-horizontal"
-                    color={"yellow"}
-                    size={26}
-                  />
+                  <MaterialCommunityIcons name="dots-horizontal" color={"yellow"} size={26} />
                 </Pressable>
               </View>
               {!isCollapsed && (
@@ -293,9 +257,7 @@ export default function CreateWorkoutScreen() {
                           compact
                           label="Seconds"
                           value={set.duration}
-                          onChange={(duration) =>
-                            patchSet(item.id, set.id, { duration })
-                          }
+                          onChange={(duration) => patchSet(item.id, set.id, { duration })}
                           max={86400}
                           disabled={saving}
                         />
@@ -303,15 +265,9 @@ export default function CreateWorkoutScreen() {
                         <>
                           <NumberEntry
                             compact
-                            label={
-                              item.exercise.trackingType === "reps"
-                                ? "Added kg"
-                                : "Kg"
-                            }
+                            label={item.exercise.trackingType === "reps" ? "Added kg" : "Kg"}
                             value={set.weight}
-                            onChange={(weight) =>
-                              patchSet(item.id, set.id, { weight })
-                            }
+                            onChange={(weight) => patchSet(item.id, set.id, { weight })}
                             step={1}
                             max={100000}
                             disabled={saving}
@@ -320,13 +276,23 @@ export default function CreateWorkoutScreen() {
                             compact
                             label="Reps"
                             value={set.reps}
-                            onChange={(reps) =>
-                              patchSet(item.id, set.id, { reps })
-                            }
+                            onChange={(reps) => patchSet(item.id, set.id, { reps })}
                             disabled={saving}
                           />
                         </>
                       )}
+                      <Pressable
+                        disabled={saving}
+                        onPress={() => setSetOptions({ exerciseId: item.id, setId: set.id })}
+                        accessibilityLabel={`Tempo and rest for set ${index + 1}`}
+                        className="h-11 w-8 items-center justify-center"
+                      >
+                        <MaterialCommunityIcons
+                          name="tune-vertical"
+                          size={18}
+                          color={set.tempo || set.rest ? "#D4F89A" : C.muted}
+                        />
+                      </Pressable>
                       <Pressable
                         disabled={saving || item.sets.length <= 1}
                         onPress={() =>
@@ -347,8 +313,7 @@ export default function CreateWorkoutScreen() {
                   ))}
                   {item.exercise.trackingType === "distance_duration" && (
                     <Txt className="mb-2 text-sm text-muted">
-                      Plan duration here; log actual distance during your
-                      workout.
+                      Plan duration here; log actual distance during your workout.
                     </Txt>
                   )}
                   <View className="flex-row items-center justify-between">
@@ -357,20 +322,12 @@ export default function CreateWorkoutScreen() {
                       onPress={() => setDetails(item.id)}
                       className="min-h-11 flex-1 flex-row items-center gap-1"
                     >
-                      <MaterialCommunityIcons
-                        name="timer-outline"
-                        size={18}
-                        color={"white"}
-                      />
+                      <MaterialCommunityIcons name="timer-outline" size={18} color={"white"} />
                       <Txt className="text-sm text-white">
                         {Number(item.rest) ? `${item.rest}s rest` : "No rest"} ·{" "}
                         {item.notes ? "Notes added" : "Notes"}
                       </Txt>
-                      <MaterialCommunityIcons
-                        name="chevron-down"
-                        size={18}
-                        color={"white"}
-                      />
+                      <MaterialCommunityIcons name="chevron-down" size={18} color={"white"} />
                     </Pressable>
                     <Pressable
                       disabled={saving || item.sets.length >= 30}
@@ -398,8 +355,8 @@ export default function CreateWorkoutScreen() {
           </Txt>
         </Pressable>
         <Txt className="mt-4 text-center text-xs text-muted">
-          Tap values to type, or slide up and down to adjust. Tap a colored
-          letter to change the set type.
+          Tap values to type, or slide up and down to adjust. Tap a colored letter to change the set
+          type.
         </Txt>
       </ScrollView>
       {picker && (
@@ -412,10 +369,7 @@ export default function CreateWorkoutScreen() {
                 setExercises((rows) => [
                   ...rows,
                   ...items
-                    .filter(
-                      (item) =>
-                        !rows.some((row) => row.exercise.id === item.id),
-                    )
+                    .filter((item) => !rows.some((row) => row.exercise.id === item.id))
                     .map(newDraftExercise),
                 ]);
                 setPicker(false);
@@ -466,9 +420,7 @@ export default function CreateWorkoutScreen() {
                       text: "Remove",
                       style: "destructive",
                       onPress: () =>
-                        setExercises((rows) =>
-                          rows.filter((row) => row.id !== selected.id),
-                        ),
+                        setExercises((rows) => rows.filter((row) => row.id !== selected.id)),
                     },
                   ],
                 ),
@@ -487,9 +439,7 @@ export default function CreateWorkoutScreen() {
           }))}
           onClose={() => setReordering(false)}
           onSave={async (ids) =>
-            setExercises((rows) =>
-              ids.map((id) => rows.find((row) => row.id === id)!),
-            )
+            setExercises((rows) => ids.map((id) => rows.find((row) => row.id === id)!))
           }
         />
       )}
@@ -504,6 +454,22 @@ export default function CreateWorkoutScreen() {
           }}
         />
       )}
+      {setOptions &&
+        (() => {
+          const item = exercises.find((e) => e.id === setOptions.exerciseId);
+          const selectedSet = item?.sets.find((s) => s.id === setOptions.setId);
+          return selectedSet ? (
+            <RoutineSetDetails
+              key={selectedSet.id}
+              set={selectedSet}
+              onClose={() => setSetOptions(null)}
+              onSave={(change) => {
+                patchSet(setOptions.exerciseId, setOptions.setId, change);
+                setSetOptions(null);
+              }}
+            />
+          ) : null;
+        })()}
     </KeyboardAvoidingView>
   );
 }
@@ -518,16 +484,12 @@ function RoutineDetails({
 }) {
   const [rest, setRest] = useState(item.rest);
   const [notes, setNotes] = useState(item.notes);
+  const [group, setGroup] = useState(item.supersetGroup ?? "");
   const [error, setError] = useState("");
   return (
     <WorkoutDrawer title="Rest & exercise notes" onClose={onClose}>
       <Txt className="mb-4 text-white text-lg">{item.exercise.name}</Txt>
-      <NumberEntry
-        label="Rest between sets · seconds"
-        value={rest}
-        onChange={setRest}
-        max={900}
-      />
+      <NumberEntry label="Rest between sets · seconds" value={rest} onChange={setRest} max={900} />
       <TextInput
         multiline
         value={notes}
@@ -538,6 +500,21 @@ function RoutineDetails({
         accessibilityLabel="Exercise notes"
         className="font-poppins-regular mt-5 min-h-2 rounded-xl bg-bg p-4 text-ink"
       />
+      <Txt className="mb-2 mt-5 text-xs text-muted">Superset group (optional)</Txt>
+      <TextInput
+        value={group}
+        onChangeText={setGroup}
+        maxLength={24}
+        autoCapitalize="characters"
+        placeholder="A"
+        placeholderTextColor={C.muted}
+        accessibilityLabel="Routine superset group"
+        className="min-h-12 rounded-xl bg-bg p-4 text-ink"
+      />
+      <Txt className="mt-2 text-xs leading-5 text-muted">
+        Use the same group on paired exercises. Sets alternate by round, with rest after the last
+        member.
+      </Txt>
       {!!error && <Txt className="mt-3 text-red-300">{error}</Txt>}
       <Pressable
         onPress={() => {
@@ -550,12 +527,89 @@ function RoutineDetails({
             setError("Rest must be a whole number from 0 to 900 seconds.");
             return;
           }
-          onSave({ rest, notes });
+          try {
+            if (group.trim()) validSupersetGroup(group);
+            onSave({ rest, notes, supersetGroup: group.trim() });
+          } catch (error) {
+            setError(error instanceof Error ? error.message : "Check the superset group.");
+          }
         }}
         className="mt-5 items-center rounded-xl bg-ink p-4"
       >
         <Txt weight="semibold" className="text-bg">
           Save details
+        </Txt>
+      </Pressable>
+    </WorkoutDrawer>
+  );
+}
+
+function RoutineSetDetails({
+  set,
+  onClose,
+  onSave,
+}: {
+  set: DraftSet;
+  onClose: () => void;
+  onSave: (change: Partial<DraftSet>) => void;
+}) {
+  const [rest, setRest] = useState(set.rest ?? "");
+  const [tempo, setTempo] = useState(set.tempo ?? "");
+  const [error, setError] = useState("");
+  return (
+    <WorkoutDrawer title="Set tempo & rest" onClose={onClose}>
+      <Txt className="mb-2 text-xs text-muted">
+        Rest override · seconds (blank uses exercise default)
+      </Txt>
+      <TextInput
+        value={rest}
+        onChangeText={setRest}
+        keyboardType="number-pad"
+        placeholder="Default"
+        placeholderTextColor={C.muted}
+        accessibilityLabel="Routine set rest override"
+        className="min-h-12 rounded-xl bg-bg p-4 text-ink"
+      />
+      <Txt className="mb-2 mt-5 text-xs text-muted">Tempo · lowering / pause / lifting / pause</Txt>
+      <TextInput
+        value={tempo}
+        onChangeText={setTempo}
+        autoCapitalize="characters"
+        maxLength={7}
+        placeholder="3-1-X-0"
+        placeholderTextColor={C.muted}
+        accessibilityLabel="Routine set tempo"
+        className="min-h-12 rounded-xl bg-bg p-4 text-ink"
+      />
+      <Txt className="mt-2 text-xs leading-5 text-muted">
+        Numbers are seconds. X means an intended explosive movement. For drop sets or rest-pause,
+        log each segment as a separate set with its own load and rest.
+      </Txt>
+      {!!error && (
+        <Txt accessibilityRole="alert" className="mt-3 text-red-300">
+          {error}
+        </Txt>
+      )}
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => {
+          if (
+            rest.trim() &&
+            (!Number.isInteger(Number(rest)) || Number(rest) < 0 || Number(rest) > 900)
+          ) {
+            setError("Set rest must be blank or a whole number from 0 to 900 seconds.");
+            return;
+          }
+          try {
+            onSave({ rest: rest.trim(), tempo: tempo.trim() ? validTempo(tempo) : "" });
+          } catch (error) {
+            setError(error instanceof Error ? error.message : "Check the tempo.");
+          }
+        }}
+        className="mt-5 min-h-12 items-center justify-center rounded-xl bg-ink"
+      >
+        <Txt weight="medium" className="text-bg">
+          Save set options
         </Txt>
       </Pressable>
     </WorkoutDrawer>

@@ -6,11 +6,13 @@ import { requireAuth, getAuth } from "../../middleware/auth.js";
 
 import {
     createTemplateSchema,
+    editTemplateSchema,
     updateSetSchema,
     addSessionExerciseSchema,
     addSessionExercisesSchema,
     addSessionSetSchema,
-    finishWorkoutSchema
+    finishWorkoutSchema,
+    updateSessionExerciseSchema
 } from "./workout.schema.js";
 
 import * as service from "./workout.service.js";
@@ -42,8 +44,11 @@ router.get("/templates/:id", asyncHandler(async (req, res) => {
 }));
 
 router.patch("/templates/:id", asyncHandler(async (req, res) => {
-    const { name } = z.object({ name: z.string().trim().min(1).max(120) }).parse(req.body);
+    const { name } = z.object({ name: z.string().trim().min(1).max(100) }).parse(req.body);
     res.json(await service.renameTemplate(getAuth(req).userId, idSchema.parse(req.params.id), name));
+}));
+router.put("/templates/:id", asyncHandler(async (req, res) => {
+    res.json(await service.editTemplate(getAuth(req).userId, idSchema.parse(req.params.id), editTemplateSchema.parse(req.body)));
 }));
 
 router.delete("/templates/:id", asyncHandler(async (req, res) => {
@@ -99,6 +104,12 @@ router.patch("/sessions/:id/exercises/order", asyncHandler(async (req, res) => {
 
 router.delete("/sessions/:id/exercises/:exerciseItemId", asyncHandler(async (req, res) => {
     res.json(await service.removeSessionExercise(getAuth(req).userId, idSchema.parse(req.params.id), idSchema.parse(req.params.exerciseItemId)));
+}));
+
+router.patch("/sessions/:id/exercises/:exerciseItemId", asyncHandler(async (req, res) => {
+    const input = updateSessionExerciseSchema.parse(req.body);
+    res.json(await service.updateSessionExercise(getAuth(req).userId, idSchema.parse(req.params.id),
+        idSchema.parse(req.params.exerciseItemId), input));
 }));
 
 router.post("/sessions/:id/exercises/batch", asyncHandler(async (req, res) => {

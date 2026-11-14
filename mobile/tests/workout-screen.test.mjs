@@ -5,8 +5,9 @@ import vm from "node:vm";
 import ts from "typescript";
 import { nextWorkoutSet, workoutTime } from "../src/features/workouts/session-progress.ts";
 import { workoutSummary } from "../src/features/workouts/summary.ts";
+import { workoutControlsSnapshot } from "../src/features/companion/native-model.ts";
 
-function screen({ completed = false, busy = false } = {}) {
+function screen({ completed = false, busy = false, isPro = true } = {}) {
   const slots = [];
   let cursor = 0;
   const frames = [];
@@ -15,6 +16,7 @@ function screen({ completed = false, busy = false } = {}) {
   const routes = [];
   const listeners = {};
   let finishes = 0;
+  let focusedExerciseId;
   const session = {
     id: "session",
     name: "Upper body",
@@ -64,6 +66,14 @@ function screen({ completed = false, busy = false } = {}) {
       return callback;
     },
   };
+  const billing = { isPro };
+  const progress = {
+    journal: {
+      workouts: [
+        { ...session, id: "previous", status: "completed", finished_at: "2026-11-13T11:00:00Z" },
+      ],
+    },
+  };
   const C = { bg: "#000", ink: "#fff", muted: "#aaa", brand: "#C5F460" };
   const deps = {
     react: React,
@@ -93,10 +103,17 @@ function screen({ completed = false, busy = false } = {}) {
     },
     "@/src/features/experience/experience-context": { useExperience: () => ({ feedback() {} }) },
     "@/src/features/experience/keep-workout-awake": { useWorkoutAwake() {} },
+    "@/src/features/progress/use-progress": { useProgress: () => progress },
+    "@/src/features/progress/model": { localDate: () => "2026-11-14" },
+    "@/src/features/billing/billing-context": { useBilling: () => billing },
     "@/src/features/workouts/workout-context": {
       useWorkout: () => ({
         session,
         busy,
+        focusedExerciseId,
+        setFocusedExerciseId: (id) => {
+          focusedExerciseId = id;
+        },
         finish: async () => {
           finishes++;
         },
@@ -149,6 +166,14 @@ function screen({ completed = false, busy = false } = {}) {
   });
   return {
     session,
+    billing,
+    progress,
+    get focusedExerciseId() {
+      return focusedExerciseId;
+    },
+    setFocusedExerciseId(id) {
+      focusedExerciseId = id;
+    },
     alerts,
     routes,
     scrolls,
@@ -202,6 +227,63 @@ test("the live screen passes its exercise list to the overview", () => {
   const overview = find(app.render(), (node) => node.type === "Overview");
   assert.equal(overview.props.exercises.length, 1);
   assert.equal(overview.props.exercises[0].exercise_name, "Bench press");
+});
+
+test("phone and watch next-set guidance follows the shared focused exercise", () => {
+  const app = screen();
+  app.session.status = "active";
+  app.session.workout_session_exercises.push({
+    ...app.session.workout_session_exercises[0],
+    id: "row",
+    exercise_name: "Row",
+    position: 1,
+    workout_logged_sets: [
+      {
+        ...app.session.workout_session_exercises[0].workout_logged_sets[1],
+        id: "row-set",
+        position: 0,
+        completed_at: null,
+      },
+    ],
+  });
+  let tree = app.render();
+  const row = find(
+    tree,
+    (node) => node.type === "ExerciseCard" && node.props.exercise.id === "row",
+  );
+  row.props.onFocus("row");
+  tree = app.render();
+  assert.equal(app.focusedExerciseId, "row");
+  assert.equal(find(tree, (node) => node.type === "Overview").props.currentId, "row");
+  const watch = workoutControlsSnapshot("owner", app.session, null, app.focusedExerciseId);
+  assert.equal(watch.nextSetId, "row-set");
+  assert.ok(button(tree, "Go to Row, set 1"));
+  // A focus change from another consumer updates the phone on the next render.
+  app.setFocusedExerciseId("bench");
+  tree = app.render();
+  assert.ok(button(tree, "Go to Bench press, set 2"));
+  assert.equal(
+    workoutControlsSnapshot("owner", app.session, null, app.focusedExerciseId).nextSetId,
+    "set-1",
+  );
+});
+
+test("Pro working-set guidance receives canonical history and superset session state, and expires immediately", () => {
+  const app = screen();
+  let card = find(app.render(), (node) => node.type === "ExerciseCard");
+  assert.equal(card.props.history, app.progress.journal.workouts);
+  assert.equal(card.props.sessionExercises[0], app.session.workout_session_exercises[0]);
+  assert.equal(card.props.sessionExercises.length, app.session.workout_session_exercises.length);
+  assert.equal(card.props.today, "2026-11-14");
+  app.billing.isPro = false;
+  card = find(app.render(), (node) => node.type === "ExerciseCard");
+  assert.equal(card.props.history, undefined);
+  assert.equal(card.props.sessionExercises[0], app.session.workout_session_exercises[0]);
+  const free = screen({ isPro: false });
+  assert.equal(
+    find(free.render(), (node) => node.type === "ExerciseCard").props.history,
+    undefined,
+  );
 });
 
 test("exercises start collapsed and next set measures the row against the scrolled viewport", () => {

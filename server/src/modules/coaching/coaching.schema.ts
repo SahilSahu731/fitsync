@@ -15,4 +15,5 @@ export const adaptSchema = z.object({
 export const progressionSchema = z.object({ ...request, expectedRevision: z.number().int().nonnegative(), incrementKg: z.number().finite().min(0.25).max(10).optional(), preview: z.boolean().optional() }).strict();
 export const rescheduleSchema = z.object({ ...request, expectedRevision: z.number().int().nonnegative(), date: z.iso.date() }).strict();
 export const startSchema = z.object(request).strict();
+export const focusSchema = z.object({ ...request, planId: z.uuid(), expectedRevisions: z.array(z.object({ id: z.uuid(), revision: z.number().int().nonnegative() }).strict()).max(100), muscle: z.string().regex(/^[a-z][a-z0-9-]{0,39}$/), startsOn: z.iso.date(), weeks: z.union([z.literal(4), z.literal(8)]), additionalSetsPerWeek: z.number().int().min(1).max(2), preview: z.boolean().optional() }).strict().refine(v => new Set(v.expectedRevisions.map(d => d.id)).size === v.expectedRevisions.length, "Include each session only once.");
 export type AdaptInput = z.infer<typeof adaptSchema>;

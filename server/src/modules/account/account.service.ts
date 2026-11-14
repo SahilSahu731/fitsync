@@ -2,8 +2,8 @@
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
 
-export async function deleteUserAccount(userId: string) {
-  const bucket = db.storage.from("profile-images");
+async function clearOwnedStorage(userId: string, bucketName: string, optional = false) {
+  const bucket = db.storage.from(bucketName);
 
   // Collect all objects owned by this user.
   const paths: string[] = [];
@@ -16,7 +16,9 @@ export async function deleteUserAccount(userId: string) {
     });
 
     if (error) {
-      throw new ApiError(502, "Could not inspect profile storage.");
+      // Older installations may not have deployed the companion migration yet.
+      if (optional && /bucket.*not found/i.test(error.message)) return;
+      throw new ApiError(502, "Could not inspect your private image storage.");
     }
 
     const files = (data || [])
@@ -29,19 +31,21 @@ export async function deleteUserAccount(userId: string) {
     offset += 100;
   }
 
-  // Supabase Storage deletion is separate from SQL.
-  // A retryable cleanup job should be added before
-  // we have large volumes of user-generated media.
-
+  // Collect before removing so offset pagination cannot skip objects.
   for (let i = 0; i < paths.length; i += 100) {
     const batch = paths.slice(i, i + 100);
 
     const { error } = await bucket.remove(batch);
 
     if (error) {
-      throw new ApiError(502, "Could not delete profile files.");
+      throw new ApiError(502, "Could not delete your private image files. Please retry account deletion.");
     }
   }
+}
+
+export async function deleteUserAccount(userId: string) {
+  await clearOwnedStorage(userId, "profile-images");
+  await clearOwnedStorage(userId, "progress-photos", true);
 
   const { data, error } = await db
     .from("app_users")

@@ -40,6 +40,8 @@ type WorkoutContextType = {
   addingSetExerciseIds: string[];
   pendingSetIds: string[];
   restTimer: RestTimer | null;
+  focusedExerciseId: string | undefined;
+  setFocusedExerciseId: (id: string | undefined) => void;
   refresh: () => Promise<void>;
   ensureSynced: () => Promise<void>;
   start: (templateId?: string, programSlotId?: string) => Promise<void>;
@@ -47,6 +49,10 @@ type WorkoutContextType = {
   addExercises: (ids: string[]) => Promise<void>;
   removeExercise: (id: string) => Promise<void>;
   reorderExercises: (ids: string[]) => Promise<void>;
+  updateExercise: (
+    id: string,
+    input: { restSeconds?: number; supersetGroup?: string | null },
+  ) => Promise<void>;
   addSet: (id: string, type?: SetType) => Promise<void>;
   removeSet: (id: string) => Promise<void>;
   updateSet: (id: string, data: Parameters<typeof workoutApi.updateSet>[2]) => Promise<void>;
@@ -127,6 +133,34 @@ function WorkoutAccountProvider({
   );
   const [loading, setLoading] = useState(true);
   const [busy, setBusy] = useState(false);
+  // Focus is local navigation state. Scope it to the current account/session;
+  // it never enters the offline workout draft or a server mutation.
+  const [exerciseFocus, setExerciseFocus] = useState<{
+    sessionId: string;
+    exerciseId: string;
+  } | null>(null);
+  const focusSession = useRef<string | undefined>(undefined);
+  useLayoutEffect(() => {
+    focusSession.current = session?.id;
+  }, [session?.id]);
+  const focusedExerciseId =
+    exerciseFocus &&
+    session &&
+    exerciseFocus.sessionId === session.id &&
+    session.workout_session_exercises.some((exercise) => exercise.id === exerciseFocus.exerciseId)
+      ? exerciseFocus.exerciseId
+      : undefined;
+  const setFocusedExerciseId = useCallback(
+    (id: string | undefined) => {
+      if (!ownerId || owner.current !== ownerId || focusSession.current !== session?.id) return;
+      setExerciseFocus(
+        session && id && session.workout_session_exercises.some((exercise) => exercise.id === id)
+          ? { sessionId: session.id, exerciseId: id }
+          : null,
+      );
+    },
+    [ownerId, session],
+  );
   const [syncError, setSyncError] = useState(false);
   const syncing = useRef<{ ownerId: string; operation: Promise<WorkoutDraft | null> } | null>(null);
   const restRevision = useRef(0);
@@ -303,6 +337,13 @@ function WorkoutAccountProvider({
     if (!session) throw new Error("No active workout.");
     await run(() => workoutApi.addExercises(session.id, ids));
   };
+  const updateExercise = async (
+    id: string,
+    input: { restSeconds?: number; supersetGroup?: string | null },
+  ) => {
+    if (!session) throw new Error("No active workout.");
+    await run(() => workoutApi.updateExercise(session.id, id, input, ownerId));
+  };
   const addSet = async (id: string, type: SetType = "normal") => {
     if (!ownerId || !activeSession) throw new Error("No active workout.");
     if (operationLock.current) throw new Error("A workout change is already in progress.");
@@ -462,6 +503,8 @@ function WorkoutAccountProvider({
         addingSetExerciseIds: pendingAdds.map((add) => add.exerciseId),
         pendingSetIds: pendingAdds.map((add) => add.set.id),
         restTimer,
+        focusedExerciseId,
+        setFocusedExerciseId,
         refresh,
         ensureSynced: requireSynced,
         start,
@@ -469,6 +512,7 @@ function WorkoutAccountProvider({
         addExercises,
         removeExercise,
         reorderExercises,
+        updateExercise,
         addSet,
         removeSet,
         updateSet,

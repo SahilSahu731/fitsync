@@ -1,11 +1,6 @@
 import { apiRequest } from "@/src/services/api";
 
-export type SetType =
-  | "warmup"
-  | "normal"
-  | "heavy"
-  | "failure"
-  | "drop";
+export type SetType = "warmup" | "normal" | "heavy" | "failure" | "drop" | "rest_pause";
 
 export type WorkoutSet = {
   id: string;
@@ -19,6 +14,8 @@ export type WorkoutSet = {
   rir: number | null;
   completed_at: string | null;
   notes: string;
+  rest_seconds?: number | null;
+  tempo?: string | null;
 };
 
 export type SessionExercise = {
@@ -30,6 +27,7 @@ export type SessionExercise = {
   tracking_type: string;
   position: number;
   rest_seconds: number;
+  superset_group?: string | null;
   notes: string;
   workout_logged_sets: WorkoutSet[];
 };
@@ -52,6 +50,8 @@ export type TemplateSet = {
   target_reps: number | null;
   target_weight?: number | null;
   target_duration_seconds: number | null;
+  rest_seconds?: number | null;
+  tempo?: string | null;
 };
 
 export type TemplateExercise = {
@@ -59,7 +59,12 @@ export type TemplateExercise = {
   position: number;
   notes?: string;
   rest_seconds?: number;
-  exercises?: { name: string; exercise_media?: { kind: string; delivery_url: string | null; sort_order: number }[] };
+  superset_group?: string | null;
+  exercises?: {
+    name: string;
+    tracking_type?: string;
+    exercise_media?: { kind: string; delivery_url: string | null; sort_order: number }[];
+  };
   workout_template_sets?: TemplateSet[];
 };
 
@@ -80,11 +85,14 @@ export type TemplateInput = {
     exerciseId: string;
     notes: string;
     restSeconds: number;
+    supersetGroup?: string | null;
     sets: {
       setType: SetType;
       targetReps: number | null;
       targetWeight: number | null;
       targetDurationSeconds?: number | null;
+      restSeconds?: number | null;
+      tempo?: string | null;
     }[];
   }[];
 };
@@ -101,15 +109,12 @@ export const workoutApi = {
   templates: (expectedOwnerId?: string) =>
     apiRequest<WorkoutTemplate[]>("/workouts/templates", { expectedOwnerId }),
 
-  template: (id: string) =>
-    apiRequest<WorkoutTemplate>(
-      `/workouts/templates/${id}`
-    ),
+  template: (id: string) => apiRequest<WorkoutTemplate>(`/workouts/templates/${id}`),
 
   createTemplate: (data: TemplateInput) =>
     apiRequest<WorkoutTemplate>("/workouts/templates", {
       method: "POST",
-      json: data
+      json: data,
     }),
 
   renameTemplate: (id: string, name: string) =>
@@ -117,7 +122,7 @@ export const workoutApi = {
 
   deleteTemplate: (id: string) =>
     apiRequest<void>(`/workouts/templates/${id}`, {
-      method: "DELETE"
+      method: "DELETE",
     }),
 
   active: (expectedOwnerId?: string) =>
@@ -127,56 +132,65 @@ export const workoutApi = {
     apiRequest<WorkoutSession>("/workouts/start", {
       method: "POST",
       expectedOwnerId,
-      json: { templateId, programSlotId }
+      json: { templateId, programSlotId },
     }),
 
-  session: (id: string) =>
-    apiRequest<WorkoutSession>(
-      `/workouts/sessions/${id}`
-    ),
+  session: (id: string) => apiRequest<WorkoutSession>(`/workouts/sessions/${id}`),
 
-  addExercise: (
-    sessionId: string,
-    exerciseId: string,
-    restSeconds = 90
-  ) =>
-    apiRequest<WorkoutSession>(
-      `/workouts/sessions/${sessionId}/exercises`,
-      {
-        method: "POST",
-        json: { exerciseId, restSeconds }
-      }
-    ),
+  addExercise: (sessionId: string, exerciseId: string, restSeconds = 90) =>
+    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises`, {
+      method: "POST",
+      json: { exerciseId, restSeconds },
+    }),
 
   addExercises: (sessionId: string, exerciseIds: string[]) =>
     apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/batch`, {
-      method: "POST", json: { exerciseIds }
+      method: "POST",
+      json: { exerciseIds },
     }),
 
   removeExercise: (sessionId: string, exerciseItemId: string) =>
-    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/${exerciseItemId}`, { method: "DELETE" }),
+    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/${exerciseItemId}`, {
+      method: "DELETE",
+    }),
+
+  updateExercise: (
+    sessionId: string,
+    exerciseItemId: string,
+    data: { restSeconds?: number; supersetGroup?: string | null },
+    expectedOwnerId?: string,
+  ) =>
+    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/${exerciseItemId}`, {
+      method: "PATCH",
+      json: data,
+      expectedOwnerId,
+    }),
 
   reorderExercises: (sessionId: string, exerciseIds: string[]) =>
-    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/order`, { method: "PATCH", json: { exerciseIds } }),
+    apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/exercises/order`, {
+      method: "PATCH",
+      json: { exerciseIds },
+    }),
 
   addSet: (
     sessionId: string,
     exerciseItemId: string,
     setType: SetType = "normal",
-    expectedOwnerId?: string
+    expectedOwnerId?: string,
   ) =>
     apiRequest<WorkoutSet | WorkoutSession>(
       `/workouts/sessions/${sessionId}/exercises/${exerciseItemId}/sets?compact=true`,
       {
         method: "POST",
         expectedOwnerId,
-        json: { setType, weightKg: null, reps: null }
-      }
+        json: { setType, weightKg: null, reps: null },
+      },
     ),
 
   removeSet: (sessionId: string, setId: string, expectedOwnerId?: string) =>
     apiRequest<WorkoutSession>(`/workouts/sessions/${sessionId}/sets/${setId}`, {
-      method: "DELETE", expectedOwnerId,
+      method: "DELETE",
+      expectedOwnerId,
     }),
 
   updateSet: (
@@ -192,39 +206,36 @@ export const workoutApi = {
       rir?: number | null;
       completed?: boolean;
       notes?: string;
+      restSeconds?: number | null;
+      tempo?: string | null;
     },
-    expectedOwnerId?: string
+    expectedOwnerId?: string,
   ) =>
-    apiRequest<WorkoutSet>(
-      `/workouts/sessions/${sessionId}/sets/${setId}?compact=true`,
-      {
-        method: "PATCH",
-        expectedOwnerId,
-        json: data
-      }
-    ),
+    apiRequest<WorkoutSet>(`/workouts/sessions/${sessionId}/sets/${setId}?compact=true`, {
+      method: "PATCH",
+      expectedOwnerId,
+      json: data,
+    }),
 
-  updateNotes: (id: string, notes: string, expectedOwnerId?: string) => apiRequest<{ notes: string }>(`/workouts/sessions/${id}`, { method: "PATCH", expectedOwnerId, json: { notes } }),
+  updateNotes: (id: string, notes: string, expectedOwnerId?: string) =>
+    apiRequest<{ notes: string }>(`/workouts/sessions/${id}`, {
+      method: "PATCH",
+      expectedOwnerId,
+      json: { notes },
+    }),
 
   finish: (id: string, elapsedSeconds?: number, notes = "", expectedOwnerId?: string) =>
-    apiRequest<WorkoutSession>(
-      `/workouts/sessions/${id}/finish`,
-      {
-        method: "POST",
-        expectedOwnerId,
-        json: { elapsedSeconds, notes }
-      }
-    ),
+    apiRequest<WorkoutSession>(`/workouts/sessions/${id}/finish`, {
+      method: "POST",
+      expectedOwnerId,
+      json: { elapsedSeconds, notes },
+    }),
 
   discard: (id: string) =>
-    apiRequest<WorkoutSession>(
-      `/workouts/sessions/${id}/discard`,
-      {
-        method: "POST",
-        json: {}
-      }
-    ),
+    apiRequest<WorkoutSession>(`/workouts/sessions/${id}/discard`, {
+      method: "POST",
+      json: {},
+    }),
 
-  history: () =>
-    apiRequest<HistoryItem[]>("/workouts/history")
+  history: () => apiRequest<HistoryItem[]>("/workouts/history"),
 };

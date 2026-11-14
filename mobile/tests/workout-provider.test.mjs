@@ -233,8 +233,40 @@ async function fixture(options = {}) {
     calls,
     offline,
     storage,
+    setRemote(value) {
+      remote = value;
+    },
   };
 }
+
+test("exercise focus is session-local and never changes the persisted workout draft", async () => {
+  const harness = await fixture();
+  const original = JSON.stringify(await harness.offline.readWorkoutDraft("owner"));
+  harness.context.setFocusedExerciseId("exercise");
+  await harness.settle();
+  assert.equal(harness.context.focusedExerciseId, "exercise");
+  assert.equal(JSON.stringify(await harness.offline.readWorkoutDraft("owner")), original);
+  await harness.context.refresh();
+  await harness.settle();
+  assert.equal(harness.context.focusedExerciseId, "exercise");
+  const previousSetter = harness.context.setFocusedExerciseId;
+  harness.setRemote({ ...session(), id: "new-session" });
+  await harness.context.refresh();
+  await harness.settle();
+  assert.equal(harness.context.focusedExerciseId, undefined);
+  previousSetter("exercise");
+  await harness.settle();
+  assert.equal(harness.context.focusedExerciseId, undefined);
+  harness.context.setFocusedExerciseId("exercise");
+  await harness.settle();
+  assert.equal(harness.context.focusedExerciseId, "exercise");
+  previousSetter(undefined);
+  await harness.settle();
+  assert.equal(harness.context.focusedExerciseId, "exercise");
+  harness.context.setFocusedExerciseId(undefined);
+  await harness.settle();
+  assert.equal(harness.context.focusedExerciseId, undefined);
+});
 
 test("offline finish returns immediately, exposes the local summary, and invalidates subscribers after upload", async () => {
   const finishGate = deferred();

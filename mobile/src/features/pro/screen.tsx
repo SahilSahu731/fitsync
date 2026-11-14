@@ -17,6 +17,8 @@ import { buildProAnalytics, type ProPeriod } from "./analytics";
 import { AnalyticsPanels, type AnalyticsView } from "./analytics-panels";
 import { TrainerPanel, TrainingTools, type ProTool } from "./training-tools";
 import { useProCatalog } from "./use-pro-catalog";
+import { TodayForYouCard } from "../companion/today-card";
+import { type Href } from "expo-router";
 import {
   GlassCard,
   ProAction,
@@ -29,9 +31,10 @@ import {
   Reveal,
 } from "./ui";
 
-type Section = "overview" | "analytics" | "trainer" | "tools";
+type Section = "overview" | "analytics" | "trainer" | "tools" | "companion";
 const SECTIONS = [
   { id: "overview", label: "Overview" },
+  { id: "companion", label: "For you" },
   { id: "analytics", label: "Analytics" },
   { id: "trainer", label: "Trainer" },
   { id: "tools", label: "Tools" },
@@ -178,6 +181,15 @@ function ProHub() {
             <Reveal key={section}>
               {section === "overview" && (
                 <>
+                  <TodayForYouCard />
+                  <View className="mb-4">
+                    <ProAction
+                      icon="star-four-points"
+                      title="Your daily Pro companion"
+                      subtitle="Check-ins, milestones, muscle focus, photos and personal reminders"
+                      onPress={() => navigate("companion")}
+                    />
+                  </View>
                   <GlassCard accent>
                     <View className="flex-row items-start justify-between gap-3">
                       <View className="min-w-0 flex-1">
@@ -344,6 +356,7 @@ function ProHub() {
                 ) : (
                   <LockedAnalytics view={view} onView={setView} />
                 ))}
+              {section === "companion" && <CompanionShortcuts />}
               {section === "trainer" && (
                 <TrainerPanel builderOpen={builder} onBuilder={setBuilder} />
               )}
@@ -374,6 +387,96 @@ function ProHub() {
         </TabScrollView>
       </ScreenEntrance>
     </ProScene>
+  );
+}
+function CompanionShortcuts() {
+  const features: {
+    tab: string;
+    icon: React.ComponentProps<typeof MaterialCommunityIcons>["name"];
+    title: string;
+    subtitle: string;
+  }[] = [
+    {
+      tab: "readiness",
+      icon: "heart-pulse",
+      title: "Today’s readiness check-in",
+      subtitle: "Sleep, energy, muscle soreness and available time",
+    },
+    {
+      tab: "insights",
+      icon: "chart-timeline-variant",
+      title: "Understand what’s changing",
+      subtitle: "Plateau evidence, exercise profiles, 4/8-week comparisons and estimated recovery",
+    },
+    {
+      tab: "goals",
+      icon: "flag-checkered",
+      title: "Meaningful milestones",
+      subtitle: "Strength, consistency and measurement goals from your logs",
+    },
+    {
+      tab: "focus",
+      icon: "human",
+      title: "A muscle focus that fits your plan",
+      subtitle: "Preview every set and session-time change before accepting",
+    },
+    {
+      tab: "photos",
+      icon: "image-multiple-outline",
+      title: "Private progress photos",
+      subtitle: "Crop before upload, compare matching views and delete any time",
+    },
+    {
+      tab: "nutrition",
+      icon: "silverware-fork-knife",
+      title: "Nutrition on your terms",
+      subtitle: "Optional daily totals connected to Progress and meal planning",
+    },
+    {
+      tab: "experiments",
+      icon: "flask-outline",
+      title: "Learn from your own training",
+      subtitle: "Compare personal experiments with their evidence and limitations",
+    },
+    {
+      tab: "reminders",
+      icon: "bell-outline",
+      title: "FitSync where you need it",
+      subtitle: "Quiet hours, snooze, Android widgets and paired-watch notification controls",
+    },
+    {
+      tab: "sharing",
+      icon: "account-check-outline",
+      title: "Keep your coach in the loop",
+      subtitle: "Choose the training information, expiry and when to revoke access",
+    },
+    {
+      tab: "reports",
+      icon: "file-document-outline",
+      title: "Your monthly training report",
+      subtitle: "Generate and share a report from synced training and measurements",
+    },
+    { tab: "desktop", icon: "monitor", title: "Your desktop planning workspace", subtitle: "Edit routines and plans, manage sharing and download reports with the same account" },
+  ];
+  return (
+    <>
+      <TodayForYouCard />
+      <ProSection
+        eyebrow="Connected to your actual progress"
+        title="A little support, every day."
+      />
+      <View className="gap-3">
+        {features.map((feature) => (
+          <ProAction
+            key={feature.tab}
+            icon={feature.icon}
+            title={feature.title}
+            subtitle={feature.subtitle}
+            onPress={() => router.push(`/companion?tab=${feature.tab}` as Href)}
+          />
+        ))}
+      </View>
+    </>
   );
 }
 function Orbit({ value, target }: { value: number; target: number }) {

@@ -12,10 +12,12 @@ export function ExerciseDetail({ id }: { id: string }) {
   const { admin } = useSession();
   useEffect(() => {
     let active = true;
-    setError("");
     api<Exercise>(`/exercises/${encodeURIComponent(id)}`)
       .then((data) => {
-        if (active) setExercise(data);
+        if (active) {
+          setError("");
+          setExercise(data);
+        }
       })
       .catch((e) => {
         if (active) setError(e.message);
@@ -31,7 +33,10 @@ export function ExerciseDetail({ id }: { id: string }) {
         <p role="alert">{error}</p>
         <button
           className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          onClick={() => setRetry(retry + 1)}
+          onClick={() => {
+            setError("");
+            setRetry(retry + 1);
+          }}
         >
           Try again
         </button>

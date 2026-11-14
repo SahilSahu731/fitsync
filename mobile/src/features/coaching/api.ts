@@ -71,6 +71,27 @@ export type AdaptInput = {
   swapExerciseId?: string;
   preview?: boolean;
 };
+export type FocusInput = {
+  planId: string;
+  expectedRevisions: { id: string; revision: number }[];
+  muscle: string;
+  startsOn: string;
+  weeks: 4 | 8;
+  additionalSetsPerWeek: number;
+};
+export type FocusPreview = {
+  plan: CoachingPlan;
+  changes: {
+    dayId: string;
+    date: string;
+    exercise: string;
+    beforeSets: number;
+    afterSets: number;
+    beforeMinutes: number;
+    afterMinutes: number;
+  }[];
+  explanation: string[];
+};
 export function coachingForOwner(expectedOwnerId?: string) {
   const request = <T>(path: string, options: Parameters<typeof apiRequest>[1] = {}) =>
     apiRequest<T>(path, { ...options, expectedOwnerId });
@@ -78,6 +99,11 @@ export function coachingForOwner(expectedOwnerId?: string) {
     preview: (data: { startDate: string; timezone: string; preferences: CoachingProfile }) =>
       request<PlanPreview>("/coaching/plans/preview", { method: "POST", json: data }),
     get: () => request<CoachingState>("/coaching"),
+    focus: (data: FocusInput, requestId: string, preview = true) =>
+      request<FocusPreview>("/coaching/plans/focus", {
+        method: "POST",
+        json: { ...data, requestId, preview },
+      }),
     create: (data: {
       requestId: string;
       startDate: string;

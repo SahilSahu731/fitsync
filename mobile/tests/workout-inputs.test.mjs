@@ -119,8 +119,9 @@ test("routine targets preserve types and time targets and reject invalid input",
 
 test("set badges have unique letters and colors for every supported type", () => {
   const { SET_TYPES } = load("../src/features/workouts/set-types.ts");
-  assert.equal(new Set(SET_TYPES.map(item => item.letter)).size, 5);
-  assert.equal(new Set(SET_TYPES.map(item => item.color)).size, 5);
+  assert.equal(new Set(SET_TYPES.map(item => item.letter)).size, SET_TYPES.length);
+  assert.equal(new Set(SET_TYPES.map(item => item.color)).size, SET_TYPES.length);
+  assert.equal(SET_TYPES.find(item => item.value === "rest_pause").letter, "RP");
 });
 
 test("reorder handle keeps its responder when its index changes mid-drag", () => {
@@ -177,6 +178,7 @@ test("set rows use empty and checked circles, with pending additions locking onl
     "./workout-controls": { NumberEntry: "Entry", WorkoutDrawer: "Drawer" },
     "./set-type-picker": { SetTypePicker: "Picker" },
     "../set-types": appearance,
+    "../routine-draft": load("../src/features/workouts/routine-draft.ts"),
   });
   const find = (node, type) => !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(child => find(child, type)) : [...(node.type === type ? [node] : []), ...find(node.props?.children, type)];
   const row = completed => SetRow({ exerciseId: "exercise", number: 1, restSeconds: 90, set: { id: "row", set_type: "normal", reps: 8, weight_kg: 20, completed_at: completed ? "done" : null } });

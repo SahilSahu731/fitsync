@@ -4,6 +4,7 @@ import { ApiError, checkDbError } from "../../common/errors.js";
 import { getSession } from "../workouts/workout.service.js";
 import { adaptPrescription, generatePlan, progressPrescription, weeklyReview, type Exercise, type History, type Profile, type Prescription } from "./coaching.engine.js";
 import type { AdaptInput } from "./coaching.schema.js";
+import { focusPreview, type FocusConfig } from "./coaching.focus.js";
 
 export function checked(error: { code?: string; message: string } | null, action: string) {
   if (!error) return;
@@ -75,6 +76,7 @@ export async function createPlan(userId: string, input: { requestId: string; sta
   if (!profile) throw new ApiError(409, "Complete your fitness setup before generating a personal plan.");
   let generated;
   try { generated = generatePlan(profile, exercises, input.startDate); } catch (error) { throw new ApiError(409, error instanceof Error ? error.message : "A suitable plan could not be generated."); }
+  generated = await applySavedFocus(userId, generated, exercises);
   const result = await db.rpc("create_fitsync_coaching_plan", { p_user_id: userId, p_request_id: requestId, p_request_data: requestData,
     p_plan: { ...generated, timezone: input.timezone, profile: { ...profile, trainingDays: generated.trainingDays } } });
   checked(result.error, "create coaching plan");
@@ -84,8 +86,34 @@ export async function previewPlan(userId: string, input: { startDate: string; ti
   const saved = await loadProfile(userId);
   if (!saved) throw new ApiError(409, "Complete your fitness profile first.");
   const exercises = await catalog();
-  try { return { ...generatePlan(input.preferences, exercises, input.startDate), timezone: input.timezone }; }
+  try { return { ...await applySavedFocus(userId, generatePlan(input.preferences, exercises, input.startDate), exercises), timezone: input.timezone }; }
   catch (error) { throw new ApiError(409, error instanceof Error ? error.message : "A suitable plan could not be built."); }
+}
+async function applySavedFocus<T extends { sessions: any[] }>(userId: string, generated: T, exercises: Exercise[]): Promise<T> {
+  const result = await db.from("companion_records").select("data").eq("user_id", userId).eq("id", "focus_active").eq("kind", "specialisation").eq("deleted", false).maybeSingle();
+  // Old deployments remain usable until the additive companion migration lands.
+  if (result.error && ["42P01", "PGRST205"].includes(result.error.code)) return generated;
+  checked(result.error, "load saved muscle focus");
+  if (!result.data) return generated;
+  const focus = focusPreview(generated.sessions, exercises, result.data.data as FocusConfig, "focus_active");
+  return { ...generated, sessions: focus.days };
+}
+export async function specialisePlan(userId: string, input: { requestId: string; planId: string; expectedRevisions: { id: string; revision: number }[]; muscle: string; startsOn: string; weeks: 4 | 8; additionalSetsPerWeek: number; preview?: boolean }) {
+  const { requestId, preview, ...requestData } = input;
+  if (!preview) { const existing = await prior(userId, requestId, "focus", requestData); if (existing) return { plan: await getPlan(userId, existing), changes: [], explanation: ["This focus block was already applied; your saved plan has been refreshed."] }; }
+  const [plan, exercises] = await Promise.all([getPlan(userId, input.planId), catalog()]);
+  if (!plan || plan.status === "archived") throw new ApiError(409, "Open your current training plan before adding a focus block.");
+  const today = new Intl.DateTimeFormat("en-CA", { timeZone: plan.timezone, year: "numeric", month: "2-digit", day: "2-digit" }).format(new Date());
+  if (input.startsOn < today || input.startsOn > new Date(Date.parse(`${today}T12:00:00Z`) + 90 * 86400000).toISOString().slice(0, 10)) throw new ApiError(400, "Start your focus block from today through 90 days ahead.");
+  if (input.expectedRevisions.length !== plan.sessions.length || plan.sessions.some((day: any) => !input.expectedRevisions.some(expected => expected.id === day.id && expected.revision === day.revision))) throw new ApiError(409, "Your plan changed. Refresh and preview the focus block again.");
+  const config: FocusConfig = { muscle: input.muscle, startsOn: input.startsOn, weeks: input.weeks, additionalSetsPerWeek: input.additionalSetsPerWeek };
+  const result = focusPreview(plan.sessions, exercises, config, "focus_active");
+  if (preview) return { plan: { ...plan, sessions: result.days }, changes: result.changes, explanation: result.explanation };
+  if (!result.changes.length) throw new ApiError(409, "No eligible unstarted movements can receive this focus. Preview another muscle or create your next plan.");
+  const changedIds = new Set(result.changes.map(day => day.dayId));
+  const saved = await db.rpc("apply_fitsync_focus_block", { p_user_id: userId, p_plan_id: plan.id, p_request_id: requestId, p_request_data: requestData, p_config: config, p_days: result.days.filter((day: any) => changedIds.has(day.id)).map((day: any) => ({ id: day.id, expectedRevision: day.revision, prescription: day.prescription })) });
+  checked(saved.error, "save muscle focus block");
+  return { plan: await getPlan(userId, plan.id), changes: result.changes, explanation: result.explanation };
 }
 async function ownedDay(userId: string, dayId: string) {
   const plan = await getPlan(userId);

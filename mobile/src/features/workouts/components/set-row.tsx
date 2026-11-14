@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Pressable, TextInput, View } from "react-native";
-import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useExperience } from "@/src/features/experience/experience-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { C } from "@/src/constants/theme";
@@ -11,6 +10,8 @@ import { useWorkout } from "../workout-context";
 import { NumberEntry, WorkoutDrawer } from "./workout-controls";
 import { SetTypePicker } from "./set-type-picker";
 import { setAppearance } from "../set-types";
+import { validTempo } from "../routine-draft";
+import type { WorkingSetSuggestion } from "../../pro/companion-insights";
 
 type Patch = Parameters<typeof workoutApi.updateSet>[2];
 export const SetRow = React.memo(function SetRow({
@@ -21,6 +22,9 @@ export const SetRow = React.memo(function SetRow({
   onFocus,
   exerciseId,
   isNext = false,
+  suppressRest = false,
+  recommendation,
+  previousDate,
 }: {
   exerciseId: string;
   set: WorkoutSet;
@@ -29,6 +33,9 @@ export const SetRow = React.memo(function SetRow({
   trackingType?: string;
   onFocus?: (exerciseId: string) => void;
   isNext?: boolean;
+  suppressRest?: boolean;
+  recommendation?: WorkingSetSuggestion;
+  previousDate?: string | null;
 }) {
   const { updateSet, removeSet, startRest, busy, pendingSetIds = [] } = useWorkout();
   const creating = pendingSetIds.includes(set.id);
@@ -48,11 +55,13 @@ export const SetRow = React.memo(function SetRow({
   const [notes, setNotes] = useState(set.notes ?? "");
   const [rpe, setRpe] = useState(set.rpe?.toString() ?? "");
   const [rir, setRir] = useState(set.rir?.toString() ?? "");
-  const [rest, setRest] = useState(String(restSeconds));
+  const [rest, setRest] = useState(set.rest_seconds == null ? "" : String(set.rest_seconds));
   const [completed, setCompleted] = useState(Boolean(set.completed_at));
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState("");
   const [drawer, setDrawer] = useState<"details" | null>(null);
+  const [tempo, setTempo] = useState(set.tempo ?? "");
+  const [showWhy, setShowWhy] = useState(false);
   const inFlight = useRef(false);
   const dirtyFields = useRef(new Set<string>());
   const inputVersions = useRef<Record<string, number>>({});
@@ -84,22 +93,13 @@ export const SetRow = React.memo(function SetRow({
       setNotes(set.notes ?? "");
       setRpe(set.rpe?.toString() ?? "");
       setRir(set.rir?.toString() ?? "");
+      setRest(set.rest_seconds == null ? "" : String(set.rest_seconds));
+      setTempo(set.tempo ?? "");
     }
-  }, [drawer, set.notes, set.rpe, set.rir]);
-  const restKey = `fitsync.set-rest.v1.${set.id}`;
-  useEffect(() => {
-    let active = true;
-    void AsyncStorage.getItem(restKey)
-      .then((value) => {
-        if (active && value !== null && Number.isFinite(Number(value))) setRest(value);
-      })
-      .catch(console.warn);
-    return () => {
-      active = false;
-    };
-  }, [restKey]);
+  }, [drawer, set.notes, set.rpe, set.rir, set.rest_seconds, set.tempo, restSeconds]);
   const timed = trackingType === "duration" || trackingType === "distance_duration";
   const weighted = !timed;
+  const configuredRest = rest.trim() === "" ? restSeconds : Number(rest);
   const focus = () => onFocus?.(exerciseId);
   async function save(patch: Patch, toggle = false) {
     if (inFlight.current || busy || creating) return;
@@ -114,7 +114,7 @@ export const SetRow = React.memo(function SetRow({
     try {
       await updateSet(set.id, patch);
       if (toggle && !before) feedback("set");
-      if (toggle && !before && Number(rest) > 0) startRest(Number(rest));
+      if (toggle && !before && configuredRest > 0 && !suppressRest) startRest(configuredRest);
     } catch (e) {
       if (toggle) setCompleted(before);
       setError(e instanceof Error ? e.message : "Not saved. Try again.");
@@ -303,6 +303,66 @@ export const SetRow = React.memo(function SetRow({
           )}
         </Pressable>
       </View>
+      {recommendation && type === "normal" && (
+        <View className="mx-1 mt-2 rounded-xl bg-white/5 p-3">
+          <Txt className="text-[10px] text-muted">
+            Previous{previousDate ? ` · ${previousDate}` : ""}:{" "}
+            {recommendation.previous.weightKg !== null
+              ? `${recommendation.previous.weightKg} kg × `
+              : ""}
+            {recommendation.previous.reps ?? recommendation.previous.durationSeconds ?? "—"}
+            {timed ? "s" : " reps"}
+          </Txt>
+          <Txt className="mt-1 text-[11px]">
+            Suggested:{" "}
+            {recommendation.suggested.weightKg !== null && !timed
+              ? `${recommendation.suggested.weightKg} kg × `
+              : ""}
+            {recommendation.suggested.reps ?? recommendation.suggested.durationSeconds ?? "—"}
+            {timed ? "s" : " reps"}
+          </Txt>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityState={{ expanded: showWhy }}
+            onPress={() => setShowWhy(!showWhy)}
+            className="min-h-11 justify-center"
+          >
+            <Txt className="text-[11px] text-[#D4F89A]">Why this target? {showWhy ? "−" : "+"}</Txt>
+          </Pressable>
+          {showWhy && (
+            <Txt className="mb-2 text-[10px] leading-4 text-muted">
+              {recommendation.reason} Optional guidance from recorded history; adjust to
+              today&apos;s technique and effort.
+            </Txt>
+          )}
+          {!completed &&
+            ((!weight.trim() && recommendation.suggested.weightKg !== null && weighted) ||
+              (!reps.trim() && recommendation.suggested.reps !== null && !timed) ||
+              (!duration.trim() && recommendation.suggested.durationSeconds !== null && timed)) && (
+              <Pressable
+                disabled={saving || busy || creating}
+                accessibilityRole="button"
+                onPress={() => {
+                  const patch: Patch = {};
+                  if (!weight.trim() && recommendation.suggested.weightKg !== null && weighted)
+                    patch.weightKg = recommendation.suggested.weightKg;
+                  if (!reps.trim() && recommendation.suggested.reps !== null && !timed)
+                    patch.reps = recommendation.suggested.reps;
+                  if (
+                    !duration.trim() &&
+                    recommendation.suggested.durationSeconds !== null &&
+                    timed
+                  )
+                    patch.durationSeconds = recommendation.suggested.durationSeconds;
+                  void save(patch);
+                }}
+                className="min-h-11 justify-center"
+              >
+                <Txt className="text-[11px] text-[#D4F89A]">Fill empty fields</Txt>
+              </Pressable>
+            )}
+        </View>
+      )}
       <Pressable
         accessibilityRole="button"
         onPress={() => {
@@ -314,7 +374,14 @@ export const SetRow = React.memo(function SetRow({
         className="min-h-11 flex-row items-center gap-1.5 px-1"
       >
         <MaterialCommunityIcons name="timer-outline" size={14} color={C.muted} />
-        <Txt className="text-[10px] text-muted">{Number(rest) ? `${rest}s rest` : "No rest"}</Txt>
+        <Txt className="text-[10px] text-muted">
+          {suppressRest
+            ? "Rest after round"
+            : configuredRest
+              ? `${configuredRest}s rest`
+              : "No rest"}
+          {set.tempo ? ` · ${set.tempo}` : ""}
+        </Txt>
         <MaterialCommunityIcons
           name={set.notes ? "note-text" : "note-text-outline"}
           size={14}
@@ -344,14 +411,31 @@ export const SetRow = React.memo(function SetRow({
             if (!saving) setDrawer(null);
           }}
         >
-          <Txt className="mb-2 text-muted">Rest after this set · saved on this device</Txt>
+          <Txt className="mb-2 text-muted">Rest after this set · synced with your workout</Txt>
           <NumberEntry
             onFocus={focus}
-            label="Rest · seconds (0 = off)"
+            label="Rest override · seconds (blank = default, 0 = off)"
             value={rest}
             onChange={setRest}
             max={900}
           />
+          <Txt className="mb-2 mt-5 text-xs text-muted">
+            Tempo · lowering / pause / lifting / pause (optional)
+          </Txt>
+          <TextInput
+            value={tempo}
+            onChangeText={setTempo}
+            autoCapitalize="characters"
+            maxLength={7}
+            placeholder="3-1-X-0"
+            placeholderTextColor={C.muted}
+            accessibilityLabel="Set tempo"
+            className="font-poppins-regular rounded-xl bg-bg p-4 text-ink"
+          />
+          <Txt className="mt-2 text-[10px] leading-4 text-muted">
+            Each number is seconds; X means an intended explosive movement. Log rest-pause mini-sets
+            separately with a short rest.
+          </Txt>
           <Txt className="mb-2 mt-5 text-muted">Set notes</Txt>
           <TextInput
             maxLength={1000}
@@ -391,7 +475,7 @@ export const SetRow = React.memo(function SetRow({
             onPress={async () => {
               if (inFlight.current || busy || creating) return;
               if (
-                !validNumber(rest, 900, true) ||
+                (rest.trim() !== "" && !validNumber(rest, 900, true)) ||
                 (rpe !== "" && (!validNumber(rpe, 10) || Number(rpe) < 1)) ||
                 (rir !== "" && !validNumber(rir, 10, true))
               ) {
@@ -402,12 +486,14 @@ export const SetRow = React.memo(function SetRow({
               setSaving(true);
               setError("");
               try {
+                const checkedTempo = tempo.trim() ? validTempo(tempo) : null;
                 await updateSet(set.id, {
                   notes,
                   rpe: rpe === "" ? null : Number(rpe),
                   rir: rir === "" ? null : Number(rir),
+                  restSeconds: rest.trim() === "" ? null : Number(rest),
+                  tempo: checkedTempo,
                 });
-                await AsyncStorage.setItem(restKey, rest);
                 setDrawer(null);
               } catch (e) {
                 setError(e instanceof Error ? e.message : "Could not save details.");

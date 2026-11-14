@@ -12,7 +12,6 @@ export function AdminOverview() {
   const [retry, setRetry] = useState(0);
   useEffect(() => {
     let active = true;
-    setError("");
     Promise.all(
       ["", "published", "draft", "archived"].map((status) =>
         api<ExercisePage>(
@@ -21,7 +20,10 @@ export function AdminOverview() {
       ),
     )
       .then((results) => {
-        if (active) setCounts(results.map((item) => item.total));
+        if (active) {
+          setError("");
+          setCounts(results.map((item) => item.total));
+        }
       })
       .catch((e) => {
         if (active) setError(e.message);
@@ -56,7 +58,10 @@ export function AdminOverview() {
           {error}
           <button
             className="inline-flex items-center gap-2 font-semibold text-ink underline-offset-4 hover:underline"
-            onClick={() => setRetry(retry + 1)}
+            onClick={() => {
+              setError("");
+              setRetry(retry + 1);
+            }}
           >
             Try again
           </button>

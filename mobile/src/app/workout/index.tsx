@@ -21,6 +21,9 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
+import { useProgress } from "@/src/features/progress/use-progress";
+import { localDate } from "@/src/features/progress/model";
+import { useBilling } from "@/src/features/billing/billing-context";
 
 import { useWorkout } from "@/src/features/workouts/workout-context";
 import { WorkoutDrawer } from "@/src/features/workouts/components/workout-controls";
@@ -40,6 +43,8 @@ import {
 } from "@/src/features/workouts/session-progress";
 
 export default function LiveWorkoutScreen() {
+  const progress = useProgress();
+  const billing = useBilling();
   const Alert = useAppAlert();
   const { feedback } = useExperience();
   const router = useRouter();
@@ -70,12 +75,13 @@ export default function LiveWorkoutScreen() {
     updateNotes,
     refresh,
     pendingCompletion,
+    focusedExerciseId: focusedExercise,
+    setFocusedExerciseId: setFocusedExercise,
   } = useWorkout();
 
   useWorkoutAwake(!!session);
 
   const [now, setNow] = useState(() => Date.now());
-  const [focusedExercise, setFocusedExercise] = useState<string>();
   const [notesOpen, setNotesOpen] = useState(false);
   const [finishReview, setFinishReview] = useState(false);
   const [restOpen, setRestOpen] = useState(false);
@@ -127,14 +133,22 @@ export default function LiveWorkoutScreen() {
     };
   }, []);
 
-  const toggleExercise = useCallback((id: string) => {
-    setFocusedExercise(id);
-    setExpanded((rows) => (rows.includes(id) ? rows.filter((item) => item !== id) : [...rows, id]));
-  }, []);
-  const openExerciseMenu = useCallback((exercise: SessionExercise) => {
-    setFocusedExercise(exercise.id);
-    setExerciseMenu(exercise);
-  }, []);
+  const toggleExercise = useCallback(
+    (id: string) => {
+      setFocusedExercise(id);
+      setExpanded((rows) =>
+        rows.includes(id) ? rows.filter((item) => item !== id) : [...rows, id],
+      );
+    },
+    [setFocusedExercise],
+  );
+  const openExerciseMenu = useCallback(
+    (exercise: SessionExercise) => {
+      setFocusedExercise(exercise.id);
+      setExerciseMenu(exercise);
+    },
+    [setFocusedExercise],
+  );
   const addExerciseSet = useCallback(
     (id: string) => {
       setFocusedExercise(id);
@@ -145,7 +159,7 @@ export default function LiveWorkoutScreen() {
         ),
       );
     },
-    [addSet, Alert],
+    [addSet, Alert, setFocusedExercise],
   );
   const recordSetMount = useCallback((id: string, node: View | null) => {
     setNodes.current[id] = node;
@@ -478,6 +492,9 @@ export default function LiveWorkoutScreen() {
               <SessionExerciseCard
                 key={exercise.id}
                 exercise={exercise}
+                history={billing.isPro ? progress.journal.workouts : undefined}
+                today={localDate()}
+                sessionExercises={exercises}
                 index={index}
                 nextSetId={next?.exercise.id === exercise.id ? next.set.id : undefined}
                 collapsed={!expanded.includes(exercise.id)}

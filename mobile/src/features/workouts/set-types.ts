@@ -41,6 +41,14 @@ export const SET_TYPES: {
     color: "#69C7B2",
     description: "Reduced load after another set",
   },
+  {
+    value: "rest_pause",
+    label: "Rest-pause",
+    letter: "RP",
+    color: "#C6BAF2",
+    description:
+      "A short rest between separately logged mini-sets. Set the rest for each mini-set.",
+  },
 ];
 export function setAppearance(type: SetType) {
   return SET_TYPES.find((item) => item.value === type) ?? SET_TYPES[0];

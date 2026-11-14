@@ -7,9 +7,7 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/images/icon.png",
-    "platforms": [
-      "android"
-    ],
+    "platforms": ["android"],
     "android": {
       "package": "com.sahil.fitsync",
       "adaptiveIcon": {
@@ -31,9 +29,7 @@
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#C5F460",
           "defaultChannel": "workout-rest-v2",
-          "sounds": [
-            "./assets/sound/rest_complete.wav"
-          ]
+          "sounds": ["./assets/sound/rest_complete.wav"]
         }
       ],
       [
@@ -53,7 +49,7 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "Allow FitSync to select a profile photo.",
+          "photosPermission": "Allow FitSync to select a profile photo or a private progress photo you choose.",
           "microphonePermission": false
         }
       ],

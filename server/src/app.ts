@@ -2,6 +2,7 @@ import progressRoutes from "./modules/progress/progress.routes.js";
 import billingRoutes from "./modules/billing/billing.routes.js";
 import coachingRoutes from "./modules/coaching/coaching.routes.js";
 import wellnessRoutes from "./modules/wellness/wellness.routes.js";
+import companionRoutes from "./modules/companion/companion.routes.js";
 import express from "express";
 import helmet from "helmet";
 
@@ -46,6 +47,7 @@ app.use("/api/workouts", workoutRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/coaching", coachingRoutes);
 app.use("/api/wellness", wellnessRoutes);
+app.use("/api/companion", companionRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/program-follow", programFollowRoutes);
 app.use("/api/catalog/admin", catalogAdminRoutes);

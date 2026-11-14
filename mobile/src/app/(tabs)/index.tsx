@@ -14,6 +14,7 @@ import { useWorkout } from "@/src/features/workouts/workout-context";
 import { WorkoutSyncNotice } from "@/src/features/workouts/components/workout-sync-notice";
 import { CoachHomeCard } from "@/src/features/coaching/home-card";
 import { ActiveProgramCard } from "@/src/features/program-follow/active-program-card";
+import { TodayForYouCard } from "@/src/features/companion/today-card";
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
@@ -96,6 +97,7 @@ export default function HomeScreen() {
           </MotionPressable>
         </View>
         <WorkoutSyncNotice />
+        <TodayForYouCard />
         <ScreenEntrance delay={50}>
           <MotionPressable
             accessibilityRole="button"

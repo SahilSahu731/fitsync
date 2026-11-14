@@ -1,7 +1,7 @@
 import { exerciseVisibility } from "../exercises/exercise.visibility.js";
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
-import type { CreateTemplateInput } from "./workout.schema.js";
+import type { CreateTemplateInput, EditTemplateInput } from "./workout.schema.js";
 import { resolveProgramSlot, programError } from "../program-follow/program.service.js";
 import { planPositionChanges } from "./workout.order.js";
 
@@ -80,7 +80,9 @@ export async function listTemplates(userId: string) {
         exercises(name, exercise_media(kind, delivery_url, sort_order))
       ),
       user_saved_routines(routine_id, training_routines(image_url)),
-      user_saved_program_routines(id, training_routines(image_url))
+      user_saved_program_routines(id, training_routines(image_url)),
+      coaching_days(id),
+      program_workout_slots(id)
     `)
         .eq("user_id", userId)
         .order("created_at", { ascending: false }).order("id").range(offset, offset + 199);
@@ -90,7 +92,7 @@ export async function listTemplates(userId: string) {
         if ((page?.length ?? 0) < 200) break;
     }
     return (data ?? []).map(row => {
-        const { user_saved_routines, user_saved_program_routines, ...rest } = row as any;
+        const { user_saved_routines, user_saved_program_routines, coaching_days, program_workout_slots, ...rest } = row as any;
         return {
             ...rest,
             workout_template_exercises: (row.workout_template_exercises ?? []).map((e: any) => ({
@@ -99,7 +101,7 @@ export async function listTemplates(userId: string) {
                 exercises: { name: e.exercises?.name }
             })),
             image_url: templateImage(row),
-            can_rename: !user_saved_routines?.length && !user_saved_program_routines?.length
+            can_rename: !user_saved_routines?.length && !user_saved_program_routines?.length && !coaching_days?.length && !program_workout_slots?.length
         };
     });
 }
@@ -110,7 +112,7 @@ export async function getTemplate(userId: string, id: string) {
       *,
       workout_template_exercises(
         *,
-        exercises(name,exercise_media(kind,delivery_url,sort_order)),
+        exercises(name,tracking_type,exercise_media(kind,delivery_url,sort_order)),
         workout_template_sets(*)
       )
     `)
@@ -163,7 +165,8 @@ export async function createTemplate(
                     exercise_id: item.exerciseId,
                     position,
                     notes: item.notes,
-                    rest_seconds: item.restSeconds
+                    rest_seconds: item.restSeconds,
+                    superset_group: item.supersetGroup ?? null
                 })
                 .select()
                 .single();
@@ -180,7 +183,9 @@ export async function createTemplate(
                         target_reps: set.targetReps ?? null,
                         target_weight: set.targetWeight ?? null,
                         target_duration_seconds:
-                            set.targetDurationSeconds ?? null
+                            set.targetDurationSeconds ?? null,
+                        rest_seconds: set.restSeconds ?? null,
+                        tempo: set.tempo ?? null
                     }))
                 );
 
@@ -197,6 +202,21 @@ export async function createTemplate(
     }
 
     return getTemplate(userId, template.id);
+}
+
+export async function editTemplate(userId: string, id: string, input: EditTemplateInput) {
+    const template = (await listTemplates(userId)).find(row => row.id === id);
+    if (!template) throw new ApiError(404, "Routine not found.");
+    if (!template.can_rename) throw new ApiError(403, "Only routines you created can be edited. Save a personal copy instead.");
+    const { expectedRevision, ...data } = input;
+    const result = await db.rpc("edit_fitsync_workout_template", { p_user_id: userId, p_template_id: id, p_expected_revision: expectedRevision, p_data: data });
+    if (["PGRST202", "42883", "42703"].includes(result.error?.code ?? "")) throw new ApiError(503, "Routine editing needs migration 020 and the updated API.");
+    if (result.error?.code === "40001") throw new ApiError(409, "This routine changed on another device. Your draft is preserved; reload the saved routine before applying your edits.");
+    if (result.error?.code === "P0002") throw new ApiError(404, "Routine not found.");
+    if (result.error?.code === "42501") throw new ApiError(403, "Only routines you created can be edited. Save a personal copy instead.");
+    if (["22023", "22P02", "23514", "22003"].includes(result.error?.code ?? "")) throw new ApiError(400, "Some routine exercises or targets are unavailable. Refresh the exercise choices and check your inputs.");
+    checkDbError(result.error, "edit personal routine");
+    return getTemplate(userId, id);
 }
 
 export async function deleteTemplate(userId: string, id: string) {
@@ -319,7 +339,8 @@ export async function startWorkout(
                     [...item.workout_template_sets]
                         .sort((a, b) => a.position - b.position),
                     false,
-                    item.notes
+                    item.notes,
+                    item.superset_group ?? null
                 );
             }
         }
@@ -341,6 +362,20 @@ export async function removeSessionExercise(userId: string, sessionId: string, e
     const { data, error } = await db.from("workout_session_exercises").delete()
         .eq("session_id", sessionId).eq("id", exerciseItemId).select("id");
     checkDbError(error, "remove workout exercise");
+    if (!data?.length) throw new ApiError(404, "Exercise not found in this workout.");
+    return getSession(userId, sessionId);
+}
+
+export async function updateSessionExercise(userId: string, sessionId: string, exerciseItemId: string,
+    input: { restSeconds?: number; supersetGroup?: string | null }) {
+    await assertActive(userId, sessionId);
+    const update = {
+        ...(input.restSeconds !== undefined ? { rest_seconds: input.restSeconds } : {}),
+        ...(input.supersetGroup !== undefined ? { superset_group: input.supersetGroup } : {})
+    };
+    const { data, error } = await db.from("workout_session_exercises").update(update)
+        .eq("session_id", sessionId).eq("id", exerciseItemId).select("id");
+    checkDbError(error, "update workout exercise");
     if (!data?.length) throw new ApiError(404, "Exercise not found in this workout.");
     return getSession(userId, sessionId);
 }
@@ -429,9 +464,12 @@ export async function addSessionExercise(
         target_weight: number | null;
         target_reps: number | null;
         target_duration_seconds: number | null;
+        rest_seconds?: number | null;
+        tempo?: string | null;
     }>,
     hydrate = true,
-    notes = ""
+    notes = "",
+    supersetGroup: string | null = null
 ) {
     await assertActive(userId, sessionId);
 
@@ -468,7 +506,8 @@ export async function addSessionExercise(
             tracking_type: exercise?.tracking_type,
             position,
             rest_seconds: restSeconds,
-            notes
+            notes,
+            superset_group: supersetGroup
         })
         .select()
         .single();
@@ -482,7 +521,9 @@ export async function addSessionExercise(
             set_type: set.set_type,
             weight_kg: set.target_weight,
             reps: set.target_reps,
-            duration_seconds: set.target_duration_seconds
+            duration_seconds: set.target_duration_seconds,
+            rest_seconds: set.rest_seconds ?? null,
+            tempo: set.tempo ?? null
         }))
         : [{
             session_exercise_id: item.id,
@@ -531,7 +572,7 @@ export async function addSet(
 
     const { data: sets, error: setsError } = await db
         .from("workout_logged_sets")
-        .select("position,weight_kg,reps,duration_seconds,distance_meters")
+        .select("position,weight_kg,reps,duration_seconds,distance_meters,rest_seconds,tempo")
         .eq("session_exercise_id", exerciseItemId)
         .order("position", { ascending: false })
         .limit(1);
@@ -549,7 +590,9 @@ export async function addSet(
             weight_kg: input.weightKg ?? sets?.[0]?.weight_kg ?? null,
             reps: input.reps ?? sets?.[0]?.reps ?? null,
             duration_seconds: sets?.[0]?.duration_seconds ?? null,
-            distance_meters: sets?.[0]?.distance_meters ?? null
+            distance_meters: sets?.[0]?.distance_meters ?? null,
+            rest_seconds: sets?.[0]?.rest_seconds ?? null,
+            tempo: sets?.[0]?.tempo ?? null
         })
         .select("*")
         .single();
@@ -617,7 +660,9 @@ export async function updateSet(
         distanceMeters: "distance_meters",
         rpe: "rpe",
         rir: "rir",
-        notes: "notes"
+        notes: "notes",
+        restSeconds: "rest_seconds",
+        tempo: "tempo"
     };
 
     const update: Record<string, unknown> = {};

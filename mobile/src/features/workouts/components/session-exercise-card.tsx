@@ -1,5 +1,5 @@
-import React from "react";
-import { Pressable, View } from "react-native";
+import React, { useMemo, useState } from "react";
+import { Pressable, TextInput, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
@@ -7,6 +7,12 @@ import type { SessionExercise } from "../api";
 import { ExerciseImage } from "./exercise-image";
 import { WorkoutGlassSurface } from "./workout-glass";
 import { SetRow } from "./set-row";
+import { localDate, type ProgressWorkout } from "../../progress/model";
+import { suggestWorkingSetTargets } from "../../pro/companion-insights";
+import { restAfterWorkoutSet } from "../session-progress";
+import { useWorkout } from "../workout-context";
+import { NumberEntry, WorkoutDrawer } from "./workout-controls";
+import { validSupersetGroup } from "../routine-draft";
 
 export const SessionExerciseCard = React.memo(function SessionExerciseCard({
   exercise,
@@ -21,6 +27,9 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
   onSetMount,
   onSetLayout,
   adding = false,
+  history,
+  today = localDate(),
+  sessionExercises,
 }: {
   exercise: SessionExercise;
   index: number;
@@ -34,7 +43,23 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
   onSetMount: (setId: string, node: View | null) => void;
   onSetLayout: (setId: string) => void;
   adding?: boolean;
+  history?: ProgressWorkout[];
+  today?: string;
+  sessionExercises?: SessionExercise[];
 }) {
+  const workout = useWorkout();
+  const [settings, setSettings] = useState(false);
+  const [rest, setRest] = useState(String(exercise.rest_seconds));
+  const [group, setGroup] = useState(exercise.superset_group ?? "");
+  const [settingsError, setSettingsError] = useState("");
+  const [saving, setSaving] = useState(false);
+  const targets = useMemo(
+    () =>
+      history
+        ? suggestWorkingSetTargets(history, exercise.exercise_id, exercise.tracking_type, today)
+        : null,
+    [history, exercise.exercise_id, exercise.tracking_type, today],
+  );
   const sets = [...exercise.workout_logged_sets].sort((a, b) => a.position - b.position);
   const logged = sets.filter((set) => !!set.completed_at).length;
   const complete = sets.length > 0 && logged === sets.length;
@@ -101,6 +126,27 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
           {!!exercise.notes && (
             <Txt className="mx-4 mb-3 text-xs leading-5 text-muted">{exercise.notes}</Txt>
           )}
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => {
+              setRest(String(exercise.rest_seconds));
+              setGroup(exercise.superset_group ?? "");
+              setSettingsError("");
+              setSettings(true);
+            }}
+            disabled={busy}
+            className="mx-4 mb-2 min-h-11 justify-center"
+          >
+            <Txt className="text-[11px] text-[#D4F89A]">
+              {exercise.superset_group ? `Superset ${exercise.superset_group} · ` : ""}
+              {exercise.rest_seconds}s default rest · Edit training method
+            </Txt>
+          </Pressable>
+          {targets && !targets.targets.length && (
+            <Txt className="mx-4 mb-3 text-[10px] leading-4 text-muted">
+              Targets: not enough comparable completed normal sets yet.
+            </Txt>
+          )}
           {sets.length > 0 && (
             <View className="mx-3 mb-2 flex-row items-center gap-2 px-2">
               <Txt className="w-11 text-center text-[10px] tracking-wider text-muted">TYPE</Txt>
@@ -131,6 +177,21 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
                   exerciseId={exercise.id}
                   onFocus={onFocus}
                   isNext={set.id === nextSetId}
+                  suppressRest={
+                    !!sessionExercises &&
+                    !!exercise.superset_group &&
+                    set.set_type !== "warmup" &&
+                    restAfterWorkoutSet(sessionExercises, exercise.id, set.id) === 0
+                  }
+                  recommendation={
+                    set.set_type === "normal"
+                      ? targets?.targets[
+                          sets.slice(0, setIndex + 1).filter((s) => s.set_type === "normal")
+                            .length - 1
+                        ]
+                      : undefined
+                  }
+                  previousDate={targets?.previousDate}
                 />
               </View>
             ))}
@@ -148,6 +209,84 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
             </Txt>
           </Pressable>
         </>
+      )}
+      {settings && (
+        <WorkoutDrawer
+          title="Training method"
+          onClose={() => {
+            if (!saving) setSettings(false);
+          }}
+        >
+          <Txt weight="medium" className="mb-4">
+            {exercise.exercise_name}
+          </Txt>
+          <NumberEntry
+            label="Default rest · seconds"
+            value={rest}
+            onChange={setRest}
+            max={900}
+            disabled={saving}
+          />
+          <Txt className="mb-2 mt-5 text-xs text-muted">Superset group (optional)</Txt>
+          <TextInput
+            value={group}
+            onChangeText={setGroup}
+            editable={!saving}
+            autoCapitalize="characters"
+            maxLength={24}
+            placeholder="A"
+            placeholderTextColor={C.muted}
+            accessibilityLabel="Superset group"
+            className="min-h-12 rounded-xl bg-bg p-4 text-ink"
+          />
+          <Txt className="mt-3 text-xs leading-5 text-muted">
+            Give paired exercises the same group, such as A. Working sets alternate by round, with
+            rest after the last member. Blank removes this exercise from its group. Individual set
+            rest overrides the default.
+          </Txt>
+          {!!settingsError && (
+            <Txt accessibilityRole="alert" className="mt-3 text-xs text-red-300">
+              {settingsError}
+            </Txt>
+          )}
+          <Pressable
+            accessibilityRole="button"
+            disabled={saving || busy}
+            onPress={async () => {
+              if (saving || busy) return;
+              if (
+                !rest.trim() ||
+                !Number.isInteger(Number(rest)) ||
+                Number(rest) < 0 ||
+                Number(rest) > 900
+              ) {
+                setSettingsError("Rest must be a whole number from 0 to 900 seconds.");
+                return;
+              }
+              setSaving(true);
+              setSettingsError("");
+              try {
+                const supersetGroup = group.trim() ? validSupersetGroup(group) : null;
+                await workout.updateExercise(exercise.id, {
+                  restSeconds: Number(rest),
+                  supersetGroup,
+                });
+                setSettings(false);
+              } catch (error) {
+                setSettingsError(
+                  error instanceof Error ? error.message : "Could not save exercise settings.",
+                );
+              } finally {
+                setSaving(false);
+              }
+            }}
+            className="mt-5 min-h-12 items-center justify-center rounded-xl bg-ink"
+          >
+            <Txt weight="medium" className="text-bg">
+              {saving ? "Saving…" : "Save training method"}
+            </Txt>
+          </Pressable>
+        </WorkoutDrawer>
       )}
     </View>
   );

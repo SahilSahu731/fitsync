@@ -1,0 +1,21 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+  android:id="@+id/fitsync_widget_root" android:layout_width="match_parent" android:layout_height="match_parent"
+  android:orientation="vertical" android:padding="18dp" android:background="@drawable/fitsync_widget_background">
+  <TextView android:layout_width="match_parent" android:layout_height="wrap_content" android:text="FITSYNC · TODAY"
+    android:textSize="11sp" android:textStyle="bold" android:letterSpacing="0.12" android:textColor="#C5F460" />
+  <TextView android:id="@+id/fitsync_widget_title" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="8dp" android:text="Your training, one tap away" android:textColor="#FFFFFF" android:textSize="19sp"
+    android:textStyle="bold" android:maxLines="2" android:ellipsize="end" />
+  <TextView android:id="@+id/fitsync_widget_detail" android:layout_width="match_parent" android:layout_height="wrap_content"
+    android:layout_marginTop="4dp" android:text="Open FitSync to sync your plan" android:textColor="#ACB4AE" android:textSize="12sp"
+    android:maxLines="2" android:ellipsize="end" />
+  <LinearLayout android:layout_width="match_parent" android:layout_height="wrap_content" android:orientation="horizontal"
+    android:layout_marginTop="12dp" android:gravity="center_vertical">
+    <TextView android:id="@+id/fitsync_widget_start" android:layout_width="wrap_content" android:layout_height="40dp"
+      android:paddingHorizontal="14dp" android:gravity="center" android:background="@drawable/fitsync_widget_button"
+      android:text="Open FitSync" android:textColor="#151810" android:textStyle="bold" android:textSize="12sp" />
+    <TextView android:id="@+id/fitsync_widget_progress" android:layout_width="0dp" android:layout_weight="1" android:layout_height="40dp"
+      android:gravity="end|center_vertical" android:text="View progress →" android:textColor="#C5F460" android:textSize="12sp" />
+  </LinearLayout>
+</LinearLayout>
