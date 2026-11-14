@@ -292,10 +292,28 @@ test("closing the picker creates nothing, and an unmounted picker cannot start a
   assert.equal(screen.calls.opened, 0);
 });
 
-test("Train opens the picker first and navigates only after a workout is started", async () => {
+function trainFixture({ workout: workoutOverrides = {}, program: programOverrides = {} } = {}) {
   const calls = [];
   const start = async (id) => {
     calls.push(["start", id]);
+  };
+  let onFocus;
+  const workout = {
+    session: null,
+    start,
+    busy: false,
+    loading: false,
+    pendingCompletion: false,
+    dataRevision: 0,
+    refresh: async () => {},
+    ...workoutOverrides,
+  };
+  const program = {
+    active: null,
+    loading: false,
+    error: "",
+    refresh: async () => {},
+    ...programOverrides,
   };
   const screen = mount("../src/app/(tabs)/train.tsx", "default", {
     "react-native": {
@@ -305,56 +323,136 @@ test("Train opens the picker first and navigates only after a workout is started
     },
     "expo-router": {
       useRouter: () => ({ push: (route) => calls.push(["navigate", route]) }),
-      useFocusEffect() {},
+      useFocusEffect(callback) { onFocus = callback; },
     },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
     "@/src/components/tab-bar-motion": { TabScrollView: "ScrollView" },
     "@/src/features/workouts/components/workout-sync-notice": { WorkoutSyncNotice: "SyncNotice" },
-    "@/src/features/coaching/home-card": { CoachHomeCard: "CoachHomeCard" },
+    "@/src/features/coaching/home-card": { CoachHomeButton: "CoachHomeButton" },
     "@/src/components/motion": { MotionPressable: "Pressable", ScreenEntrance: "Entrance" },
     "@/src/features/program-follow/active-program-card": { ActiveProgramCard: "ActiveProgramCard" },
+    "@/src/features/program-follow/program-context": { useProgram: () => program },
     "@/src/components/app-dialog": { useAppAlert: () => ({ alert() {} }) },
     "@/src/constants/theme": { C: { bg: "#000000", ink: "#FFFFFF", brand: "#C5F460" } },
     "@/src/components/ui": { PageHeading: "Heading", SectionHeading: "SectionHeading", Txt: "Txt" },
-    "@/src/features/workouts/api": { workoutApi: {} },
-    "@/src/features/workouts/workout-context": {
-      useWorkout: () => ({
-        session: null,
-        start,
-        busy: false,
-        loading: false,
-        pendingCompletion: false,
-        dataRevision: 0,
-      }),
+    "@/src/features/workouts/api": {
+      workoutApi: { templates: async () => [], history: async () => [] },
     },
-    "@/src/features/training-catalog/api": { catalogApi: {} },
-    "@react-native-async-storage/async-storage": {},
+    "@/src/features/workouts/workout-context": {
+      useWorkout: () => workout,
+    },
+    "@/src/features/training-catalog/api": { catalogApi: { myPrograms: async () => [] } },
+    "@react-native-async-storage/async-storage": { getItem: async () => null },
     "@/src/context/session": { useSession: () => ({ user: { id: "athlete" } }) },
     "@/src/features/workouts/components/train-actions": {},
     "expo-image": { Image: "Image" },
     "@/src/features/workouts/components/training-section": { TrainingSection: "TrainingSection" },
     "@/src/features/workouts/summary": {
       trainingWeek: () => ({ workouts: 0, minutes: 0, days: 0 }),
-      workoutSummary: () => ({}),
+      workoutSummary: () => ({ completedSets: 1, totalSets: 3, exercises: 1 }),
     },
     "@/src/features/workouts/components/routine-card": { RoutineCard: "RoutineCard" },
     "@/src/features/workouts/components/start-workout-dialog": {
       StartWorkoutDialog: "StartWorkoutDialog",
     },
   });
+  return { ...screen, calls, workout, program, focus: () => onFocus() };
+}
+
+test("Train opens the picker first and navigates only after a workout is started", async () => {
+  const screen = trainFixture();
   let tree = screen.render();
   assert.equal(find(tree, "StartWorkoutDialog").length, 0);
   find(tree, "Pressable")
     .find((node) => text(node).includes("Start empty workout"))
     .props.onPress();
   tree = screen.render();
-  assert.deepEqual(calls, []);
+  assert.deepEqual(screen.calls, []);
   const dialog = find(tree, "StartWorkoutDialog")[0];
   await dialog.props.onStart("template-push");
   dialog.props.onStarted();
-  assert.deepEqual(calls, [
+  assert.deepEqual(screen.calls, [
     ["start", "template-push"],
     ["navigate", "/workout"],
   ]);
   assert.equal(find(screen.render(), "StartWorkoutDialog").length, 0);
+});
+
+test("Train prioritizes an active workout over its program and only offers empty workouts without either", () => {
+  const screen = trainFixture({ program: { active: { enrollment: { id: "program" } } } });
+  let tree = screen.render();
+  assert.equal(find(tree, "ActiveProgramCard").length, 1);
+  assert.doesNotMatch(text(tree), /Start empty workout/);
+
+  screen.workout.session = { id: "session", name: "Push Day" };
+  tree = screen.render();
+  assert.equal(find(tree, "ActiveProgramCard").length, 0);
+  assert.match(text(tree), /Push Day/);
+  find(tree, "Pressable").find((node) => text(node).includes("Resume workout")).props.onPress();
+  assert.deepEqual(screen.calls, [["navigate", "/workout"]]);
+  assert.equal(find(tree, "StartWorkoutDialog").length, 0);
+
+  screen.workout.session = null;
+  screen.program.active = null;
+  tree = screen.render();
+  assert.equal(find(tree, "ActiveProgramCard").length, 0);
+  assert.match(text(tree), /Start empty workout/);
+});
+
+test("Train waits for workout and program checks and retains the program retry state on failure", () => {
+  const screen = trainFixture({ program: { loading: true } });
+  let tree = screen.render();
+  assert.equal(find(tree, "ActiveProgramCard").length, 1);
+  assert.doesNotMatch(text(tree), /Start empty workout/);
+  screen.program.loading = false;
+  screen.program.error = "Offline";
+  tree = screen.render();
+  assert.equal(find(tree, "ActiveProgramCard").length, 1);
+  assert.doesNotMatch(text(tree), /Start empty workout/);
+  screen.program.error = "";
+  screen.workout.loading = true;
+  tree = screen.render();
+  assert.equal(find(tree, "ActiveProgramCard").length, 0);
+  assert.doesNotMatch(text(tree), /Start empty workout/);
+});
+
+test("Train refreshes its program on focus and places the coach button before the weekly summary", async () => {
+  let refreshed = 0;
+  const screen = trainFixture({ program: { refresh: async () => { refreshed++; } } });
+  screen.render();
+  screen.focus();
+  await screen.flush();
+  assert.equal(refreshed, 1);
+  const tree = screen.render();
+  const children = find(tree, "ScrollView")[0].props.children;
+  const coach = children.findIndex((node) => node?.type === "CoachHomeButton");
+  const week = children.findIndex((node) => /This Week/.test(text(node)));
+  assert.ok(coach >= 0 && week > coach);
+  assert.equal(find(tree, "CoachHomeButton").length, 1);
+  assert.doesNotMatch(text(tree), /Your plans/);
+});
+
+test("the personal coach button opens coaching for Pro members and the upgrade page for free members", () => {
+  const calls = [];
+  const billing = { isPro: false, loading: false };
+  const screen = mount("../src/features/coaching/home-card.tsx", "CoachHomeButton", {
+    "react-native": { View: "View" },
+    "expo-router": { router: { push: (route) => calls.push(route) } },
+    "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
+    "@/src/components/motion": { MotionPressable: "Pressable" },
+    "@/src/components/ui": { Txt: "Txt" },
+    "@/src/constants/theme": { C: { brand: "#C5F460" } },
+    "@/src/features/billing/billing-context": { useBilling: () => billing },
+    "./model": {},
+    "./use-coaching": {},
+  });
+  screen.render().props.onPress();
+  billing.isPro = true;
+  screen.render().props.onPress();
+  assert.deepEqual(calls, ["/pro", "/coach"]);
+  billing.loading = true;
+  const tree = screen.render();
+  assert.equal(tree.props.disabled, true);
+  tree.props.onPress();
+  assert.deepEqual(calls, ["/pro", "/coach"]);
 });

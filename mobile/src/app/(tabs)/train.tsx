@@ -1,8 +1,9 @@
 import { TabScrollView } from "@/src/components/tab-bar-motion";
 import { WorkoutSyncNotice } from "@/src/features/workouts/components/workout-sync-notice";
-import { CoachHomeCard } from "@/src/features/coaching/home-card";
+import { CoachHomeButton } from "@/src/features/coaching/home-card";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
 import { ActiveProgramCard } from "@/src/features/program-follow/active-program-card";
+import { useProgram } from "@/src/features/program-follow/program-context";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useCallback, useEffect, useRef, useState } from "react";
 
@@ -20,7 +21,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { C } from "@/src/constants/theme";
-import { PageHeading, SectionHeading, Txt } from "@/src/components/ui";
+import { PageHeading, Txt } from "@/src/components/ui";
 
 import { workoutApi, type WorkoutTemplate, type HistoryItem } from "@/src/features/workouts/api";
 
@@ -82,7 +83,7 @@ function QuickTile({
       accessibilityLabel={`${title}. ${subtitle}`}
       className="min-w-0 flex-1 flex-row items-center gap-2 rounded-[18px] bg-panel p-3.5"
     >
-      <MaterialCommunityIcons name={icon} size={20} color={"#333"} />
+      <MaterialCommunityIcons name={icon} size={20} color={"white"} />
       <Txt weight="medium" className="flex-1 text-[14px]">
         {title}
       </Txt>
@@ -315,6 +316,13 @@ function TrainAccountScreen() {
     refresh: refreshWorkout,
   } = useWorkout();
 
+  const {
+    active: activeProgram,
+    loading: programLoading,
+    error: programError,
+    refresh: refreshProgram,
+  } = useProgram();
+
   const { user } = useSession();
   const orderKey = `fitsync.train-order.v1.${user?.id ?? "signed-out"}`;
   const [menu, setMenu] = useState<MenuTarget | null>(null);
@@ -387,6 +395,7 @@ function TrainAccountScreen() {
       let active = true;
 
       void refreshWorkout().catch(() => {});
+      void refreshProgram();
       void load().finally(() => {
         if (active) setLoading(false);
       });
@@ -394,7 +403,7 @@ function TrainAccountScreen() {
       return () => {
         active = false;
       };
-    }, [load, refreshWorkout]),
+    }, [load, refreshWorkout, refreshProgram]),
   );
 
   useEffect(() => {
@@ -405,7 +414,7 @@ function TrainAccountScreen() {
     setRefreshing(true);
 
     try {
-      await refreshWorkout().catch(() => {});
+      await Promise.all([refreshWorkout().catch(() => {}), refreshProgram()]);
       await load();
     } finally {
       setRefreshing(false);
@@ -579,6 +588,7 @@ function TrainAccountScreen() {
 
           <PageHeading eyebrow={today} title="Let's train." subtitle="Your session, your pace." />
           <WorkoutSyncNotice />
+          <CoachHomeButton />
           {!loading && !error && (
             <View className="mb-3">
               <View className="mb-2 flex-row gap-1.5">
@@ -672,7 +682,7 @@ function TrainAccountScreen() {
             </View>
           )}
 
-          {/* Hero: resume or start */}
+          {/* Hero: active session, active program, or start */}
 
           {session ? (
             <Pressable
@@ -745,6 +755,10 @@ function TrainAccountScreen() {
                 </View>
               </View>
             </Pressable>
+          ) : workoutLoading ? (
+            <Skeleton height={170} />
+          ) : activeProgram || programLoading || programError ? (
+            <ActiveProgramCard hideEmpty />
           ) : (
             <Pressable
               accessibilityRole="button"
@@ -815,12 +829,6 @@ function TrainAccountScreen() {
             />
           </View>
 
-          <View className="mb-2">
-            <SectionHeading title="Your plans" />
-            <CoachHomeCard compact />
-            <ActiveProgramCard hideEmpty />
-          </View>
-
           {/* Error */}
 
           {Boolean(error) && !loading ? (
@@ -849,9 +857,9 @@ function TrainAccountScreen() {
               <TrainingSection
                 key={`programs-${user?.id}`}
                 title="Programs"
-                subtitle="Your saved multiweek plans"
                 count={programs.length}
                 icon="calendar-week"
+                accent="#7DCFFF"
               >
                 <Pressable
                   accessibilityRole="button"
@@ -906,7 +914,6 @@ function TrainAccountScreen() {
               <TrainingSection
                 key={`routines-${user?.id}`}
                 title="Routines"
-                subtitle="Reusable workouts, ready to start"
                 count={templates.length}
                 icon="dumbbell"
               >
@@ -964,9 +971,13 @@ function TrainAccountScreen() {
 
               {/* History */}
 
-              <View className="mt-6">
-                <SectionHeading title="Recent workouts" />
-
+              <TrainingSection
+                key={`history-${user?.id}`}
+                title="Recent workouts"
+                count={visibleHistory.length}
+                icon="history"
+                accent="#FFB38A"
+              >
                 {visibleHistory.length === 0 ? (
                   <EmptyState
                     icon="history"
@@ -998,7 +1009,7 @@ function TrainAccountScreen() {
                     </Txt>
                   </Pressable>
                 )}
-              </View>
+              </TrainingSection>
             </>
           )}
         </TabScrollView>
