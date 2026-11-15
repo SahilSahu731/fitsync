@@ -50,7 +50,7 @@ export function ShareProgress({
     >
       {loading ? (
         <View className="items-center gap-3 py-8">
-          <ActivityIndicator color="#7DCFFF" />
+          <ActivityIndicator color={C.ink} />
           <Txt className="text-sm text-muted">Loading your progress…</Txt>
         </View>
       ) : error ? (
@@ -62,15 +62,11 @@ export function ShareProgress({
         <>
           <View
             className="rounded-[26px] border bg-elevated p-5"
-            style={{ borderColor: "#C5F46030" }}
+            style={{ borderColor: "#FFFFFF1F" }}
           >
             <View className="flex-row items-center gap-2">
-              <Icon name="chart-line" size={21} color="#C5F460" />
-              <Txt
-                weight="semibold"
-                className="text-xs tracking-[2px]"
-                style={{ color: "#C5F460" }}
-              >
+              <Icon name="chart-line" size={21} color={C.ink} />
+              <Txt weight="semibold" className="text-xs tracking-[2px]" style={{ color: C.ink }}>
                 FITSYNC
               </Txt>
             </View>
@@ -86,7 +82,7 @@ export function ShareProgress({
                   style={{ width: "45%" }}
                 >
                   <View className="mb-3 flex-row items-center gap-2">
-                    <Icon name={stat.icon} size={17} color={stat.color} />
+                    <Icon name={stat.icon} size={17} color={C.ink} />
                     <Txt className="flex-1 text-[10px] text-muted">{stat.label}</Txt>
                   </View>
                   <Txt
@@ -120,7 +116,7 @@ export function ShareProgress({
             disabled={sharing || !data.current.workouts}
             onPress={() => void share()}
             className={`mt-5 min-h-14 flex-row items-center justify-center gap-2 rounded-full ${!data.current.workouts ? "opacity-40" : ""}`}
-            style={{ backgroundColor: "#7DCFFF" }}
+            style={{ backgroundColor: C.ink }}
           >
             {sharing ? (
               <ActivityIndicator color={C.bg} />

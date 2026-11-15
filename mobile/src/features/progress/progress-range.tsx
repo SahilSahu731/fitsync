@@ -28,12 +28,12 @@ export function ProgressRange({
           accessibilityState={{ selected: days === period }}
           onPress={() => (period > 90 && !isPro ? onPro() : onChange(period))}
           className="min-h-11 flex-1 flex-row items-center justify-center gap-1 rounded-xl px-1"
-          style={{ backgroundColor: days === period ? "#C5F46018" : "transparent" }}
+          style={{ backgroundColor: days === period ? C.ink : "transparent" }}
         >
           <Txt
             weight="medium"
             className="text-xs"
-            style={{ color: days === period ? "#C5F460" : C.muted }}
+            style={{ color: days === period ? C.bg : C.muted }}
           >
             {period === 7
               ? "7 days"
@@ -43,7 +43,9 @@ export function ProgressRange({
                   ? "3 months"
                   : "1 year"}
           </Txt>
-          {period > 90 && !isPro && <Icon name="lock-outline" size={12} color="#D4B5FF" />}
+          {period > 90 && !isPro && (
+            <Icon name="lock-outline" size={12} color={days === period ? C.bg : C.muted} />
+          )}
         </Pressable>
       ))}
     </View>

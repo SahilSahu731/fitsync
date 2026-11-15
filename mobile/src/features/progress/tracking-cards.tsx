@@ -167,7 +167,7 @@ export function TrainingStats({ data, unit }: { data: ProgressAnalytics; unit: "
     { label: "Minutes", value: shortNumber(data.current.minutes), icon: "clock-outline" as const },
     { label: "Working sets", value: shortNumber(data.current.sets), icon: "dumbbell" as const },
     {
-      label: `Volume · ${unit}`,
+      label: `Volume · ${unit} × reps`,
       value: shortNumber(weightValue(data.current.volume, unit)),
       icon: "weight-kilogram" as const,
     },

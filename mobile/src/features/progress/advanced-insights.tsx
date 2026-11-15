@@ -26,7 +26,7 @@ export function AdvancedInsights({
   if (checking)
     return (
       <View className="mt-6 flex-row items-center gap-3 rounded-[24px] bg-panel p-5">
-        <ActivityIndicator color="#D4B5FF" />
+        <ActivityIndicator color={C.ink} />
         <Txt className="text-xs text-muted">Checking your Pro access…</Txt>
       </View>
     );
@@ -45,19 +45,19 @@ export function AdvancedInsights({
     return (
       <View
         className="mt-7 rounded-[26px] border bg-panel p-5"
-        style={{ borderColor: "#D4B5FF30" }}
+        style={{ borderColor: "#FFFFFF18" }}
       >
         <View className="flex-row items-center gap-2">
-          <Icon name="star-four-points" size={18} color="#D4B5FF" />
+          <Icon name="star-four-points" size={18} color={C.ink} />
           <Txt weight="medium" className="flex-1 text-base">
             Workload distribution
           </Txt>
-          <Txt weight="semibold" className="text-[10px]" style={{ color: "#D4B5FF" }}>
+          <Txt weight="semibold" className="text-[10px]" style={{ color: C.ink }}>
             PRO
           </Txt>
         </View>
         <Txt className="mb-4 mt-2 text-xs leading-5 text-muted">
-          External volume by exercise in this range.
+          Share of external weighted volume · Top 5 exercises in this range.
         </Txt>
         {exercises.length ? (
           exercises.slice(0, 5).map((exercise) => (
@@ -71,10 +71,10 @@ export function AdvancedInsights({
                   {weightValue(exercise.volume, unit).toLocaleString(undefined, {
                     maximumFractionDigits: 0,
                   })}{" "}
-                  {unit}
+                  {unit} × reps
                 </Txt>
               </View>
-              <ProgressFill ratio={exercise.volume / total} color="#D4B5FF" height={5} />
+              <ProgressFill ratio={exercise.volume / total} color={C.ink} height={5} />
             </View>
           ))
         ) : (
@@ -87,10 +87,10 @@ export function AdvancedInsights({
           onPress={onOpen}
           className="min-h-11 flex-row items-center justify-between"
         >
-          <Txt weight="medium" className="text-xs" style={{ color: "#D4B5FF" }}>
+          <Txt weight="medium" className="text-xs" style={{ color: C.ink }}>
             More advanced analytics
           </Txt>
-          <Icon name="arrow-top-right" size={18} color="#D4B5FF" />
+          <Icon name="arrow-top-right" size={18} color={C.ink} />
         </Pressable>
       </View>
     );
@@ -98,7 +98,7 @@ export function AdvancedInsights({
   return (
     <View
       className="mt-7 overflow-hidden rounded-[26px] border bg-panel"
-      style={{ borderColor: "#D4B5FF30" }}
+      style={{ borderColor: "#FFFFFF18" }}
     >
       <View className="relative h-64">
         <BlurTargetView
@@ -111,7 +111,7 @@ export function AdvancedInsights({
               <Svg width="100%" height={155} viewBox="0 0 140 160">
                 <Path
                   d="M5 130 L25 110 L45 120 L65 80 L85 85 L105 45 L135 20"
-                  stroke="#D4B5FF"
+                  stroke={C.ink}
                   strokeWidth={5}
                   fill="none"
                 />
@@ -123,7 +123,7 @@ export function AdvancedInsights({
                     width={14}
                     height={height / 2}
                     rx={4}
-                    fill="#7DCFFF50"
+                    fill="#FFFFFF38"
                   />
                 ))}
               </Svg>
@@ -133,7 +133,7 @@ export function AdvancedInsights({
                 <View key={width} className="h-6 rounded-lg bg-elevated">
                   <View
                     className="h-full rounded-lg"
-                    style={{ width: width as `${number}%`, backgroundColor: "#C5F46040" }}
+                    style={{ width: width as `${number}%`, backgroundColor: "#FFFFFF30" }}
                   />
                 </View>
               ))}
@@ -150,10 +150,10 @@ export function AdvancedInsights({
         <View className="absolute inset-0 items-center justify-center bg-black/45 px-6">
           <View
             className="mb-3 flex-row items-center gap-1.5 rounded-full px-3 py-1.5"
-            style={{ backgroundColor: "#D4B5FF25" }}
+            style={{ backgroundColor: "#FFFFFF12" }}
           >
-            <Icon name="lock-outline" size={13} color="#D4B5FF" />
-            <Txt weight="semibold" className="text-[10px]" style={{ color: "#D4B5FF" }}>
+            <Icon name="lock-outline" size={13} color={C.ink} />
+            <Txt weight="semibold" className="text-[10px]" style={{ color: C.ink }}>
               FITSYNC PRO
             </Txt>
           </View>
@@ -168,7 +168,7 @@ export function AdvancedInsights({
             accessibilityLabel="Explore Pro advanced analytics"
             onPress={onOpen}
             className="mt-4 min-h-11 flex-row items-center gap-2 rounded-full px-5"
-            style={{ backgroundColor: "#D4B5FF" }}
+            style={{ backgroundColor: C.ink }}
           >
             <Txt weight="semibold" className="text-xs text-bg">
               Explore Pro

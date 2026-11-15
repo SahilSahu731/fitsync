@@ -114,13 +114,13 @@ export function MetricDetail({
               }}
               style={{
                 borderBottomWidth: 2,
-                borderBottomColor: group === key ? C.brand : "transparent",
+                borderBottomColor: group === key ? C.ink : "transparent",
                 minHeight: 44,
                 paddingHorizontal: 10,
                 justifyContent: "center",
               }}
             >
-              <Txt className="text-xs" style={{ color: group === key ? C.brand : C.muted }}>
+              <Txt className="text-xs" style={{ color: group === key ? C.ink : C.muted }}>
                 {METRIC_GROUPS[key].label}
               </Txt>
             </Pressable>
@@ -140,7 +140,7 @@ export function MetricDetail({
                 paddingHorizontal: 13,
                 minHeight: 44,
                 justifyContent: "center",
-                backgroundColor: key === metric ? C.brand : C.elevated,
+                backgroundColor: key === metric ? C.ink : C.elevated,
               }}
             >
               <Txt
@@ -154,7 +154,7 @@ export function MetricDetail({
           ))}
         </View>
       </ScrollView>
-      <Txt weight="semibold" className="text-[26px]" style={{ color: C.brand }}>
+      <Txt weight="semibold" className="text-[26px]" style={{ color: C.ink }}>
         {spec.label}
       </Txt>
       <Txt className="mb-5 mt-2 text-xs text-muted">
@@ -185,7 +185,7 @@ export function MetricDetail({
             style={{ width: "47%", padding: 15, borderRadius: 18, backgroundColor: C.elevated }}
           >
             <Txt className="text-[11px] text-muted">{item.label}</Txt>
-            <Txt weight="semibold" className="mt-2 text-xl" style={{ color: C.brand }}>
+            <Txt weight="semibold" className="mt-2 text-xl" style={{ color: C.ink }}>
               {stat(item.value)}
             </Txt>
             <Txt className="text-[11px] text-muted">{labelUnit}</Txt>
@@ -216,7 +216,7 @@ export function MetricDetail({
             </Txt>
             {entry.notes && <Txt className="mt-1 text-[11px] text-muted">{entry.notes}</Txt>}
           </View>
-          <Txt weight="semibold" style={{ color: C.brand }}>
+          <Txt weight="semibold" style={{ color: C.ink }}>
             {stat(convert(entry.value!))} {labelUnit} ↗
           </Txt>
         </Pressable>
@@ -234,7 +234,7 @@ export function MetricDetail({
           padding: 17,
           borderRadius: 18,
           alignItems: "center",
-          backgroundColor: C.brand,
+          backgroundColor: C.ink,
         }}
       >
         <Txt weight="semibold" style={{ color: C.bg }}>

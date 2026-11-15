@@ -5,6 +5,7 @@ import { MotionPressable } from "@/src/components/motion";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import { change, type ProgressAnalytics } from "./analytics";
+import { sessionProfile } from "./report";
 import { TrendChart } from "./charts";
 import { weightValue } from "./model";
 import { compact } from "./tracking-cards";
@@ -32,6 +33,10 @@ export function TrainingTrends({
   const [chart, setChart] = useState<ChartMetric>("workouts");
   const workoutChange = canCompare ? change(data.current.workouts, data.previous.workouts) : null;
   const activeDays = data.activity.filter((day) => day.workouts > 0).length;
+  const profile = sessionProfile(data);
+  const averageMinutes = profile.points.length
+    ? profile.points.reduce((sum, point) => sum + point.minutes, 0) / profile.points.length
+    : null;
 
   return (
     <>
@@ -53,11 +58,12 @@ export function TrainingTrends({
           </View>
           <View className="flex-1">
             <Txt weight="medium" className="text-xl">
-              {data.current.workouts
-                ? Math.round(data.current.minutes / data.current.workouts)
-                : "—"}
+              {averageMinutes === null ? "—" : compact(averageMinutes)}
             </Txt>
-            <Txt className="mt-1 text-xs text-muted">Minutes per workout</Txt>
+            <Txt className="mt-1 text-xs text-muted">Avg recorded minutes</Txt>
+            <Txt className="mt-1 text-[10px] text-muted">
+              {profile.points.length}/{profile.totalSessions} sessions with duration
+            </Txt>
           </View>
         </View>
         {data.current.workouts === 0 ? (
@@ -105,7 +111,9 @@ export function TrainingTrends({
                 value: chart === "volume" ? weightValue(day.volume, unit) : day[chart],
               }))}
               color={C.ink}
-              unit={chart === "volume" ? unit : chart === "minutes" ? "min" : "workouts"}
+              unit={
+                chart === "volume" ? `${unit} × reps` : chart === "minutes" ? "min" : "workouts"
+              }
               format={compact}
             />
             <Txt className="mt-4 text-[11px] leading-5 text-muted">

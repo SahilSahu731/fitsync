@@ -341,7 +341,7 @@ export function ProgressDashboard() {
           <RefreshControl
             refreshing={progress.refreshing && !progress.loading}
             onRefresh={() => void progress.refresh()}
-            tintColor={C.brand}
+            tintColor={C.ink}
           />
         }
         contentContainerClassName="w-full max-w-2xl self-center px-6 pt-2 pb-48"
@@ -359,9 +359,9 @@ export function ProgressDashboard() {
             accessibilityLabel="View your goals"
             onPress={() => setGoalEditor(true)}
             className="h-11 w-11 items-center justify-center rounded-full"
-            style={{ backgroundColor: "#C5F4601A" }}
+            style={{ backgroundColor: "#FFFFFF0A", borderWidth: 1, borderColor: "#FFFFFF12" }}
           >
-            <Icon name="bullseye-arrow" color="#C5F460" size={21} />
+            <Icon name="bullseye-arrow" color={C.ink} size={21} />
           </MotionPressable>
           <MotionPressable
             accessibilityRole="button"
@@ -369,9 +369,9 @@ export function ProgressDashboard() {
             accessibilityHint="Preview your progress summary before sharing"
             onPress={() => setSharePreview(true)}
             className="h-11 w-11 items-center justify-center rounded-full"
-            style={{ backgroundColor: "#7DCFFF1A" }}
+            style={{ backgroundColor: "#FFFFFF0A", borderWidth: 1, borderColor: "#FFFFFF12" }}
           >
-            <Icon name="share-variant-outline" color="#7DCFFF" size={21} />
+            <Icon name="share-variant-outline" color={C.ink} size={21} />
           </MotionPressable>
         </View>
         <Txt className="-mt-2 mb-5 text-xs text-muted">Your work, made visible.</Txt>
@@ -384,10 +384,7 @@ export function ProgressDashboard() {
               onPress={() => navigate(item.id)}
               className="min-h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-xl px-2"
               style={{
-                backgroundColor:
-                  item.id === view
-                    ? `${item.id === "overview" ? "#C5F460" : item.id === "health" ? "#7DCFFF" : "#FFB38A"}20`
-                    : "transparent",
+                backgroundColor: item.id === view ? C.ink : "transparent",
               }}
             >
               <Icon
@@ -399,28 +396,13 @@ export function ProgressDashboard() {
                       : "calendar-check-outline"
                 }
                 size={17}
-                color={
-                  item.id === view
-                    ? item.id === "overview"
-                      ? "#C5F460"
-                      : item.id === "health"
-                        ? "#7DCFFF"
-                        : "#FFB38A"
-                    : C.muted
-                }
+                color={item.id === view ? C.bg : C.muted}
               />
               <Txt
                 weight="medium"
                 className="text-xs"
                 style={{
-                  color:
-                    item.id === view
-                      ? item.id === "overview"
-                        ? "#C5F460"
-                        : item.id === "health"
-                          ? "#7DCFFF"
-                          : "#FFB38A"
-                      : C.muted,
+                  color: item.id === view ? C.bg : C.muted,
                 }}
               >
                 {item.label}
@@ -465,7 +447,7 @@ export function ProgressDashboard() {
             <Icon
               name={messageError ? "alert-circle-outline" : "check-circle-outline"}
               size={19}
-              color={messageError ? "#C1C1C1" : C.brand}
+              color={messageError ? "#C1C1C1" : C.ink}
             />
             <Txt className="flex-1 text-xs">{message}</Txt>
             <Icon name="close" color={C.muted} size={16} />
@@ -576,7 +558,7 @@ export function ProgressDashboard() {
                     paddingHorizontal: 14,
                     borderRadius: 24,
                     alignItems: "center",
-                    backgroundColor: !metricSearch && group === key ? C.brand : C.panel,
+                    backgroundColor: !metricSearch && group === key ? C.ink : C.panel,
                   }}
                 >
                   <Icon
@@ -657,7 +639,7 @@ export function ProgressDashboard() {
                 <Icon
                   name={historyDayOnly ? "checkbox-marked" : "checkbox-blank-outline"}
                   size={22}
-                  color={historyDayOnly ? C.brand : C.muted}
+                  color={historyDayOnly ? C.ink : C.muted}
                 />
                 <Txt className="text-sm text-muted">Selected day only</Txt>
               </MotionPressable>

@@ -34,6 +34,12 @@ function find(node, type) {
   return [...(node.type === type ? [node] : []), ...find(node.props?.children, type)];
 }
 
+function text(node) {
+  if (Array.isArray(node)) return node.map(text).join(" ");
+  if (node && typeof node === "object") return text(node.props?.children);
+  return String(node ?? "");
+}
+
 test("the bar exposes only the five requested tabs in order", () => {
   const Tabs = Object.assign(() => null, { Screen: "Screen" });
   const calls = [];
@@ -103,6 +109,10 @@ test("the bar exposes only the five requested tabs in order", () => {
 
 const model = load("../src/features/progress/model.ts", {});
 const analytics = load("../src/features/progress/analytics.ts", { "./model": model });
+const report = load("../src/features/progress/report.ts", {
+  "./analytics": analytics,
+  "./model": model,
+});
 const today = "2026-11-13";
 function workout(id, date) {
   return {
@@ -180,6 +190,7 @@ function progressFixture() {
     "@/src/constants/theme": { C: { ink: "#FFFFFF", bg: "#000000" } },
     "@/src/context/session": { useSession: () => session },
     "./analytics": analytics,
+    "./report": report,
     "./access": access,
     "./progress-range": { ProgressRange: "Range" },
     "@/src/features/billing/billing-context": { useBilling: () => billing },
@@ -330,6 +341,7 @@ function trendsFixture(workouts = [workout("recent", "2026-11-12")]) {
     "@/src/components/ui": { Txt: "Txt" },
     "@/src/constants/theme": { C: { ink: "#FFFFFF", bg: "#000000" } },
     "./analytics": analytics,
+    "./report": report,
     "./charts": { TrendChart: "Chart" },
     "./model": model,
     "./tracking-cards": { compact: String },
@@ -357,7 +369,7 @@ test("merged charts retain workout, volume, and duration series and convert weig
     .props.onPress();
   tree = fixture.render("lb");
   const chart = find(tree, "Chart")[0].props;
-  assert.equal(chart.unit, "lb");
+  assert.equal(chart.unit, "lb × reps");
   assert.equal(
     chart.points.reduce((sum, point) => sum + point.value, 0),
     model.weightValue(600, "lb"),
@@ -425,4 +437,13 @@ test("free ranges gate older analytics; a Pro downgrade cannot retain a paid ran
   assert.equal(free.data.current.workouts, 2);
   assert.equal(free.data.allTime.workouts, 2);
   assert.equal(free.canCompare, false);
+});
+
+test("session-time averages exclude workouts without a recorded duration", () => {
+  const recorded = workout("recorded", "2026-11-12");
+  const missing = { ...workout("missing", "2026-11-13"), elapsed_seconds: null };
+  const tree = trendsFixture([recorded, missing]).render();
+  assert.match(text(tree), /Avg recorded minutes/);
+  assert.match(text(tree), /1.*\/.*2.*sessions with duration/);
+  assert.ok(find(tree, "Txt").some((n) => text(n) === "20"));
 });

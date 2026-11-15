@@ -28,13 +28,28 @@ function load(file, deps = {}) {
 const model = load("../src/features/progress/model.ts");
 const analytics = load("../src/features/progress/analytics.ts", { "./model": model });
 const { buildProgress } = analytics;
+const report = load("../src/features/progress/report.ts", {
+  "./analytics": analytics,
+  "./model": model,
+});
+let hookState = [];
+let hookIndex = 0;
 const react = {
   createElement: (type, props, ...children) =>
     typeof type === "function"
       ? type({ ...props, children })
       : { type, props: props ?? {}, children },
   Fragment: "fragment",
-  useState: (initial) => [initial, () => {}],
+  useState: (initial) => {
+    const index = hookIndex++;
+    if (!(index in hookState)) hookState[index] = initial;
+    return [
+      hookState[index],
+      (value) => {
+        hookState[index] = value;
+      },
+    ];
+  },
 };
 const component = (name) => (props) => ({ type: name, props, children: props.children ?? [] });
 const { ProgressOverview } = load("../src/features/progress/overview.tsx", {
@@ -51,11 +66,17 @@ const { ProgressOverview } = load("../src/features/progress/overview.tsx", {
     SmallButton: component("SmallButton"),
   },
   "./analytics": analytics,
+  "./report": report,
   "./charts": { TrendChart: component("TrendChart"), Ring: component("Ring") },
   "./insight-charts": {
-    ActivityBars: component("ActivityBars"),
+    HabitWeek: component("HabitWeek"),
     ActivityHeatmap: component("Heatmap"),
     MacroRing: component("MacroRing"),
+  },
+  "./analytical-charts": {
+    CumulativeChart: component("CumulativeChart"),
+    SessionScatter: component("SessionScatter"),
+    DurationBoxPlot: component("DurationBoxPlot"),
   },
   "./progress-range": { ProgressRange: component("Range") },
   "./advanced-insights": { AdvancedInsights: component("Advanced") },
@@ -106,8 +127,13 @@ function render(extra = {}) {
     ),
     ...extra,
   };
-  const tree = ProgressOverview(props);
-  return { tree, nodes: nodes(tree), calls };
+  hookState = [];
+  function rerender() {
+    hookIndex = 0;
+    const tree = ProgressOverview(props);
+    return { tree, nodes: nodes(tree), calls, rerender };
+  }
+  return rerender();
 }
 test("new user sees starting actions and missing values without invented progress", () => {
   const v = render();
@@ -182,4 +208,90 @@ test("old daily logs remain viewable but older hydration trends are identified a
     isPro: false,
   });
   assert.match(text(v.tree), /Older hydration trends require Pro/);
+});
+
+const workout = (id, date, minutes, load = 20) => ({
+  id,
+  name: `Workout ${id}`,
+  status: "completed",
+  started_at: `${date}T09:00:00Z`,
+  finished_at: `${date}T10:00:00Z`,
+  elapsed_seconds: minutes === null ? null : minutes * 60,
+  workout_session_exercises: [
+    {
+      id: `exercise-${id}`,
+      exercise_id: "bench",
+      exercise_name: "Bench press",
+      tracking_type: "reps_weight",
+      workout_logged_sets: [
+        { completed_at: `${date}T10:00:00Z`, set_type: "normal", weight_kg: load, reps: 10 },
+        { completed_at: `${date}T10:00:00Z`, set_type: "warmup", weight_kg: 1000, reps: 10 },
+      ],
+    },
+  ],
+});
+test("overview uses cumulative totals and switches to a real session-length distribution", () => {
+  const data = buildProgress(
+    [
+      workout("a", "2026-11-10", 20),
+      workout("b", "2026-11-14", 40),
+      workout("missing", "2026-11-15", null),
+    ],
+    [],
+    30,
+    "2026-11-15",
+    3,
+  );
+  let v = render({ data, unit: "lb" });
+  const cumulative = v.nodes.find((n) => n.type === "CumulativeChart");
+  assert.equal(cumulative.props.points.length, 30);
+  assert.equal(cumulative.props.points.at(-1).value, 3);
+  const scatter = v.nodes.find((n) => n.type === "SessionScatter");
+  assert.equal(scatter.props.points.length, 2);
+  assert.equal(scatter.props.points[1].sets, 1);
+  assert.match(text(v.tree), /2.*\/.*3.*sessions with recorded duration/);
+  const durationButton = v.nodes.find(
+    (n) => n.type === "Pressable" && text(n) === "Session length",
+  );
+  durationButton.props.onPress();
+  v = v.rerender();
+  assert.equal(
+    v.nodes.some((n) => n.type === "SessionScatter"),
+    false,
+  );
+  assert.equal(v.nodes.find((n) => n.type === "DurationBoxPlot").props.distribution.median, 30);
+  const volumeButton = v.nodes.find((n) => n.type === "Pressable" && text(n) === "Volume");
+  volumeButton.props.onPress();
+  v = v.rerender();
+  assert.equal(
+    v.nodes.find((n) => n.type === "CumulativeChart").props.points.at(-1).value,
+    model.weightValue(600, "lb"),
+  );
+});
+test("hydration timeline receives missing logs distinctly from logged zero and uses the selected check-in date", () => {
+  const events = [
+    {
+      id: "water-zero",
+      kind: "metric",
+      metric: "water",
+      date: "2026-11-10",
+      value: 0,
+      observedAt: "2026-11-10T10:00:00Z",
+    },
+    {
+      id: "water-goal",
+      kind: "metric",
+      metric: "water",
+      date: "2026-11-11",
+      value: 2000,
+      observedAt: "2026-11-11T10:00:00Z",
+    },
+  ];
+  const data = buildProgress([], events, 30, "2026-11-15", 3);
+  const v = render({ data, selectedDate: "2026-11-11" });
+  const timeline = v.nodes.find((n) => n.type === "HabitWeek");
+  assert.equal(timeline.props.days.at(-1).date, "2026-11-11");
+  assert.equal(timeline.props.days.at(-1).value, 2000);
+  assert.equal(timeline.props.days.at(-2).value, 0);
+  assert.equal(timeline.props.days.at(-3).value, null);
 });

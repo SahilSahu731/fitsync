@@ -9,7 +9,7 @@ import { TrendChart } from "./charts";
 import { dateLabel, weightValue } from "./model";
 import type { ProgressAnalytics } from "./analytics";
 
-const purple = C.brand;
+const accent = C.ink;
 type Mode = "e1rm" | "load" | "volume" | "reps" | "duration" | "distance";
 const names: Record<Mode, string> = {
   e1rm: "Est. 1RM",
@@ -48,13 +48,16 @@ export function StrengthSection({
           ? ["distance", "duration"]
           : ["reps"];
   const activeMode = modes.includes(mode) ? mode : modes[0];
-  const modeUnit = ["e1rm", "load", "volume"].includes(activeMode)
-    ? unit
-    : activeMode === "reps"
-      ? "reps"
-      : activeMode === "duration"
-        ? "sec"
-        : "m";
+  const modeUnit =
+    activeMode === "volume"
+      ? `${unit} × reps`
+      : ["e1rm", "load"].includes(activeMode)
+        ? unit
+        : activeMode === "reps"
+          ? "reps"
+          : activeMode === "duration"
+            ? "sec"
+            : "m";
   const convert = (value: number) =>
     ["e1rm", "load", "volume"].includes(activeMode) ? weightValue(value, unit) : value;
   const sessions =
@@ -88,7 +91,7 @@ export function StrengthSection({
             justifyContent: "center",
           }}
         >
-          <MaterialCommunityIcons name="chart-timeline-variant-shimmer" size={25} color={purple} />
+          <MaterialCommunityIcons name="chart-timeline-variant-shimmer" size={25} color={accent} />
         </View>
       </View>
       <View style={{ padding: 20, borderRadius: 28, backgroundColor: C.panel }}>
@@ -118,7 +121,7 @@ export function StrengthSection({
                   borderRadius: 20,
                   paddingHorizontal: 14,
                   paddingVertical: 10,
-                  backgroundColor: item.id === exercise?.id ? purple : "#FFFFFF08",
+                  backgroundColor: item.id === exercise?.id ? accent : "#FFFFFF08",
                 }}
               >
                 <Txt
@@ -162,14 +165,14 @@ export function StrengthSection({
                     onPress={() => setMode(item)}
                     style={{
                       borderBottomWidth: 2,
-                      borderBottomColor: item === activeMode ? purple : "transparent",
+                      borderBottomColor: item === activeMode ? accent : "transparent",
                       paddingVertical: 8,
                       paddingHorizontal: 8,
                     }}
                   >
                     <Txt
                       className="text-xs"
-                      style={{ color: item === activeMode ? purple : C.muted }}
+                      style={{ color: item === activeMode ? accent : C.muted }}
                     >
                       {names[item]}
                     </Txt>
@@ -179,14 +182,14 @@ export function StrengthSection({
             </ScrollView>
             <TrendChart
               points={points}
-              color={purple}
+              color={accent}
               unit={modeUnit}
               format={(value) => value.toLocaleString(undefined, { maximumFractionDigits: 1 })}
             />
             {first !== undefined && last !== undefined && points.length > 1 && (
               <View className="mt-4 flex-row items-center justify-between rounded-2xl bg-black/20 p-3">
                 <Txt className="text-xs text-muted">First → latest in this range</Txt>
-                <Txt weight="semibold" style={{ color: purple }}>
+                <Txt weight="semibold" style={{ color: accent }}>
                   {last - first >= 0 ? "+" : ""}
                   {(last - first).toFixed(1)} {modeUnit}
                 </Txt>
@@ -223,7 +226,7 @@ export function StrengthSection({
                           {session.sets} working sets
                         </Txt>
                       </View>
-                      <Txt weight="semibold" className="text-xs" style={{ color: purple }}>
+                      <Txt weight="semibold" className="text-xs" style={{ color: accent }}>
                         {session[activeMode] === null
                           ? "No estimate"
                           : `${convert(session[activeMode]!).toFixed(1)} ${modeUnit}`}{" "}

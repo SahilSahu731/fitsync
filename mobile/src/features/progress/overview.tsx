@@ -15,7 +15,9 @@ import {
 } from "./model";
 import { change, type ProgressAnalytics } from "./analytics";
 import { Ring, TrendChart } from "./charts";
-import { ActivityBars, ActivityHeatmap, MacroRing } from "./insight-charts";
+import { ActivityHeatmap, HabitWeek, MacroRing } from "./insight-charts";
+import { CumulativeChart, DurationBoxPlot, SessionScatter } from "./analytical-charts";
+import { cumulativeActivity, sessionProfile } from "./report";
 import { ProgressRange } from "./progress-range";
 import { AdvancedInsights } from "./advanced-insights";
 
@@ -52,9 +54,8 @@ type Props = {
   onRange?: (days: number) => void;
   onPro?: () => void;
 };
-const green = "#C5F460",
-  blue = "#7DCFFF",
-  peach = "#FFB38A";
+const ink = "#F5F5F5";
+const macroShades = [ink, "#ACACAC", "#656565"] as const;
 const noop = () => {};
 export function ProgressOverview({
   data,
@@ -91,25 +92,16 @@ export function ProgressOverview({
 }: Props) {
   const [chart, setChart] = useState<"workouts" | "minutes" | "volume">("workouts");
   const [exerciseId, setExerciseId] = useState("");
-  const color = chart === "workouts" ? green : chart === "minutes" ? blue : peach;
+  const [sessionView, setSessionView] = useState<"workload" | "duration">("workload");
+  const profile = sessionProfile(data);
+  const cumulative = cumulativeActivity(data, chart, unit);
   const chartUnit =
     chart === "workouts" ? "workouts" : chart === "minutes" ? "min" : `${unit} × reps`;
-  const bucketSize = Math.max(1, Math.ceil(data.activity.length / 13));
-  const buckets = Array.from(
-    { length: Math.ceil(data.activity.length / bucketSize) },
-    (_, index) => {
-      const rows = data.activity.slice(index * bucketSize, (index + 1) * bucketSize);
-      const value = rows.reduce((sum, row) => sum + row[chart], 0);
-      return {
-        date: rows[0].date,
-        end: rows.at(-1)!.date,
-        value: chart === "volume" ? weightValue(value, unit) : value,
-      };
-    },
-  );
   const delta = canCompare ? change(data.current[chart], data.previous[chart]) : null;
   const currentValue =
     chart === "volume" ? weightValue(data.current.volume, unit) : data.current[chart];
+  const previousValue =
+    chart === "volume" ? weightValue(data.previous.volume, unit) : data.previous[chart];
   const activeDays = data.activity.filter((day) => day.workouts > 0).length;
   const water = daily("water");
   const recentExercises = [...data.exercises].sort((a, b) =>
@@ -157,7 +149,17 @@ export function ProgressOverview({
         null,
     };
   }).filter((day) => isPro || day.date >= addDays(today, -89));
-  const waterMax = Math.max(goals.water ?? 0, 1, ...waterDays.map((day) => day.value ?? 0));
+  const waterLogged = waterDays.filter((day) => day.value !== null).length;
+  const waterMet = goals.water
+    ? waterDays.filter((day) => day.value !== null && day.value >= goals.water!).length
+    : 0;
+  const firstPerformance = exercisePoints[0]?.value;
+  const latestPerformance = exercisePoints.at(-1)?.value;
+  const performanceChange =
+    firstPerformance != null && latestPerformance != null && exercisePoints.length > 1
+      ? latestPerformance - firstPerformance
+      : null;
+  const weightValues = weights.map((entry) => weightValue(entry.value!, unit));
   return (
     <>
       <ProgressRange days={days} isPro={isPro} onChange={onRange} onPro={onPro} />
@@ -169,7 +171,7 @@ export function ProgressOverview({
           <Icon
             name={isPro ? "star-four-points" : "check-circle-outline"}
             size={12}
-            color={isPro ? "#D4B5FF" : green}
+            color={C.muted}
           />
           <Txt className="text-[10px] text-muted">
             {isPro ? "Pro analytics" : "90 days included"}
@@ -180,11 +182,11 @@ export function ProgressOverview({
         <>
           <View
             className="overflow-hidden rounded-[28px] border bg-panel p-5"
-            style={{ borderColor: `${color}25` }}
+            style={{ borderColor: "#FFFFFF14" }}
           >
             <View className="flex-row items-center justify-between">
               <Txt weight="medium" className="text-base">
-                Your momentum
+                Training trend
               </Txt>
               <Pressable
                 accessibilityRole="button"
@@ -192,24 +194,29 @@ export function ProgressOverview({
                 onPress={onTraining}
                 className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
               >
-                <Icon name="arrow-top-right" size={20} color={color} />
+                <Icon name="arrow-top-right" size={20} color={ink} />
               </Pressable>
             </View>
-            <View className="mt-2 flex-row items-baseline gap-2">
+            <View className="mt-2">
               <Txt
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                minimumFontScale={0.65}
                 weight="semibold"
                 className="text-[44px] leading-[58px] tracking-[-1.7px]"
-                style={{ color }}
+                style={{ color: ink }}
               >
                 {compact(currentValue)}
               </Txt>
-              <Txt className="text-sm text-muted">{chartUnit}</Txt>
+              <Txt className="mb-1 text-xs text-muted">{chartUnit} in range</Txt>
             </View>
             <Txt className="mb-3 text-[10px] leading-5 text-muted">
               {delta !== null
-                ? `${delta > 0 ? "+" : ""}${delta.toFixed(0)}% vs previous ${days} days`
+                ? `${delta > 0 ? "+" : ""}${delta.toFixed(0)}% · ${compact(previousValue)} ${chartUnit} in previous ${days} days`
                 : data.current.workouts
-                  ? `${activeDays} active days · completed sessions only`
+                  ? canCompare
+                    ? `${compact(previousValue)} ${chartUnit} recorded in previous ${days} days`
+                    : `${activeDays} active days · completed sessions only`
                   : hasWorkoutHistory
                     ? "No completed sessions in this range."
                     : "Start with one workout. Your progress grows from there."}
@@ -228,32 +235,36 @@ export function ProgressOverview({
                   accessibilityState={{ selected: chart === id }}
                   onPress={() => setChart(id)}
                   className="min-h-11 flex-1 items-center justify-center rounded-full"
-                  style={{ backgroundColor: chart === id ? `${color}18` : C.elevated }}
+                  style={{ backgroundColor: chart === id ? ink : C.elevated }}
                 >
                   <Txt
                     weight="medium"
                     className="text-[11px]"
-                    style={{ color: chart === id ? color : C.muted }}
+                    style={{ color: chart === id ? C.bg : C.muted }}
                   >
                     {label}
                   </Txt>
                 </Pressable>
               ))}
             </View>
-            <ActivityBars
-              key={`${days}:${chart}`}
-              points={buckets}
-              color={color}
-              unit={chartUnit}
-            />
+            <View className="mt-4">
+              <CumulativeChart key={`${days}:${chart}`} points={cumulative} unit={chartUnit} />
+            </View>
+            <Txt className="mt-2 text-[10px] leading-5 text-muted">
+              {chart === "volume"
+                ? "Cumulative external load × reps. Completed weighted working sets only."
+                : chart === "minutes"
+                  ? "Cumulative recorded workout time, including rest."
+                  : "Running total of completed workouts. Flat sections show days without a session."}
+            </Txt>
             <View className="mt-5 flex-row border-t border-white/5 pt-4">
               {[
-                { label: "Workouts", value: data.current.workouts, color: green },
-                { label: "Minutes", value: data.current.minutes, color: blue },
-                { label: "Working sets", value: data.current.sets, color: peach },
+                { label: "Workouts", value: data.current.workouts },
+                { label: "Minutes", value: data.current.minutes },
+                { label: "Working sets", value: data.current.sets },
               ].map((stat) => (
                 <View key={stat.label} className="flex-1">
-                  <Txt weight="semibold" className="text-lg" style={{ color: stat.color }}>
+                  <Txt weight="semibold" className="text-lg" style={{ color: ink }}>
                     {compact(stat.value)}
                   </Txt>
                   <Txt className="mt-1 text-[10px] text-muted">{stat.label}</Txt>
@@ -265,7 +276,7 @@ export function ProgressOverview({
                 <SmallButton
                   label="Set my goals"
                   icon="bullseye-arrow"
-                  color={green}
+                  color={ink}
                   onPress={onGoals}
                 />
               </View>
@@ -280,9 +291,57 @@ export function ProgressOverview({
               </View>
             )}
           </View>
+          <View className="mt-4 rounded-[26px] border border-white/5 bg-panel p-5">
+            <View className="mb-1 flex-row items-center gap-2">
+              <Icon name="chart-scatter-plot" size={18} color={ink} />
+              <Txt weight="medium" className="flex-1 text-sm">
+                Inside your sessions
+              </Txt>
+            </View>
+            <Txt className="mb-4 text-[10px] leading-5 text-muted">
+              Understand your session workload and typical workout length.
+            </Txt>
+            <View className="mb-3 flex-row gap-2">
+              {(
+                [
+                  ["workload", "Workload"],
+                  ["duration", "Session length"],
+                ] as const
+              ).map(([id, label]) => (
+                <Pressable
+                  key={id}
+                  accessibilityRole="button"
+                  accessibilityState={{ selected: sessionView === id }}
+                  onPress={() => setSessionView(id)}
+                  className="min-h-11 flex-1 items-center justify-center rounded-full px-3"
+                  style={{ backgroundColor: sessionView === id ? ink : C.elevated }}
+                >
+                  <Txt
+                    className="text-[11px]"
+                    weight="medium"
+                    style={{ color: sessionView === id ? C.bg : C.muted }}
+                  >
+                    {label}
+                  </Txt>
+                </Pressable>
+              ))}
+            </View>
+            {sessionView === "workload" ? (
+              <SessionScatter key={`scatter:${days}`} points={profile.points} />
+            ) : (
+              <DurationBoxPlot distribution={profile.duration} />
+            )}
+            <Txt className="mt-3 text-[10px] leading-5 text-muted">
+              {profile.points.length}/{profile.totalSessions} sessions with recorded duration.
+              {profile.missingDurationCount > 0
+                ? ` ${profile.missingDurationCount} without duration excluded.`
+                : ""}
+              {" Working sets exclude warmups."}
+            </Txt>
+          </View>
           <View className="mt-4 rounded-[26px] bg-panel p-5">
             <View className="mb-4 flex-row items-center gap-2">
-              <Icon name="calendar-check-outline" size={18} color={green} />
+              <Icon name="calendar-check-outline" size={18} color={ink} />
               <Txt weight="medium" className="flex-1 text-sm">
                 Consistency, at a glance
               </Txt>
@@ -306,7 +365,7 @@ export function ProgressOverview({
       <SectionTitle title="Body & daily habits" action="All metrics" onAction={onHealth} />
       <View className="rounded-[26px] bg-panel p-5">
         <View className="flex-row items-center gap-2">
-          <Icon name="scale-bathroom" size={20} color={peach} />
+          <Icon name="scale-bathroom" size={20} color={ink} />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="View weight trend"
@@ -324,16 +383,16 @@ export function ProgressOverview({
             onPress={() => onLog("weight")}
             className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
           >
-            <Icon name="plus" size={20} color={peach} />
+            <Icon name="plus" size={20} color={ink} />
           </Pressable>
         </View>
-        <View className="mt-2 flex-row items-baseline gap-2">
+        <View className="mt-2 flex-row flex-wrap items-baseline gap-x-2 gap-y-1">
           <Txt weight="semibold" className="text-[32px]">
             {latestWeight ? displayMetric("weight", latestWeight.value, unit) : "—"}
           </Txt>
           <Txt className="text-xs text-muted">{unit}</Txt>
           {weightChange !== null && (
-            <Txt className="ml-auto text-xs" style={{ color: peach }}>
+            <Txt className="w-full text-xs" style={{ color: ink }}>
               {weightChange > 0 ? "+" : ""}
               {weightChange.toFixed(1)} {unit} in range
             </Txt>
@@ -349,12 +408,15 @@ export function ProgressOverview({
             date: entry.date,
             value: weightValue(entry.value!, unit),
           }))}
-          color={peach}
+          color={ink}
           unit={unit}
           compact
         />
         <Txt className="mt-3 text-[10px] text-muted">
-          {weights.length} logged days in this range · changes are shown neutrally.
+          {weightValues.length > 1
+            ? `${Math.min(...weightValues).toFixed(1)}–${Math.max(...weightValues).toFixed(1)} ${unit} range · ${weights.length} logged days`
+            : `${weights.length} logged days in this range`}
+          {" · Dots show logged readings."}
         </Txt>
       </View>
       <View className="mb-3 mt-5 flex-row items-center justify-between">
@@ -366,7 +428,7 @@ export function ProgressOverview({
       {dayPicker}
       <View className="rounded-[26px] bg-panel p-5">
         <View className="flex-row items-center gap-2">
-          <Icon name="water-outline" size={20} color={blue} />
+          <Icon name="water-outline" size={20} color={ink} />
           <Pressable
             accessibilityRole="button"
             accessibilityLabel={`Water, ${water ?? "no log"} ml. View details`}
@@ -384,11 +446,11 @@ export function ProgressOverview({
             onPress={() => onLog("water")}
             className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
           >
-            <Icon name="plus" size={20} color={blue} />
+            <Icon name="plus" size={20} color={ink} />
           </Pressable>
         </View>
         <View className="mt-3 flex-row items-center gap-5">
-          <Ring value={water ?? 0} target={goals.water} color={blue} size={116}>
+          <Ring value={water ?? 0} target={goals.water} color={ink} size={116}>
             <Txt weight="semibold" className="text-xl">
               {water === null ? "—" : compact(water)}
             </Txt>
@@ -401,25 +463,24 @@ export function ProgressOverview({
             <Txt className="mt-1 text-[10px] leading-5 text-muted">
               {goals.water ? `Goal ${compact(goals.water)} ml` : "Track freely · no target set"}
             </Txt>
-            <View className="mt-3 h-10 flex-row items-end gap-1.5">
-              {waterDays.map((day) => (
-                <View
-                  key={day.date}
-                  className="flex-1 rounded-t"
-                  style={{
-                    height: day.value === null ? 3 : Math.max(3, (day.value / waterMax) * 40),
-                    backgroundColor: day.value === null ? C.elevated : blue,
-                    opacity: day.date === selectedDate ? 1 : 0.45,
-                  }}
-                />
-              ))}
-            </View>
-            <Txt className="mt-2 text-[9px] text-muted">
-              {waterDays.length
-                ? `${waterDays.filter((day) => day.value !== null).length} of ${waterDays.length} days logged`
-                : "Older hydration trends require Pro"}
+            <Txt className="mt-3 text-xs">
+              {water === null
+                ? "No log for this day"
+                : goals.water
+                  ? water >= goals.water
+                    ? "Daily goal met"
+                    : `${compact(goals.water - water)} ml to goal`
+                  : "Water logged"}
             </Txt>
           </View>
+        </View>
+        <View className="mt-4 border-t border-white/5 pt-4">
+          <HabitWeek days={waterDays} target={goals.water} />
+          <Txt className="mt-3 text-[10px] leading-4 text-muted">
+            {waterDays.length
+              ? `${waterLogged}/${waterDays.length} days logged${goals.water ? ` · ${waterMet} at current goal` : ""}`
+              : "Older hydration trends require Pro"}
+          </Txt>
         </View>
         <Pressable
           accessibilityRole="button"
@@ -428,8 +489,8 @@ export function ProgressOverview({
           onPress={onWater}
           className={`mt-4 min-h-11 flex-row items-center justify-center gap-2 rounded-full bg-elevated ${waterBusy || !canLog ? "opacity-40" : ""}`}
         >
-          <Icon name="water-plus-outline" size={18} color={blue} />
-          <Txt weight="medium" className="text-xs" style={{ color: blue }}>
+          <Icon name="water-plus-outline" size={18} color={ink} />
+          <Txt weight="medium" className="text-xs" style={{ color: ink }}>
             {waterBusy ? "Saving…" : "+250 ml water"}
           </Txt>
         </Pressable>
@@ -442,7 +503,7 @@ export function ProgressOverview({
           onPress={onNutrition}
           className="min-h-11 flex-row items-center gap-2"
         >
-          <Icon name="silverware-fork-knife" size={20} color={green} />
+          <Icon name="silverware-fork-knife" size={20} color={ink} />
           <Txt weight="medium" className="flex-1 text-sm">
             Nutrition
           </Txt>
@@ -462,8 +523,8 @@ export function ProgressOverview({
               onPress={() => onLog("caloriesIn")}
               className="mt-2 min-h-11 flex-row items-center gap-1"
             >
-              <Icon name="plus" size={16} color={green} />
-              <Txt className="text-xs" style={{ color: green }}>
+              <Icon name="plus" size={16} color={ink} />
+              <Txt className="text-xs" style={{ color: ink }}>
                 Log nutrition
               </Txt>
             </Pressable>
@@ -472,9 +533,9 @@ export function ProgressOverview({
         <View className="mt-4 flex-row gap-2">
           {(
             [
-              ["protein", "Protein", green],
-              ["carbs", "Carbs", blue],
-              ["fat", "Fat", peach],
+              ["protein", "Protein", macroShades[0]],
+              ["carbs", "Carbs", macroShades[1]],
+              ["fat", "Fat", macroShades[2]],
             ] as const
           ).map(([metric, label, color]) => (
             <Pressable
@@ -523,12 +584,12 @@ export function ProgressOverview({
                       onPress={() => setExerciseId(item.id)}
                       className="min-h-11 justify-center rounded-full px-4"
                       style={{
-                        backgroundColor: item.id === exercise.id ? "#C5F46018" : C.elevated,
+                        backgroundColor: item.id === exercise.id ? ink : C.elevated,
                       }}
                     >
                       <Txt
                         className="text-[11px]"
-                        style={{ color: item.id === exercise.id ? green : C.muted }}
+                        style={{ color: item.id === exercise.id ? C.bg : C.muted }}
                       >
                         {item.name}
                       </Txt>
@@ -541,9 +602,20 @@ export function ProgressOverview({
                 <Txt className="mb-4 mt-1 text-[10px] text-muted">
                   {exerciseLabel} · {exerciseUnit}
                 </Txt>
+                {performanceChange !== null && (
+                  <View className="mb-3 flex-row flex-wrap items-center gap-x-3 gap-y-1">
+                    <Txt weight="medium" className="text-sm">
+                      {performanceChange > 0 ? "+" : ""}
+                      {compact(performanceChange)} {exerciseUnit}
+                    </Txt>
+                    <Txt className="text-[10px] text-muted">
+                      first → latest · {exercisePoints.length} sessions in range
+                    </Txt>
+                  </View>
+                )}
                 <TrendChart
                   points={exercisePoints}
-                  color={green}
+                  color={ink}
                   unit={exerciseUnit}
                   format={compact}
                 />
@@ -553,15 +625,15 @@ export function ProgressOverview({
                   onPress={() => onExercise(exercise.id)}
                   className="mt-3 min-h-11 flex-row items-center justify-between"
                 >
-                  <Txt className="text-xs" style={{ color: green }}>
+                  <Txt className="text-xs" style={{ color: ink }}>
                     Session details & recent bests
                   </Txt>
-                  <Icon name="arrow-top-right" size={18} color={green} />
+                  <Icon name="arrow-top-right" size={18} color={ink} />
                 </Pressable>
               </>
             ) : (
               <>
-                <Icon name="chart-line" color={green} size={28} />
+                <Icon name="chart-line" color={ink} size={28} />
                 <Txt weight="medium" className="mt-3 text-base">
                   See what’s getting stronger
                 </Txt>
