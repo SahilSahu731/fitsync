@@ -23,6 +23,7 @@ type Props = {
   data: ProgressAnalytics;
   goals: Goals;
   hasGoals?: boolean;
+  hasWorkoutHistory?: boolean;
   onGoals?: () => void;
   unit: "kg" | "lb";
   today: string;
@@ -59,6 +60,7 @@ export function ProgressOverview({
   data,
   goals,
   hasGoals = true,
+  hasWorkoutHistory = Boolean(data.allTime.workouts),
   onGoals,
   unit,
   today,
@@ -154,7 +156,7 @@ export function ProgressOverview({
         data.metrics.find((entry) => entry.metric === "water" && entry.date === date)?.value ??
         null,
     };
-  });
+  }).filter((day) => isPro || day.date >= addDays(today, -89));
   const waterMax = Math.max(goals.water ?? 0, 1, ...waterDays.map((day) => day.value ?? 0));
   return (
     <>
@@ -208,7 +210,9 @@ export function ProgressOverview({
                 ? `${delta > 0 ? "+" : ""}${delta.toFixed(0)}% vs previous ${days} days`
                 : data.current.workouts
                   ? `${activeDays} active days · completed sessions only`
-                  : "Start with one workout. Your progress grows from there."}
+                  : hasWorkoutHistory
+                    ? "No completed sessions in this range."
+                    : "Start with one workout. Your progress grows from there."}
             </Txt>
             <View className="flex-row gap-2">
               {(
@@ -269,7 +273,7 @@ export function ProgressOverview({
             {!data.allTime.workouts && (
               <View className="mt-3">
                 <SmallButton
-                  label="Start your first workout"
+                  label={hasWorkoutHistory ? "Back to Train" : "Start your first workout"}
                   icon="arrow-right"
                   onPress={onTrain}
                 />
@@ -411,7 +415,9 @@ export function ProgressOverview({
               ))}
             </View>
             <Txt className="mt-2 text-[9px] text-muted">
-              {waterDays.filter((day) => day.value !== null).length} of 7 days logged
+              {waterDays.length
+                ? `${waterDays.filter((day) => day.value !== null).length} of ${waterDays.length} days logged`
+                : "Older hydration trends require Pro"}
             </Txt>
           </View>
         </View>

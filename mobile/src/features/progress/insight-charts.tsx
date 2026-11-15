@@ -19,7 +19,11 @@ export function ActivityBars({
 }) {
   const [selected, setSelected] = useState<number | null>(null);
   const id = useId().replace(/:/g, "");
-  const index = Math.min(selected ?? points.length - 1, points.length - 1);
+  const latestActive = points.findLastIndex((point) => point.value > 0);
+  const index = Math.min(
+    selected ?? (latestActive >= 0 ? latestActive : points.length - 1),
+    points.length - 1,
+  );
   const active = points[index];
   const max = Math.max(1, ...points.map((point) => point.value));
   const width = 552 / Math.max(1, points.length);

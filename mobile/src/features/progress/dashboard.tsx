@@ -497,6 +497,7 @@ export function ProgressDashboard() {
             data={data}
             goals={goals}
             hasGoals={progress.hasGoals}
+            hasWorkoutHistory={completed.length > 0}
             onGoals={() => setGoalEditor(true)}
             unit={unit}
             today={today}
