@@ -7,6 +7,7 @@ import { MotionPressable, ProgressFill, ScreenEntrance } from "@/src/components/
 import { Txt, SectionHeading } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import { useSession } from "@/src/context/session";
+import { HomeGoals } from "@/src/features/progress/home-goals";
 import { useProgress } from "@/src/features/progress/use-progress";
 import { buildProgress } from "@/src/features/progress/analytics";
 import { addDays, dateLabel, latestMetrics, localDate } from "@/src/features/progress/model";
@@ -20,7 +21,7 @@ type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 export default function HomeScreen() {
   const router = useRouter();
-  const { user } = useSession();
+  const { user, settings } = useSession();
   const { session } = useWorkout();
   const progress = useProgress();
   const today = localDate();
@@ -96,6 +97,24 @@ export default function HomeScreen() {
             </Txt>
           </MotionPressable>
         </View>
+        <HomeGoals
+          ownerId={user?.id ?? ""}
+          hasGoals={progress.hasGoals}
+          ready={
+            !progress.loading &&
+            !progress.refreshing &&
+            !progress.storageError &&
+            !progress.syncError &&
+            !progress.workoutError
+          }
+          activeWorkout={Boolean(session)}
+          goals={progress.goals}
+          events={progress.journal.events}
+          workouts={progress.journal.workouts}
+          unit={settings?.weightUnit ?? "kg"}
+          completed={currentWeek.workouts}
+          onRetry={() => void progress.refresh()}
+        />
         <WorkoutSyncNotice />
         <TodayForYouCard />
         <ScreenEntrance delay={50}>
@@ -146,7 +165,9 @@ export default function HomeScreen() {
               <View>
                 <Txt weight="medium" className="text-[42px] leading-[50px] tracking-[-1.5px]">
                   {progress.loading ? "—" : currentWeek.workouts}
-                  <Txt className="text-xl text-muted"> / {progress.goals.weeklyWorkouts}</Txt>
+                  {progress.hasGoals && (
+                    <Txt className="text-xl text-muted"> / {progress.goals.weeklyWorkouts}</Txt>
+                  )}
                 </Txt>
                 <Txt className="mt-1 text-xs text-muted">Sessions completed</Txt>
               </View>
@@ -158,13 +179,15 @@ export default function HomeScreen() {
                 <Txt className="mt-1 text-[11px] text-muted">Time for you</Txt>
               </View>
             </View>
-            <View className="mt-5">
-              <ProgressFill
-                ratio={currentWeek.workouts / Math.max(1, progress.goals.weeklyWorkouts)}
-                color={C.ink}
-                height={4}
-              />
-            </View>
+            {progress.hasGoals && (
+              <View className="mt-5">
+                <ProgressFill
+                  ratio={currentWeek.workouts / Math.max(1, progress.goals.weeklyWorkouts)}
+                  color={C.ink}
+                  height={4}
+                />
+              </View>
+            )}
             <View className="mt-6 flex-row justify-between gap-1">
               {Array.from({ length: 7 }, (_, index) => addDays(currentWeek.date, index)).map(
                 (date) => {

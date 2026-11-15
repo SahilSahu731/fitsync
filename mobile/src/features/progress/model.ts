@@ -170,7 +170,9 @@ export type ProgressWorkout = {
     id: string;
     exercise_id: string;
     exercise_name: string;
-    exercises?: { exercise_muscles?: { role: string; exercise_muscle_groups: { code: string } | null }[] };
+    exercises?: {
+      exercise_muscles?: { role: string; exercise_muscle_groups: { code: string } | null }[];
+    };
     tracking_type: string;
     position: number;
     workout_logged_sets: LoggedSet[];
@@ -236,6 +238,9 @@ export function latestMetrics(events: ProgressEvent[]) {
   return [...result.values()]
     .filter((event) => event.value !== null)
     .sort((a, b) => a.date.localeCompare(b.date));
+}
+export function hasSavedGoals(events: ProgressEvent[]) {
+  return events.some((event) => event.kind === "goals");
 }
 export function currentGoals(events: ProgressEvent[], trainingDays = 3): Goals {
   return {

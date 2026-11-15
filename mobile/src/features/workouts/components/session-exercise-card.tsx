@@ -83,12 +83,12 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
           <View className="min-w-0 flex-1">
             <View className="mb-1 flex-row flex-wrap items-center gap-x-2 gap-y-0.5">
               <Txt className="text-[10px] tracking-wider text-muted">
-                EXERCISE {String(index + 1).padStart(2, "0")}
+                {String(index + 1).padStart(2, "0")}
               </Txt>
               {(current || complete) && (
                 <Txt
                   weight="medium"
-                  className={`text-[10px] ${complete ? "text-[#BFECD0]" : "text-ink"}`}
+                  className={`text-[10px] ${complete ? "text-[#23bb5d]" : "text-ink"}`}
                 >
                   {complete ? "✓ Done" : "• Up next"}
                 </Txt>
@@ -97,11 +97,11 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
             <Txt
               weight="semibold"
               numberOfLines={2}
-              className="text-[15px] leading-[22px] tracking-[-0.3px]"
+              className="text-[15px] leading-[20px] tracking-[-0.3px]"
             >
               {exercise.exercise_name}
             </Txt>
-            <Txt className="mt-1 text-[11px] text-muted">
+            <Txt className="mt-1 text-[10px] text-muted">
               {logged}/{sets.length} sets logged
             </Txt>
           </View>
@@ -118,7 +118,7 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
           onPress={() => onMenu(exercise)}
           className="ml-1 h-11 w-11 items-center justify-center rounded-xl"
         >
-          <MaterialCommunityIcons name="dots-horizontal" size={22} color={C.muted} />
+          <MaterialCommunityIcons name="dots-horizontal" size={18} color={C.muted} />
         </Pressable>
       </View>
       {!collapsed && (

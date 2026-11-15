@@ -11,6 +11,7 @@ import {
 } from "./journal";
 import {
   currentGoals,
+  hasSavedGoals,
   emptyJournal,
   type Goals,
   type Metric,
@@ -127,7 +128,8 @@ export function useProgress() {
   return {
     journal,
     goals: currentGoals(journal.events, profile?.trainingDays ?? 3),
-    loading,
+    hasGoals: hasSavedGoals(journal.events),
+    loading: loading || cache.ownerId !== ownerId,
     refreshing,
     syncError,
     workoutError,

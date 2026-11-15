@@ -20,7 +20,6 @@ import {
   validMetric,
   weightKg,
   weightValue,
-  type Goals,
   type Metric,
   type MetricEvent,
 } from "./model";
@@ -388,112 +387,6 @@ export function MetricEditor({
           <Txt className="text-sm text-muted">Clear this day’s value</Txt>
         </Pressable>
       )}
-    </Sheet>
-  );
-}
-const goalLabels: Record<keyof Goals, string> = {
-  steps: "Daily steps",
-  caloriesIn: "Food intake (kcal/day)",
-  caloriesActive: "Active calories (kcal/day)",
-  protein: "Protein (g/day)",
-  carbs: "Carbs (g/day)",
-  fat: "Fat (g/day)",
-  activeMinutes: "Active minutes per day",
-  weight: "Body weight",
-  water: "Water (ml/day)",
-  sleep: "Sleep (hours/night)",
-  weeklyWorkouts: "Workouts per week",
-};
-export function GoalsEditor({
-  goals,
-  unit,
-  onClose,
-  onSave,
-}: {
-  goals: Goals;
-  unit: "kg" | "lb";
-  onClose: () => void;
-  onSave: (goals: Goals) => Promise<void>;
-}) {
-  const [values, setValues] = useState(() =>
-    Object.fromEntries(
-      Object.entries(goals).map(([key, value]) => [
-        key,
-        value == null
-          ? ""
-          : String(key === "weight" ? Math.round(weightValue(value, unit) * 100) / 100 : value),
-      ]),
-    ),
-  );
-  const [error, setError] = useState("");
-  const [busy, setBusy] = useState(false);
-  async function save() {
-    const result = Object.fromEntries(
-      Object.entries(values).map(([key, value]) => [
-        key,
-        value.trim() ? (key === "weight" ? weightKg(Number(value), unit) : Number(value)) : null,
-      ]),
-    ) as Goals;
-    for (const key of Object.keys(goalLabels) as (keyof Goals)[]) {
-      const n = result[key];
-      if (
-        key === "weeklyWorkouts"
-          ? n == null || !Number.isInteger(n) || n < 1 || n > 14
-          : n !== null &&
-            (!Number.isFinite(n) ||
-              n <= 0 ||
-              !validMetric(key, n) ||
-              (["steps", "water", "caloriesIn", "caloriesActive"].includes(key) &&
-                !Number.isInteger(n)) ||
-              (key === "sleep" && n < 1) ||
-              (key === "steps" && n > 100000))
-      ) {
-        setError(`Check your ${goalLabels[key].toLowerCase()} target.`);
-        return;
-      }
-    }
-    setBusy(true);
-    setError("");
-    try {
-      await onSave(result);
-      onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to save goals.");
-    } finally {
-      setBusy(false);
-    }
-  }
-  return (
-    <Sheet
-      title="Your goals"
-      subtitle="Targets are yours to choose. Leave optional goals blank to track without a target. These are tracking preferences, not a nutrition or medical plan."
-      onClose={onClose}
-      busy={busy}
-    >
-      {(Object.keys(goalLabels) as (keyof Goals)[]).map((key) => (
-        <Field
-          key={key}
-          label={`${goalLabels[key]}${key === "weight" ? ` (${unit})` : ""}`}
-          value={values[key]}
-          disabled={busy}
-          onChange={(value) => setValues((v) => ({ ...v, [key]: value }))}
-        />
-      ))}
-      {error && (
-        <Txt className="mb-4 text-sm" style={{ color: "#FF9A94" }}>
-          {error}
-        </Txt>
-      )}
-      <Pressable
-        accessibilityRole="button"
-        disabled={busy}
-        onPress={() => void save()}
-        className="items-center rounded-2xl bg-ink p-4"
-      >
-        <Txt weight="semibold" className="text-bg">
-          {busy ? "Saving…" : "Save goals"}
-        </Txt>
-      </Pressable>
     </Sheet>
   );
 }

@@ -1,6 +1,7 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -9,12 +10,14 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppAlert } from "@/src/components/app-dialog";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
+import { useSession } from "@/src/context/session";
+import { ScreenEntrance } from "@/src/components/motion";
 import { workoutApi } from "@/src/features/workouts/api";
 import {
   newDraftExercise,
@@ -25,14 +28,30 @@ import {
   validTempo,
   validSupersetGroup,
 } from "@/src/features/workouts/routine-draft";
-import { ExerciseImage } from "@/src/features/workouts/components/exercise-image";
+import { RoutineExerciseCard } from "@/src/features/workouts/components/routine-exercise-card";
+import {
+  WorkoutGlassScene,
+  WorkoutGlassSurface,
+} from "@/src/features/workouts/components/workout-glass";
 import { ExercisePicker } from "@/src/features/workouts/components/exercise-picker";
 import { NumberEntry, WorkoutDrawer } from "@/src/features/workouts/components/workout-controls";
-import { SetTypePicker } from "@/src/features/workouts/components/set-type-picker";
-// import { setAppearance } from "@/src/features/workouts/set-types";
 import { ReorderTraining, TrainActions } from "@/src/features/workouts/components/train-actions";
 
 export default function CreateWorkoutScreen() {
+  const { user } = useSession();
+  return <RoutineBuilder key={user?.id ?? "signed-out"} ownerId={user?.id ?? ""} />;
+}
+
+function RoutineBuilder({ ownerId }: { ownerId: string }) {
+  const insets = useSafeAreaInsets();
+  const notesInput = useRef<TextInput>(null);
+  const alive = useRef(true);
+  useEffect(() => {
+    alive.current = true;
+    return () => {
+      alive.current = false;
+    };
+  }, []);
   const Alert = useAppAlert();
   const router = useRouter();
   const [name, setName] = useState("");
@@ -70,407 +89,376 @@ export default function CreateWorkoutScreen() {
           : row,
       ),
     );
+  const back = () => (router.canGoBack() ? router.back() : router.replace("/(tabs)/train"));
   const close = () => {
     if (savingRef.current) return;
     if (!name && !description && !exercises.length) {
-      router.back();
+      back();
       return;
     }
     Alert.alert("Discard this draft?", "Your unsaved routine changes will be lost.", [
       { text: "Keep editing", style: "cancel" },
-      { text: "Discard", style: "destructive", onPress: () => router.back() },
+      { text: "Discard", style: "destructive", onPress: back },
     ]);
   };
   const save = async () => {
     if (savingRef.current) return;
+    Keyboard.dismiss();
     setError("");
     try {
+      if (!ownerId) throw Error("Sign in again before saving your routine.");
       const input = routineInput(name, description, exercises);
       savingRef.current = true;
       setSaving(true);
-      await workoutApi.createTemplate(input);
-      router.replace("/(tabs)/train");
+      await workoutApi.createTemplate(input, ownerId);
+      if (alive.current) router.replace("/(tabs)/train");
     } catch (e) {
-      setError(e instanceof Error ? e.message : "Could not save your routine. Try again.");
+      if (alive.current)
+        setError(e instanceof Error ? e.message : "Could not save your routine. Try again.");
     } finally {
       savingRef.current = false;
-      setSaving(false);
+      if (alive.current) setSaving(false);
     }
   };
   const totalSets = exercises.reduce((sum, item) => sum + item.sets.length, 0);
   return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === "ios" ? "padding" : undefined}
-      className="flex-1 bg-bg"
-    >
-      <View className="flex-row items-center justify-between px-4 py-3">
-        <Pressable
-          disabled={saving}
-          accessibilityLabel="Back"
-          onPress={close}
-          className="h-11 w-11 items-center justify-center"
+    <WorkoutGlassScene>
+      <ScreenEntrance className="flex-1">
+        <KeyboardAvoidingView
+          behavior={Platform.OS === "ios" ? "padding" : undefined}
+          keyboardVerticalOffset={insets.top}
+          className="flex-1"
         >
-          <MaterialCommunityIcons name="arrow-left" size={26} color={C.ink} />
-        </Pressable>
-        <Txt weight="semibold" className="text-2xl">
-          New routine
-        </Txt>
-        <Pressable
-          disabled={saving}
-          onPress={() => void save()}
-          className="min-w-16 items-center rounded-xl bg-white px-4 py-3"
-        >
-          {saving ? (
-            <ActivityIndicator color={C.bg} />
-          ) : (
-            <Txt weight="semibold" className="text-bg">
-              Save
-            </Txt>
-          )}
-        </Pressable>
-      </View>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 20, paddingBottom: 100 }}
-      >
-        {!!error && (
-          <View className="mb-4 rounded-xl bg-red-500/10 p-4">
-            <Txt accessibilityRole="alert" className="text-red-300">
-              {error}
-            </Txt>
-          </View>
-        )}
-        <View className="mb-5 rounded-2xl bg-panel p-4">
-          <Txt className="mb-2 text-xs text-muted">Routine Name</Txt>
-          <TextInput
-            value={name}
-            onChangeText={setName}
-            editable={!saving}
-            maxLength={100}
-            accessibilityLabel="Routine name"
-            placeholder="e.g. Upper body A"
-            placeholderTextColor={C.muted}
-            className="min-h-12 font-poppins-bold text-2xl text-ink"
-          />
-          <View className="mt-3 flex-row items-center pt-3">
-            <MaterialCommunityIcons name="note-text" size={22} color={"white"} />
-            <TextInput
-              value={description}
-              onChangeText={setDescription}
-              editable={!saving}
-              multiline
-              maxLength={2000}
-              accessibilityLabel="Routine notes"
-              placeholder="Goals or notes for this session"
-              placeholderTextColor={C.muted}
-              className="font-poppins-regular ml-2 min-h-11 flex-1 text-sm text-ink"
-            />
-          </View>
-        </View>
-        <View className="mb-4 flex-row items-center justify-between">
-          <View>
-            <Txt weight="semibold" className="text-xl">
-              {exercises.length ? "Your session" : "Build your session"}
-            </Txt>
-            <Txt className="mt-1 text-sm text-muted">
-              {exercises.length} exercises · {totalSets} sets · reusable routine
-            </Txt>
-          </View>
-          {exercises.length > 1 && (
+          <View className="flex-row items-center gap-3 px-4 pb-3 pt-2">
             <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Close routine builder"
+              accessibilityState={{ disabled: saving }}
               disabled={saving}
-              onPress={() => setReordering(true)}
-              accessibilityLabel="Reorder exercises"
-              className="h-11 w-11 items-center justify-center rounded-xl bg-panel"
+              onPress={close}
+              className="h-11 w-11 items-center justify-center rounded-full bg-panel"
             >
-              <MaterialCommunityIcons name="sort-variant" color={C.ink} size={23} />
+              <MaterialCommunityIcons name="arrow-left" size={23} color={C.ink} />
             </Pressable>
-          )}
-        </View>
-        {!exercises.length && (
-          <View className="mb-5 items-center rounded-2xl px-6 py-9">
-            <MaterialCommunityIcons name="dumbbell" size={42} color={C.ink} />
-            <Txt weight="semibold" className="mt-4 text-lg">
-              Start with your exercises
-            </Txt>
-            <Txt className="mt-2 text-center text-sm text-muted">
-              Choose multiple exercises, then set your targets. Saving a routine won&apos;t start a
-              workout.
-            </Txt>
+            <View className="min-w-0 flex-1">
+              <Txt weight="medium" className="text-sm" numberOfLines={1}>
+                New routine
+              </Txt>
+              <Txt className="mt-0.5 text-[10px] text-muted">Plan it once. Make it yours.</Txt>
+            </View>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Save routine"
+              accessibilityState={{ disabled: saving, busy: saving }}
+              disabled={saving}
+              onPress={() => void save()}
+              className={`min-h-11 min-w-20 items-center justify-center rounded-xl bg-white px-5 ${saving ? "opacity-60" : ""}`}
+            >
+              {saving ? (
+                <ActivityIndicator color={C.bg} />
+              ) : (
+                <Txt weight="semibold" className="text-sm text-bg">
+                  Save
+                </Txt>
+              )}
+            </Pressable>
           </View>
-        )}
-        {exercises.map((item) => {
-          const timed = ["duration", "distance_duration"].includes(item.exercise.trackingType);
-          const isCollapsed = collapsed.includes(item.id);
-          return (
-            <View key={item.id} className="mb-5 overflow-hidden rounded-[24px] bg-panel">
-              <View className="flex-row items-center px-3 pb-3 pt-4">
-                <Pressable
-                  className="min-w-0 flex-1 flex-row items-center"
-                  onPress={() =>
-                    setCollapsed((rows) =>
-                      rows.includes(item.id)
-                        ? rows.filter((id) => id !== item.id)
-                        : [...rows, item.id],
-                    )
-                  }
-                >
-                  <ExerciseImage uri={item.exercise.imageUrl} name={item.exercise.name} />
-                  <View className="ml-3 flex-1">
-                    <Txt weight="semibold" className="text-lg" numberOfLines={2}>
-                      {item.exercise.name}
-                    </Txt>
-                    <Txt className="mt-1 text-sm text-muted">
-                      {item.sets.length} sets · {timed ? "Time targets" : "Weight & reps"}
+          {!!error && (
+            <View className="mx-4 mb-3 rounded-2xl border border-red-300/20 bg-red-500/10 p-3">
+              <Txt
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                className="text-xs leading-5 text-red-300"
+              >
+                {error}
+              </Txt>
+            </View>
+          )}
+          <ScrollView
+            className="flex-1"
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            contentContainerStyle={{
+              paddingHorizontal: 16,
+              paddingBottom: Math.max(24, insets.bottom + 16),
+            }}
+          >
+            <View className="mb-3 pt-2">
+              <TextInput
+                value={name}
+                onChangeText={setName}
+                editable={!saving}
+                maxLength={100}
+                accessibilityLabel="Routine name"
+                placeholder="Name your routine"
+                placeholderTextColor={C.muted}
+                returnKeyType="next"
+                onSubmitEditing={() => notesInput.current?.focus()}
+                keyboardAppearance="dark"
+                className="min-h-14 font-poppins-semibold text-[24px] leading-9 tracking-[-0.8px] text-ink"
+              />
+              <View className="mt-2 overflow-hidden rounded-3xl border border-white/10 p-4">
+                <WorkoutGlassSurface />
+                <View className="flex-row items-center gap-4">
+                  <View className="flex-1">
+                    <Txt className="text-[11px] text-muted">Exercises</Txt>
+                    <Txt weight="semibold" className="mt-1 text-2xl">
+                      {exercises.length}
                     </Txt>
                   </View>
-                  <MaterialCommunityIcons
-                    name={isCollapsed ? "chevron-down" : "chevron-up"}
-                    size={24}
-                    color={C.ink}
-                  />
-                </Pressable>
-                <Pressable
-                  disabled={saving}
-                  onPress={() => setMenu(item.id)}
-                  accessibilityLabel={`Options for ${item.exercise.name}`}
-                  className="ml-1 h-11 w-11 items-center justify-center"
-                >
-                  <MaterialCommunityIcons name="dots-horizontal" color={"yellow"} size={26} />
-                </Pressable>
-              </View>
-              {!isCollapsed && (
-                <View className="px-3 pb-3">
-                  {item.sets.map((set, index) => (
-                    <View
-                      key={set.id}
-                      className="mb-2 flex-row items-end gap-2 rounded-xl bg-elevated p-2"
-                    >
-                      <SetTypePicker
-                        value={set.type}
-                        number={index + 1}
-                        disabled={saving}
-                        onChange={(type) => patchSet(item.id, set.id, { type })}
-                      />
-                      {timed ? (
-                        <NumberEntry
-                          compact
-                          label="Seconds"
-                          value={set.duration}
-                          onChange={(duration) => patchSet(item.id, set.id, { duration })}
-                          max={86400}
-                          disabled={saving}
-                        />
-                      ) : (
-                        <>
-                          <NumberEntry
-                            compact
-                            label={item.exercise.trackingType === "reps" ? "Added kg" : "Kg"}
-                            value={set.weight}
-                            onChange={(weight) => patchSet(item.id, set.id, { weight })}
-                            step={1}
-                            max={100000}
-                            disabled={saving}
-                          />
-                          <NumberEntry
-                            compact
-                            label="Reps"
-                            value={set.reps}
-                            onChange={(reps) => patchSet(item.id, set.id, { reps })}
-                            disabled={saving}
-                          />
-                        </>
-                      )}
-                      <Pressable
-                        disabled={saving}
-                        onPress={() => setSetOptions({ exerciseId: item.id, setId: set.id })}
-                        accessibilityLabel={`Tempo and rest for set ${index + 1}`}
-                        className="h-11 w-8 items-center justify-center"
-                      >
-                        <MaterialCommunityIcons
-                          name="tune-vertical"
-                          size={18}
-                          color={set.tempo || set.rest ? "#D4F89A" : C.muted}
-                        />
-                      </Pressable>
-                      <Pressable
-                        disabled={saving || item.sets.length <= 1}
-                        onPress={() =>
-                          patch(item.id, {
-                            sets: item.sets.filter((row) => row.id !== set.id),
-                          })
-                        }
-                        accessibilityLabel={`Remove set ${index + 1}`}
-                        className="h-11 w-11 items-center justify-center"
-                      >
-                        <MaterialCommunityIcons
-                          name="minus-circle"
-                          size={22}
-                          color={item.sets.length <= 1 ? C.border : C.muted}
-                        />
-                      </Pressable>
-                    </View>
-                  ))}
-                  {item.exercise.trackingType === "distance_duration" && (
-                    <Txt className="mb-2 text-sm text-muted">
-                      Plan duration here; log actual distance during your workout.
+                  <View className="flex-1 border-l border-white/10 pl-4">
+                    <Txt className="text-[11px] text-muted">Planned sets</Txt>
+                    <Txt weight="semibold" className="mt-1 text-2xl">
+                      {totalSets}
                     </Txt>
-                  )}
-                  <View className="flex-row items-center justify-between">
-                    <Pressable
-                      disabled={saving}
-                      onPress={() => setDetails(item.id)}
-                      className="min-h-11 flex-1 flex-row items-center gap-1"
-                    >
-                      <MaterialCommunityIcons name="timer-outline" size={18} color={"white"} />
-                      <Txt className="text-sm text-white">
-                        {Number(item.rest) ? `${item.rest}s rest` : "No rest"} ·{" "}
-                        {item.notes ? "Notes added" : "Notes"}
-                      </Txt>
-                      <MaterialCommunityIcons name="chevron-down" size={18} color={"white"} />
-                    </Pressable>
-                    <Pressable
-                      disabled={saving || item.sets.length >= 30}
-                      onPress={() => addSet(item.id)}
-                      className="min-h-11 justify-center px-3"
-                    >
-                      <Txt weight="semibold" className="text-ink">
-                        + Add set
-                      </Txt>
-                    </Pressable>
+                  </View>
+                  <View className="h-12 w-12 items-center justify-center rounded-2xl bg-white/5">
+                    <MaterialCommunityIcons name="playlist-edit" size={26} color={C.muted} />
                   </View>
                 </View>
+                <View className="mt-4 flex-row items-start gap-2 border-t border-white/10 pt-3">
+                  <MaterialCommunityIcons
+                    name="note-text-outline"
+                    size={18}
+                    color={C.muted}
+                    style={{ marginTop: 12 }}
+                  />
+                  <TextInput
+                    ref={notesInput}
+                    value={description}
+                    onChangeText={setDescription}
+                    editable={!saving}
+                    multiline
+                    maxLength={2000}
+                    accessibilityLabel="Routine notes"
+                    placeholder="Add goals or routine notes (optional)"
+                    placeholderTextColor={C.muted}
+                    keyboardAppearance="dark"
+                    textAlignVertical="top"
+                    className="min-h-11 flex-1 font-poppins-regular py-2.5 text-xs leading-5 text-ink"
+                  />
+                </View>
+              </View>
+            </View>
+            <View className="mb-4 mt-3 flex-row items-center justify-between gap-3 px-1">
+              <View className="flex-1">
+                <Txt weight="semibold" className="text-lg tracking-[-0.4px]">
+                  Your exercises
+                </Txt>
+                <Txt className="mt-0.5 text-[11px] text-muted">
+                  {exercises.length
+                    ? "Set your targets before you train."
+                    : "Build the session you want to repeat."}
+                </Txt>
+              </View>
+              {exercises.length > 1 && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Reorder exercises"
+                  disabled={saving}
+                  onPress={() => setReordering(true)}
+                  className="h-11 w-11 items-center justify-center rounded-xl bg-white/5"
+                >
+                  <MaterialCommunityIcons name="sort-variant" size={20} color={C.muted} />
+                </Pressable>
               )}
             </View>
-          );
-        })}
-        <Pressable
-          disabled={saving || exercises.length >= 50}
-          onPress={() => setPicker(true)}
-          className="flex-row items-center justify-center rounded-2xl bg-ink py-3"
-        >
-          <MaterialCommunityIcons name="plus" size={26} color={C.bg} />
-          <Txt weight="semibold" className="ml-2 text-bg text-lg">
-            Add exercises
-          </Txt>
-        </Pressable>
-        <Txt className="mt-4 text-center text-xs text-muted">
-          Tap values to type, or slide up and down to adjust. Tap a colored letter to change the set
-          type.
-        </Txt>
-      </ScrollView>
-      {picker && (
-        <Modal animationType="slide" onRequestClose={() => setPicker(false)}>
-          <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
-            <ExercisePicker
-              existingIds={exercises.map((item) => item.exercise.id)}
-              onClose={() => setPicker(false)}
-              onConfirm={async (items) => {
-                setExercises((rows) => [
-                  ...rows,
-                  ...items
-                    .filter((item) => !rows.some((row) => row.exercise.id === item.id))
-                    .map(newDraftExercise),
-                ]);
-                setPicker(false);
-              }}
+            {!exercises.length && (
+              <View className="mb-4 overflow-hidden rounded-3xl border border-white/10 px-6 py-7">
+                <WorkoutGlassSurface />
+                <View>
+                  <View className="mb-5 h-14 w-14 items-center justify-center rounded-2xl bg-white/5">
+                    <MaterialCommunityIcons name="dumbbell" size={27} color={C.ink} />
+                  </View>
+                  <Txt weight="semibold" className="text-lg tracking-[-0.4px]">
+                    Start with your exercises
+                  </Txt>
+                  <Txt className="mt-2 text-xs leading-5 text-muted">
+                    Choose your movements, then plan sets, reps and rest. Your routine will be ready
+                    in Train whenever you are.
+                  </Txt>
+                </View>
+              </View>
+            )}
+            {exercises.map((item, index) => (
+              <RoutineExerciseCard
+                key={item.id}
+                item={item}
+                index={index}
+                collapsed={collapsed.includes(item.id)}
+                disabled={saving}
+                onToggle={() =>
+                  setCollapsed((rows) =>
+                    rows.includes(item.id)
+                      ? rows.filter((id) => id !== item.id)
+                      : [...rows, item.id],
+                  )
+                }
+                onMenu={() => setMenu(item.id)}
+                onDetails={() => setDetails(item.id)}
+                onSetOptions={(setId) => setSetOptions({ exerciseId: item.id, setId })}
+                onPatchSet={(setId, change) => patchSet(item.id, setId, change)}
+                onAddSet={() => addSet(item.id)}
+              />
+            ))}
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Add exercises"
+              accessibilityState={{ disabled: saving || exercises.length >= 50 }}
+              disabled={saving || exercises.length >= 50}
+              onPress={() => setPicker(true)}
+              className={`min-h-14 flex-row items-center justify-center gap-2 rounded-2xl border border-white/15 bg-panel ${saving || exercises.length >= 50 ? "opacity-50" : ""}`}
+            >
+              <MaterialCommunityIcons name="plus" size={20} color={C.ink} />
+              <Txt weight="medium" className="text-sm">
+                {exercises.length >= 50 ? "50-exercise limit reached" : "Add exercises"}
+              </Txt>
+            </Pressable>
+            <Txt className="mt-4 text-center text-[10px] leading-5 text-muted">
+              {exercises.length
+                ? "Tap a target to edit. Set type, tempo and rest are yours to adjust."
+                : "Saving a routine won’t start a workout."}
+            </Txt>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Discard routine draft"
+              disabled={saving}
+              onPress={close}
+              className="mt-3 min-h-12 items-center justify-center"
+            >
+              <Txt className="text-xs text-muted">Discard draft</Txt>
+            </Pressable>
+          </ScrollView>
+          {picker && (
+            <Modal animationType="slide" onRequestClose={() => setPicker(false)}>
+              <SafeAreaView edges={["top"]} className="flex-1 bg-bg">
+                <ExercisePicker
+                  existingIds={exercises.map((item) => item.exercise.id)}
+                  disabled={saving}
+                  onClose={() => setPicker(false)}
+                  onConfirm={async (items) => {
+                    setExercises((rows) => [
+                      ...rows,
+                      ...items
+                        .filter(
+                          (item, index) =>
+                            !rows.some((row) => row.exercise.id === item.id) &&
+                            items.findIndex((other) => other.id === item.id) === index,
+                        )
+                        .slice(0, Math.max(0, 50 - rows.length))
+                        .map(newDraftExercise),
+                    ]);
+                    setPicker(false);
+                  }}
+                />
+              </SafeAreaView>
+            </Modal>
+          )}
+          {selected && (
+            <TrainActions
+              title={selected.exercise.name}
+              onClose={() => setMenu(null)}
+              actions={[
+                ...(selected.sets.length < 30
+                  ? [
+                      {
+                        label: "Add set",
+                        icon: "plus-circle-outline" as const,
+                        run: () => addSet(selected.id),
+                      },
+                    ]
+                  : []),
+                {
+                  label: "Rest & notes",
+                  icon: "note-text-outline",
+                  run: () => setDetails(selected.id),
+                },
+                ...(exercises.length > 1
+                  ? [
+                      {
+                        label: "Reorder exercises",
+                        icon: "sort-variant" as const,
+                        run: () => setReordering(true),
+                      },
+                    ]
+                  : []),
+                {
+                  label: "Remove exercise",
+                  icon: "trash-can-outline",
+                  danger: true,
+                  run: () =>
+                    Alert.alert(
+                      `Remove ${selected.exercise.name}?`,
+                      "This removes its planned sets from this draft.",
+                      [
+                        { text: "Keep", style: "cancel" },
+                        {
+                          text: "Remove",
+                          style: "destructive",
+                          onPress: () =>
+                            setExercises((rows) => rows.filter((row) => row.id !== selected.id)),
+                        },
+                      ],
+                    ),
+                },
+              ]}
             />
-          </SafeAreaView>
-        </Modal>
-      )}
-      {selected && (
-        <TrainActions
-          title={selected.exercise.name}
-          onClose={() => setMenu(null)}
-          actions={[
-            ...(selected.sets.length < 30
-              ? [
-                  {
-                    label: "Add set",
-                    icon: "plus-circle-outline" as const,
-                    run: () => addSet(selected.id),
-                  },
-                ]
-              : []),
-            {
-              label: "Rest & notes",
-              icon: "note-text-outline",
-              run: () => setDetails(selected.id),
-            },
-            ...(exercises.length > 1
-              ? [
-                  {
-                    label: "Reorder exercises",
-                    icon: "sort-variant" as const,
-                    run: () => setReordering(true),
-                  },
-                ]
-              : []),
-            {
-              label: "Remove exercise",
-              icon: "trash-can-outline",
-              danger: true,
-              run: () =>
-                Alert.alert(
-                  `Remove ${selected.exercise.name}?`,
-                  "This removes its planned sets from this draft.",
-                  [
-                    { text: "Keep", style: "cancel" },
-                    {
-                      text: "Remove",
-                      style: "destructive",
-                      onPress: () =>
-                        setExercises((rows) => rows.filter((row) => row.id !== selected.id)),
-                    },
-                  ],
-                ),
-            },
-          ]}
-        />
-      )}
-      {reordering && (
-        <ReorderTraining
-          title="exercises"
-          hint="This sets the exercise order for your routine."
-          items={exercises.map((item) => ({
-            id: item.id,
-            name: item.exercise.name,
-            imageUrl: item.exercise.imageUrl,
-          }))}
-          onClose={() => setReordering(false)}
-          onSave={async (ids) =>
-            setExercises((rows) => ids.map((id) => rows.find((row) => row.id === id)!))
-          }
-        />
-      )}
-      {detail && (
-        <RoutineDetails
-          key={detail.id}
-          item={detail}
-          onClose={() => setDetails(null)}
-          onSave={(change) => {
-            patch(detail.id, change);
-            setDetails(null);
-          }}
-        />
-      )}
-      {setOptions &&
-        (() => {
-          const item = exercises.find((e) => e.id === setOptions.exerciseId);
-          const selectedSet = item?.sets.find((s) => s.id === setOptions.setId);
-          return selectedSet ? (
-            <RoutineSetDetails
-              key={selectedSet.id}
-              set={selectedSet}
-              onClose={() => setSetOptions(null)}
+          )}
+          {reordering && (
+            <ReorderTraining
+              title="exercises"
+              hint="This sets the exercise order for your routine."
+              items={exercises.map((item) => ({
+                id: item.id,
+                name: item.exercise.name,
+                imageUrl: item.exercise.imageUrl,
+              }))}
+              onClose={() => setReordering(false)}
+              onSave={async (ids) =>
+                setExercises((rows) => ids.map((id) => rows.find((row) => row.id === id)!))
+              }
+            />
+          )}
+          {detail && (
+            <RoutineDetails
+              key={detail.id}
+              item={detail}
+              onClose={() => setDetails(null)}
               onSave={(change) => {
-                patchSet(setOptions.exerciseId, setOptions.setId, change);
-                setSetOptions(null);
+                patch(detail.id, change);
+                setDetails(null);
               }}
             />
-          ) : null;
-        })()}
-    </KeyboardAvoidingView>
+          )}
+          {setOptions &&
+            (() => {
+              const item = exercises.find((e) => e.id === setOptions.exerciseId);
+              const selectedSet = item?.sets.find((s) => s.id === setOptions.setId);
+              return selectedSet ? (
+                <RoutineSetDetails
+                  key={selectedSet.id}
+                  set={selectedSet}
+                  exerciseName={item!.exercise.name}
+                  number={item!.sets.findIndex((set) => set.id === selectedSet.id) + 1}
+                  canRemove={item!.sets.length > 1}
+                  onRemove={() => {
+                    patch(item!.id, {
+                      sets: item!.sets.filter((set) => set.id !== selectedSet.id),
+                    });
+                    setSetOptions(null);
+                  }}
+                  onClose={() => setSetOptions(null)}
+                  onSave={(change) => {
+                    patchSet(setOptions.exerciseId, setOptions.setId, change);
+                    setSetOptions(null);
+                  }}
+                />
+              ) : null;
+            })()}
+        </KeyboardAvoidingView>
+      </ScreenEntrance>
+    </WorkoutGlassScene>
   );
 }
 function RoutineDetails({
@@ -498,7 +486,7 @@ function RoutineDetails({
         placeholder="Technique cues or setup notes"
         placeholderTextColor={C.muted}
         accessibilityLabel="Exercise notes"
-        className="font-poppins-regular mt-5 min-h-2 rounded-xl bg-bg p-4 text-ink"
+        className="font-poppins-regular mt-5 min-h-24 rounded-xl bg-bg p-4 text-sm leading-6 text-ink"
       />
       <Txt className="mb-2 mt-5 text-xs text-muted">Superset group (optional)</Txt>
       <TextInput
@@ -546,10 +534,18 @@ function RoutineDetails({
 
 function RoutineSetDetails({
   set,
+  exerciseName,
+  number,
+  canRemove,
+  onRemove,
   onClose,
   onSave,
 }: {
   set: DraftSet;
+  exerciseName: string;
+  number: number;
+  canRemove: boolean;
+  onRemove: () => void;
   onClose: () => void;
   onSave: (change: Partial<DraftSet>) => void;
 }) {
@@ -557,7 +553,8 @@ function RoutineSetDetails({
   const [tempo, setTempo] = useState(set.tempo ?? "");
   const [error, setError] = useState("");
   return (
-    <WorkoutDrawer title="Set tempo & rest" onClose={onClose}>
+    <WorkoutDrawer title={`Set ${number} options`} onClose={onClose}>
+      <Txt className="mb-4 text-sm text-muted">{exerciseName}</Txt>
       <Txt className="mb-2 text-xs text-muted">
         Rest override · seconds (blank uses exercise default)
       </Txt>
@@ -610,6 +607,17 @@ function RoutineSetDetails({
       >
         <Txt weight="medium" className="text-bg">
           Save set options
+        </Txt>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel="Remove planned set"
+        disabled={!canRemove}
+        onPress={onRemove}
+        className="mt-3 min-h-12 items-center justify-center"
+      >
+        <Txt className={canRemove ? "text-xs text-red-300" : "text-xs text-muted"}>
+          {canRemove ? "Remove set" : "Keep at least one set per exercise"}
         </Txt>
       </Pressable>
     </WorkoutDrawer>

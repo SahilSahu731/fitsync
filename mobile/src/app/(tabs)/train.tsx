@@ -21,7 +21,7 @@ import { useFocusEffect, useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
 import { C } from "@/src/constants/theme";
-import { PageHeading, Txt } from "@/src/components/ui";
+import { Txt } from "@/src/components/ui";
 
 import { workoutApi, type WorkoutTemplate, type HistoryItem } from "@/src/features/workouts/api";
 
@@ -40,6 +40,7 @@ import { Image } from "expo-image";
 import { TrainingSection } from "@/src/features/workouts/components/training-section";
 import { trainingWeek, workoutSummary } from "@/src/features/workouts/summary";
 import { RoutineCard } from "@/src/features/workouts/components/routine-card";
+import { WorkoutDrawer } from "@/src/features/workouts/components/workout-controls";
 import { StartWorkoutDialog } from "@/src/features/workouts/components/start-workout-dialog";
 
 function ordered<T extends { id: string }>(rows: T[], ids: string[]) {
@@ -330,6 +331,7 @@ function TrainAccountScreen() {
   const [reordering, setReordering] = useState<"programs" | "routines" | null>(null);
   const [actionBusy, setActionBusy] = useState(false);
   const [showStartDialog, setShowStartDialog] = useState(false);
+  const [showWeek, setShowWeek] = useState(false);
   const [templates, setTemplates] = useState<WorkoutTemplate[]>([]);
   const [programs, setPrograms] = useState<SavedProgram[]>([]);
   const [history, setHistory] = useState<HistoryItem[]>([]);
@@ -563,11 +565,11 @@ function TrainAccountScreen() {
   const matchingTemplates = templates.filter((item) =>
     item.name.toLowerCase().includes(routineSearch.trim().toLowerCase()),
   );
-  const today = new Date().toLocaleDateString(undefined, {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-  });
+  const weekStats = [
+    { value: week.workouts, label: "Workouts", icon: "dumbbell" as const, color: "#C5F460", detail: "Completed workout sessions." },
+    { value: week.minutes, label: "Minutes", icon: "timer-outline" as const, color: "#7DCFFF", detail: "Total time spent in completed workouts." },
+    { value: week.days, label: "Active days", icon: "calendar-check-outline" as const, color: "#FFB38A", detail: "Days with at least one completed workout." },
+  ];
 
   return (
     <>
@@ -586,101 +588,25 @@ function TrainAccountScreen() {
         >
           {/* Header */}
 
-          <PageHeading eyebrow={today} title="Let's train." subtitle="Your session, your pace." />
-          <WorkoutSyncNotice />
-          <CoachHomeButton />
-          {!loading && !error && (
-            <View className="mb-3">
-              <View className="mb-2 flex-row gap-1.5">
-                <MaterialCommunityIcons
-                  name="update"
-                  size={14}
-                  color={"white"}
-                  accessible={false}
-                />
-                <Txt weight="medium" className="text-[10px]">
-                  This Week
-                </Txt>
-              </View>
-              <View className="flex-row gap-2">
-                {[
-                  {
-                    value: week.workouts,
-                    label: "Workouts",
-                    icon: "dumbbell" as const,
-                    color: "#C5F460",
-                    background: "#171D10",
-                  },
-                  {
-                    value: week.minutes,
-                    label: "Minutes",
-                    icon: "timer-outline" as const,
-                    color: "#7DCFFF",
-                    background: "#101B24",
-                  },
-                  {
-                    value: week.days,
-                    label: "Active days",
-                    icon: "calendar-check-outline" as const,
-                    color: "#FFB38A",
-                    background: "#211812",
-                  },
-                ].map((stat, index) => (
-                  <ScreenEntrance
-                    key={stat.label}
-                    delay={80 + index * 80}
-                    style={{ flex: 1, minWidth: 0 }}
-                  >
-                    <View
-                      accessible
-                      accessibilityLabel={`${stat.value} ${stat.label.toLowerCase()} this week`}
-                      className="overflow-hidden rounded-[22px] border p-3"
-                      style={{
-                        backgroundColor: stat.background,
-                      }}
-                    >
-                      <View className="flex-row items-center gap-2">
-                        <View
-                          className="rounded-xl"
-                          style={{
-                            shadowColor: stat.color,
-                            shadowOffset: { width: 0, height: 2 },
-                            shadowOpacity: 0.18,
-                            shadowRadius: 8,
-                          }}
-                        >
-                          <MaterialCommunityIcons
-                            name={stat.icon}
-                            size={18}
-                            color={stat.color}
-                            accessible={false}
-                          />
-                        </View>
-                        <Txt
-                          weight="semibold"
-                          numberOfLines={1}
-                          adjustsFontSizeToFit
-                          minimumFontScale={0.65}
-                          className="text-[20px] leading-[34px]"
-                          style={{ color: stat.color }}
-                        >
-                          {stat.value}
-                        </Txt>
-                      </View>
-                      <Txt
-                        numberOfLines={1}
-                        adjustsFontSizeToFit
-                        minimumFontScale={0.8}
-                        className="mt-0.5 text-[9px] leading-4 text-white/70"
-                      >
-                        {stat.label}
-                      </Txt>
-                    </View>
-                  </ScreenEntrance>
+          <View className="mb-4 flex-row items-center justify-between gap-3">
+            <Txt accessibilityRole="header" weight="medium" className="min-w-0 flex-1 text-[28px] leading-10 tracking-[-1px]">Train</Txt>
+            {!loading && !error && (
+              <View className="flex-row items-center gap-1">
+                {weekStats.map((stat) => (
+                  <Pressable key={stat.label} accessibilityRole="button"
+                    accessibilityLabel={`${stat.value} ${stat.label.toLowerCase()} this week`}
+                    accessibilityHint="Opens this week's training summary"
+                    onPress={() => setShowWeek(true)}
+                    className="min-h-11 min-w-11 flex-row items-center justify-center gap-1.5 rounded-xl bg-panel px-2">
+                    <MaterialCommunityIcons name={stat.icon} size={17} color={stat.color} accessible={false} />
+                    <Txt weight="semibold" className="text-sm" style={{ color: stat.color }}>{stat.value}</Txt>
+                  </Pressable>
                 ))}
               </View>
-            </View>
-          )}
+            )}
+          </View>
+          <WorkoutSyncNotice />
+          <CoachHomeButton />
 
           {/* Hero: active session, active program, or start */}
 
@@ -1014,6 +940,21 @@ function TrainAccountScreen() {
           )}
         </TabScrollView>
       </ScreenEntrance>
+      {showWeek && (
+        <WorkoutDrawer title="This week" onClose={() => setShowWeek(false)}>
+          <Txt className="mb-4 text-xs leading-5 text-muted">Your completed training since Monday.</Txt>
+          {weekStats.map((stat) => (
+            <View key={stat.label} className="flex-row items-center gap-3 py-3">
+              <MaterialCommunityIcons name={stat.icon} size={22} color={stat.color} accessible={false} />
+              <View className="min-w-0 flex-1">
+                <Txt weight="medium" className="text-sm">{stat.label}</Txt>
+                <Txt className="mt-0.5 text-xs leading-5 text-muted">{stat.detail}</Txt>
+              </View>
+              <Txt weight="semibold" className="text-xl" style={{ color: stat.color }}>{stat.value}</Txt>
+            </View>
+          ))}
+        </WorkoutDrawer>
+      )}
       {showStartDialog && (
         <StartWorkoutDialog
           disabled={startDisabled}

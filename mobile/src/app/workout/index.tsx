@@ -471,7 +471,7 @@ export default function LiveWorkoutScreen() {
                     />
                   </Pressable>
                 </View>
-                <Txt className="mb-4 px-1 text-[11px] leading-5 text-muted">
+                <Txt className="mb-4 px-1 text-[9px] leading-5 text-muted">
                   Open an exercise, enter your numbers, and tap the circle to log a set.
                 </Txt>
               </>
@@ -627,7 +627,7 @@ export default function LiveWorkoutScreen() {
         )}
         {restOpen && (
           <WorkoutDrawer title="Rest timer" onClose={() => setRestOpen(false)}>
-            <Txt className="mb-4 text-sm text-muted">
+            <Txt className="mb-4 text-xs text-muted">
               Start a break whenever you need one. Logging a set starts its own rest timer.
             </Txt>
             <View className="flex-row flex-wrap gap-3">
@@ -640,7 +640,7 @@ export default function LiveWorkoutScreen() {
                     startRest(seconds);
                     setRestOpen(false);
                   }}
-                  className="min-h-14 min-w-20 flex-1 items-center justify-center rounded-2xl bg-elevated px-4"
+                  className="min-h-14 min-w-20 flex-1 items-center justify-center rounded-2xl bg-elevated px-2 "
                 >
                   <Txt weight="medium">{seconds < 60 ? `${seconds}s` : `${seconds / 60} min`}</Txt>
                 </Pressable>

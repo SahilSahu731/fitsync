@@ -17,7 +17,16 @@ import {
 import type { CoachingProfile, PlanPreview, WeeklyReview } from "../coaching/api";
 import { Sheet } from "../progress/editors";
 import { compact } from "../progress/tracking-cards";
-import { GlassCard, ProAction, ProButton, ProPill, ProSection, ProStat, PRO, Reveal } from "./ui";
+import {
+  GlassCard,
+  ProAction,
+  ProButton,
+  ProPill,
+  ProSection,
+  ProStat,
+  PRO,
+  Reveal,
+} from "./hub-ui";
 import {
   calculateWarmup,
   DEFAULT_RAMPS,

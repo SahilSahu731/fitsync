@@ -38,8 +38,8 @@ export function WorkoutDrawer({
           style={{ maxHeight: "88%" }}
           className="rounded-t-[28px] bg-panel px-5 pt-3"
         >
-          <View className="mb-3 h-1 w-10 self-center rounded-full bg-muted/40" />
-          <View className="mb-5 flex-row items-center justify-between">
+          <View className="mb-2 h-1 w-10 self-center rounded-full bg-muted/40" />
+          <View className="mb-3 flex-row items-center justify-between">
             <Txt weight="semibold" className="flex-1 text-xl">
               {title}
             </Txt>

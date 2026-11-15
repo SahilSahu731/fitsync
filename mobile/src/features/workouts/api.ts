@@ -111,10 +111,11 @@ export const workoutApi = {
 
   template: (id: string) => apiRequest<WorkoutTemplate>(`/workouts/templates/${id}`),
 
-  createTemplate: (data: TemplateInput) =>
+  createTemplate: (data: TemplateInput, expectedOwnerId?: string) =>
     apiRequest<WorkoutTemplate>("/workouts/templates", {
       method: "POST",
       json: data,
+      expectedOwnerId,
     }),
 
   renameTemplate: (id: string, name: string) =>

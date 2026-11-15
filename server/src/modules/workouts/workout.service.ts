@@ -1,3 +1,4 @@
+import { randomUUID } from "node:crypto";
 import { exerciseVisibility } from "../exercises/exercise.visibility.js";
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
@@ -124,6 +125,23 @@ export async function getTemplate(userId: string, id: string) {
     return ensure(data);
 }
 
+function checkTemplateCreationError(
+    error: { code?: string; message: string } | null,
+    action: string,
+    includesRestPause = false
+) {
+    if (!error) return;
+    const missingAdvancedColumn = ["42703", "PGRST204"].includes(error.code ?? "")
+        && /\b(superset_group|rest_seconds|tempo)\b/.test(error.message);
+    const missingRestPause = includesRestPause && error.code === "23514"
+        && /workout_(template|logged)_sets_set_type_check/.test(error.message);
+    if (missingAdvancedColumn || missingRestPause) {
+        console.error(`[DATABASE] ${action}: advanced routines need migration 018:`, error.message);
+        throw new ApiError(503, "Advanced routine settings are unavailable. Save without supersets, tempo, set rest overrides or rest-pause, or contact support.");
+    }
+    checkDbError(error, action);
+}
+
 export async function createTemplate(
     userId: string,
     input: CreateTemplateInput
@@ -166,12 +184,14 @@ export async function createTemplate(
                     position,
                     notes: item.notes,
                     rest_seconds: item.restSeconds,
-                    superset_group: item.supersetGroup ?? null
+                    // Ordinary routines only need the base workout schema.
+                    // Include advanced columns only when they were requested.
+                    ...(item.supersetGroup != null ? { superset_group: item.supersetGroup } : {})
                 })
                 .select()
                 .single();
 
-            checkDbError(insertError, "insert template exercise");
+            checkTemplateCreationError(insertError, "insert template exercise");
 
             const { error: setError } = await db
                 .from("workout_template_sets")
@@ -184,12 +204,12 @@ export async function createTemplate(
                         target_weight: set.targetWeight ?? null,
                         target_duration_seconds:
                             set.targetDurationSeconds ?? null,
-                        rest_seconds: set.restSeconds ?? null,
-                        tempo: set.tempo ?? null
+                        ...(set.restSeconds != null ? { rest_seconds: set.restSeconds } : {}),
+                        ...(set.tempo != null ? { tempo: set.tempo } : {})
                     }))
                 );
 
-            checkDbError(setError, "insert template sets");
+            checkTemplateCreationError(setError, "insert template sets", item.sets.some(set => set.setType === "rest_pause"));
         }
     } catch (error) {
         await db
@@ -330,18 +350,37 @@ export async function startWorkout(
             const items = [...template.workout_template_exercises]
                 .sort((a, b) => a.position - b.position);
 
-            for (const item of items) {
-                await addSessionExercise(
-                    userId,
-                    session.id,
-                    item.exercise_id,
-                    item.rest_seconds,
-                    [...item.workout_template_sets]
-                        .sort((a, b) => a.position - b.position),
-                    false,
-                    item.notes,
-                    item.superset_group ?? null
-                );
+            if (items.length) {
+                const { data: available, error: validationError } = await db.from("exercises")
+                    .select("id, name, tracking_type")
+                    .in("id", [...new Set(items.map(item => item.exercise_id))])
+                    .or(exerciseVisibility(userId))
+                    .or(`status.eq.published,and(status.eq.archived,owner_user_id.eq.${userId})`);
+                checkDbError(validationError, "validate workout exercises");
+                const byId = new Map((available ?? []).map(exercise => [exercise.id, exercise]));
+                const rows = items.map((item, position) => {
+                    const exercise = ensure(byId.get(item.exercise_id) ?? null, "Exercise not found.");
+                    return {
+                        id: randomUUID(), session_id: session.id, exercise_id: exercise.id,
+                        exercise_name: exercise.name, tracking_type: exercise.tracking_type,
+                        position, rest_seconds: item.rest_seconds, notes: item.notes,
+                        ...(item.superset_group != null ? { superset_group: item.superset_group } : {})
+                    };
+                });
+                const inserted = await db.from("workout_session_exercises").insert(rows);
+                checkTemplateCreationError(inserted.error, "add workout exercises");
+                const sets = items.flatMap<{ session_exercise_id: string; position: number; set_type: string; weight_kg?: number | null; reps?: number | null; duration_seconds?: number | null; rest_seconds?: number; tempo?: string }>((item, index) => {
+                    const planned = [...item.workout_template_sets].sort((a, b) => a.position - b.position);
+                    return planned.length ? planned.map((set, position) => ({
+                        session_exercise_id: rows[index].id, position, set_type: set.set_type,
+                        weight_kg: set.target_weight, reps: set.target_reps,
+                        duration_seconds: set.target_duration_seconds,
+                        ...(set.rest_seconds != null ? { rest_seconds: set.rest_seconds } : {}),
+                        ...(set.tempo != null ? { tempo: set.tempo } : {})
+                    })) : [{ session_exercise_id: rows[index].id, position: 0, set_type: "normal" }];
+                });
+                const insertedSets = await db.from("workout_logged_sets").insert(sets);
+                checkTemplateCreationError(insertedSets.error, "create workout sets", sets.some(set => set.set_type === "rest_pause"));
             }
         }
     } catch (error) {
@@ -507,12 +546,12 @@ export async function addSessionExercise(
             position,
             rest_seconds: restSeconds,
             notes,
-            superset_group: supersetGroup
+            ...(supersetGroup != null ? { superset_group: supersetGroup } : {})
         })
         .select()
         .single();
 
-    checkDbError(error, "add workout exercise");
+    checkTemplateCreationError(error, "add workout exercise");
 
     const sets = plannedSets?.length
         ? plannedSets.map((set, index) => ({
@@ -522,8 +561,8 @@ export async function addSessionExercise(
             weight_kg: set.target_weight,
             reps: set.target_reps,
             duration_seconds: set.target_duration_seconds,
-            rest_seconds: set.rest_seconds ?? null,
-            tempo: set.tempo ?? null
+            ...(set.rest_seconds != null ? { rest_seconds: set.rest_seconds } : {}),
+            ...(set.tempo != null ? { tempo: set.tempo } : {})
         }))
         : [{
             session_exercise_id: item.id,
@@ -541,7 +580,7 @@ export async function addSessionExercise(
             .delete()
             .eq("id", item.id);
 
-        checkDbError(setError, "create exercise sets");
+        checkTemplateCreationError(setError, "create exercise sets", sets.some(set => set.set_type === "rest_pause"));
     }
 
     return hydrate ? getSession(userId, sessionId) : null;

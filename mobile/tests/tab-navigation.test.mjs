@@ -165,7 +165,7 @@ function progressFixture() {
       View: "View",
       TextInput: "Input",
     },
-    "expo-router": { useRouter: () => ({ push: (route) => calls.push(route) }) },
+    "expo-router": { useLocalSearchParams: () => ({}), useRouter: () => ({ push: (route) => calls.push(route), setParams() {} }) },
     "@/src/components/motion": { MotionPressable: "Pressable", ScreenEntrance: "Entrance" },
     "@/src/components/tab-bar-motion": { TabScrollView: "ScrollView" },
     "@/src/components/ui": { PageHeading: "Heading", Txt: "Txt" },
@@ -173,14 +173,15 @@ function progressFixture() {
     "@/src/context/session": { useSession: () => session },
     "./analytics": analytics,
     "./training-trends": { TrainingTrends: "Trends" },
-    "./editors": { GoalsEditor: "Goals", MetricEditor: "Editor", Sheet: "Sheet" },
+    "./editors": { MetricEditor: "Editor", Sheet: "Sheet" },
     "./consistency": { ConsistencySection: "Consistency" },
     "./metric-detail": { MetricDetail: "MetricDetail" },
     "./walk-counter": { WalkCounter: "WalkCounter" },
-    "./plus": { PlusPreview: "PlusPreview" },
+    "./overview": { ProgressOverview: "Overview" },
+    "./goals-summary": { GoalsSummary: "GoalsSummary" },
     "./model": { ...model, localDate: () => today },
     "./strength": { StrengthSection: "Strength" },
-    "./tracking-cards": { compact: (value) => String(value), TrainingStats: "Totals" },
+    "./tracking-cards": { compact: (value) => String(value), TrainingStats: "Totals", MetricList: "MetricList" },
     "./use-progress": { useProgress: () => progress },
     "./visuals": { Icon: "Icon", PanelCard: "Panel", SectionTitle: "Title", SmallButton: "Button" },
   });
@@ -198,6 +199,8 @@ function progressFixture() {
 test("Progress shares its date range and saved workouts with the merged Stats charts", () => {
   const fixture = progressFixture();
   let tree = fixture.render();
+  find(tree, "Overview")[0].props.onTraining();
+  tree = fixture.render();
   assert.equal(find(tree, "Totals")[0].props.data.current.workouts, 2);
   assert.equal(find(tree, "Trends")[0].props.data.current.workouts, 2);
   find(tree, "Pressable")
@@ -220,7 +223,7 @@ test("Progress shares its date range and saved workouts with the merged Stats ch
   const historyTab = find(tree, "Pressable").find(
     (button) =>
       button.props.accessibilityRole === "tab" &&
-      button.props.children.props.children === "History",
+      find(button, "Txt").some(label => label.props.children === "History"),
   );
   historyTab.props.onPress();
   tree = fixture.render();
@@ -248,7 +251,7 @@ test("Progress retains Health and its check-in controls alongside the merged tra
     .find(
       (button) =>
         button.props.accessibilityRole === "tab" &&
-        button.props.children.props.children === "Health",
+        find(button, "Txt").some(label => label.props.children === "Track"),
     )
     .props.onPress();
   const health = fixture.render();
@@ -258,11 +261,8 @@ test("Progress retains Health and its check-in controls alongside the merged tra
       (input) => input.props.accessibilityLabel === "Search all health metrics",
     ),
   );
-  assert.ok(
-    find(health, "Pressable").some(
-      (button) => button.props.accessibilityLabel === "Log a health check-in",
-    ),
-  );
+  find(health, "MetricList")[0].props.onLog("water");
+  assert.equal(find(fixture.render(), "Editor")[0].props.initialMetric, "water");
 });
 
 test("merged training distinguishes first sync, failures, cached data, and a real empty account", () => {
@@ -285,12 +285,12 @@ test("merged training distinguishes first sync, failures, cached data, and a rea
     pending: [],
     workoutsUpdatedAt: today,
   };
-  assert.equal(find(fixture.render(), "Trends")[0].props.data.current.workouts, 1);
+  assert.equal(find(fixture.render(), "Overview")[0].props.data.current.workouts, 1);
   fixture.progress.workoutError = "";
   fixture.progress.journal = { workouts: [], events: [], pending: [], workoutsUpdatedAt: today };
   tree = fixture.render();
-  assert.equal(find(tree, "Totals")[0].props.data.current.workouts, 0);
-  assert.equal(find(tree, "Trends")[0].props.data.current.workouts, 0);
+  assert.equal(find(tree, "Overview")[0].props.data.current.workouts, 0);
+  assert.equal(find(tree, "Overview")[0].props.trainingAvailable, true);
 });
 
 function trendsFixture(workouts = [workout("recent", "2026-11-12")]) {

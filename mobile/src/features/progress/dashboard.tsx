@@ -9,10 +9,10 @@ import {
   TextInput,
   View,
 } from "react-native";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { MotionPressable, ScreenEntrance } from "@/src/components/motion";
 import { useSession } from "@/src/context/session";
-import { PageHeading, Txt } from "@/src/components/ui";
+import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import { useProgress } from "./use-progress";
 import {
@@ -28,29 +28,28 @@ import {
   type ProgressWorkout,
 } from "./model";
 import { buildProgress, metricSeries, workoutDate, summary } from "./analytics";
-import { GoalsEditor, MetricEditor, Sheet } from "./editors";
+import { MetricEditor, Sheet } from "./editors";
 import { StrengthSection } from "./strength";
 import { ConsistencySection } from "./consistency";
 import { MetricDetail } from "./metric-detail";
 import { WalkCounter } from "./walk-counter";
 import { Icon, IconButton, PanelCard, SectionTitle, SmallButton } from "./visuals";
 import {
-  DailyMetricGrid,
   MetricList,
-  TrainingHero,
   TrainingStats,
   WeightCard,
   compact,
   displayMetric,
   displayUnit,
 } from "./tracking-cards";
-import { PlusPreview } from "./plus";
+import { GoalsSummary } from "./goals-summary";
+import { ProgressOverview } from "./overview";
 import { TrainingTrends } from "./training-trends";
 
 type ProgressView = "overview" | "health" | "history";
 const VIEWS = [
   { id: "overview", label: "Overview" },
-  { id: "health", label: "Health" },
+  { id: "health", label: "Track" },
   { id: "history", label: "History" },
 ] as const;
 const PERIODS = [7, 30, 90, 365];
@@ -103,6 +102,7 @@ function WorkoutRows({
 
 export function ProgressDashboard() {
   const router = useRouter();
+  const { showGoals } = useLocalSearchParams<{ showGoals?: string }>();
   const { settings } = useSession();
   const progress = useProgress();
   const { journal, goals } = progress;
@@ -118,6 +118,12 @@ export function ProgressDashboard() {
   const [editor, setEditor] = useState<{ metric: Metric; date: string } | null>(null);
   const [goalEditor, setGoalEditor] = useState(false);
   const [trainingDetails, setTrainingDetails] = useState(false);
+  function closeGoals() {
+    setGoalEditor(false);
+    if (showGoals) router.setParams({ showGoals: undefined });
+  }
+  const [exerciseDetail, setExerciseDetail] = useState<string | null>(null);
+  const [nutritionDetail, setNutritionDetail] = useState(false);
   const [dateEditor, setDateEditor] = useState(false);
   const [dateInput, setDateInput] = useState(today);
   const [dateError, setDateError] = useState("");
@@ -313,50 +319,77 @@ export function ProgressDashboard() {
             tintColor={C.brand}
           />
         }
-        contentContainerClassName="w-full max-w-2xl self-center px-6 pt-6 pb-48"
+        contentContainerClassName="w-full max-w-2xl self-center px-6 pt-2 pb-48"
       >
-        <PageHeading
-          eyebrow="The work adds up"
-          title="Your progress."
-          subtitle="Every session. Every check-in. A clearer picture of you."
-        />
-        <View className="mb-5 flex-row items-center gap-3">
-          <View className="flex-1">
-            <Txt className="text-xs text-muted">
-              {dateLabel(today, { weekday: "long", day: "numeric", month: "short" })}
-            </Txt>
-          </View>
-          <IconButton
-            icon="tune-variant"
-            label="Edit progress goals"
-            onPress={() => setGoalEditor(true)}
-          />
+        <View className="mb-4 flex-row items-center justify-between gap-3">
+          <Txt
+            accessibilityRole="header"
+            weight="medium"
+            className="min-w-0 flex-1 text-[28px] leading-10 tracking-[-1px]"
+          >
+            Progress
+          </Txt>
           <MotionPressable
             accessibilityRole="button"
-            accessibilityLabel="Log a health check-in"
-            accessibilityState={{ disabled: !canLog }}
-            disabled={!canLog}
-            onPress={() => setEditor({ metric: "steps", date: selectedDate })}
-            className={`min-h-11 flex-row items-center gap-2 rounded-full bg-ink px-5 ${canLog ? "" : "opacity-40"}`}
+            accessibilityLabel="View your goals"
+            onPress={() => setGoalEditor(true)}
+            className="min-h-11 flex-row items-center gap-2 rounded-full px-4"
+            style={{ backgroundColor: "#C5F4601A" }}
           >
-            <Icon name="plus" color={C.bg} size={18} />
-            <Txt weight="semibold" className="text-xs text-black">
-              Check in
+            <Icon name="bullseye-arrow" color="#C5F460" size={21} />
+            <Txt weight="medium" className="text-xs" style={{ color: "#C5F460" }}>
+              Goals
             </Txt>
           </MotionPressable>
         </View>
-        <View className="mb-4 flex-row gap-1 rounded-full bg-panel p-1.5">
+        <Txt className="-mt-2 mb-5 text-xs text-muted">Small steps. Real progress.</Txt>
+        <View className="mb-4 flex-row gap-1 rounded-2xl bg-panel p-1.5">
           {VIEWS.map((item) => (
             <MotionPressable
               key={item.id}
               accessibilityRole="tab"
               accessibilityState={{ selected: item.id === view }}
               onPress={() => navigate(item.id)}
-              className={`min-h-11 flex-1 items-center justify-center rounded-full px-2 ${item.id === view ? "bg-ink" : ""}`}
+              className="min-h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-xl px-2"
+              style={{
+                backgroundColor:
+                  item.id === view
+                    ? `${item.id === "overview" ? "#C5F460" : item.id === "health" ? "#7DCFFF" : "#FFB38A"}20`
+                    : "transparent",
+              }}
             >
+              <Icon
+                name={
+                  item.id === "overview"
+                    ? "chart-box-outline"
+                    : item.id === "health"
+                      ? "heart-pulse"
+                      : "calendar-check-outline"
+                }
+                size={17}
+                color={
+                  item.id === view
+                    ? item.id === "overview"
+                      ? "#C5F460"
+                      : item.id === "health"
+                        ? "#7DCFFF"
+                        : "#FFB38A"
+                    : C.muted
+                }
+              />
               <Txt
                 weight="medium"
-                className={`text-xs ${item.id === view ? "text-black" : "text-muted"}`}
+                className="text-xs"
+                style={{
+                  color:
+                    item.id === view
+                      ? item.id === "overview"
+                        ? "#C5F460"
+                        : item.id === "health"
+                          ? "#7DCFFF"
+                          : "#FFB38A"
+                      : C.muted,
+                }}
               >
                 {item.label}
               </Txt>
@@ -420,121 +453,35 @@ export function ProgressDashboard() {
           </View>
         )}
 
-        {view === "overview" && (
-          <>
-            <SectionTitle
-              title="Training overview"
-              action="Details"
-              onAction={() => setTrainingDetails(true)}
-            />
-            <View className="mb-4 flex-row gap-2">
-              {PERIODS.map((period) => (
-                <MotionPressable
-                  key={period}
-                  accessibilityRole="button"
-                  accessibilityLabel={`Last ${period} days`}
-                  accessibilityState={{ selected: days === period }}
-                  onPress={() => setDays(period)}
-                  style={{
-                    flex: 1,
-                    minHeight: 44,
-                    borderRadius: 20,
-                    backgroundColor: days === period ? C.elevated : "transparent",
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Txt
-                    weight="medium"
-                    style={{ color: days === period ? C.ink : C.muted, fontSize: 12 }}
-                  >
-                    {period === 365 ? "1 year" : `${period} days`}
-                  </Txt>
-                </MotionPressable>
-              ))}
-            </View>
-            {canShowTraining && (
-              <>
-                <TrainingHero
-                  data={data}
-                  days={days}
-                  target={goals.weeklyWorkouts}
-                  onGoals={() => setGoalEditor(true)}
-                  onDay={(date) => {
-                    setSelectedDate(date);
-                    setHistoryDayOnly(true);
-                    navigate("history");
-                  }}
-                />
-                <TrainingStats data={data} unit={unit} />
-                <TrainingTrends data={data} days={days} unit={unit} />
-              </>
-            )}
-            <SectionTitle
-              title="Daily tracking"
-              action="All metrics"
-              onAction={() => navigate("health")}
-            />
-            {dayPicker}
-            <DailyMetricGrid metrics={["steps", "caloriesIn", "water", "sleep"]} {...metricProps} />
-            <View className="mt-3">
-              <SmallButton
-                label="Add 250 ml water"
-                icon="water-plus-outline"
-                onPress={() => void addWater()}
-                disabled={waterBusy || !canLog}
-              />
-            </View>
-            <SectionTitle
-              title="Body weight"
-              action="View trend"
-              onAction={() => setDetailMetric("weight")}
-            />
-            <WeightCard
-              latest={latestWeight}
-              weights={weights}
-              unit={unit}
-              onLog={() => setEditor({ metric: "weight", date: selectedDate })}
-              onDetail={() => setDetailMetric("weight")}
-            />
-            <SectionTitle
-              title={`${dateTitle}’s training`}
-              action="History"
-              onAction={() => {
-                setHistoryDayOnly(false);
-                navigate("history");
-              }}
-            />
-            {dailyWorkouts.length ? (
-              <WorkoutRows workouts={dailyWorkouts} unit={unit} onOpen={openWorkout} />
-            ) : (
-              <PanelCard>
-                <View className="flex-row items-center gap-3">
-                  <Icon name="dumbbell" size={26} color={C.muted} />
-                  <View className="flex-1">
-                    <Txt weight="semibold" className="text-sm">
-                      No workout logged
-                    </Txt>
-                    <Txt className="mt-1 text-xs text-muted">
-                      Completed sessions will appear here.
-                    </Txt>
-                  </View>
-                  <MotionPressable
-                    accessibilityRole="button"
-                    onPress={() => router.push("/(tabs)/train")}
-                    className="min-h-11 justify-center pl-2"
-                  >
-                    <Txt weight="semibold" className="text-xs text-ink">
-                      Train
-                    </Txt>
-                  </MotionPressable>
-                </View>
-              </PanelCard>
-            )}
-            <View className="mt-6">
-              <PlusPreview />
-            </View>
-          </>
+        {view === "overview" && !trainingLoading && (
+          <ProgressOverview
+            data={data}
+            goals={goals}
+            hasGoals={progress.hasGoals}
+            onGoals={() => setGoalEditor(true)}
+            unit={unit}
+            today={today}
+            dateTitle={dateTitle}
+            daily={daily}
+            latestWeight={latestWeight}
+            weights={weights}
+            trainingAvailable={canShowTraining}
+            canLog={canLog}
+            waterBusy={waterBusy}
+            dayPicker={dayPicker}
+            onLog={(metric) => setEditor({ metric, date: selectedDate })}
+            onMetric={setDetailMetric}
+            onNutrition={() => setNutritionDetail(true)}
+            onHealth={() => navigate("health")}
+            onTraining={() => setTrainingDetails(true)}
+            onExercise={setExerciseDetail}
+            onTrain={() => router.push("/(tabs)/train")}
+            onHistory={() => {
+              setHistoryDayOnly(false);
+              navigate("history");
+            }}
+            onWater={() => void addWater()}
+          />
         )}
 
         {view === "health" && (
@@ -836,17 +783,75 @@ export function ProgressDashboard() {
           }}
         />
       )}
-      {goalEditor && (
-        <GoalsEditor
+      {(goalEditor || showGoals === "1") && (
+        <GoalsSummary
           goals={goals}
+          hasGoals={progress.hasGoals}
+          events={journal.events}
+          workouts={journal.workouts}
           unit={unit}
-          onClose={() => setGoalEditor(false)}
-          onSave={async (next) => {
-            await progress.saveGoals(next);
-            setMessageError(false);
-            setMessage("Goals updated.");
+          loading={progress.loading || progress.refreshing}
+          error={progress.storageError || (!progress.hasGoals ? progress.syncError : "")}
+          onRetry={() => void progress.refresh()}
+          onClose={closeGoals}
+          onEdit={() => {
+            closeGoals();
+            router.push("/goals");
           }}
         />
+      )}
+      {nutritionDetail && (
+        <Sheet
+          title="Nutrition"
+          subtitle={`${dateTitle} · tap a nutrient for its trend, or + to log`}
+          onClose={() => setNutritionDetail(false)}
+        >
+          <MetricList
+            metrics={[
+              "caloriesIn",
+              "protein",
+              "carbs",
+              "fat",
+              "fiber",
+              "sugar",
+              "sodium",
+              "caffeine",
+            ]}
+            {...metricProps}
+            onLog={(metric) => {
+              setNutritionDetail(false);
+              setEditor({ metric, date: selectedDate });
+            }}
+            onDetail={(metric) => {
+              setNutritionDetail(false);
+              setDetailMetric(metric);
+            }}
+          />
+        </Sheet>
+      )}
+      {exerciseDetail !== null && (
+        <Sheet
+          title="Exercise progress"
+          subtitle="Compare your working sets and personal bests"
+          onClose={() => setExerciseDetail(null)}
+        >
+          <View className="flex-row gap-2">
+            {PERIODS.map((period) => (
+              <MotionPressable
+                key={period}
+                accessibilityRole="button"
+                accessibilityLabel={`Exercise progress, last ${period} days`}
+                accessibilityLabel={`Last ${period} days`}
+                accessibilityState={{ selected: days === period }}
+                onPress={() => setDays(period)}
+                className={`min-h-11 flex-1 items-center justify-center rounded-full ${days === period ? "bg-elevated" : ""}`}
+              >
+                <Txt className="text-xs">{period === 365 ? "1 year" : `${period} days`}</Txt>
+              </MotionPressable>
+            ))}
+          </View>
+          <StrengthSection data={data} unit={unit} initialExerciseId={exerciseDetail} />
+        </Sheet>
       )}
       {trainingDetails && (
         <Sheet
@@ -854,7 +859,22 @@ export function ProgressDashboard() {
           subtitle={`${dateLabel(data.start)} – ${dateLabel(today)} · completed workouts`}
           onClose={() => setTrainingDetails(false)}
         >
+          <View className="mb-4 flex-row gap-2">
+            {PERIODS.map((period) => (
+              <MotionPressable
+                key={period}
+                accessibilityRole="button"
+                accessibilityLabel={`Last ${period} days`}
+                accessibilityState={{ selected: days === period }}
+                onPress={() => setDays(period)}
+                className={`min-h-11 flex-1 items-center justify-center rounded-full ${days === period ? "bg-elevated" : ""}`}
+              >
+                <Txt className="text-xs">{period === 365 ? "1 year" : `${period} days`}</Txt>
+              </MotionPressable>
+            ))}
+          </View>
           <TrainingStats data={data} unit={unit} />
+          <TrainingTrends data={data} days={days} unit={unit} />
           <PanelCard style={{ marginTop: 16 }}>
             <View className="flex-row justify-between">
               <View>
@@ -893,7 +913,6 @@ export function ProgressDashboard() {
               navigate("history");
             }}
           />
-          <StrengthSection data={data} unit={unit} />
         </Sheet>
       )}
       {dateEditor && (

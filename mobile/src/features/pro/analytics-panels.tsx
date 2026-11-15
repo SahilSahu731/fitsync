@@ -20,7 +20,7 @@ import { Body } from "../workouts/components/muscle-focus";
 import { pretty } from "../exercises/api";
 import type { useProgress } from "../progress/use-progress";
 import { modesFor, type ProAnalytics, type RecordMode } from "./analytics";
-import { GlassCard, ProPill, ProSection, ProStat, ProAction, PRO, Reveal } from "./ui";
+import { GlassCard, ProPill, ProSection, ProStat, ProAction, PRO, Reveal } from "./hub-ui";
 
 export type AnalyticsView = "training" | "muscles" | "records" | "body";
 const MODE_LABELS: Record<RecordMode, string> = {

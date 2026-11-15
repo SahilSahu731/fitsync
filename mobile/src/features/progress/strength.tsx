@@ -19,11 +19,19 @@ const names: Record<Mode, string> = {
   duration: "Longest set",
   distance: "Farthest set",
 };
-export function StrengthSection({ data, unit }: { data: ProgressAnalytics; unit: "kg" | "lb" }) {
+export function StrengthSection({
+  data,
+  unit,
+  initialExerciseId = "",
+}: {
+  data: ProgressAnalytics;
+  unit: "kg" | "lb";
+  initialExerciseId?: string;
+}) {
   const router = useRouter();
   const [search, setSearch] = useState("");
-  const [exerciseId, setExerciseId] = useState("");
-  const [mode, setMode] = useState<Mode>("e1rm");
+  const [exerciseId, setExerciseId] = useState(initialExerciseId);
+  const [mode, setMode] = useState<Mode>("load");
   const [allRecords, setAllRecords] = useState(false);
   const exercises = data.exercises.filter((exercise) =>
     exercise.name.toLowerCase().includes(search.toLowerCase()),

@@ -34,6 +34,7 @@ function fixture() {
     refresh: async () => calls.push("progress-refresh"),
   };
   progress.journal.workoutsUpdatedAt = "2026-11-14T12:00:00Z";
+  const session = { user: { id: "owner", name: "Sam" }, settings: { weightUnit: "kg" } };
   const dependencies = {
     react: {
       useState(initial) {
@@ -65,13 +66,18 @@ function fixture() {
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
     "react-native-svg": { __esModule: true, default: "Svg", Circle: "Circle", Path: "Path" },
     "@/src/context/session": {
-      useSession: () => ({ user: { id: "owner", name: "Sam" }, settings: { weightUnit: "kg" } }),
+      useSession: () => session,
     },
     "@/src/components/motion": { MotionPressable: "Pressable", ScreenEntrance: "Entrance" },
     "@/src/components/tab-bar-motion": { TabScrollView: "TabScroll" },
-    "@/src/components/ui": { Txt: "Txt" },
+    "@/src/components/ui": { Txt: "Txt", PageHeading: "PageHeading" },
     "../billing/billing-context": { useBilling: () => billing },
-    "../progress/use-progress": { useProgress: () => progress },
+    "../progress/use-progress": {
+      useProgress: () => {
+        calls.push("progress-hook");
+        return progress;
+      },
+    },
     "../progress/model": {
       ...model,
       localDate: (value) => (value ? model.localDate(value) : "2026-11-14"),
@@ -84,9 +90,17 @@ function fixture() {
     "./analytics-panels": { AnalyticsPanels: "Analytics" },
     "./training-tools": { TrainerPanel: "Trainer", TrainingTools: "Tools" },
     "./use-pro-catalog": {
-      useProCatalog: () => ({ items: [], loading: false, error: "", refresh: async () => {} }),
+      useProCatalog: () => {
+        calls.push("catalog-hook");
+        return {
+          items: [],
+          loading: false,
+          error: "",
+          refresh: async () => calls.push("catalog-refresh"),
+        };
+      },
     },
-    "./ui": Object.fromEntries(
+    "./hub-ui": Object.fromEntries(
       [
         "GlassCard",
         "ProAction",
@@ -127,114 +141,156 @@ function fixture() {
     billing,
     progress,
     calls,
+    session,
     render() {
       cursor = 0;
-      const root = exports.ProHubScreen();
-      return root.type(root.props);
+      const expand = (node) => {
+        if (!node || typeof node !== "object") return node;
+        if (Array.isArray(node)) return node.map(expand);
+        if (typeof node.type === "function") return expand(node.type(node.props));
+        return { ...node, props: { ...node.props, children: expand(node.props?.children) } };
+      };
+      return expand(exports.ProHubScreen());
     },
   };
 }
-test("Pro hub exposes real training, analytics, trainer and tool destinations", () => {
+const tab = (tree, label) =>
+  find(tree, "Pressable").find(
+    (node) => node.props.accessibilityRole === "tab" && node.props.accessibilityLabel === label,
+  );
+const textOf = (node) =>
+  !node
+    ? ""
+    : Array.isArray(node)
+      ? node.map(textOf).join(" ")
+      : typeof node === "object"
+        ? textOf(node.props?.children)
+        : String(node);
+const assertBenefitsOnly = (tree) => {
+  for (const component of ["Analytics", "Trainer", "Tools", "TodayForYou", "ProStat"])
+    assert.equal(find(tree, component).length, 0, component);
+  assert.equal(
+    find(tree, "Pressable").some((node) => node.props.accessibilityRole === "tab"),
+    false,
+  );
+  assert.ok(find(tree, "ProButton").some((node) => node.props.title === "Become a Pro"));
+};
+
+test("non-members see only benefits and membership actions without loading private training data", () => {
+  const f = fixture();
+  f.billing.isPro = false;
+  const tree = f.render();
+  assertBenefitsOnly(tree);
+  assert.equal(f.calls.includes("progress-hook"), false);
+  assert.equal(f.calls.includes("catalog-hook"), false);
+  assert.match(textOf(tree), /Unlimited graph history/);
+  find(tree, "ProButton")
+    .find((node) => node.props.title === "Become a Pro")
+    .props.onPress();
+  assert.equal(f.calls.at(-1), "/membership");
+});
+
+test("checking and failed entitlement verification never mount the paid workspace", async () => {
+  const f = fixture();
+  f.billing.isPro = false;
+  f.billing.loading = true;
+  let tree = f.render();
+  assertBenefitsOnly(tree);
+  assert.match(textOf(tree), /Checking your membership/);
+  f.billing.loading = false;
+  f.billing.error = "Offline";
+  tree = f.render();
+  assertBenefitsOnly(tree);
+  assert.equal(f.calls.includes("progress-hook"), false);
+  await find(tree, "ProAction")
+    .find((node) => node.props.title === "Check membership again")
+    .props.onPress();
+  assert.equal(f.calls.at(-1), "billing-refresh");
+});
+
+test("signed-out sessions never mount a workspace even if a stale billing value says Pro", () => {
+  const f = fixture();
+  f.session.user = null;
+  assertBenefitsOnly(f.render());
+  assert.equal(f.calls.includes("progress-hook"), false);
+});
+
+test("Pro members can reach analytics, trainer, tools and billing", () => {
   const f = fixture();
   let tree = f.render();
-  assert.ok(find(tree, "ProAction").some((n) => n.props.title === "Every muscle, understood"));
-  find(tree, "ProAction")
-    .find((n) => n.props.title === "Every muscle, understood")
+  find(tree, "Pressable")
+    .find((node) => node.props.accessibilityLabel === "Muscle insights")
     .props.onPress();
   tree = f.render();
   assert.equal(find(tree, "Analytics")[0].props.view, "muscles");
   find(tree, "ProPill")
-    .find((n) => n.props.label === "All time")
+    .find((node) => node.props.label === "All time")
     .props.onPress();
-  tree = f.render();
-  assert.equal(find(tree, "Analytics")[0].props.data.previous, null);
-  find(tree, "ProPill")
-    .find((n) => n.props.label === "Trainer")
-    .props.onPress();
-  tree = f.render();
-  assert.equal(find(tree, "Trainer").length, 1);
-  find(tree, "ProPill")
-    .find((n) => n.props.label === "Tools")
-    .props.onPress();
-  tree = f.render();
-  assert.equal(find(tree, "Tools").length, 1);
+  assert.equal(find(f.render(), "Analytics")[0].props.data.previous, null);
+  tab(tree, "Trainer").props.onPress();
+  assert.equal(find(f.render(), "Trainer").length, 1);
+  tab(tree, "Tools").props.onPress();
+  assert.equal(find(f.render(), "Tools").length, 1);
   find(tree, "Pressable")
-    .find((n) => n.props.accessibilityLabel === "Manage Pro membership")
+    .find((node) => node.props.accessibilityLabel === "Manage Pro membership")
     .props.onPress();
   assert.equal(f.calls.at(-1), "/membership");
 });
-test("membership expiration replaces deep analytics with the membership explanation", () => {
+
+test("membership expiration unmounts all paid content and stops paid data hooks", () => {
   const f = fixture();
-  let tree = f.render();
-  find(tree, "ProPill")
-    .find((n) => n.props.label === "Analytics")
-    .props.onPress();
+  tab(f.render(), "Analytics").props.onPress();
   assert.equal(find(f.render(), "Analytics").length, 1);
+  const privateReads = f.calls.filter((call) => call.endsWith("-hook")).length;
   f.billing.isPro = false;
-  tree = f.render();
-  assert.equal(find(tree, "Analytics").length, 0);
-  const walk = (node) =>
-    !node || typeof node !== "object"
-      ? []
-      : Array.isArray(node)
-        ? node.flatMap(walk)
-        : [...(node.type?.name === "LockedAnalytics" ? [node] : []), ...walk(node.props?.children)];
-  const preview = walk(tree)[0];
-  assert.ok(preview);
-  assert.ok(
-    find(preview.type(preview.props), "ProButton").some(
-      (n) => n.props.title === "Explore membership",
-    ),
-  );
+  assertBenefitsOnly(f.render());
+  assert.equal(f.calls.filter((call) => call.endsWith("-hook")).length, privateReads);
 });
 
-test("For you opens the daily companion and routes each shortcut to its matching screen", () => {
+test("verified members keep their workspace during a background membership refresh", () => {
+  const f = fixture();
+  f.billing.loading = true;
+  tab(f.render(), "Analytics").props.onPress();
+  assert.equal(find(f.render(), "Analytics").length, 1);
+});
+
+test("For you opens the daily briefing and routes shortcuts to the matching screen", () => {
   const f = fixture();
   let tree = f.render();
-  assert.equal(find(tree, "TodayForYou").length, 1);
   find(tree, "ProAction")
     .find((node) => node.props.title === "Your daily Pro companion")
     .props.onPress();
   tree = f.render();
-  assert.equal(
-    find(tree, "ProPill").find((node) => node.props.label === "For you").props.selected,
-    true,
-  );
-  const walk = (node) =>
-    !node || typeof node !== "object"
-      ? []
-      : Array.isArray(node)
-        ? node.flatMap(walk)
-        : [
-            ...(node.type?.name === "CompanionShortcuts" ? [node] : []),
-            ...walk(node.props?.children),
-          ];
-  const child = walk(tree)[0];
-  assert.ok(child);
-  const shortcuts = child.type(child.props);
-  assert.equal(find(shortcuts, "TodayForYou").length, 1);
-  const actions = find(shortcuts, "ProAction");
-  assert.equal(new Set(actions.map(node => node.props.title)).size, actions.length);
-  for (const [title, tab] of [
+  assert.equal(tab(tree, "For you").props.accessibilityState.selected, true);
+  assert.equal(find(tree, "TodayForYou").length, 1);
+  const actions = find(tree, "ProAction");
+  assert.equal(new Set(actions.map((node) => node.props.title)).size, actions.length);
+  for (const [title, destination] of [
     ["Today’s readiness check-in", "readiness"],
     ["A muscle focus that fits your plan", "focus"],
     ["Your monthly training report", "reports"],
     ["Your desktop planning workspace", "desktop"],
   ]) {
     actions.find((node) => node.props.title === title).props.onPress();
-    assert.equal(f.calls.at(-1), `/companion?tab=${tab}`);
+    assert.equal(f.calls.at(-1), `/companion?tab=${destination}`);
   }
 });
-test("independent training tools remain reachable while workout history is opening", () => {
+
+test("independent training tools remain reachable while history is opening", () => {
   const f = fixture();
   f.progress.loading = true;
-  let tree = f.render();
+  const tree = f.render();
   assert.equal(find(tree, "Loading").length, 1);
-  find(tree, "ProPill")
-    .find((n) => n.props.label === "Tools")
-    .props.onPress();
-  tree = f.render();
-  assert.equal(find(tree, "Tools").length, 1);
+  tab(tree, "Tools").props.onPress();
+  assert.equal(find(f.render(), "Tools").length, 1);
+});
+
+test("pull to refresh updates the same progress, muscle metadata and entitlement sources", async () => {
+  const f = fixture();
+  find(f.render(), "TabScroll")[0].props.refreshControl.props.onRefresh();
+  await Promise.resolve();
+  for (const source of ["progress-refresh", "catalog-refresh", "billing-refresh"])
+    assert.ok(f.calls.includes(source));
 });
 
 function loadUi(file, dependencies) {

@@ -1,12 +1,12 @@
 import React, { useMemo, useRef, useState, useCallback, useEffect } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, type Href } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import Svg, { Circle, Path } from "react-native-svg";
+import Svg, { Circle } from "react-native-svg";
 import { useSession } from "@/src/context/session";
 import { MotionPressable, ScreenEntrance } from "@/src/components/motion";
 import { TabScrollView } from "@/src/components/tab-bar-motion";
-import { Txt } from "@/src/components/ui";
+import { PageHeading, Txt } from "@/src/components/ui";
 import { useBilling } from "../billing/billing-context";
 import { useProgress } from "../progress/use-progress";
 import { addDays, dateLabel, localDate } from "../progress/model";
@@ -18,7 +18,6 @@ import { AnalyticsPanels, type AnalyticsView } from "./analytics-panels";
 import { TrainerPanel, TrainingTools, type ProTool } from "./training-tools";
 import { useProCatalog } from "./use-pro-catalog";
 import { TodayForYouCard } from "../companion/today-card";
-import { type Href } from "expo-router";
 import {
   GlassCard,
   ProAction,
@@ -29,7 +28,8 @@ import {
   ProScene,
   PRO,
   Reveal,
-} from "./ui";
+  type ProIcon,
+} from "./hub-ui";
 
 type Section = "overview" | "analytics" | "trainer" | "tools" | "companion";
 const SECTIONS = [
@@ -39,10 +39,206 @@ const SECTIONS = [
   { id: "trainer", label: "Trainer" },
   { id: "tools", label: "Tools" },
 ] as const;
+
+// Keep paid hooks and private training content behind the verified entitlement boundary.
 export function ProHubScreen() {
   const { user } = useSession();
-  return <ProHub key={user?.id ?? "signed-out"} />;
+  const billing = useBilling();
+  return (
+    <ProScene>
+      {billing.isPro && user?.id ? (
+        <ProHub key={user.id} />
+      ) : (
+        <ProBenefits
+          checking={billing.loading}
+          error={billing.error}
+          onRetry={() => void billing.refresh()}
+        />
+      )}
+    </ProScene>
+  );
 }
+
+function ProBrand({ member = false }: { member?: boolean }) {
+  return (
+    <View className="mb-6 flex-row items-center justify-between gap-3">
+      <View className="flex-row items-center gap-2">
+        <MaterialCommunityIcons name="star-four-points" size={19} color="white" />
+        <Txt weight="semibold" className="text-[12px] tracking-[1.8px]">
+          FITSync
+        </Txt>
+        <View className="rounded-full border border-white/20 bg-white/10 px-2 py-0.5">
+          <Txt weight="medium" className="text-[9px] tracking-wider">
+            PRO
+          </Txt>
+        </View>
+      </View>
+      {member && (
+        <MotionPressable
+          accessibilityRole="button"
+          accessibilityLabel="Manage Pro membership"
+          onPress={() => router.push("/membership")}
+          className="min-h-11 flex-row items-center gap-1.5 rounded-full bg-white/5 px-3"
+        >
+          <View className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: PRO.accent }} />
+          <Txt className="text-[10px]">Member</Txt>
+          <MaterialCommunityIcons name="chevron-right" size={14} color={PRO.muted} />
+        </MotionPressable>
+      )}
+    </View>
+  );
+}
+
+const BENEFITS: { icon: ProIcon; title: string; description: string; detail: string }[] = [
+  {
+    icon: "chart-timeline-variant",
+    title: "Go deeper into your progress",
+    description:
+      "Unlimited graph history, personal records and training-block comparisons. See the evidence behind plateaus and exercise trends.",
+    detail: "Deep analytics",
+  },
+  {
+    icon: "human",
+    title: "Understand every muscle",
+    description:
+      "Explore muscle workload, balance and estimated recovery. Preview a specialisation block before changing your plan.",
+    detail: "Muscle insights",
+  },
+  {
+    icon: "creation-outline",
+    title: "A trainer in your corner",
+    description:
+      "Build a plan around your goals, equipment and schedule. Get working-set targets and recommendations that explain why.",
+    detail: "FitSync trainer",
+  },
+  {
+    icon: "playlist-plus",
+    title: "Make training your own",
+    description:
+      "Unlimited routines, custom exercises, warm-up and plate calculators. Plan supersets, drop sets, tempo and rest times.",
+    detail: "Your training toolbox",
+  },
+  {
+    icon: "weather-sunset",
+    title: "A little guidance, every day",
+    description:
+      "Your daily briefing, optional readiness check-ins, goal milestones and personal reminders that fit your day.",
+    detail: "Daily support",
+  },
+  {
+    icon: "shield-lock-outline",
+    title: "Keep your whole story together",
+    description:
+      "Track measurements, compare private photos and explore optional nutrition. Use desktop planning, monthly reports and sharing you control.",
+    detail: "Connected to your account",
+  },
+];
+
+function ProBenefits({
+  checking,
+  error,
+  onRetry,
+}: {
+  checking: boolean;
+  error: string | null;
+  onRetry: () => void;
+}) {
+  return (
+    <ScreenEntrance className="flex-1">
+      <TabScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="w-full max-w-2xl self-center px-6 pt-6 pb-48"
+        refreshControl={
+          <RefreshControl refreshing={checking} onRefresh={onRetry} tintColor="white" />
+        }
+      >
+        <ProBrand />
+        <Reveal>
+          <GlassCard accent>
+            <View className="mb-7 flex-row items-center justify-between">
+              <View className="rounded-full border border-white/10 bg-white/5 px-3 py-1.5">
+                <Txt className="text-[10px] text-white/80">A little more possibility</Txt>
+              </View>
+              <View className="h-12 w-12 items-center justify-center rounded-2xl border border-white/15 bg-white/5">
+                <MaterialCommunityIcons name="star-four-points" size={25} color="white" />
+              </View>
+            </View>
+            <Txt
+              accessibilityRole="header"
+              weight="medium"
+              className="text-[34px] leading-[44px] tracking-[-1.5px]"
+            >
+              Your training.{"\n"}A level deeper.
+            </Txt>
+            <Txt className="mb-6 mt-3 text-sm leading-6 text-muted">
+              Understand your progress. Find your next step. Make every session feel more yours.
+            </Txt>
+            <ProButton title="Become a Pro" onPress={() => router.push("/membership")} />
+            <Txt className="mt-3 text-center text-[10px] leading-5 text-muted">
+              Explore plans and everything included.
+            </Txt>
+          </GlassCard>
+        </Reveal>
+        {checking ? (
+          <View accessibilityLiveRegion="polite" className="mt-4 flex-row items-center gap-2 px-1">
+            <ActivityIndicator size="small" color="white" />
+            <Txt className="text-xs text-muted">Checking your membership…</Txt>
+          </View>
+        ) : error ? (
+          <View className="mt-4">
+            <ProAction
+              icon="refresh"
+              title="Check membership again"
+              subtitle="We couldn’t verify your membership. Retry to open your Pro workspace."
+              onPress={onRetry}
+            />
+          </View>
+        ) : null}
+        <ProSection
+          eyebrow="Made for the way you train"
+          title="More insight. More possibilities."
+        />
+        <View className="gap-3">
+          {BENEFITS.map((benefit, index) => (
+            <Reveal key={benefit.title} delay={Math.min(index * 45, 180)}>
+              <GlassCard blur={false}>
+                <View className="flex-row items-center gap-3">
+                  <View className="h-11 w-11 items-center justify-center rounded-2xl bg-white/5">
+                    <MaterialCommunityIcons
+                      name={benefit.icon}
+                      size={23}
+                      color={index === 0 ? PRO.accent : "white"}
+                    />
+                  </View>
+                  <Txt className="text-[10px] text-muted">{benefit.detail}</Txt>
+                </View>
+                <Txt weight="medium" className="mt-4 text-[17px] leading-6 tracking-[-0.3px]">
+                  {benefit.title}
+                </Txt>
+                <Txt className="mt-2 text-xs leading-[21px] text-muted">{benefit.description}</Txt>
+              </GlassCard>
+            </Reveal>
+          ))}
+        </View>
+        <View className="mb-3 mt-7">
+          <ProButton title="Become a Pro" onPress={() => router.push("/membership")} />
+        </View>
+        <MotionPressable
+          accessibilityRole="button"
+          onPress={() => router.push("/membership")}
+          className="min-h-11 items-center justify-center"
+        >
+          <Txt className="text-xs text-muted">Membership & billing ↗</Txt>
+        </MotionPressable>
+        <View className="mt-3 flex-row items-center justify-center gap-2">
+          <MaterialCommunityIcons name="shield-check-outline" size={13} color={PRO.muted} />
+          <Txt className="text-[10px] text-muted">Your progress. Your account. Your control.</Txt>
+        </View>
+      </TabScrollView>
+    </ScreenEntrance>
+  );
+}
+
 function ProHub() {
   const { user, settings } = useSession();
   const billing = useBilling();
@@ -92,303 +288,299 @@ function ProHub() {
     progress.loading ||
     (!progress.journal.workoutsUpdatedAt && progress.refreshing && !data.allTime.workouts);
   return (
-    <ProScene>
-      <ScreenEntrance className="flex-1">
-        <TabScrollView
-          ref={scroll}
-          showsVerticalScrollIndicator={false}
-          keyboardShouldPersistTaps="handled"
-          contentContainerClassName="w-full max-w-2xl self-center px-6 pt-5 pb-56"
-          refreshControl={
-            <RefreshControl
-              refreshing={progress.refreshing && !progress.loading}
-              onRefresh={refresh}
-              tintColor={PRO.accent}
-            />
-          }
-        >
-          <View className="mb-7 flex-row items-center justify-between gap-3">
-            <View className="flex-row items-center gap-2">
-              <MaterialCommunityIcons name="star-four-points" size={20} color={PRO.accent} />
-              <Txt weight="semibold" className="text-[13px] tracking-[2px]">
-                FITSYNC <Txt style={{ color: PRO.accent }}>PRO</Txt>
-              </Txt>
-            </View>
+    <ScreenEntrance className="flex-1">
+      <TabScrollView
+        ref={scroll}
+        showsVerticalScrollIndicator={false}
+        keyboardShouldPersistTaps="handled"
+        contentContainerClassName="w-full max-w-2xl self-center px-6 pt-6 pb-48"
+        refreshControl={
+          <RefreshControl
+            refreshing={progress.refreshing && !progress.loading}
+            onRefresh={refresh}
+            tintColor="white"
+          />
+        }
+      >
+        <ProBrand member />
+        <PageHeading
+          eyebrow="A little more direction"
+          title="Your Pro workspace."
+          subtitle="Your training, understood."
+        />
+        <View className="mb-6 mt-2 flex-row border-b border-white/10">
+          {SECTIONS.map((s) => (
             <MotionPressable
-              accessibilityRole="button"
-              accessibilityLabel="Manage Pro membership"
-              onPress={() => router.push("/membership")}
-              className="min-h-11 flex-row items-center gap-2 rounded-full border border-white/10 bg-white/5 px-3"
+              key={s.id}
+              accessibilityRole="tab"
+              accessibilityLabel={s.label}
+              accessibilityState={{ selected: section === s.id }}
+              onPress={() => navigate(s.id)}
+              className="min-h-12 min-w-0 flex-1 items-center justify-center border-b-2 px-0.5"
+              style={{ borderBottomColor: section === s.id ? "#FFFFFF" : "transparent" }}
             >
-              <View
-                className="h-1.5 w-1.5 rounded-full"
-                style={{ backgroundColor: billing.isPro ? PRO.accent : PRO.muted }}
-              />
-              <Txt className="text-[10px]">
-                {billing.loading ? "Checking…" : billing.isPro ? "Member" : "Explore Pro"}
+              <Txt
+                weight="medium"
+                className="text-[11px]"
+                style={{ color: section === s.id ? "#FFFFFF" : PRO.muted }}
+              >
+                {s.label}
               </Txt>
-              <MaterialCommunityIcons name="chevron-right" size={14} color={PRO.muted} />
             </MotionPressable>
-          </View>
-          <Txt className="mb-2 text-xs text-muted">
-            {user?.name?.split(" ")[0]
-              ? `${user.name.split(" ")[0]}, make every session count.`
-              : "Make every session count."}
-          </Txt>
-          <Txt weight="medium" className="mb-6 text-[36px] leading-[43px] tracking-[-1.3px]">
-            A little more insight.{`\n`}A lot more direction.
-          </Txt>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
-            <View className="flex-row gap-2">
-              {SECTIONS.map((s) => (
-                <ProPill
-                  key={s.id}
-                  label={s.label}
-                  selected={section === s.id}
-                  onPress={() => navigate(s.id)}
-                />
-              ))}
-            </View>
-          </ScrollView>
-          {!!billing.error && (
-            <View className="mb-4">
-              <ProAction
-                icon="refresh"
-                title="Membership needs a refresh"
-                subtitle={billing.error}
-                onPress={() => void billing.refresh()}
-              />
-            </View>
-          )}
-          {!!issue && (
-            <View className="mb-4">
-              <ProAction
-                icon="cloud-alert-outline"
-                title="Sync needs attention"
-                subtitle={`${progress.journal.workoutsUpdatedAt ? "Showing saved history. " : ""}${issue}`}
-                onPress={() => void progress.refresh()}
-              />
-            </View>
-          )}
-          {initialLoading && (section === "overview" || section === "analytics") ? (
-            <GlassCard>
-              <View className="flex-row items-center gap-3 py-5">
-                <ActivityIndicator color={PRO.accent} />
-                <Txt className="text-sm text-muted">Opening your training history…</Txt>
-              </View>
-            </GlassCard>
-          ) : (
-            <Reveal key={section}>
-              {section === "overview" && (
-                <>
-                  <TodayForYouCard />
-                  <View className="mb-4">
-                    <ProAction
-                      icon="star-four-points"
-                      title="Your daily Pro companion"
-                      subtitle="Check-ins, milestones, muscle focus, photos and personal reminders"
-                      onPress={() => navigate("companion")}
-                    />
-                  </View>
-                  <GlassCard accent>
-                    <View className="flex-row items-start justify-between gap-3">
-                      <View className="min-w-0 flex-1">
-                        <Txt className="text-[10px] tracking-[2px]" style={{ color: PRO.accent }}>
-                          THIS WEEK’S MOMENTUM
-                        </Txt>
-                        <Txt
-                          weight="medium"
-                          className="mt-4 text-[52px] leading-[60px] tracking-[-2px]"
-                        >
-                          {historyUnavailable ? "—" : thisWeek}
-                          <Txt className="text-xl tracking-normal text-muted">
-                            {" "}
-                            / {progress.goals.weeklyWorkouts}
-                          </Txt>
-                        </Txt>
-                        <Txt className="mt-1 text-xs text-muted">workouts completed this week</Txt>
-                      </View>
-                      {!historyUnavailable && (
-                        <Orbit value={thisWeek} target={progress.goals.weeklyWorkouts} />
-                      )}
-                    </View>
-                    <View className="mt-6 flex-row gap-4 border-t border-white/10 pt-5">
-                      <ProStat
-                        label="LIFETIME SESSIONS"
-                        value={historyUnavailable ? "—" : compact(data.allTime.workouts)}
-                      />
-                      <ProStat
-                        label="TIME INVESTED"
-                        value={historyUnavailable ? "—" : compact(data.allTime.minutes / 60)}
-                        unit="hrs"
-                      />
-                    </View>
-                    <View className="mt-5">
-                      <ProButton title="Find my next session" onPress={() => navigate("trainer")} />
-                    </View>
-                  </GlassCard>
-                  {!billing.isPro && (
-                    <View className="mt-4">
-                      <ProAction
-                        icon="star-four-points"
-                        title="Unlock FitSync Pro"
-                        subtitle="Deep analytics, explained plan changes and weekly guidance"
-                        onPress={() => router.push("/membership")}
-                      />
-                    </View>
-                  )}
-                  <ProSection
-                    eyebrow="Go a little deeper"
-                    title="The detail makes the difference."
-                  />
-                  <View className="gap-3">
-                    <ProAction
-                      icon="human"
-                      title="Every muscle, understood"
-                      subtitle="20 muscle groups · primary & supporting workload · exercise breakdowns"
-                      onPress={() => navigate("analytics", "muscles")}
-                    />
-                    <ProAction
-                      icon="trophy-outline"
-                      title="Your personal record book"
-                      subtitle="All-time bests · new records · every exercise and session"
-                      onPress={() => navigate("analytics", "records")}
-                    />
-                    <ProAction
-                      icon="chart-timeline-variant"
-                      title="Unlimited graph history"
-                      subtitle="Training, volume, sets, reps, time, distance and recorded effort"
-                      onPress={() => navigate("analytics", "training")}
-                    />
-                    <ProAction
-                      icon="tape-measure"
-                      title="Your whole picture"
-                      subtitle="31 metrics across body, nutrition, activity and recovery"
-                      onPress={() => navigate("analytics", "body")}
-                    />
-                  </View>
-                  <ProSection eyebrow="Built around your life" title="Meet your FitSync trainer." />
-                  <GlassCard accent>
-                    <Txt weight="medium" className="text-[27px] leading-8 tracking-[-.8px]">
-                      Know what to do.{`\n`}Understand why.
-                    </Txt>
-                    <Txt className="mt-3 text-sm leading-6 text-muted">
-                      Preview a plan that fits your goal and equipment. Review real progress, adapt
-                      a busy day and move missed sessions without losing the thread.
-                    </Txt>
-                    <View className="mt-5">
-                      <ProButton title="Open FitSync trainer" onPress={() => navigate("trainer")} />
-                    </View>
-                  </GlassCard>
-                  <ProSection title="Make it yours" />
-                  <View className="gap-3">
-                    <ProAction
-                      icon="calculator-variant-outline"
-                      title="A smarter warm-up"
-                      subtitle="Calculate achievable sets with your actual plate inventory"
-                      onPress={() => {
-                        setTool("warmup");
-                        navigate("tools");
-                      }}
-                    />
-                    <ProAction
-                      icon="playlist-plus"
-                      title="Unlimited routines & custom exercises"
-                      subtitle="Reusable sessions and a private movement library"
-                      onPress={() => navigate("tools")}
-                    />
-                  </View>
-                  <RoutineLibrary ownerId={user?.id ?? ""} />
-                  <ProSection title="Your data stays yours" />
-                  <GlassCard blur={false}>
-                    <Txt className="text-xs leading-6 text-muted">
-                      Your ordinary workout logging, current health metrics, personal records,
-                      history and raw export remain available in Progress. Pro adds deeper
-                      interpretation, planning tools and guidance.
-                    </Txt>
-                    <View className="mt-4">
-                      <ProPill
-                        label="Membership & billing"
-                        selected={false}
-                        onPress={() => router.push("/membership")}
-                      />
-                    </View>
-                  </GlassCard>
-                </>
-              )}
-              {section === "analytics" &&
-                (billing.loading ? (
-                  <ActivityIndicator color={PRO.accent} className="my-10" />
-                ) : billing.isPro ? (
-                  <>
-                    <View className="mb-5">
-                      <Txt className="mb-3 text-[10px] tracking-[2px] text-muted">
-                        YOUR ANALYSIS RANGE
-                      </Txt>
-                      <ScrollView horizontal showsHorizontalScrollIndicator={false}>
-                        <View className="flex-row gap-2">
-                          {([7, 30, 90, 365, "all"] as const).map((p) => (
-                            <ProPill
-                              key={p}
-                              label={p === "all" ? "All time" : p === 365 ? "1 year" : `${p} days`}
-                              selected={period === p}
-                              onPress={() => setPeriod(p)}
-                            />
-                          ))}
-                        </View>
-                      </ScrollView>
-                    </View>
-                    {catalog.loading && view === "muscles" && (
-                      <Txt className="mb-3 text-xs text-muted">
-                        Updating exercise muscle labels…
-                      </Txt>
-                    )}
-                    <AnalyticsPanels
-                      data={data}
-                      unit={unit}
-                      progress={progress}
-                      view={view}
-                      onView={setView}
-                      metadataError={catalog.error}
-                      onRetryMetadata={() => void catalog.refresh()}
-                    />
-                  </>
-                ) : (
-                  <LockedAnalytics view={view} onView={setView} />
-                ))}
-              {section === "companion" && <CompanionShortcuts />}
-              {section === "trainer" && (
-                <TrainerPanel builderOpen={builder} onBuilder={setBuilder} />
-              )}
-              {section === "tools" && (
-                <>
-                  <TrainingTools tool={tool} onTool={setTool} />
-                  <RoutineLibrary ownerId={user?.id ?? ""} />
-                </>
-              )}
-            </Reveal>
-          )}
-          <View className="mt-10 flex-row items-center justify-center gap-2">
-            <MaterialCommunityIcons
-              name={issue ? "cloud-off-outline" : "shield-check-outline"}
-              size={13}
-              color={PRO.muted}
+          ))}
+        </View>
+        {!!billing.error && (
+          <View className="mb-4">
+            <ProAction
+              icon="refresh"
+              title="Membership needs a refresh"
+              subtitle={billing.error}
+              onPress={() => void billing.refresh()}
             />
-            <Txt className="text-[10px] text-muted">
-              {progress.refreshing
-                ? "Syncing your training"
-                : issue
-                  ? "Saved history on this device"
-                  : progress.journal.workoutsUpdatedAt
-                    ? `Training synced · ${dateLabel(localDate(new Date(progress.journal.workoutsUpdatedAt)))}`
-                    : "Private to your FitSync account"}
-            </Txt>
           </View>
-        </TabScrollView>
-      </ScreenEntrance>
-    </ProScene>
+        )}
+        {!!issue && (
+          <View className="mb-4">
+            <ProAction
+              icon="cloud-alert-outline"
+              title="Sync needs attention"
+              subtitle={`${progress.journal.workoutsUpdatedAt ? "Showing saved history. " : ""}${issue}`}
+              onPress={() => void progress.refresh()}
+            />
+          </View>
+        )}
+        {initialLoading && (section === "overview" || section === "analytics") ? (
+          <GlassCard>
+            <View className="flex-row items-center gap-3 py-5">
+              <ActivityIndicator color="white" />
+              <Txt className="text-sm text-muted">Opening your training history…</Txt>
+            </View>
+          </GlassCard>
+        ) : (
+          <Reveal key={section}>
+            {section === "overview" && (
+              <>
+                <GlassCard accent>
+                  <View className="flex-row items-start justify-between gap-3">
+                    <View className="min-w-0 flex-1">
+                      <Txt className="text-[10px] text-muted">YOUR WEEK SO FAR</Txt>
+                      <Txt
+                        weight="medium"
+                        className="mt-3 text-[46px] leading-[58px] tracking-[-2px]"
+                      >
+                        {historyUnavailable ? "—" : thisWeek}
+                        <Txt className="text-lg tracking-normal text-muted">
+                          {" "}
+                          / {progress.goals.weeklyWorkouts}
+                        </Txt>
+                      </Txt>
+                      <Txt className="mt-1 text-xs text-muted">workouts completed</Txt>
+                    </View>
+                    {!historyUnavailable && (
+                      <Orbit value={thisWeek} target={progress.goals.weeklyWorkouts} />
+                    )}
+                  </View>
+                  <View className="mt-5 flex-row gap-5 border-t border-white/10 pt-4">
+                    <ProStat
+                      label="TOTAL SESSIONS"
+                      value={historyUnavailable ? "—" : compact(data.allTime.workouts)}
+                    />
+                    <ProStat
+                      label="TIME INVESTED"
+                      value={historyUnavailable ? "—" : compact(data.allTime.minutes / 60)}
+                      unit="hrs"
+                    />
+                  </View>
+                </GlassCard>
+                <View className="mt-3">
+                  <ProAction
+                    icon="weather-sunset"
+                    title="Your daily Pro companion"
+                    subtitle="Your next session, readiness and one useful insight"
+                    onPress={() => navigate("companion")}
+                  />
+                </View>
+                <ProSection
+                  title="Explore your progress"
+                  action="View all"
+                  onAction={() => navigate("analytics")}
+                />
+                <View className="flex-row flex-wrap justify-between gap-y-3">
+                  {(
+                    [
+                      [
+                        "training",
+                        "chart-timeline-variant",
+                        "Training trends",
+                        "Your full history",
+                      ],
+                      ["muscles", "human", "Muscle insights", "Workload & balance"],
+                      [
+                        "records",
+                        "trophy-outline",
+                        "Personal records",
+                        "Every exercise, every best",
+                      ],
+                      ["body", "tape-measure", "Measurements", "Your whole picture"],
+                    ] as const
+                  ).map(([id, icon, title, subtitle]) => (
+                    <InsightTile
+                      key={id}
+                      icon={icon}
+                      title={title}
+                      subtitle={subtitle}
+                      onPress={() => navigate("analytics", id)}
+                    />
+                  ))}
+                </View>
+                <ProSection title="Built around you" />
+                <View className="gap-3">
+                  <ProAction
+                    icon="creation-outline"
+                    title="FitSync trainer"
+                    subtitle="Build your plan. Review your progress. Understand why."
+                    onPress={() => navigate("trainer")}
+                  />
+                  <ProAction
+                    icon="calculator-variant-outline"
+                    title="Your training toolbox"
+                    subtitle="Warm-ups, custom exercises and unlimited routines"
+                    onPress={() => navigate("tools")}
+                  />
+                  <ProAction
+                    icon="flag-checkered"
+                    title="Goals & milestones"
+                    subtitle="Keep the next meaningful step in sight"
+                    onPress={() => router.push("/companion?tab=goals")}
+                  />
+                </View>
+              </>
+            )}
+            {section === "analytics" && (
+              <>
+                <View className="mb-5">
+                  <Txt className="mb-3 text-[10px] text-muted">ANALYSIS RANGE</Txt>
+                  <ScrollView horizontal showsHorizontalScrollIndicator={false}>
+                    <View className="flex-row gap-2">
+                      {([7, 30, 90, 365, "all"] as const).map((p) => (
+                        <ProPill
+                          key={p}
+                          label={p === "all" ? "All time" : p === 365 ? "1 year" : `${p} days`}
+                          selected={period === p}
+                          onPress={() => setPeriod(p)}
+                        />
+                      ))}
+                    </View>
+                  </ScrollView>
+                </View>
+                {catalog.loading && view === "muscles" && (
+                  <Txt className="mb-3 text-xs text-muted">Updating exercise muscle labels…</Txt>
+                )}
+                <AnalyticsPanels
+                  data={data}
+                  unit={unit}
+                  progress={progress}
+                  view={view}
+                  onView={setView}
+                  metadataError={catalog.error}
+                  onRetryMetadata={() => void catalog.refresh()}
+                />
+              </>
+            )}
+            {section === "companion" && <CompanionShortcuts />}
+            {section === "trainer" && <TrainerPanel builderOpen={builder} onBuilder={setBuilder} />}
+            {section === "tools" && (
+              <>
+                <TrainingTools tool={tool} onTool={setTool} />
+                <RoutineLibrary ownerId={user?.id ?? ""} />
+              </>
+            )}
+          </Reveal>
+        )}
+        <View className="mt-8 flex-row items-center justify-center gap-2">
+          <MaterialCommunityIcons
+            name={issue ? "cloud-off-outline" : "shield-check-outline"}
+            size={13}
+            color={PRO.muted}
+          />
+          <Txt className="text-[10px] text-muted">
+            {progress.refreshing
+              ? "Syncing your training"
+              : issue
+                ? "Showing saved history"
+                : progress.journal.workoutsUpdatedAt
+                  ? `Training synced · ${dateLabel(localDate(new Date(progress.journal.workoutsUpdatedAt)))}`
+                  : "Private to your FitSync account"}
+          </Txt>
+        </View>
+      </TabScrollView>
+    </ScreenEntrance>
   );
 }
+
+function InsightTile({
+  icon,
+  title,
+  subtitle,
+  onPress,
+}: {
+  icon: ProIcon;
+  title: string;
+  subtitle: string;
+  onPress: () => void;
+}) {
+  return (
+    <MotionPressable
+      accessibilityRole="button"
+      accessibilityLabel={title}
+      onPress={onPress}
+      style={{ width: "48.5%" }}
+      className="overflow-hidden rounded-[22px] border border-white/5 bg-white/5 p-4"
+    >
+      <View className="mb-6 flex-row items-center justify-between">
+        <MaterialCommunityIcons name={icon} size={23} color="white" />
+        <MaterialCommunityIcons name="arrow-top-right" size={15} color={PRO.muted} />
+      </View>
+      <Txt weight="medium" className="text-[13px]">
+        {title}
+      </Txt>
+      <Txt className="mt-1 text-[10px] leading-4 text-muted">{subtitle}</Txt>
+    </MotionPressable>
+  );
+}
+
+function Orbit({ value, target }: { value: number; target: number }) {
+  const ratio = target > 0 ? Math.max(0, Math.min(1, value / target)) : 0;
+  return (
+    <View
+      className="h-24 w-24 items-center justify-center"
+      accessibilityLabel={`${value} of ${target} weekly workouts completed`}
+    >
+      <Svg width={96} height={96} viewBox="0 0 96 96" style={{ position: "absolute" }}>
+        <Circle cx={48} cy={48} r={38} fill="none" stroke="#FFFFFF0D" strokeWidth={5} />
+        <Circle
+          cx={48}
+          cy={48}
+          r={38}
+          fill="none"
+          stroke={PRO.accent}
+          strokeWidth={5}
+          strokeLinecap="round"
+          strokeDasharray={2 * Math.PI * 38}
+          strokeDashoffset={2 * Math.PI * 38 * (1 - ratio)}
+          rotation={-90}
+          origin="48,48"
+        />
+      </Svg>
+      <MaterialCommunityIcons
+        name={ratio >= 1 ? "check" : "dumbbell"}
+        size={25}
+        color={ratio >= 1 ? PRO.accent : "white"}
+      />
+    </View>
+  );
+}
+
 function CompanionShortcuts() {
   const features: {
     tab: string;
@@ -456,15 +648,18 @@ function CompanionShortcuts() {
       title: "Your monthly training report",
       subtitle: "Generate and share a report from synced training and measurements",
     },
-    { tab: "desktop", icon: "monitor", title: "Your desktop planning workspace", subtitle: "Edit routines and plans, manage sharing and download reports with the same account" },
+    {
+      tab: "desktop",
+      icon: "monitor",
+      title: "Your desktop planning workspace",
+      subtitle:
+        "Edit routines and plans, manage sharing and download reports with the same account",
+    },
   ];
   return (
     <>
       <TodayForYouCard />
-      <ProSection
-        eyebrow="Connected to your actual progress"
-        title="A little support, every day."
-      />
+      <ProSection eyebrow="Connected to your actual progress" title="Your daily companion" />
       <View className="gap-3">
         {features.map((feature) => (
           <ProAction
@@ -476,123 +671,6 @@ function CompanionShortcuts() {
           />
         ))}
       </View>
-    </>
-  );
-}
-function Orbit({ value, target }: { value: number; target: number }) {
-  const ratio = target > 0 ? Math.min(1, value / target) : 0;
-  return (
-    <View
-      className="h-28 w-28 items-center justify-center"
-      accessibilityLabel={`${value} of ${target} weekly workouts completed`}
-    >
-      <Svg width={112} height={112} viewBox="0 0 112 112" style={{ position: "absolute" }}>
-        <Circle cx={56} cy={56} r={47} fill="none" stroke="#D4F89A10" strokeWidth={1} />
-        <Circle cx={56} cy={56} r={37} fill="none" stroke="#D4F89A15" strokeWidth={5} />
-        <Circle
-          cx={56}
-          cy={56}
-          r={37}
-          fill="none"
-          stroke={PRO.accent}
-          strokeWidth={5}
-          strokeLinecap="round"
-          strokeDasharray={2 * Math.PI * 37}
-          strokeDashoffset={2 * Math.PI * 37 * (1 - ratio)}
-          rotation={-90}
-          origin="56,56"
-        />
-        <Path d="M49 46 63 56 49 66Z" fill={PRO.accent} />
-      </Svg>
-    </View>
-  );
-}
-function LockedAnalytics({
-  view,
-  onView,
-}: {
-  view: AnalyticsView;
-  onView: (value: AnalyticsView) => void;
-}) {
-  const details: Record<AnalyticsView, { title: string; text: string; items: string[] }> = {
-    training: {
-      title: "See the whole training story.",
-      text: "Explore your own completed workouts across any saved period.",
-      items: [
-        "8 training measures with interactive charts",
-        "All-time history, with weekly and monthly views for long ranges",
-        "Equal-period comparisons and recorded-effort context",
-      ],
-    },
-    muscles: {
-      title: "Make every muscle count.",
-      text: "Understand the work each movement contributes, without a guessed recovery score.",
-      items: [
-        "20 muscle groups and a front/back muscle map",
-        "Primary and supporting sets counted separately",
-        "Training frequency, volume and exercise breakdowns",
-      ],
-    },
-    records: {
-      title: "A record book that goes deeper.",
-      text: "Find the details behind your best sets and see how they evolved.",
-      items: [
-        "All-time bests and genuine record improvements",
-        "Load, reps, estimated 1RM, volume, time and distance",
-        "Exercise search and a link to every real session",
-      ],
-    },
-    body: {
-      title: "Connect every check-in.",
-      text: "Explore body, recovery, activity and nutrition together.",
-      items: [
-        "All 31 existing measurements",
-        "Full-range graphs and logged-day coverage",
-        "Correct, clear and add entries to your private journal",
-      ],
-    },
-  };
-  const d = details[view];
-  return (
-    <>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-5">
-        <View className="flex-row gap-2">
-          {(
-            [
-              ["training", "Training"],
-              ["muscles", "Muscles"],
-              ["records", "PRs"],
-              ["body", "Measurements"],
-            ] as const
-          ).map(([id, label]) => (
-            <ProPill key={id} label={label} selected={view === id} onPress={() => onView(id)} />
-          ))}
-        </View>
-      </ScrollView>
-      <GlassCard accent>
-        <View
-          className="mb-5 h-14 w-14 items-center justify-center rounded-2xl"
-          style={{ backgroundColor: "#D4F89A10" }}
-        >
-          <MaterialCommunityIcons name="lock-open-variant-outline" color={PRO.accent} size={28} />
-        </View>
-        <Txt weight="medium" className="text-[31px] leading-10 tracking-[-1px]">
-          {d.title}
-        </Txt>
-        <Txt className="mt-3 text-sm leading-6 text-muted">{d.text}</Txt>
-        <View className="my-6 gap-4">
-          {d.items.map((text) => (
-            <View key={text} className="flex-row items-start gap-3">
-              <MaterialCommunityIcons name="check" color={PRO.accent} size={17} />
-              <Txt className="flex-1 text-xs leading-5">{text}</Txt>
-            </View>
-          ))}
-        </View>
-        <ProButton title="Explore membership" onPress={() => router.push("/membership")} />
-        <Txt className="mt-4 text-[11px] leading-5 text-muted">
-          Your existing charts, personal records, logging and full history stay free in Progress.
-        </Txt>
-      </GlassCard>
     </>
   );
 }
