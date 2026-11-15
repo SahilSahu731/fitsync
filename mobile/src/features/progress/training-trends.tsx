@@ -21,14 +21,16 @@ export function TrainingTrends({
   data,
   days,
   unit,
+  canCompare = true,
 }: {
   data: ProgressAnalytics;
   days: number;
   unit: "kg" | "lb";
+  canCompare?: boolean;
 }) {
   const router = useRouter();
   const [chart, setChart] = useState<ChartMetric>("workouts");
-  const workoutChange = change(data.current.workouts, data.previous.workouts);
+  const workoutChange = canCompare ? change(data.current.workouts, data.previous.workouts) : null;
   const activeDays = data.activity.filter((day) => day.workouts > 0).length;
 
   return (
@@ -36,9 +38,11 @@ export function TrainingTrends({
       <SectionTitle title="Training trends" />
       <PanelCard>
         <Txt className="mb-4 text-xs leading-5 text-muted">
-          {workoutChange === null
-            ? `No workouts in the previous ${days} days to compare.`
-            : `${workoutChange > 0 ? "+" : ""}${compact(workoutChange)}% workouts compared with the previous ${days} days.`}
+          {!canCompare
+            ? "Comparisons with dates older than 90 days are available with Pro."
+            : workoutChange === null
+              ? `No workouts in the previous ${days} days to compare.`
+              : `${workoutChange > 0 ? "+" : ""}${compact(workoutChange)}% workouts compared with the previous ${days} days.`}
         </Txt>
         <View className="mb-5 flex-row gap-4">
           <View className="flex-1">

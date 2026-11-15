@@ -23,10 +23,12 @@ export function StrengthSection({
   data,
   unit,
   initialExerciseId = "",
+  historyLabel = "All time",
 }: {
   data: ProgressAnalytics;
   unit: "kg" | "lb";
   initialExerciseId?: string;
+  historyLabel?: string;
 }) {
   const router = useRouter();
   const [search, setSearch] = useState("");
@@ -147,7 +149,8 @@ export function StrengthSection({
               {exercise.name}
             </Txt>
             <Txt className="mt-1 text-[11px] text-muted">
-              {exercise.sessions.length} sessions all time · {exercise.type.replace(/_/g, " + ")}
+              {exercise.sessions.length} sessions · {historyLabel.toLowerCase()} ·{" "}
+              {exercise.type.replace(/_/g, " + ")}
             </Txt>
             <ScrollView horizontal showsHorizontalScrollIndicator={false} className="my-4">
               <View className="flex-row gap-2">
@@ -239,7 +242,7 @@ export function StrengthSection({
             Your personal bests
           </Txt>
           <Txt className="mt-1 text-xs text-muted">
-            All time · {data.exercises.length} exercises with working sets
+            {historyLabel} · {data.exercises.length} exercises with working sets
           </Txt>
         </View>
         <MaterialCommunityIcons name="trophy-outline" size={27} color="#D3D3D3" />

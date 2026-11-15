@@ -129,7 +129,7 @@ export function useProgress() {
     journal,
     goals: currentGoals(journal.events, profile?.trainingDays ?? 3),
     hasGoals: hasSavedGoals(journal.events),
-    loading: loading || cache.ownerId !== ownerId,
+    loading: loading || (cache.ownerId !== ownerId && !storageError),
     refreshing,
     syncError,
     workoutError,

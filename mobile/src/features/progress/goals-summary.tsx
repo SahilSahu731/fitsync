@@ -36,7 +36,7 @@ export function GoalsSummary({
   const format = (n: number) => n.toLocaleString(undefined, { maximumFractionDigits: 1 });
   return (
     <Sheet title="My goals" subtitle="Your plan, and how it’s coming along." onClose={onClose}>
-      {loading && !hasGoals ? (
+      {loading && !hasGoals && !error ? (
         <View className="items-center gap-3 py-8">
           <ActivityIndicator color="#C5F460" />
           <Txt className="text-sm text-muted">Opening your goals…</Txt>

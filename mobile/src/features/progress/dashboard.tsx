@@ -42,8 +42,12 @@ import {
   displayMetric,
   displayUnit,
 } from "./tracking-cards";
+import { ShareProgress } from "./share-progress";
 import { GoalsSummary } from "./goals-summary";
 import { ProgressOverview } from "./overview";
+import { useBilling } from "@/src/features/billing/billing-context";
+import { progressDays, progressSources, canCompareProgress } from "./access";
+import { ProgressRange } from "./progress-range";
 import { TrainingTrends } from "./training-trends";
 
 type ProgressView = "overview" | "health" | "history";
@@ -52,7 +56,6 @@ const VIEWS = [
   { id: "health", label: "Track" },
   { id: "history", label: "History" },
 ] as const;
-const PERIODS = [7, 30, 90, 365];
 
 function WorkoutRows({
   workouts,
@@ -105,18 +108,21 @@ export function ProgressDashboard() {
   const { showGoals } = useLocalSearchParams<{ showGoals?: string }>();
   const { settings } = useSession();
   const progress = useProgress();
+  const billing = useBilling();
   const { journal, goals } = progress;
   const unit = settings?.weightUnit ?? "kg";
   const today = localDate();
   const scroll = useRef<ScrollView>(null);
   const [view, setView] = useState<ProgressView>("overview");
   const [group, setGroup] = useState<MetricGroup>("activity");
-  const [days, setDays] = useState(30);
+  const [requestedDays, setDays] = useState(30);
+  const days = progressDays(requestedDays, billing.isPro);
   const [selectedDate, setSelectedDate] = useState(today);
   const [metricSearch, setMetricSearch] = useState("");
   const [detailMetric, setDetailMetric] = useState<Metric | null>(null);
   const [editor, setEditor] = useState<{ metric: Metric; date: string } | null>(null);
   const [goalEditor, setGoalEditor] = useState(false);
+  const [sharePreview, setSharePreview] = useState(false);
   const [trainingDetails, setTrainingDetails] = useState(false);
   function closeGoals() {
     setGoalEditor(false);
@@ -136,14 +142,33 @@ export function ProgressDashboard() {
   const [waterBusy, setWaterBusy] = useState(false);
   const [walkDraft, setWalkDraft] = useState({ count: 0, date: today });
   const savingWalk = useRef(false);
-  const data = useMemo(
-    () => buildProgress(journal.workouts, journal.events, days, today, goals.weeklyWorkouts),
-    [journal.workouts, journal.events, days, today, goals.weeklyWorkouts],
+  const source = useMemo(
+    () => progressSources(journal.workouts, journal.events, today, billing.isPro),
+    [journal.workouts, journal.events, today, billing.isPro],
   );
+  const data = useMemo(
+    () => buildProgress(source.workouts, source.events, days, today, goals.weeklyWorkouts),
+    [source.workouts, source.events, days, today, goals.weeklyWorkouts],
+  );
+  const analyticsMetrics = useMemo(() => latestMetrics(source.events), [source.events]);
+  function openPro() {
+    setTrainingDetails(false);
+    setExerciseDetail(null);
+    setDetailMetric(null);
+    setSharePreview(false);
+    router.push("/(tabs)/pro");
+  }
+  function selectDays(period: number) {
+    if (period > 90 && !billing.isPro) {
+      openPro();
+      return;
+    }
+    setDays(period);
+  }
   const metrics = useMemo(() => latestMetrics(journal.events), [journal.events]);
   const daily = (metric: Metric) =>
     metrics.find((entry) => entry.metric === metric && entry.date === selectedDate)?.value ?? null;
-  const weights = metricSeries(journal.events, "weight", data.start, today);
+  const weights = metricSeries(source.events, "weight", data.start, today);
   const latestWeight = metrics
     .filter((entry) => entry.metric === "weight" && entry.date <= today)
     .at(-1);
@@ -333,16 +358,23 @@ export function ProgressDashboard() {
             accessibilityRole="button"
             accessibilityLabel="View your goals"
             onPress={() => setGoalEditor(true)}
-            className="min-h-11 flex-row items-center gap-2 rounded-full px-4"
+            className="h-11 w-11 items-center justify-center rounded-full"
             style={{ backgroundColor: "#C5F4601A" }}
           >
             <Icon name="bullseye-arrow" color="#C5F460" size={21} />
-            <Txt weight="medium" className="text-xs" style={{ color: "#C5F460" }}>
-              Goals
-            </Txt>
+          </MotionPressable>
+          <MotionPressable
+            accessibilityRole="button"
+            accessibilityLabel="Share progress"
+            accessibilityHint="Preview your progress summary before sharing"
+            onPress={() => setSharePreview(true)}
+            className="h-11 w-11 items-center justify-center rounded-full"
+            style={{ backgroundColor: "#7DCFFF1A" }}
+          >
+            <Icon name="share-variant-outline" color="#7DCFFF" size={21} />
           </MotionPressable>
         </View>
-        <Txt className="-mt-2 mb-5 text-xs text-muted">Small steps. Real progress.</Txt>
+        <Txt className="-mt-2 mb-5 text-xs text-muted">Your work, made visible.</Txt>
         <View className="mb-4 flex-row gap-1 rounded-2xl bg-panel p-1.5">
           {VIEWS.map((item) => (
             <MotionPressable
@@ -455,6 +487,13 @@ export function ProgressDashboard() {
 
         {view === "overview" && !trainingLoading && (
           <ProgressOverview
+            days={days}
+            isPro={billing.isPro}
+            billingChecking={billing.loading}
+            canCompare={canCompareProgress(data.start, days, source.earliest)}
+            onRange={selectDays}
+            onPro={openPro}
+            selectedDate={selectedDate}
             data={data}
             goals={goals}
             hasGoals={progress.hasGoals}
@@ -770,17 +809,33 @@ export function ProgressDashboard() {
       {detailMetric && (
         <MetricDetail
           initialMetric={detailMetric}
-          metrics={metrics}
+          metrics={analyticsMetrics}
           start={data.start}
           end={today}
           days={days}
           unit={unit}
-          onRangeChange={setDays}
+          onRangeChange={selectDays}
+          maxDays={billing.isPro ? undefined : 90}
+          onPro={openPro}
           onClose={() => setDetailMetric(null)}
           onEdit={(metric, date) => {
             setDetailMetric(null);
             setEditor({ metric, date });
           }}
+        />
+      )}
+      {sharePreview && (
+        <ShareProgress
+          data={data}
+          unit={unit}
+          loading={trainingLoading}
+          error={
+            !canShowTraining && !trainingLoading
+              ? progress.storageError || progress.workoutError
+              : ""
+          }
+          onRetry={() => void progress.refresh()}
+          onClose={() => setSharePreview(false)}
         />
       )}
       {(goalEditor || showGoals === "1") && (
@@ -835,22 +890,13 @@ export function ProgressDashboard() {
           subtitle="Compare your working sets and personal bests"
           onClose={() => setExerciseDetail(null)}
         >
-          <View className="flex-row gap-2">
-            {PERIODS.map((period) => (
-              <MotionPressable
-                key={period}
-                accessibilityRole="button"
-                accessibilityLabel={`Exercise progress, last ${period} days`}
-                accessibilityLabel={`Last ${period} days`}
-                accessibilityState={{ selected: days === period }}
-                onPress={() => setDays(period)}
-                className={`min-h-11 flex-1 items-center justify-center rounded-full ${days === period ? "bg-elevated" : ""}`}
-              >
-                <Txt className="text-xs">{period === 365 ? "1 year" : `${period} days`}</Txt>
-              </MotionPressable>
-            ))}
-          </View>
-          <StrengthSection data={data} unit={unit} initialExerciseId={exerciseDetail} />
+          <ProgressRange days={days} isPro={billing.isPro} onChange={selectDays} onPro={openPro} />
+          <StrengthSection
+            data={data}
+            unit={unit}
+            initialExerciseId={exerciseDetail}
+            historyLabel={billing.isPro ? "All time" : "Last 90 days"}
+          />
         </Sheet>
       )}
       {trainingDetails && (
@@ -859,22 +905,14 @@ export function ProgressDashboard() {
           subtitle={`${dateLabel(data.start)} – ${dateLabel(today)} · completed workouts`}
           onClose={() => setTrainingDetails(false)}
         >
-          <View className="mb-4 flex-row gap-2">
-            {PERIODS.map((period) => (
-              <MotionPressable
-                key={period}
-                accessibilityRole="button"
-                accessibilityLabel={`Last ${period} days`}
-                accessibilityState={{ selected: days === period }}
-                onPress={() => setDays(period)}
-                className={`min-h-11 flex-1 items-center justify-center rounded-full ${days === period ? "bg-elevated" : ""}`}
-              >
-                <Txt className="text-xs">{period === 365 ? "1 year" : `${period} days`}</Txt>
-              </MotionPressable>
-            ))}
-          </View>
+          <ProgressRange days={days} isPro={billing.isPro} onChange={selectDays} onPro={openPro} />
           <TrainingStats data={data} unit={unit} />
-          <TrainingTrends data={data} days={days} unit={unit} />
+          <TrainingTrends
+            data={data}
+            days={days}
+            unit={unit}
+            canCompare={canCompareProgress(data.start, days, source.earliest)}
+          />
           <PanelCard style={{ marginTop: 16 }}>
             <View className="flex-row justify-between">
               <View>

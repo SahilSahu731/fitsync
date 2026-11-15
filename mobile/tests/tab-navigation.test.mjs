@@ -124,11 +124,16 @@ function workout(id, date) {
     ],
   };
 }
+const access = load("../src/features/progress/access.ts", {
+  "./model": model,
+  "./analytics": analytics,
+});
 function progressFixture() {
   const state = [];
   let cursor = 0;
   const calls = [];
   const session = { settings: { weightUnit: "kg" } };
+  const billing = { isPro: false, loading: false };
   const progress = {
     journal: {
       workouts: [workout("recent", "2026-11-12"), workout("older", "2026-10-24")],
@@ -165,13 +170,19 @@ function progressFixture() {
       View: "View",
       TextInput: "Input",
     },
-    "expo-router": { useLocalSearchParams: () => ({}), useRouter: () => ({ push: (route) => calls.push(route), setParams() {} }) },
+    "expo-router": {
+      useLocalSearchParams: () => ({}),
+      useRouter: () => ({ push: (route) => calls.push(route), setParams() {} }),
+    },
     "@/src/components/motion": { MotionPressable: "Pressable", ScreenEntrance: "Entrance" },
     "@/src/components/tab-bar-motion": { TabScrollView: "ScrollView" },
     "@/src/components/ui": { PageHeading: "Heading", Txt: "Txt" },
     "@/src/constants/theme": { C: { ink: "#FFFFFF", bg: "#000000" } },
     "@/src/context/session": { useSession: () => session },
     "./analytics": analytics,
+    "./access": access,
+    "./progress-range": { ProgressRange: "Range" },
+    "@/src/features/billing/billing-context": { useBilling: () => billing },
     "./training-trends": { TrainingTrends: "Trends" },
     "./editors": { MetricEditor: "Editor", Sheet: "Sheet" },
     "./consistency": { ConsistencySection: "Consistency" },
@@ -179,14 +190,20 @@ function progressFixture() {
     "./walk-counter": { WalkCounter: "WalkCounter" },
     "./overview": { ProgressOverview: "Overview" },
     "./goals-summary": { GoalsSummary: "GoalsSummary" },
+    "./share-progress": { ShareProgress: "ShareProgress" },
     "./model": { ...model, localDate: () => today },
     "./strength": { StrengthSection: "Strength" },
-    "./tracking-cards": { compact: (value) => String(value), TrainingStats: "Totals", MetricList: "MetricList" },
+    "./tracking-cards": {
+      compact: (value) => String(value),
+      TrainingStats: "Totals",
+      MetricList: "MetricList",
+    },
     "./use-progress": { useProgress: () => progress },
     "./visuals": { Icon: "Icon", PanelCard: "Panel", SectionTitle: "Title", SmallButton: "Button" },
   });
   return {
     progress,
+    billing,
     calls,
     session,
     render() {
@@ -203,9 +220,7 @@ test("Progress shares its date range and saved workouts with the merged Stats ch
   tree = fixture.render();
   assert.equal(find(tree, "Totals")[0].props.data.current.workouts, 2);
   assert.equal(find(tree, "Trends")[0].props.data.current.workouts, 2);
-  find(tree, "Pressable")
-    .find((button) => button.props.accessibilityLabel === "Last 7 days")
-    .props.onPress();
+  find(tree, "Range")[0].props.onChange(7);
   fixture.session.settings.weightUnit = "lb";
   tree = fixture.render();
   assert.equal(find(tree, "Totals")[0].props.data.current.workouts, 1);
@@ -223,7 +238,7 @@ test("Progress shares its date range and saved workouts with the merged Stats ch
   const historyTab = find(tree, "Pressable").find(
     (button) =>
       button.props.accessibilityRole === "tab" &&
-      find(button, "Txt").some(label => label.props.children === "History"),
+      find(button, "Txt").some((label) => label.props.children === "History"),
   );
   historyTab.props.onPress();
   tree = fixture.render();
@@ -251,7 +266,7 @@ test("Progress retains Health and its check-in controls alongside the merged tra
     .find(
       (button) =>
         button.props.accessibilityRole === "tab" &&
-        find(button, "Txt").some(label => label.props.children === "Track"),
+        find(button, "Txt").some((label) => label.props.children === "Track"),
     )
     .props.onPress();
   const health = fixture.render();
@@ -370,4 +385,44 @@ test("legacy Stats links redirect into the unified Progress tab", () => {
     "expo-router": { Redirect: "Redirect" },
   });
   assert.equal(exports.default().props.href, "/(tabs)/progress");
+});
+
+test("Progress top actions are icon-only Goals and Share, and sharing opens a preview", () => {
+  const fixture = progressFixture();
+  let tree = fixture.render();
+  const goals = find(tree, "Pressable").find(
+    (button) => button.props.accessibilityLabel === "View your goals",
+  );
+  assert.equal(find(goals, "Txt").length, 0);
+  const share = find(tree, "Pressable").find(
+    (button) => button.props.accessibilityLabel === "Share progress",
+  );
+  assert.equal(find(share, "Txt").length, 0);
+  share.props.onPress();
+  tree = fixture.render();
+  const preview = find(tree, "ShareProgress")[0];
+  assert.equal(preview.props.data.current.workouts, 2);
+  assert.equal(preview.props.unit, "kg");
+  preview.props.onClose();
+  assert.equal(find(fixture.render(), "ShareProgress").length, 0);
+  goals.props.onPress();
+  assert.equal(find(fixture.render(), "GoalsSummary").length, 1);
+});
+
+test("free ranges gate older analytics; a Pro downgrade cannot retain a paid range", () => {
+  const f = progressFixture();
+  f.progress.journal.workouts.push(workout("archive", "2025-12-12"));
+  let tree = f.render();
+  find(tree, "Overview")[0].props.onRange(365);
+  assert.equal(f.calls.at(-1), "/(tabs)/pro");
+  assert.equal(find(f.render(), "Overview")[0].props.days, 30);
+  f.billing.isPro = true;
+  find(f.render(), "Overview")[0].props.onRange(365);
+  assert.equal(find(f.render(), "Overview")[0].props.data.current.workouts, 3);
+  f.billing.isPro = false;
+  const free = find(f.render(), "Overview")[0].props;
+  assert.equal(free.days, 90);
+  assert.equal(free.data.current.workouts, 2);
+  assert.equal(free.data.allTime.workouts, 2);
+  assert.equal(free.canCompare, false);
 });

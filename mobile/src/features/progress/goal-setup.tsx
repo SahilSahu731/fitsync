@@ -1,20 +1,14 @@
 import React, { useState } from "react";
-import {
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 import { MotionPressable as Pressable } from "@/src/components/motion";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import { useSession } from "@/src/context/session";
 import { useProgress } from "./use-progress";
 import { Icon, IconButton, SmallButton, type IconName } from "./visuals";
+import { GoalValueDialog } from "./goal-value-dialog";
 import { goalsToDraft, parseGoalsDraft } from "./goal-draft";
 import type { Goals } from "./model";
 
@@ -58,14 +52,14 @@ const options: { key: OptionalGoal; label: string; unit: string; icon: IconName;
   ];
 export function GoalSetup() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { settings } = useSession();
   const progress = useProgress();
   const unit = settings?.weightUnit ?? "kg";
   const [values, setValues] = useState<Record<keyof Goals, string> | null>(null);
   const [step, setStep] = useState(0);
-  const [selected, setSelected] = useState<OptionalGoal | null>(null);
+  const [selected, setSelected] = useState<keyof Goals | null>(null);
   const [more, setMore] = useState(false);
-  const [customWeekly, setCustomWeekly] = useState(false);
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(false);
   const [error, setError] = useState("");
@@ -79,7 +73,6 @@ export function GoalSetup() {
   ) {
     setValues(goalsToDraft(progress.goals, unit));
     setWasEditing(progress.hasGoals);
-    setCustomWeekly(progress.goals.weeklyWorkouts > 7);
   }
   function leave() {
     if (router.canGoBack()) router.back();
@@ -89,7 +82,16 @@ export function GoalSetup() {
     setValues((current) => (current ? { ...current, [key]: value } : current));
     setError("");
   }
-  const active = options.find((option) => option.key === selected);
+  const active =
+    selected === "weeklyWorkouts"
+      ? {
+          key: selected,
+          label: "Weekly workouts",
+          unit: "workouts / week",
+          icon: "dumbbell" as const,
+          color: "#C5F460",
+        }
+      : options.find((option) => option.key === selected);
   const optionalCount = values ? options.filter((option) => values[option.key].trim()).length : 0;
   async function save() {
     if (!values || busy) return;
@@ -123,6 +125,7 @@ export function GoalSetup() {
     <SafeAreaView edges={["bottom"]} className="flex-1 bg-bg">
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
+        keyboardVerticalOffset={insets.top}
         className="flex-1"
       >
         <View className="w-full max-w-2xl self-center flex-row items-center gap-3 px-6 py-3">
@@ -143,7 +146,9 @@ export function GoalSetup() {
           {!saved && <Txt className="text-xs text-muted">{step + 1} of 2</Txt>}
         </View>
         <ScrollView
+          className="flex-1"
           keyboardShouldPersistTaps="handled"
+          keyboardDismissMode="on-drag"
           contentContainerClassName="w-full max-w-2xl self-center px-6 pb-8"
         >
           {!values ? (
@@ -255,7 +260,6 @@ export function GoalSetup() {
                           accessibilityState={{ selected: Number(values.weeklyWorkouts) === count }}
                           onPress={() => {
                             change("weeklyWorkouts", String(count));
-                            setCustomWeekly(false);
                           }}
                           className="min-h-12 min-w-12 items-center justify-center rounded-2xl px-3"
                           style={{
@@ -276,24 +280,13 @@ export function GoalSetup() {
                     </View>
                     <Pressable
                       accessibilityRole="button"
-                      onPress={() => setCustomWeekly(!customWeekly)}
+                      onPress={() => setSelected("weeklyWorkouts")}
                       className="mt-3 min-h-11 justify-center"
                     >
                       <Txt className="text-xs text-muted">
-                        {customWeekly
-                          ? "Hide custom target"
-                          : "More than 7 sessions? Set a custom target"}
+                        More than 7 sessions? Set a custom target
                       </Txt>
                     </Pressable>
-                    {customWeekly && (
-                      <TextInput
-                        accessibilityLabel="Weekly workout target"
-                        value={values.weeklyWorkouts}
-                        onChangeText={(value) => change("weeklyWorkouts", value)}
-                        keyboardType="number-pad"
-                        className="min-h-14 rounded-2xl bg-elevated px-4 font-poppins-medium text-xl text-ink"
-                      />
-                    )}
                   </View>
                   <Txt className="mt-4 text-xs leading-5 text-muted">
                     Rest days are part of your routine. You can adjust this goal anytime.
@@ -314,8 +307,9 @@ export function GoalSetup() {
                         key={option.key}
                         disabled={busy}
                         accessibilityRole="button"
+                        accessibilityHint="Opens a dialog to set your target"
                         accessibilityState={{ expanded: selected === option.key, disabled: busy }}
-                        onPress={() => setSelected(selected === option.key ? null : option.key)}
+                        onPress={() => setSelected(option.key)}
                         className="min-h-24 grow rounded-[20px] border p-4"
                         style={{
                           width: "45%",
@@ -354,37 +348,6 @@ export function GoalSetup() {
                     </Txt>
                     <Icon name={more ? "chevron-up" : "chevron-down"} color={C.muted} size={17} />
                   </Pressable>
-                  {active && (
-                    <View className="mt-2 rounded-[22px] bg-panel p-5">
-                      <Txt weight="medium" className="text-base">
-                        My {active.label.toLowerCase()} target
-                      </Txt>
-                      <Txt className="mb-3 mt-1 text-xs text-muted">
-                        {active.key === "weight" ? `Target weight in ${unit}` : active.unit}
-                      </Txt>
-                      <TextInput
-                        accessibilityLabel={`${active.label} target ${active.key === "weight" ? unit : active.unit}`}
-                        editable={!busy}
-                        value={values[active.key]}
-                        onChangeText={(value) => change(active.key, value)}
-                        keyboardType="decimal-pad"
-                        placeholder="Enter your target"
-                        placeholderTextColor={C.muted}
-                        className="min-h-14 rounded-2xl bg-elevated px-4 font-poppins-medium text-xl text-ink"
-                      />
-                      <Pressable
-                        accessibilityRole="button"
-                        disabled={busy}
-                        onPress={() => {
-                          change(active.key, "");
-                          setSelected(null);
-                        }}
-                        className="min-h-11 items-center justify-center"
-                      >
-                        <Txt className="text-xs text-muted">Remove this target</Txt>
-                      </Pressable>
-                    </View>
-                  )}
                   <Txt className="mt-3 text-xs leading-5 text-muted">
                     {optionalCount
                       ? `${optionalCount} personal ${optionalCount === 1 ? "target" : "targets"} added. Leave the rest unset.`
@@ -439,6 +402,31 @@ export function GoalSetup() {
           </View>
         )}
       </KeyboardAvoidingView>
+      {active && values && (
+        <GoalValueDialog
+          key={active.key}
+          goal={active.key}
+          label={active.label}
+          icon={active.icon}
+          color={active.color}
+          suffix={active.key === "weight" ? unit : active.unit}
+          initialValue={values[active.key]}
+          weightUnit={unit}
+          onCancel={() => setSelected(null)}
+          onSave={(value) => {
+            change(active.key, value);
+            setSelected(null);
+          }}
+          onRemove={
+            active.key === "weeklyWorkouts"
+              ? undefined
+              : () => {
+                  change(active.key, "");
+                  setSelected(null);
+                }
+          }
+        />
+      )}
     </SafeAreaView>
   );
 }

@@ -29,6 +29,8 @@ export function MetricDetail({
   onEdit,
   onRangeChange,
   paged = false,
+  maxDays,
+  onPro,
 }: {
   initialMetric: Metric;
   metrics: MetricEvent[];
@@ -39,6 +41,8 @@ export function MetricDetail({
   onClose: () => void;
   onRangeChange?: (days: number) => void;
   paged?: boolean;
+  maxDays?: number;
+  onPro?: () => void;
   onEdit: (metric: Metric, date: string) => void;
 }) {
   const Chart = paged ? HistoryChart : TrendChart;
@@ -71,8 +75,11 @@ export function MetricDetail({
             <Pressable
               key={period}
               accessibilityRole="button"
+              accessibilityLabel={
+                maxDays && period > maxDays ? "1 year, requires Pro" : `Last ${period} days`
+              }
               accessibilityState={{ selected: days === period }}
-              onPress={() => onRangeChange(period)}
+              onPress={() => (maxDays && period > maxDays ? onPro?.() : onRangeChange(period))}
               style={{
                 flex: 1,
                 minHeight: 40,
@@ -86,7 +93,9 @@ export function MetricDetail({
                 weight="medium"
                 style={{ color: days === period ? C.bg : C.muted, fontSize: 12 }}
               >
-                {period === 365 ? "1 year" : `${period} days`}
+                {period === 365
+                  ? `1 year${maxDays && period > maxDays ? " · Pro" : ""}`
+                  : `${period} days`}
               </Txt>
             </Pressable>
           ))}
