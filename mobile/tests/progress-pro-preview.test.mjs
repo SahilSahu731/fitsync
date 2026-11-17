@@ -42,6 +42,15 @@ const deps = {
   "./model": { weightValue: (n) => n },
 };
 const { AdvancedInsights } = load("../src/features/progress/advanced-insights.tsx", deps);
+const { DeepAnalytics } = load("../src/features/progress/deep-analytics.tsx", {
+  ...deps,
+  "./insights": {
+    deepProgressInsight: () => {
+      throw Error("Paid analytics must not run");
+    },
+  },
+  "./dashboard-ui": {},
+});
 const { ProgressRange } = load("../src/features/progress/progress-range.tsx", {
   ...deps,
   "./access": { PROGRESS_PERIODS: [7, 30, 90, 365] },
@@ -68,6 +77,39 @@ const unavailable = new Proxy(
     },
   },
 );
+test("the new free analytics invitation opens Pro without reading or computing member data", () => {
+  let opened = 0;
+  const tree = DeepAnalytics({
+    data: unavailable,
+    isPro: false,
+    checking: false,
+    unit: "kg",
+    onPro: () => opened++,
+    onExercise() {},
+  });
+  assert.match(text(tree), /Go deeper into your progress/);
+  nodes(tree)
+    .find((n) => n.props.accessibilityLabel === "Explore Pro advanced analytics")
+    .props.onPress();
+  assert.equal(opened, 1);
+});
+test("the new analytics gate waits for billing resolution even with a previous Pro state", () => {
+  for (const isPro of [false, true]) {
+    const tree = DeepAnalytics({
+      data: unavailable,
+      isPro,
+      checking: true,
+      unit: "kg",
+      onPro() {},
+      onExercise() {},
+    });
+    assert.equal(
+      nodes(tree).some((n) => n.type === "Loading"),
+      true,
+    );
+    assert.doesNotMatch(text(tree), /Go deeper into your progress/);
+  }
+});
 test("locked preview is illustrative, inaccessible decorative geometry and never computes private paid analytics", () => {
   let opened = 0;
   const tree = AdvancedInsights({

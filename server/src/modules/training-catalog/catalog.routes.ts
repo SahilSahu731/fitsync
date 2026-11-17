@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { asyncHandler } from "../../common/async-handler.js";
 import { requireAuth, getAuth } from "../../middleware/auth.js";
+import { requirePro } from "../billing/billing.middleware.js";
 import * as service from "./catalog.service.js";
 
 const router = Router();
@@ -62,7 +63,7 @@ router.get("/my-programs", asyncHandler(async (req, res) => {
   res.json(await service.myPrograms(getAuth(req).userId));
 }));
 
-router.post("/programs/:id/save", asyncHandler(async (req, res) => {
+router.post("/programs/:id/save", requirePro, asyncHandler(async (req, res) => {
   res.json(
     await service.saveProgram(
       getAuth(req).userId,

@@ -1,5 +1,5 @@
 import React, { useState } from "react";
-import { ScrollView, View } from "react-native";
+import { ActivityIndicator, ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { Txt, PrimaryButton } from "@/src/components/ui";
 import { useAppAlert } from "@/src/components/app-dialog";
@@ -7,8 +7,17 @@ import { useSession, type Goal, type Equipment, type Experience } from "@/src/co
 import { GOAL_LABELS, EQUIPMENT_LABELS, localDate, localTimezone } from "./model";
 import { Choice, CoachHeader } from "./components";
 import { useCoaching } from "./use-coaching";
+import { useBilling } from "../billing/billing-context";
+import { ProgramUpgrade } from "../program-follow/program-upgrade";
+import { C } from "@/src/constants/theme";
 
 export function CoachSetupScreen() {
+  const billing = useBilling();
+  if (billing.isPro) return <MemberCoachSetup />;
+  return <View className="flex-1 bg-bg"><CoachHeader title="Your personal program" subtitle="Built around you with Pro" /><ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>{billing.loading ? <View className="items-center py-10"><ActivityIndicator color={C.brand} /><Txt className="mt-3 text-sm text-muted">Checking your membership…</Txt></View> : <ProgramUpgrade coach />}</ScrollView></View>;
+}
+
+function MemberCoachSetup() {
   const { profile, updateFitness } = useSession();
   const { alert } = useAppAlert();
   const resource = useCoaching();
@@ -28,7 +37,7 @@ export function CoachSetupScreen() {
     } catch (failure) { alert("Could not build your plan", failure instanceof Error ? failure.message : "Please try again.", undefined, "error"); }
   };
   const disabled = resource.busy || resource.loading;
-  return <View className="flex-1 bg-bg"><CoachHeader title="Make it yours" subtitle="A starting plan is included with Free" /><ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>
+  return <View className="flex-1 bg-bg"><CoachHeader title="Make it yours" subtitle="Your personal program with Pro" /><ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>
     <Txt weight="semibold" className="text-[34px] leading-[39px] tracking-[-0.8px]">One plan. Your pace.</Txt><Txt className="mb-7 mt-3 text-base leading-6 text-muted">Choose what matters to you. We will build four weeks of movement with a clear starting point.</Txt>
     {!profile && <View className="mb-5 rounded-2xl bg-panel p-4"><Txt className="text-sm leading-6">Complete your fitness profile first so your plan has the basics it needs.</Txt><View className="mt-3"><PrimaryButton title="Complete setup" onPress={() => router.push("/onboarding")} /></View></View>}
     <Txt weight="semibold" className="mb-3 text-lg">Your main goal</Txt><View className="mb-7 gap-2">{(Object.keys(GOAL_LABELS) as Goal[]).map(value => <Choice key={value} value={value} label={GOAL_LABELS[value]} selected={goal === value} onSelect={setGoal} disabled={disabled} />)}</View>

@@ -28,7 +28,7 @@ export function ProgressRange({
           accessibilityState={{ selected: days === period }}
           onPress={() => (period > 90 && !isPro ? onPro() : onChange(period))}
           className="min-h-11 flex-1 flex-row items-center justify-center gap-1 rounded-xl px-1"
-          style={{ backgroundColor: days === period ? C.ink : "transparent" }}
+          style={{ backgroundColor: days === period ? C.brand : "transparent" }}
         >
           <Txt
             weight="medium"

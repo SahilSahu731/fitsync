@@ -2,6 +2,7 @@ import { db } from "../../config/supabase.js";
 import { checkDbError } from "../../common/errors.js";
 import { programDetail } from "./program.service.js";
 import { canSendReminder, reminderCopy } from "./program.reminders.js";
+import { billingService } from "../billing/billing.service.js";
 
 const PUSH_URL = "https://exp.host/--/api/v2/push";
 async function expoRequest(path: string, body: unknown) {
@@ -46,6 +47,16 @@ async function receipts() {
 }
 
 export async function runProgramReminders() {
+  // One verification per account per run, including across multiple devices.
+  const access = new Map<string, Promise<boolean>>();
+  const hasPro = (userId: string) => {
+    let verified = access.get(userId);
+    if (!verified) {
+      verified = billingService.getEntitlement(userId).then(entitlement => entitlement.active && entitlement.tier === "pro");
+      access.set(userId, verified);
+    }
+    return verified;
+  };
   // No retries after an ambiguous network response: favour avoiding duplicates.
   const abandoned = await db.from("program_reminder_jobs").update({ status: "failed", error_code: "worker_interrupted" })
     .eq("status", "sending").lt("attempted_at", new Date(Date.now() - 10 * 60_000).toISOString());
@@ -74,6 +85,7 @@ export async function runProgramReminders() {
           const auth = await db.from("auth_sessions").select("id").eq("id", d.session_id).eq("user_id", e.user_id).is("revoked_at", null).gt("expires_at", new Date().toISOString()).maybeSingle();
           checkDbError(auth.error, "check reminder device session");
           if (!auth.data) { await updateJob(job.id, { status: "cancelled" }); return; }
+          if (!await hasPro(e.user_id)) { await updateJob(job.id, { status: "cancelled" }); return; }
           const preference = await db.from("user_settings").select("workout_reminders").eq("user_id", e.user_id).maybeSingle();
           checkDbError(preference.error, "check reminder consent");
           const copy = preference.data?.workout_reminders ? reminderCopy(await programDetail(e.user_id, e.id)) : null;

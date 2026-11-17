@@ -9,7 +9,12 @@ import { useProgram } from "../program-follow/program-context";
 import { GlassCard, ProButton, PRO } from "../pro/ui";
 import { defaultReminders, type CompanionRecord, type ReminderPreferences } from "./api";
 import { useCompanion } from "./companion-context";
-import { validReminderPreferences } from "./reminder-model";
+import {
+  anyReminderEnabled,
+  HABIT_REMINDERS,
+  validReminderPreferences,
+  type HabitReminderKind,
+} from "./reminder-model";
 import { requestCompanionReminderPermission } from "./reminders";
 import { getCompanionNativeAvailability, requestCompanionWidgetPin } from "./widget";
 import { useCompanionNativeStatus } from "./native-status";
@@ -37,6 +42,15 @@ export function ReminderSettingsPanel() {
       revision: current?.revision ?? saved?.revision ?? 0,
     }));
     setMessage("");
+  };
+  const changeHabit = (kind: HabitReminderKind, value: { enabled?: boolean; time?: string }) => {
+    const fallback = HABIT_REMINDERS.find((habit) => habit.kind === kind)!;
+    change({
+      habits: {
+        ...prefs.habits,
+        [kind]: { enabled: false, time: fallback.time, ...prefs.habits?.[kind], ...value },
+      },
+    });
   };
   async function run(action: () => Promise<void>) {
     setWorking(true);
@@ -72,16 +86,17 @@ export function ReminderSettingsPanel() {
           Personal reminders
         </Txt>
         <Txt className="mt-2 text-xs leading-5 text-muted">
-          Your preferences sync to your account. Each phone schedules its own reminders for the next
-          14 days when you open FitSync. Planned rest days stay quiet; completed sessions remove
-          their reminders.
+          Choose the nudges that fit your day. Your preferences sync to your account; each phone
+          schedules the next 14 days when you open FitSync. Notifications need permission on each
+          phone.
         </Txt>
         {program.active?.enrollment.reminder_enabled && (
           <View className="mt-3">
             <Txt className="text-xs leading-5" style={{ color: PRO.gold }}>
-              Your followed program already has reminders enabled. Personal reminders are paused to
-              avoid duplicates. Program reminders use their existing time and do not include these
-              custom quiet hours or Snooze. Turn program reminders off to use the personal
+              Your followed program already has training reminders enabled. Personal training
+              reminders are paused to avoid duplicates; daily meal, hydration and wind-down
+              reminders still work. Program reminders use their existing time and do not include
+              these custom quiet hours or Snooze. Turn program reminders off to use the personal
               preferences below.
             </Txt>
             <ProButton
@@ -133,8 +148,8 @@ export function ReminderSettingsPanel() {
             }}
           />
         </View>
-        {field("Reminder time · HH:mm", "time")}
-        <Txt className="mb-2 mt-4 text-xs text-muted">Reminder weekdays</Txt>
+        {field("Training time · HH:mm", "time")}
+        <Txt className="mb-2 mt-4 text-xs text-muted">Training weekdays</Txt>
         <View className="flex-row flex-wrap gap-2">
           {days.map((day, index) => {
             const value = index + 1,
@@ -162,6 +177,72 @@ export function ReminderSettingsPanel() {
             );
           })}
         </View>
+        <Txt className="mt-3 text-xs leading-5 text-muted">
+          Training reminders follow these weekdays and your plan. Rest days stay quiet; completing a
+          session removes its training reminder.
+        </Txt>
+        <View className="mt-6 gap-3 border-t border-white/10 pt-5">
+          <Txt weight="medium" className="text-base">
+            A little support, every day
+          </Txt>
+          <Txt className="text-xs leading-5 text-muted">
+            Each option sends one reminder daily, including weekends and training rest days. All
+            start off; choose your own times.
+          </Txt>
+          {HABIT_REMINDERS.map((habit) => {
+            const setting = prefs.habits?.[habit.kind] ?? { enabled: false, time: habit.time };
+            return (
+              <View
+                key={habit.kind}
+                className="rounded-2xl border border-white/10 bg-white/[0.03] p-4"
+              >
+                <View className="flex-row items-center justify-between gap-3">
+                  <Txt weight="medium" className="flex-1 text-sm">
+                    {habit.label}
+                  </Txt>
+                  <Switch
+                    accessibilityLabel={`${habit.label} reminders`}
+                    disabled={disabled}
+                    value={setting.enabled}
+                    trackColor={{ false: "#363C40", true: PRO.accent }}
+                    thumbColor="#FFFFFF"
+                    onValueChange={(enabled) => {
+                      if (!enabled) {
+                        changeHabit(habit.kind, { enabled: false });
+                        return;
+                      }
+                      void run(async () => {
+                        if (!(await requestCompanionReminderPermission()))
+                          throw new Error(
+                            "Notifications are off. Open your phone settings to enable them.",
+                          );
+                        changeHabit(habit.kind, { enabled: true });
+                      });
+                    }}
+                  />
+                </View>
+                <Txt className="mb-2 mt-3 text-xs text-muted">Daily time · HH:mm</Txt>
+                <TextInput
+                  accessibilityLabel={`${habit.label} time`}
+                  value={setting.time}
+                  onChangeText={(time) => changeHabit(habit.kind, { time })}
+                  editable={!disabled}
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  placeholder="HH:mm"
+                  placeholderTextColor={PRO.muted}
+                  className="min-h-11 rounded-xl bg-black/20 px-3 py-2 text-white"
+                />
+              </View>
+            );
+          })}
+        </View>
+        <Txt weight="medium" className="mt-6 text-base">
+          Your boundaries
+        </Txt>
+        <Txt className="mt-2 text-xs leading-5 text-muted">
+          The same timezone, quiet hours and snooze apply to all personal reminders.
+        </Txt>
         <View className="flex-row gap-3">
           <View className="flex-1">{field("Quiet hours start · HH:mm", "quietStart")}</View>
           <View className="flex-1">{field("Quiet hours end · HH:mm", "quietEnd")}</View>
@@ -194,7 +275,7 @@ export function ReminderSettingsPanel() {
                 throw new Error(
                   "Choose valid times, a timezone, at least one weekday and a snooze between 5 and 180 minutes.",
                 );
-              if (prefs.enabled && !(await requestCompanionReminderPermission()))
+              if (anyReminderEnabled(prefs) && !(await requestCompanionReminderPermission()))
                 throw new Error("Enable phone notifications before saving active reminders.");
               await companion.save("reminders", "reminders", prefs, undefined, revision);
               setDraft(null);

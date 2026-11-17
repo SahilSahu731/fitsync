@@ -184,15 +184,28 @@ function Field({
 }
 const platePreset = (unit: "kg" | "lb") =>
   unit === "kg" ? "20x2, 10x1, 5x1, 2.5x1, 1.25x1" : "45x2, 25x1, 10x1, 5x1, 2.5x1";
-function WarmupCalculator({ onClose }: { onClose: () => void }) {
+export function WarmupCalculator({
+  onClose,
+  initialLoadKg,
+  exerciseName,
+}: {
+  onClose: () => void;
+  initialLoadKg?: number;
+  exerciseName?: string;
+}) {
   const { settings } = useSession();
   const [unit, setUnit] = useState<"kg" | "lb">(settings?.weightUnit ?? "kg");
-  const [target, setTarget] = useState(unit === "kg" ? "80" : "185"),
+  const [target, setTarget] = useState(
+      initialLoadKg !== undefined && Number.isFinite(initialLoadKg) && initialLoadKg > 0
+        ? String(Math.round(initialLoadKg * (unit === "lb" ? 2.2046226218 : 1) * 100) / 100)
+        : "",
+    ),
     [bar, setBar] = useState(unit === "kg" ? "20" : "45"),
     [increment, setIncrement] = useState(unit === "kg" ? "2.5" : "5"),
     [plates, setPlates] = useState(platePreset(unit));
   const [ramps, setRamps] = useState<Ramp[]>(DEFAULT_RAMPS.map((r) => ({ ...r })));
   const result = useMemo(() => {
+    if (!target.trim()) return { data: null, error: "" };
     try {
       const load = numeric(target),
         barWeight = numeric(bar),
@@ -236,7 +249,18 @@ function WarmupCalculator({ onClose }: { onClose: () => void }) {
         Switching units converts your working load and selects the standard bar and plate inventory
         for that unit. Edit these to match your equipment.
       </Txt>
+      {exerciseName && (
+        <Txt className="mb-3 text-xs text-brand">
+          Starting from your saved target · {exerciseName}
+        </Txt>
+      )}
       <Field label={`Working load · ${unit}`} value={target} onChange={setTarget} />
+      {!target.trim() && (
+        <Txt className="mb-4 text-xs leading-6 text-muted">
+          Enter the working load you plan to use. The calculator builds editable practice sets from
+          that load.
+        </Txt>
+      )}
       <View className="flex-row gap-3">
         <Field label={`Bar weight · ${unit}`} value={bar} onChange={setBar} />
         <Field label={`Round down by · ${unit}`} value={increment} onChange={setIncrement} />
@@ -333,7 +357,7 @@ function WarmupCalculator({ onClose }: { onClose: () => void }) {
     </Sheet>
   );
 }
-function OneRepMax({ onClose }: { onClose: () => void }) {
+export function OneRepMax({ onClose }: { onClose: () => void }) {
   const { settings } = useSession();
   const unit = settings?.weightUnit ?? "kg";
   const [weight, setWeight] = useState("60"),

@@ -3,8 +3,7 @@ import { ScrollView, View } from "react-native";
 import { MotionPressable as Pressable } from "@/src/components/motion";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
-import { Icon, SectionTitle, SmallButton } from "./visuals";
-import { compact, displayMetric } from "./tracking-cards";
+import { Icon, SmallButton } from "./visuals";
 import {
   addDays,
   dateLabel,
@@ -14,12 +13,23 @@ import {
   type MetricEvent,
 } from "./model";
 import { change, type ProgressAnalytics } from "./analytics";
-import { Ring, TrendChart } from "./charts";
-import { ActivityHeatmap, HabitWeek, MacroRing } from "./insight-charts";
+import { TrendChart } from "./charts";
+import { ActivityHeatmap, HabitWeek } from "./insight-charts";
 import { CumulativeChart, DurationBoxPlot, SessionScatter } from "./analytical-charts";
-import { cumulativeActivity, sessionProfile } from "./report";
+import { cumulativeActivity } from "./report";
 import { ProgressRange } from "./progress-range";
-import { AdvancedInsights } from "./advanced-insights";
+import { exerciseTrend, trainingInsight } from "./insights";
+import {
+  AnalyticsCard,
+  Choices,
+  DataBars,
+  MetricTile,
+  EmptyInsight,
+  ACCENTS,
+  numberLabel,
+} from "./dashboard-ui";
+import { DeepAnalytics } from "./deep-analytics";
+import { BodyAnalytics, RecoveryAnalytics } from "./health-panels";
 
 type Props = {
   data: ProgressAnalytics;
@@ -54,9 +64,62 @@ type Props = {
   onRange?: (days: number) => void;
   onPro?: () => void;
 };
-const ink = "#F5F5F5";
-const macroShades = [ink, "#ACACAC", "#656565"] as const;
 const noop = () => {};
+
+function DailyCell({
+  title,
+  metric,
+  value,
+  unit,
+  color,
+  onLog,
+  onDetail,
+  disabled,
+}: {
+  title: string;
+  metric: Metric;
+  value: number | null;
+  unit: string;
+  color: string;
+  onLog: () => void;
+  onDetail: () => void;
+  disabled: boolean;
+}) {
+  return (
+    <View className="min-w-0 flex-1 rounded-[20px] border border-white/5 bg-panel p-4">
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`${title}, ${numberLabel(value)} ${unit}. View details`}
+        onPress={onDetail}
+      >
+        <Txt className="text-[11px] text-muted">{title}</Txt>
+        <Txt
+          weight="medium"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          className="mt-2 text-[25px] tracking-[-0.7px]"
+        >
+          {numberLabel(value)}
+          <Txt className="text-[10px] text-muted"> {unit}</Txt>
+        </Txt>
+      </Pressable>
+      <Pressable
+        accessibilityRole="button"
+        accessibilityLabel={`Log ${metric}`}
+        accessibilityState={{ disabled }}
+        disabled={disabled}
+        onPress={onLog}
+        className="-mb-1 mt-2 min-h-11 flex-row items-center gap-1.5"
+      >
+        <Icon name="plus-circle-outline" size={16} color={disabled ? C.muted : color} />
+        <Txt weight="medium" className="text-[10px]" style={{ color: disabled ? C.muted : color }}>
+          Add check-in
+        </Txt>
+      </Pressable>
+    </View>
+  );
+}
+
 export function ProgressOverview({
   data,
   goals,
@@ -68,8 +131,6 @@ export function ProgressOverview({
   dateTitle,
   selectedDate = today,
   daily,
-  latestWeight,
-  weights,
   canLog,
   trainingAvailable,
   waterBusy,
@@ -93,20 +154,20 @@ export function ProgressOverview({
   const [chart, setChart] = useState<"workouts" | "minutes" | "volume">("workouts");
   const [exerciseId, setExerciseId] = useState("");
   const [sessionView, setSessionView] = useState<"workload" | "duration">("workload");
-  const profile = sessionProfile(data);
+  const [topic, setTopic] = useState<"training" | "body" | "recovery">("training");
+  const [rhythm, setRhythm] = useState<"calendar" | "weekdays">("calendar");
+  const insight = trainingInsight(data);
   const cumulative = cumulativeActivity(data, chart, unit);
-  const chartUnit =
-    chart === "workouts" ? "workouts" : chart === "minutes" ? "min" : `${unit} × reps`;
-  const delta = canCompare ? change(data.current[chart], data.previous[chart]) : null;
   const currentValue =
     chart === "volume" ? weightValue(data.current.volume, unit) : data.current[chart];
-  const previousValue =
-    chart === "volume" ? weightValue(data.previous.volume, unit) : data.previous[chart];
-  const activeDays = data.activity.filter((day) => day.workouts > 0).length;
-  const water = daily("water");
-  const recentExercises = [...data.exercises].sort((a, b) =>
-    b.sessions.at(-1)!.timestamp.localeCompare(a.sessions.at(-1)!.timestamp),
-  );
+  const delta = canCompare ? change(data.current[chart], data.previous[chart]) : null;
+  const chartUnit =
+    chart === "workouts" ? "workouts" : chart === "minutes" ? "min" : `${unit} × reps`;
+  const recentExercises = [...data.exercises]
+    .filter((exercise) =>
+      exercise.sessions.some((session) => session.date >= data.start && session.date <= today),
+    )
+    .sort((a, b) => b.sessions.at(-1)!.timestamp.localeCompare(a.sessions.at(-1)!.timestamp));
   const exercise = recentExercises.find((item) => item.id === exerciseId) ?? recentExercises[0];
   const key =
     exercise?.type === "reps_weight"
@@ -118,30 +179,16 @@ export function ProgressOverview({
           : "reps";
   const exerciseUnit =
     key === "load" ? unit : key === "duration" ? "sec" : key === "distance" ? "m" : "reps";
-  const exerciseLabel =
-    key === "load"
-      ? "Heaviest working set"
-      : key === "duration"
-        ? "Longest set"
-        : key === "distance"
-          ? "Farthest set"
-          : "Most set reps";
-  const exercisePoints =
-    exercise?.sessions
-      .filter((session) => session.date >= data.start && session.date <= today)
-      .map((session, index) => ({
-        date: session.date,
-        label: `Session ${index + 1}`,
-        value: key === "load" ? weightValue(session[key], unit) : session[key],
-      })) ?? [];
-  const firstWeight = weights[0]?.value;
-  const lastWeight = weights.at(-1)?.value;
-  const weightChange =
-    firstWeight != null && lastWeight != null && weights.length > 1
-      ? weightValue(lastWeight - firstWeight, unit)
-      : null;
-  const waterDays = Array.from({ length: 7 }, (_, i) => {
-    const date = addDays(selectedDate, i - 6);
+  const exercisePoints = exercise
+    ? exerciseTrend(insight.selected, exercise.id).map((point) => ({
+        ...point,
+        value: key === "load" ? weightValue(point.value, unit) : point.value,
+      }))
+    : [];
+  const water = daily("water");
+  const oldWater = !isPro && selectedDate < addDays(today, -89);
+  const waterDays = Array.from({ length: 7 }, (_, index) => {
+    const date = addDays(selectedDate, index - 6);
     return {
       date,
       value:
@@ -149,513 +196,445 @@ export function ProgressOverview({
         null,
     };
   }).filter((day) => isPro || day.date >= addDays(today, -89));
-  const waterLogged = waterDays.filter((day) => day.value !== null).length;
-  const waterMet = goals.water
-    ? waterDays.filter((day) => day.value !== null && day.value >= goals.water!).length
-    : 0;
-  const firstPerformance = exercisePoints[0]?.value;
-  const latestPerformance = exercisePoints.at(-1)?.value;
-  const performanceChange =
-    firstPerformance != null && latestPerformance != null && exercisePoints.length > 1
-      ? latestPerformance - firstPerformance
-      : null;
-  const weightValues = weights.map((entry) => weightValue(entry.value!, unit));
+  const healthProps = {
+    data,
+    unit,
+    isPro: isPro && !billingChecking,
+    daily,
+    goals,
+    canLog,
+    onLog,
+    onMetric,
+    onNutrition,
+  };
   return (
     <>
       <ProgressRange days={days} isPro={isPro} onChange={onRange} onPro={onPro} />
-      <View className="mb-4 flex-row items-center justify-between">
+      <View className="mb-4 flex-row items-center justify-between gap-3">
         <Txt className="text-[10px] text-muted">
           {dateLabel(data.start)} – {dateLabel(today)}
         </Txt>
         <View className="flex-row items-center gap-1">
-          <Icon
-            name={isPro ? "star-four-points" : "check-circle-outline"}
-            size={12}
-            color={C.muted}
-          />
+          <View className="h-1.5 w-1.5 rounded-full bg-brand" />
           <Txt className="text-[10px] text-muted">
             {isPro ? "Pro analytics" : "90 days included"}
           </Txt>
         </View>
       </View>
-      {trainingAvailable && (
-        <>
-          <View
-            className="overflow-hidden rounded-[28px] border bg-panel p-5"
-            style={{ borderColor: "#FFFFFF14" }}
-          >
-            <View className="flex-row items-center justify-between">
-              <Txt weight="medium" className="text-base">
-                Training trend
-              </Txt>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="View training analytics"
-                onPress={onTraining}
-                className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
-              >
-                <Icon name="arrow-top-right" size={20} color={ink} />
-              </Pressable>
-            </View>
-            <View className="mt-2">
-              <Txt
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                minimumFontScale={0.65}
-                weight="semibold"
-                className="text-[44px] leading-[58px] tracking-[-1.7px]"
-                style={{ color: ink }}
-              >
-                {compact(currentValue)}
-              </Txt>
-              <Txt className="mb-1 text-xs text-muted">{chartUnit} in range</Txt>
-            </View>
-            <Txt className="mb-3 text-[10px] leading-5 text-muted">
-              {delta !== null
-                ? `${delta > 0 ? "+" : ""}${delta.toFixed(0)}% · ${compact(previousValue)} ${chartUnit} in previous ${days} days`
-                : data.current.workouts
-                  ? canCompare
-                    ? `${compact(previousValue)} ${chartUnit} recorded in previous ${days} days`
-                    : `${activeDays} active days · completed sessions only`
-                  : hasWorkoutHistory
-                    ? "No completed sessions in this range."
-                    : "Start with one workout. Your progress grows from there."}
-            </Txt>
-            <View className="flex-row gap-2">
-              {(
-                [
-                  ["workouts", "Workouts"],
-                  ["minutes", "Time"],
-                  ["volume", "Volume"],
-                ] as const
-              ).map(([id, label]) => (
-                <Pressable
-                  key={id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: chart === id }}
-                  onPress={() => setChart(id)}
-                  className="min-h-11 flex-1 items-center justify-center rounded-full"
-                  style={{ backgroundColor: chart === id ? ink : C.elevated }}
-                >
-                  <Txt
-                    weight="medium"
-                    className="text-[11px]"
-                    style={{ color: chart === id ? C.bg : C.muted }}
-                  >
-                    {label}
-                  </Txt>
-                </Pressable>
-              ))}
-            </View>
-            <View className="mt-4">
-              <CumulativeChart key={`${days}:${chart}`} points={cumulative} unit={chartUnit} />
-            </View>
-            <Txt className="mt-2 text-[10px] leading-5 text-muted">
-              {chart === "volume"
-                ? "Cumulative external load × reps. Completed weighted working sets only."
-                : chart === "minutes"
-                  ? "Cumulative recorded workout time, including rest."
-                  : "Running total of completed workouts. Flat sections show days without a session."}
-            </Txt>
-            <View className="mt-5 flex-row border-t border-white/5 pt-4">
-              {[
-                { label: "Workouts", value: data.current.workouts },
-                { label: "Minutes", value: data.current.minutes },
-                { label: "Working sets", value: data.current.sets },
-              ].map((stat) => (
-                <View key={stat.label} className="flex-1">
-                  <Txt weight="semibold" className="text-lg" style={{ color: ink }}>
-                    {compact(stat.value)}
-                  </Txt>
-                  <Txt className="mt-1 text-[10px] text-muted">{stat.label}</Txt>
-                </View>
-              ))}
-            </View>
-            {!hasGoals && onGoals && (
-              <View className="mt-4">
-                <SmallButton
-                  label="Set my goals"
-                  icon="bullseye-arrow"
-                  color={ink}
-                  onPress={onGoals}
-                />
-              </View>
-            )}
-            {!data.allTime.workouts && (
-              <View className="mt-3">
-                <SmallButton
-                  label={hasWorkoutHistory ? "Back to Train" : "Start your first workout"}
-                  icon="arrow-right"
-                  onPress={onTrain}
-                />
-              </View>
-            )}
-          </View>
-          <View className="mt-4 rounded-[26px] border border-white/5 bg-panel p-5">
-            <View className="mb-1 flex-row items-center gap-2">
-              <Icon name="chart-scatter-plot" size={18} color={ink} />
-              <Txt weight="medium" className="flex-1 text-sm">
-                Inside your sessions
-              </Txt>
-            </View>
-            <Txt className="mb-4 text-[10px] leading-5 text-muted">
-              Understand your session workload and typical workout length.
-            </Txt>
-            <View className="mb-3 flex-row gap-2">
-              {(
-                [
-                  ["workload", "Workload"],
-                  ["duration", "Session length"],
-                ] as const
-              ).map(([id, label]) => (
-                <Pressable
-                  key={id}
-                  accessibilityRole="button"
-                  accessibilityState={{ selected: sessionView === id }}
-                  onPress={() => setSessionView(id)}
-                  className="min-h-11 flex-1 items-center justify-center rounded-full px-3"
-                  style={{ backgroundColor: sessionView === id ? ink : C.elevated }}
-                >
-                  <Txt
-                    className="text-[11px]"
-                    weight="medium"
-                    style={{ color: sessionView === id ? C.bg : C.muted }}
-                  >
-                    {label}
-                  </Txt>
-                </Pressable>
-              ))}
-            </View>
-            {sessionView === "workload" ? (
-              <SessionScatter key={`scatter:${days}`} points={profile.points} />
-            ) : (
-              <DurationBoxPlot distribution={profile.duration} />
-            )}
-            <Txt className="mt-3 text-[10px] leading-5 text-muted">
-              {profile.points.length}/{profile.totalSessions} sessions with recorded duration.
-              {profile.missingDurationCount > 0
-                ? ` ${profile.missingDurationCount} without duration excluded.`
-                : ""}
-              {" Working sets exclude warmups."}
-            </Txt>
-          </View>
-          <View className="mt-4 rounded-[26px] bg-panel p-5">
-            <View className="mb-4 flex-row items-center gap-2">
-              <Icon name="calendar-check-outline" size={18} color={ink} />
-              <Txt weight="medium" className="flex-1 text-sm">
-                Consistency, at a glance
-              </Txt>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel="Open consistency calendar"
-                onPress={onTraining}
-                className="h-11 w-11 items-center justify-center"
-              >
-                <Icon name="chevron-right" size={18} color={C.muted} />
-              </Pressable>
-            </View>
-            <ActivityHeatmap days={data.activity} />
-            <Txt className="mt-4 text-[10px] leading-5 text-muted">
-              Every square is a day. Brighter squares mark more completed sessions.
-            </Txt>
-          </View>
-        </>
-      )}
 
-      <SectionTitle title="Body & daily habits" action="All metrics" onAction={onHealth} />
-      <View className="rounded-[26px] bg-panel p-5">
-        <View className="flex-row items-center gap-2">
-          <Icon name="scale-bathroom" size={20} color={ink} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="View weight trend"
-            onPress={() => onMetric("weight")}
-            className="min-h-11 flex-1 justify-center"
-          >
-            <Txt weight="medium" className="text-sm">
-              Body weight
-            </Txt>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Log weight"
-            disabled={!canLog}
-            onPress={() => onLog("weight")}
-            className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
-          >
-            <Icon name="plus" size={20} color={ink} />
-          </Pressable>
-        </View>
-        <View className="mt-2 flex-row flex-wrap items-baseline gap-x-2 gap-y-1">
-          <Txt weight="semibold" className="text-[32px]">
-            {latestWeight ? displayMetric("weight", latestWeight.value, unit) : "—"}
+      <View className="overflow-hidden rounded-[28px] border border-brand/15 bg-[#12170D] p-5">
+        <View className="flex-row items-center justify-between gap-3">
+          <Txt weight="medium" className="text-[10px] tracking-[1.5px] text-brand">
+            YOUR WORK, ADDING UP
           </Txt>
-          <Txt className="text-xs text-muted">{unit}</Txt>
-          {weightChange !== null && (
-            <Txt className="w-full text-xs" style={{ color: ink }}>
-              {weightChange > 0 ? "+" : ""}
-              {weightChange.toFixed(1)} {unit} in range
-            </Txt>
-          )}
+          <Icon name="chart-timeline-variant" color={C.brand} size={20} />
         </View>
-        <Txt className="mb-4 mt-1 text-[10px] text-muted">
-          {latestWeight
-            ? `Last log · ${dateLabel(latestWeight.date)}`
-            : "Your first log sets your baseline"}
-        </Txt>
-        <TrendChart
-          points={weights.map((entry) => ({
-            date: entry.date,
-            value: weightValue(entry.value!, unit),
-          }))}
-          color={ink}
-          unit={unit}
-          compact
-        />
-        <Txt className="mt-3 text-[10px] text-muted">
-          {weightValues.length > 1
-            ? `${Math.min(...weightValues).toFixed(1)}–${Math.max(...weightValues).toFixed(1)} ${unit} range · ${weights.length} logged days`
-            : `${weights.length} logged days in this range`}
-          {" · Dots show logged readings."}
-        </Txt>
-      </View>
-      <View className="mb-3 mt-5 flex-row items-center justify-between">
-        <Txt weight="medium" className="text-sm">
-          Daily check-in
-        </Txt>
-        <Txt className="text-[10px] text-muted">Tap + to log</Txt>
-      </View>
-      {dayPicker}
-      <View className="rounded-[26px] bg-panel p-5">
-        <View className="flex-row items-center gap-2">
-          <Icon name="water-outline" size={20} color={ink} />
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel={`Water, ${water ?? "no log"} ml. View details`}
-            onPress={() => onMetric("water")}
-            className="min-h-11 flex-1 justify-center"
-          >
+        <View className="mt-3 flex-row items-end gap-3">
+          <Txt weight="medium" className="text-[54px] leading-[66px] tracking-[-2px]">
+            {trainingAvailable ? data.current.workouts : "—"}
+          </Txt>
+          <View className="flex-1 pb-2">
             <Txt weight="medium" className="text-sm">
-              Hydration
+              {data.current.workouts === 1 ? "session completed" : "sessions completed"}
             </Txt>
-          </Pressable>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Log water"
-            disabled={!canLog}
-            onPress={() => onLog("water")}
-            className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
-          >
-            <Icon name="plus" size={20} color={ink} />
-          </Pressable>
-        </View>
-        <View className="mt-3 flex-row items-center gap-5">
-          <Ring value={water ?? 0} target={goals.water} color={ink} size={116}>
-            <Txt weight="semibold" className="text-xl">
-              {water === null ? "—" : compact(water)}
-            </Txt>
-            <Txt className="text-[10px] text-muted">ml</Txt>
-          </Ring>
-          <View className="min-w-0 flex-1">
-            <Txt weight="medium" className="text-sm">
-              {dateTitle}
-            </Txt>
-            <Txt className="mt-1 text-[10px] leading-5 text-muted">
-              {goals.water ? `Goal ${compact(goals.water)} ml` : "Track freely · no target set"}
-            </Txt>
-            <Txt className="mt-3 text-xs">
-              {water === null
-                ? "No log for this day"
-                : goals.water
-                  ? water >= goals.water
-                    ? "Daily goal met"
-                    : `${compact(goals.water - water)} ml to goal`
-                  : "Water logged"}
-            </Txt>
+            <Txt className="mt-1 text-[10px] text-muted">in the last {days} days</Txt>
           </View>
         </View>
-        <View className="mt-4 border-t border-white/5 pt-4">
-          <HabitWeek days={waterDays} target={goals.water} />
-          <Txt className="mt-3 text-[10px] leading-4 text-muted">
-            {waterDays.length
-              ? `${waterLogged}/${waterDays.length} days logged${goals.water ? ` · ${waterMet} at current goal` : ""}`
-              : "Older hydration trends require Pro"}
-          </Txt>
-        </View>
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel={`Add 250 milliliters of water for ${dateTitle}`}
-          disabled={waterBusy || !canLog}
-          onPress={onWater}
-          className={`mt-4 min-h-11 flex-row items-center justify-center gap-2 rounded-full bg-elevated ${waterBusy || !canLog ? "opacity-40" : ""}`}
-        >
-          <Icon name="water-plus-outline" size={18} color={ink} />
-          <Txt weight="medium" className="text-xs" style={{ color: ink }}>
-            {waterBusy ? "Saving…" : "+250 ml water"}
-          </Txt>
-        </Pressable>
-      </View>
-
-      <View className="mt-4 rounded-[26px] bg-panel p-5">
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Nutrition totals and nutrient tracking"
-          onPress={onNutrition}
-          className="min-h-11 flex-row items-center gap-2"
-        >
-          <Icon name="silverware-fork-knife" size={20} color={ink} />
-          <Txt weight="medium" className="flex-1 text-sm">
-            Nutrition
-          </Txt>
-          <Txt className="text-[10px] text-muted">{dateTitle}</Txt>
-          <Icon name="chevron-right" size={18} color={C.muted} />
-        </Pressable>
-        <View className="mt-3 flex-row items-center gap-5">
-          <MacroRing protein={daily("protein")} carbs={daily("carbs")} fat={daily("fat")} />
-          <View className="flex-1">
-            <Txt weight="semibold" className="text-[28px]">
-              {displayMetric("caloriesIn", daily("caloriesIn"), unit)}
-            </Txt>
-            <Txt className="text-[10px] text-muted">kcal logged</Txt>
-            <Pressable
-              accessibilityRole="button"
-              disabled={!canLog}
-              onPress={() => onLog("caloriesIn")}
-              className="mt-2 min-h-11 flex-row items-center gap-1"
-            >
-              <Icon name="plus" size={16} color={ink} />
-              <Txt className="text-xs" style={{ color: ink }}>
-                Log nutrition
+        <View className="mt-3 flex-row gap-3 border-t border-brand/10 pt-4">
+          {[
+            {
+              label: "Training time",
+              value: trainingAvailable ? numberLabel(data.current.minutes, 0) : "—",
+              suffix: "min",
+            },
+            {
+              label: "Working sets",
+              value: trainingAvailable ? numberLabel(data.current.sets, 0) : "—",
+              suffix: "sets",
+            },
+            {
+              label: "Volume",
+              value: trainingAvailable
+                ? numberLabel(weightValue(data.current.volume, unit), 0)
+                : "—",
+              suffix: `${unit} × reps`,
+            },
+          ].map((item) => (
+            <View key={item.label} className="min-w-0 flex-1">
+              <Txt className="text-[9px] text-muted">{item.label}</Txt>
+              <Txt weight="medium" numberOfLines={1} adjustsFontSizeToFit className="mt-1 text-xl">
+                {item.value}
+                <Txt className="text-[9px] text-muted"> {item.suffix}</Txt>
               </Txt>
-            </Pressable>
-          </View>
-        </View>
-        <View className="mt-4 flex-row gap-2">
-          {(
-            [
-              ["protein", "Protein", macroShades[0]],
-              ["carbs", "Carbs", macroShades[1]],
-              ["fat", "Fat", macroShades[2]],
-            ] as const
-          ).map(([metric, label, color]) => (
-            <Pressable
-              key={metric}
-              accessibilityRole="button"
-              accessibilityLabel={`Log ${label.toLowerCase()}`}
-              disabled={!canLog}
-              onPress={() => onLog(metric)}
-              className="min-w-0 flex-1 rounded-2xl bg-elevated p-3"
-            >
-              <View className="mb-2 h-1 w-5 rounded-full" style={{ backgroundColor: color }} />
-              <Txt className="text-[10px] text-muted">{label}</Txt>
-              <Txt weight="medium" className="mt-1 text-sm">
-                {displayMetric(metric, daily(metric), unit)}
-                <Txt className="text-[10px] text-muted"> g</Txt>
-              </Txt>
-            </Pressable>
+            </View>
           ))}
         </View>
-        <Txt className="mt-3 text-[9px] leading-4 text-muted">
-          Ring shows energy from your logged macros. Missing logs stay empty.
+        <Txt className="mt-4 text-[10px] leading-5 text-muted">
+          {!trainingAvailable
+            ? "Your saved training is unavailable. Refresh to try again."
+            : data.current.workouts
+              ? `${insight.activeDays} training days. Every completed working set counts.`
+              : hasWorkoutHistory
+                ? "No completed sessions in this range. Your earlier work is still yours."
+                : "Your first log sets your baseline. Finish a workout to start your story."}
         </Txt>
+        {trainingAvailable && !data.current.workouts && (
+          <View className="mt-3">
+            <SmallButton
+              label={hasWorkoutHistory ? "Back to Train" : "Start your first workout"}
+              icon="arrow-right"
+              color={C.brand}
+              onPress={onTrain}
+            />
+          </View>
+        )}
       </View>
 
-      {trainingAvailable && (
+      <View className="mt-6">
+        <Choices
+          options={[
+            { id: "training", label: "Training" },
+            { id: "body", label: "Body & food" },
+            { id: "recovery", label: "Recovery" },
+          ]}
+          value={topic}
+          onChange={setTopic}
+        />
+      </View>
+      {topic === "training" && trainingAvailable && (
         <>
-          <SectionTitle
-            title="Exercise progress"
-            action="Explore"
-            onAction={() => onExercise("")}
-          />
-          <View className="rounded-[26px] bg-panel p-5">
+          <AnalyticsCard
+            title="The bigger picture"
+            subtitle="A running total of the work you completed in this range."
+            icon="chart-line"
+          >
+            <Choices
+              options={[
+                { id: "workouts", label: "Workouts" },
+                { id: "minutes", label: "Minutes" },
+                { id: "volume", label: "Volume" },
+              ]}
+              value={chart}
+              onChange={setChart}
+            />
+            <View className="mb-3 flex-row items-center justify-between gap-3">
+              <Txt weight="medium" className="text-[30px] tracking-[-1px]">
+                {numberLabel(currentValue)}
+                <Txt className="text-[10px] text-muted"> {chartUnit}</Txt>
+              </Txt>
+              {delta !== null && (
+                <View className="rounded-full bg-white/5 px-3 py-2">
+                  <Txt
+                    weight="medium"
+                    className="text-[10px]"
+                    style={{ color: delta >= 0 ? C.brand : "#E5C58F" }}
+                  >
+                    {delta > 0 ? "+" : ""}
+                    {numberLabel(delta)}%
+                  </Txt>
+                </View>
+              )}
+            </View>
+            <CumulativeChart points={cumulative} unit={chartUnit} />
+            <Txt className="mt-3 text-[10px] leading-5 text-muted">
+              {!canCompare
+                ? "Choose a shorter period or Pro to compare beyond your available history."
+                : delta === null
+                  ? "No earlier total is available for a percentage comparison."
+                  : `Compared with the previous ${days} days.`}
+              {chart === "volume"
+                ? " Volume is external load × reps; bodyweight and timed work stay separate."
+                : ""}
+            </Txt>
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="View training analytics"
+              onPress={onTraining}
+              className="mt-2 min-h-11 flex-row items-center justify-between"
+            >
+              <Txt weight="medium" className="text-xs text-brand">
+                Explore training details
+              </Txt>
+              <Icon name="arrow-right" color={C.brand} size={17} />
+            </Pressable>
+          </AnalyticsCard>
+          <View className="mt-4 flex-row gap-3">
+            <MetricTile
+              label="Average session"
+              value={numberLabel(insight.averageDuration)}
+              unit="min"
+              icon="timer-outline"
+              caption={`${insight.profile.points.length}/${insight.profile.totalSessions} sessions timed`}
+            />
+            <MetricTile
+              label="Median session"
+              value={numberLabel(insight.medianDuration)}
+              unit="min"
+              icon="chart-bell-curve-cumulative"
+              caption="Middle recorded session length"
+            />
+          </View>
+          <AnalyticsCard
+            title="Your training rhythm"
+            subtitle="Consistency is a pattern, one training day at a time."
+            icon="calendar-check-outline"
+          >
+            <Choices
+              options={[
+                { id: "calendar", label: "Activity map" },
+                { id: "weekdays", label: "By weekday" },
+              ]}
+              value={rhythm}
+              onChange={setRhythm}
+            />
+            {rhythm === "calendar" ? (
+              <ActivityHeatmap days={data.activity} />
+            ) : (
+              <DataBars
+                rows={insight.weekdays.map((day) => ({ label: day.label, value: day.count }))}
+                suffix="sessions"
+              />
+            )}
+            <View className="mt-4 flex-row justify-between gap-4 border-t border-white/5 pt-4">
+              <View className="flex-1">
+                <Txt weight="medium" className="text-xl">
+                  {numberLabel(insight.averageGap)}
+                  <Txt className="text-[10px] text-muted"> days</Txt>
+                </Txt>
+                <Txt className="mt-1 text-[10px] text-muted">Average gap between training days</Txt>
+              </View>
+              <View className="flex-1">
+                <Txt weight="medium" className="text-xl">
+                  {hasGoals ? data.streak : "—"}
+                  <Txt className="text-[10px] text-muted"> weeks</Txt>
+                </Txt>
+                <Txt className="mt-1 text-[10px] text-muted">
+                  {hasGoals ? "Weekly goal run" : "Set a goal to track your run"}
+                </Txt>
+              </View>
+            </View>
+            {onGoals && (
+              <Pressable
+                accessibilityRole="button"
+                onPress={onGoals}
+                className="mt-2 min-h-11 justify-center"
+              >
+                <Txt className="text-xs text-brand">
+                  {hasGoals ? "Review your goals" : "Set your weekly goal"}
+                </Txt>
+              </Pressable>
+            )}
+          </AnalyticsCard>
+          <AnalyticsCard
+            title="Exercise spotlight"
+            subtitle="Compare the same movement across your recorded sessions."
+            icon="dumbbell"
+          >
             {exercise ? (
               <>
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  contentContainerStyle={{ gap: 8 }}
-                  className="mb-4"
-                >
-                  {recentExercises.slice(0, 6).map((item) => (
-                    <Pressable
-                      key={item.id}
-                      accessibilityRole="button"
-                      accessibilityState={{ selected: item.id === exercise.id }}
-                      onPress={() => setExerciseId(item.id)}
-                      className="min-h-11 justify-center rounded-full px-4"
-                      style={{
-                        backgroundColor: item.id === exercise.id ? ink : C.elevated,
-                      }}
-                    >
-                      <Txt
-                        className="text-[11px]"
-                        style={{ color: item.id === exercise.id ? C.bg : C.muted }}
+                <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-4">
+                  <View className="flex-row gap-2">
+                    {recentExercises.slice(0, 12).map((item) => (
+                      <Pressable
+                        key={item.id}
+                        accessibilityRole="button"
+                        accessibilityState={{ selected: exercise.id === item.id }}
+                        onPress={() => setExerciseId(item.id)}
+                        className={`min-h-11 justify-center rounded-full px-4 ${exercise.id === item.id ? "bg-brand/10" : "bg-white/5"}`}
                       >
-                        {item.name}
-                      </Txt>
-                    </Pressable>
-                  ))}
+                        <Txt
+                          className={`text-[10px] ${exercise.id === item.id ? "text-brand" : "text-muted"}`}
+                        >
+                          {item.name}
+                        </Txt>
+                      </Pressable>
+                    ))}
+                  </View>
                 </ScrollView>
-                <Txt weight="medium" className="text-base">
+                <Txt weight="medium" className="mb-1 text-lg">
                   {exercise.name}
                 </Txt>
-                <Txt className="mb-4 mt-1 text-[10px] text-muted">
-                  {exerciseLabel} · {exerciseUnit}
+                <Txt className="mb-4 text-[10px] text-muted">
+                  {key === "load"
+                    ? "Heaviest completed working set"
+                    : key === "duration"
+                      ? "Longest completed set"
+                      : key === "distance"
+                        ? "Farthest completed set"
+                        : "Most reps in a completed set"}
                 </Txt>
-                {performanceChange !== null && (
-                  <View className="mb-3 flex-row flex-wrap items-center gap-x-3 gap-y-1">
-                    <Txt weight="medium" className="text-sm">
-                      {performanceChange > 0 ? "+" : ""}
-                      {compact(performanceChange)} {exerciseUnit}
-                    </Txt>
-                    <Txt className="text-[10px] text-muted">
-                      first → latest · {exercisePoints.length} sessions in range
-                    </Txt>
-                  </View>
-                )}
-                <TrendChart
-                  points={exercisePoints}
-                  color={ink}
-                  unit={exerciseUnit}
-                  format={compact}
-                />
+                <TrendChart points={exercisePoints} color={C.brand} unit={exerciseUnit} />
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel={`View ${exercise.name} performance details`}
                   onPress={() => onExercise(exercise.id)}
                   className="mt-3 min-h-11 flex-row items-center justify-between"
                 >
-                  <Txt className="text-xs" style={{ color: ink }}>
+                  <Txt weight="medium" className="text-xs text-brand">
                     Session details & recent bests
                   </Txt>
-                  <Icon name="arrow-top-right" size={18} color={ink} />
+                  <Icon name="arrow-right" color={C.brand} size={18} />
                 </Pressable>
               </>
             ) : (
-              <>
-                <Icon name="chart-line" color={ink} size={28} />
-                <Txt weight="medium" className="mt-3 text-base">
-                  See what’s getting stronger
-                </Txt>
-                <Txt className="mt-2 text-xs leading-5 text-muted">
-                  Finish a workout to see your lifts, reps, and personal bests here. A second
-                  session starts your comparison.
-                </Txt>
-                <View className="mt-4">
-                  <SmallButton label="Go to Train" icon="arrow-right" onPress={onTrain} />
-                </View>
-              </>
+              <EmptyInsight
+                title="Build your exercise history"
+                detail="Finish a workout to see your lifts, reps and recorded bests here. A second session starts your comparison."
+              />
             )}
-          </View>
-          <AdvancedInsights
-            isPro={isPro}
-            checking={billingChecking}
+          </AnalyticsCard>
+          <AnalyticsCard
+            title="Inside your sessions"
+            subtitle={`${insight.profile.points.length} / ${insight.profile.totalSessions} sessions with recorded duration. Missing durations stay unrecorded.`}
+            icon="chart-scatter-plot"
+          >
+            <Choices
+              options={[
+                { id: "workload", label: "Sets & duration" },
+                { id: "duration", label: "Session length" },
+              ]}
+              value={sessionView}
+              onChange={setSessionView}
+            />
+            {sessionView === "workload" ? (
+              <SessionScatter points={insight.profile.points} />
+            ) : (
+              <DurationBoxPlot distribution={insight.profile.duration} />
+            )}
+          </AnalyticsCard>
+          <DeepAnalytics
             data={data}
             unit={unit}
-            onOpen={onPro}
+            isPro={isPro}
+            checking={billingChecking}
+            onPro={onPro}
+            onExercise={onExercise}
           />
         </>
       )}
+      {topic === "body" && <BodyAnalytics {...healthProps} />}
+      {topic === "recovery" && <RecoveryAnalytics {...healthProps} />}
+
+      <View className="mb-3 mt-8 flex-row items-center justify-between gap-3">
+        <Txt accessibilityRole="header" weight="medium" className="text-xl tracking-[-0.5px]">
+          Daily check-in
+        </Txt>
+        <Pressable
+          accessibilityRole="button"
+          onPress={onHealth}
+          className="min-h-11 justify-center"
+        >
+          <Txt className="text-xs text-muted">All metrics ↗</Txt>
+        </Pressable>
+      </View>
+      {dayPicker}
+      <Txt className="-mt-2 mb-4 text-[10px] text-muted">
+        {dateTitle} · Your entries, at your pace.
+      </Txt>
+      <View className="gap-3">
+        <View className="flex-row gap-3">
+          <DailyCell
+            title="Body weight"
+            metric="weight"
+            value={daily("weight") === null ? null : weightValue(daily("weight")!, unit)}
+            unit={unit}
+            color={ACCENTS.body}
+            disabled={!canLog}
+            onLog={() => onLog("weight")}
+            onDetail={() => onMetric("weight")}
+          />
+          <DailyCell
+            title="Water"
+            metric="water"
+            value={water === null ? null : water / 1000}
+            unit="L"
+            color={ACCENTS.body}
+            disabled={!canLog}
+            onLog={() => onLog("water")}
+            onDetail={() => onMetric("water")}
+          />
+        </View>
+        <View className="flex-row gap-3">
+          <DailyCell
+            title="Sleep"
+            metric="sleep"
+            value={daily("sleep")}
+            unit="hours"
+            color={ACCENTS.recovery}
+            disabled={!canLog}
+            onLog={() => onLog("sleep")}
+            onDetail={() => onMetric("sleep")}
+          />
+          <DailyCell
+            title="Steps"
+            metric="steps"
+            value={daily("steps")}
+            unit="steps"
+            color={C.brand}
+            disabled={!canLog}
+            onLog={() => onLog("steps")}
+            onDetail={() => onMetric("steps")}
+          />
+        </View>
+      </View>
+      <AnalyticsCard
+        title="Hydration, one day at a time"
+        subtitle="The seven days ending on your selected check-in date."
+        icon="water-outline"
+        color={ACCENTS.body}
+      >
+        {oldWater ? (
+          <Pressable accessibilityRole="button" onPress={onPro} className="min-h-11 justify-center">
+            <Txt className="text-xs text-brand">Older hydration trends require Pro</Txt>
+          </Pressable>
+        ) : (
+          <HabitWeek days={waterDays} target={goals.water} />
+        )}
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Add 250 milliliters of water"
+          accessibilityState={{ disabled: !canLog || waterBusy, busy: waterBusy }}
+          disabled={!canLog || waterBusy}
+          onPress={onWater}
+          className="mt-5 min-h-11 flex-row items-center justify-center gap-2 rounded-full bg-white/5"
+        >
+          <Icon name="water-plus-outline" color={ACCENTS.body} size={19} />
+          <Txt weight="medium" className="text-xs" style={{ color: ACCENTS.body }}>
+            {waterBusy ? "Saving…" : "Add 250 ml"}
+          </Txt>
+        </Pressable>
+      </AnalyticsCard>
+      <View className="mt-4 rounded-[24px] border border-white/5 bg-panel p-5">
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Nutrition totals and nutrient tracking"
+          onPress={onNutrition}
+          className="flex-row items-center justify-between gap-3"
+        >
+          <View>
+            <Txt weight="medium" className="text-sm">
+              Nutrition totals
+            </Txt>
+            <Txt className="mt-2 text-xs text-muted">
+              {numberLabel(daily("caloriesIn"), 0)} kcal · {numberLabel(daily("protein"))} g protein
+            </Txt>
+          </View>
+          <Icon name="arrow-top-right" color={ACCENTS.nutrition} size={21} />
+        </Pressable>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Log protein"
+          disabled={!canLog}
+          accessibilityState={{ disabled: !canLog }}
+          onPress={() => onLog("protein")}
+          className="mt-3 min-h-11 flex-row items-center gap-2"
+        >
+          <Icon name="plus-circle-outline" size={17} color={ACCENTS.nutrition} />
+          <Txt weight="medium" className="text-xs" style={{ color: ACCENTS.nutrition }}>
+            Log protein
+          </Txt>
+        </Pressable>
+      </View>
       <View className="mt-6">
         <SmallButton label="Workout & check-in history" icon="history" onPress={onHistory} />
       </View>

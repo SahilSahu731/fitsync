@@ -118,6 +118,41 @@ test("record writes and deletes use authenticated ownership and revision through
   assert.equal(calls[1].args.p_expected_revision, 4);
   assert.equal(calls[1].args.p_delete, true);
 });
+test("reminder records accept legacy training settings and optional opt-in daily categories", () => {
+  const data = {
+    enabled: true,
+    time: "18:00",
+    days: [1, 3, 5],
+    quietStart: "22:00",
+    quietEnd: "08:00",
+    snoozeMinutes: 30,
+    timezone: "Asia/Kolkata",
+  };
+  const parse = (value: unknown) =>
+    saveRecordSchema.safeParse({ kind: "reminders", expectedRevision: 0, data: value });
+  assert.equal(parse(data).success, true);
+  assert.equal(
+    parse({
+      ...data,
+      enabled: false,
+      days: [],
+      habits: {
+        meals: { enabled: true, time: "12:00" },
+        hydration: { enabled: false, time: "15:00" },
+        sleep: { enabled: true, time: "21:00" },
+      },
+    }).success,
+    true,
+  );
+  assert.equal(parse({ ...data, days: [] }).success, false);
+  for (const habits of [
+    { sleep: { enabled: true, time: "24:00" } },
+    { meals: { enabled: true, time: "12:00", ownerId: "someone-else" } },
+    { unknown: { enabled: true, time: "12:00" } },
+    { hydration: { time: "15:00" } },
+  ])
+    assert.equal(parse({ ...data, habits }).success, false);
+});
 test("record revision conflicts become refreshable 409 errors", async (t) => {
   t.mock.method(db, "rpc", async () => ({
     data: null,

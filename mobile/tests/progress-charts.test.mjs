@@ -144,6 +144,34 @@ test("cumulative charts retain actual plateaus and increments as steps with a ze
   validGeometry(tree);
 });
 
+test("cumulative charts work without Array.toSorted and preserve their input order", () => {
+  // A separate realm reproduces the device runtime without changing Node globals.
+  const points = vm.runInNewContext(`
+    Array.prototype.toSorted = undefined;
+    Object.freeze([
+      Object.freeze({ date: "2026-11-05", value: 3 }),
+      Object.freeze({ date: "2026-11-01", value: 0 }),
+      Object.freeze({ date: "2026-11-02", value: 1 }),
+    ]);
+  `);
+  assert.equal(points.toSorted, undefined);
+  const h = chartHarness();
+  let tree = h.render(h.CumulativeChart, { points, unit: "workouts" });
+  assert.match(text(tree), /Through 2026-11-05/);
+  assert.match(text(tree), /3 workouts in this range/);
+  nodes(tree)
+    .find((node) => node.props.accessibilityLabel === "Previous cumulative date")
+    .props.onPress();
+  tree = h.render(h.CumulativeChart, { points, unit: "workouts" });
+  assert.match(text(tree), /Through 2026-11-02/);
+  assert.match(text(tree), /1 workouts in this range/);
+  assert.deepEqual(
+    [...points].map((point) => point.date),
+    ["2026-11-05", "2026-11-01", "2026-11-02"],
+  );
+  validGeometry(tree);
+});
+
 test("single and equal cumulative values render finite SVG geometry and bound navigation", () => {
   for (const points of [
     [{ date: "2026-11-01", value: 0 }],

@@ -381,6 +381,9 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
         } else {
           const reminder = await handleCompanionReminderResponse(response, ownerId, preferences);
           if (reminder === "open" && mounted) router.push("/(tabs)/train");
+          else if (reminder === "meals" && mounted) router.push("/wellness");
+          else if ((reminder === "hydration" || reminder === "sleep") && mounted)
+            router.push("/(tabs)/progress");
         }
         processed.current.add(key);
         await Notifications.clearLastNotificationResponseAsync();

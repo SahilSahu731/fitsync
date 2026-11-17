@@ -2,6 +2,7 @@ import { Router } from "express";
 import { z } from "zod";
 import { asyncHandler } from "../../common/async-handler.js";
 import { getAuth, requireAuth } from "../../middleware/auth.js";
+import { requirePro } from "../billing/billing.middleware.js";
 import * as service from "./program.service.js";
 const router = Router(); router.use(requireAuth);
 const id = z.uuid();
@@ -13,8 +14,12 @@ router.get("/active", asyncHandler(async (req,res) => { res.json(await service.a
 router.get("/history", asyncHandler(async (req,res) => { res.json(await service.programHistory(getAuth(req).userId)); }));
 router.post("/devices", asyncHandler(async (req,res) => { await service.registerDevice(getAuth(req).userId,tokenSchema.parse(req.body).token,getAuth(req).sessionId); res.status(204).end(); }));
 router.delete("/devices", asyncHandler(async (req,res) => { await service.unregisterDevice(getAuth(req).userId,tokenSchema.parse(req.body).token); res.status(204).end(); }));
-router.post("/follow/:programId", asyncHandler(async (req,res) => { res.json(await service.followProgram(getAuth(req).userId,id.parse(req.params.programId),followSchema.parse(req.body))); }));
+router.post("/follow/:programId", requirePro, asyncHandler(async (req,res) => { res.json(await service.followProgram(getAuth(req).userId,id.parse(req.params.programId),followSchema.parse(req.body))); }));
 router.get("/:id", asyncHandler(async (req,res) => { res.json(await service.programDetail(getAuth(req).userId,id.parse(req.params.id))); }));
 router.post("/:id/stop", asyncHandler(async (req,res) => { await service.stopProgram(getAuth(req).userId,id.parse(req.params.id)); res.status(204).end(); }));
-router.patch("/:id/reminders", asyncHandler(async (req,res) => { res.json(await service.updateReminders(getAuth(req).userId,id.parse(req.params.id),reminderSchema.parse(req.body))); }));
+router.patch("/:id/reminders", (req,res,next) => {
+  // Users can always withdraw reminder consent, including after Pro expires.
+  if (req.body?.reminderEnabled === false) return next();
+  return requirePro(req,res,next);
+}, asyncHandler(async (req,res) => { res.json(await service.updateReminders(getAuth(req).userId,id.parse(req.params.id),reminderSchema.parse(req.body))); }));
 export default router;

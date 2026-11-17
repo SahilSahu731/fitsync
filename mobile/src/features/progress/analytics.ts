@@ -7,7 +7,7 @@ export function completedSets(workout: ProgressWorkout, includeWarmups = false) 
 }
 export function setVolume(set: LoggedSet, trackingType: string) {
   // Added load and assistance are not comparable with external-load volume.
-  return trackingType === "reps_weight" ? number(set.weight_kg) * number(set.reps) : 0;
+  return trackingType === "reps_weight" && set.weight_kg !== null && Number.isFinite(set.weight_kg) && set.weight_kg >= 0 && set.reps !== null && Number.isInteger(set.reps) && set.reps > 0 ? set.weight_kg * set.reps : 0;
 }
 export function estimatedMax(set: LoggedSet, trackingType: string) {
   const weight = number(set.weight_kg); const reps = number(set.reps);
@@ -26,7 +26,7 @@ export function summary(workouts: ProgressWorkout[]) {
   };
 }
 export function buildProgress(workouts: ProgressWorkout[], events: ProgressEvent[], days: number, today: string, weeklyTarget: number) {
-  const done = workouts.filter(workout => workout.status === "completed" && workout.finished_at && workoutDate(workout) <= today);
+  const done = [...new Map(workouts.filter(workout => workout.status === "completed" && workout.finished_at && Number.isFinite(Date.parse(workout.finished_at)) && workoutDate(workout) <= today).map(workout => [workout.id, workout])).values()];
   const start = addDays(today, 1 - days); const previousStart = addDays(start, -days);
   const selected = done.filter(workout => workoutDate(workout) >= start);
   const previous = done.filter(workout => workoutDate(workout) >= previousStart && workoutDate(workout) < start);

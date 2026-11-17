@@ -111,7 +111,7 @@ export function SectionHeading({
           <Txt weight="medium" className="text-xs text-muted">
             {action}
           </Txt>
-          <MaterialCommunityIcons name="arrow-top-right" size={15} color={C.muted} />
+          <MaterialCommunityIcons name="arrow-right" size={15} color={C.muted} />
         </Pressable>
       )}
     </View>

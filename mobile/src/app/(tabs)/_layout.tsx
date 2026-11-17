@@ -3,6 +3,7 @@ import { Keyboard, View } from "react-native";
 import { Redirect, Tabs } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { useSession } from "@/src/context/session";
+import { useBilling } from "@/src/features/billing/billing-context";
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 import { TabBarMotionProvider, useTabBarMotion } from "@/src/components/tab-bar-motion";
 import type { TabArtworkName } from "@/src/components/tab-artwork";
@@ -36,6 +37,7 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
   const insets = useSafeAreaInsets();
   const { feedback } = useExperience();
   const { expand } = useTabBarMotion();
+  const { isPro } = useBilling();
 
   const [keyboardOpen, setKeyboardOpen] = useState(false);
   useEffect(() => {
@@ -50,7 +52,9 @@ function FloatingTabBar({ state, navigation }: TabBarProps) {
   const routes = TAB_IDS.flatMap((id) => state.routes.filter((route) => route.name === id));
   const selectedIndex = routes.findIndex((route) => route.key === state.routes[state.index]?.key);
 
-  if (keyboardOpen || !routes.length) return null;
+  // The free Pro page has its own purchase dock and close action.
+  const showingPaywall = state.routes[state.index]?.name === "pro" && !isPro;
+  if (keyboardOpen || !routes.length || showingPaywall) return null;
 
   return (
     <View

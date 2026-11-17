@@ -2,6 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
+import { randomUUID } from "node:crypto";
 import ts from "typescript";
 
 function load(file, dependencies = {}, globals = {}) {
@@ -208,6 +209,7 @@ function finishFixture(concurrentStatus, initialStatus = "active") {
     }; return builder;
   } };
   const service = load("../../server/src/modules/workouts/workout.service.ts", {
+    "node:crypto": { randomUUID },
     "../../config/supabase.js": { db },
     "../../common/errors.js": { ApiError, checkDbError: error => { if (error) throw error; } },
     "../program-follow/program.service.js": { resolveProgramSlot: async () => null, programError: error => { if (error) throw error; } },

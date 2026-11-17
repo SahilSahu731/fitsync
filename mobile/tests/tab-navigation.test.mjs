@@ -43,6 +43,7 @@ function text(node) {
 test("the bar exposes only the five requested tabs in order", () => {
   const Tabs = Object.assign(() => null, { Screen: "Screen" });
   const calls = [];
+  const billing = { isPro: false };
   const exports = load("../src/app/(tabs)/_layout.tsx", {
     react: { useEffect() {}, useState: (value) => [value, () => {}] },
     "react-native": { View: "View" },
@@ -51,6 +52,7 @@ test("the bar exposes only the five requested tabs in order", () => {
     "@/src/context/session": {
       useSession: () => ({ ready: true, user: { id: "athlete" }, profile: {} }),
     },
+    "@/src/features/billing/billing-context": { useBilling: () => billing },
     "@/src/features/workouts/components/active-workout-bar": {
       ActiveWorkoutBar: "ActiveWorkoutBar",
     },
@@ -105,6 +107,13 @@ test("the bar exposes only the five requested tabs in order", () => {
   prevented = true;
   buttons[0].props.onPress();
   assert.equal(calls.length, 3, "prevented navigation stays on the current screen");
+  const paywallBar = find(tree, Tabs)[0].props.tabBar({
+    state: { ...state, index: 1 },
+    navigation,
+  });
+  assert.equal(paywallBar.type(paywallBar.props), null, "the purchase dock is not covered by tabs");
+  billing.isPro = true;
+  assert.notEqual(paywallBar.type(paywallBar.props), null, "Pro members retain their normal tabs");
 });
 
 const model = load("../src/features/progress/model.ts", {});

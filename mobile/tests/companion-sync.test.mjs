@@ -6,6 +6,8 @@ import ts from "typescript";
 import {
   reminderDate,
   validReminderPreferences,
+  anyReminderEnabled,
+  HABIT_REMINDERS,
 } from "../src/features/companion/reminder-model.ts";
 import { workoutControlsSnapshot } from "../src/features/companion/native-model.ts";
 import { restAfterWorkoutSet } from "../src/features/workouts/session-progress.ts";
@@ -317,7 +319,7 @@ test("reminder form preserves an edited draft and its old revision when a remote
     "../pro/ui": { GlassCard: "Card", ProButton: "Button", PRO: {} },
     "./api": { defaultReminders: () => ({ ...prefs }) },
     "./companion-context": { useCompanion: () => companion },
-    "./reminder-model": { validReminderPreferences },
+    "./reminder-model": { validReminderPreferences, anyReminderEnabled, HABIT_REMINDERS },
     "./reminders": { requestCompanionReminderPermission: async () => true },
     "./widget": {
       getCompanionNativeAvailability: () => ({
@@ -333,9 +335,15 @@ test("reminder form preserves an edited draft and its old revision when a remote
   const instance = runtime.mount(() => module.ReminderSettingsPanel());
   const input = () =>
     find(instance.tree, "Input").find(
-      (node) => node.props.accessibilityLabel === "Reminder time · HH:mm",
+      (node) => node.props.accessibilityLabel === "Training time · HH:mm",
     );
   input().props.onChangeText("19:15");
+  instance.render();
+  const mealTime = () =>
+    find(instance.tree, "Input").find(
+      (node) => node.props.accessibilityLabel === "Meal planning time",
+    );
+  mealTime().props.onChangeText("13:15");
   instance.render();
   companion = {
     ...companion,
@@ -346,12 +354,15 @@ test("reminder form preserves an edited draft and its old revision when a remote
   };
   instance.render();
   assert.equal(input().props.value, "19:15");
+  assert.equal(mealTime().props.value, "13:15");
   const button = find(instance.tree, "Button").find(
     (node) => node.props.title === "Save reminder preferences",
   );
   button.props.onPress();
   await instance.settle();
   assert.equal(calls[0][4], 3);
+  assert.equal(calls[0][2].habits.meals.time, "13:15");
+  assert.equal(calls[0][2].habits.meals.enabled, false);
   assert.equal(calls.length, 1);
   assert.equal(input().props.value, "19:15");
   assert.ok(

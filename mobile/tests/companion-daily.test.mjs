@@ -276,9 +276,17 @@ function cardFixture(options = {}) {
     calls = [];
   let cursor = 0,
     tree;
-  const companion = { state: { records: [record({ energy: 1, availableMinutes: 30 })] } };
+  const companion = {
+    state: { records: [record({ energy: 1, availableMinutes: 30 })] },
+    refresh: async () => {
+      calls.push(["refresh-companion"]);
+      if (options.refreshFail) throw new Error("offline");
+    },
+  };
+  const refreshRef = { current: null };
   const progress = { journal: { events: [], workouts: [] } };
   const program = { active: null };
+  const billing = { isPro: true };
   const workoutState = {
     session: null,
     busy: false,
@@ -288,7 +296,9 @@ function cardFixture(options = {}) {
   const coaching = {
     data: { plan: plan() },
     error: null,
-    refresh: async () => {},
+    refresh: async () => {
+      calls.push(["refresh-coaching"]);
+    },
     api: {
       start: async (id) => {
         calls.push(["start", id]);
@@ -315,6 +325,9 @@ function cardFixture(options = {}) {
   const module = load("../src/features/companion/today-card.tsx", {
     react: {
       useMemo: (callback) => callback(),
+      useImperativeHandle: (ref, create) => {
+        if (ref) ref.current = create();
+      },
       useState(initial) {
         const index = cursor++;
         if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial;
@@ -327,13 +340,13 @@ function cardFixture(options = {}) {
       },
     },
     "react/jsx-runtime": { jsx, jsxs: jsx },
-    "react-native": { View: "View" },
+    "react-native": { View: "View", ActivityIndicator: "Loading" },
     "expo-router": { router: { push: (path) => calls.push(["route", path]) } },
     "@/src/components/ui": { Txt: "Txt" },
     "@/src/components/app-dialog": {
       useAppAlert: () => ({ alert: (...args) => calls.push(["alert", ...args]) }),
     },
-    "../billing/billing-context": { useBilling: () => ({ isPro: true }) },
+    "../billing/billing-context": { useBilling: () => billing },
     "../progress/use-progress": { useProgress: () => progress },
     "../progress/model": { localDate: () => TODAY, dateLabel: (date) => date },
     "../progress/analytics": { workoutDate },
@@ -349,7 +362,7 @@ function cardFixture(options = {}) {
   });
   function render() {
     cursor = 0;
-    tree = module.TodayForYouCard();
+    tree = module.TodayForYouCard({ refreshRef });
     if (typeof tree.type === "function") tree = tree.type(tree.props);
     return tree;
   }
@@ -372,15 +385,39 @@ function cardFixture(options = {}) {
     companion,
     progress,
     program,
+    billing,
     workout: workoutState,
     coaching,
     calls,
+    refresh: () => refreshRef.current.refresh(),
     render,
     button,
     settle,
     preview,
   };
 }
+test("Free members are offered Pro before a scheduled coaching session starts", async () => {
+  const fixture = cardFixture();
+  fixture.billing.isPro = false;
+  fixture.render();
+  fixture.button("Follow my plan with Pro").props.onPress();
+  await fixture.settle();
+  assert.deepEqual(
+    fixture.calls.filter((call) => ["route", "start", "ensure-synced"].includes(call[0])),
+    [["route", "/pro"]],
+  );
+  fixture.workout.session = { id: "active", name: "Active workout" };
+  fixture.render();
+  fixture.button("Resume workout").props.onPress();
+  await fixture.settle();
+  assert.deepEqual(fixture.calls.at(-1), ["route", "/workout"]);
+});
+test("Home refresh updates coaching and companion even when one source is offline", async () => {
+  const fixture = cardFixture({ refreshFail: true });
+  await fixture.refresh();
+  assert.ok(fixture.calls.some((call) => call[0] === "refresh-coaching"));
+  assert.ok(fixture.calls.some((call) => call[0] === "refresh-companion"));
+});
 test("an active workout resumes from a rest-day card and does not start another plan session", async () => {
   const fixture = cardFixture();
   fixture.coaching.data.plan = plan([day({ date: "2026-11-18" })]);

@@ -6,6 +6,7 @@ import ts from "typescript";
 import { buildProAnalytics } from "../src/features/pro/analytics.ts";
 import * as model from "../src/features/progress/model.ts";
 import { workoutDate } from "../src/features/progress/analytics.ts";
+import { nextSession } from "../src/features/coaching/model.ts";
 const jsx = (type, props) => ({ type, props });
 const find = (node, type) =>
   !node || typeof node !== "object"
@@ -13,10 +14,18 @@ const find = (node, type) =>
     : Array.isArray(node)
       ? node.flatMap((n) => find(n, type))
       : [...(node.type === type ? [node] : []), ...find(node.props?.children, type)];
+const textOf = (node) =>
+  !node
+    ? ""
+    : Array.isArray(node)
+      ? node.map(textOf).join(" ")
+      : typeof node === "object"
+        ? textOf(node.props?.children)
+        : String(node);
 function fixture() {
-  const slots = [];
+  const slots = [],
+    calls = [];
   let cursor = 0;
-  const calls = [];
   const billing = {
     isPro: true,
     loading: false,
@@ -35,113 +44,167 @@ function fixture() {
   };
   progress.journal.workoutsUpdatedAt = "2026-11-14T12:00:00Z";
   const session = { user: { id: "owner", name: "Sam" }, settings: { weightUnit: "kg" } };
-  const dependencies = {
-    react: {
-      useState(initial) {
-        const i = cursor++;
-        if (!(i in slots)) slots[i] = typeof initial === "function" ? initial() : initial;
-        return [
-          slots[i],
-          (value) => {
-            slots[i] = typeof value === "function" ? value(slots[i]) : value;
-          },
-        ];
-      },
-      useRef(initial) {
-        const i = cursor++;
-        if (!(i in slots)) slots[i] = { current: initial };
-        return slots[i];
-      },
-      useMemo: (fn) => fn(),
-      useCallback: (fn) => fn,
-      useEffect() {},
+  const program = {
+    active: null,
+    loading: false,
+    error: "",
+    refresh: async () => calls.push("program-refresh"),
+  };
+  const coaching = {
+    data: { plan: null },
+    loading: false,
+    error: null,
+    refresh: async () => calls.push("coaching-refresh"),
+  };
+  const companion = {
+    state: { records: [] },
+    loading: false,
+    error: null,
+    refresh: async () => calls.push("companion-refresh"),
+  };
+  const resources = {
+    food: null,
+    recipes: [],
+    library: [],
+    loading: false,
+    mealError: "",
+    libraryError: "",
+    refresh: async () => calls.push("resources-refresh"),
+  };
+  const nativeStatus = {
+    permission: "granted",
+    error: null,
+    scheduled: 0,
+    suppressedByQuietHours: 0,
+  };
+  const hook = (name, value) => () => {
+    calls.push(name + "-hook");
+    return value;
+  };
+  const react = {
+    useState(initial) {
+      const i = cursor++;
+      if (!(i in slots)) slots[i] = typeof initial === "function" ? initial() : initial;
+      return [
+        slots[i],
+        (value) => {
+          slots[i] = typeof value === "function" ? value(slots[i]) : value;
+        },
+      ];
     },
+    useRef(initial) {
+      const i = cursor++;
+      if (!(i in slots)) slots[i] = { current: initial };
+      return slots[i];
+    },
+    useMemo: (fn) => fn(),
+    useCallback: (fn) => fn,
+    useEffect() {},
+  };
+  const dependencies = {
+    react,
     "react-native": {
       ActivityIndicator: "Loading",
       RefreshControl: "Refresh",
       ScrollView: "ScrollView",
       View: "View",
     },
+    "expo-linear-gradient": { LinearGradient: "Gradient" },
     "expo-router": { router: { push: (path) => calls.push(path) }, useFocusEffect() {} },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
-    "react-native-svg": { __esModule: true, default: "Svg", Circle: "Circle", Path: "Path" },
-    "@/src/context/session": {
-      useSession: () => session,
-    },
+    "@/src/context/session": { useSession: () => session },
     "@/src/components/motion": { MotionPressable: "Pressable", ScreenEntrance: "Entrance" },
     "@/src/components/tab-bar-motion": { TabScrollView: "TabScroll" },
-    "@/src/components/ui": { Txt: "Txt", PageHeading: "PageHeading" },
+    "@/src/components/ui": { Txt: "Txt" },
     "../billing/billing-context": { useBilling: () => billing },
-    "../progress/use-progress": {
-      useProgress: () => {
-        calls.push("progress-hook");
-        return progress;
-      },
-    },
+    "../billing/paywall": { ProScreen: "ProMarketing" },
+    "../progress/use-progress": { useProgress: hook("progress", progress) },
     "../progress/model": {
       ...model,
       localDate: (value) => (value ? model.localDate(value) : "2026-11-14"),
     },
-    "../progress/tracking-cards": { compact: String },
     "../progress/analytics": { workoutDate },
-    "../workouts/api": { workoutApi: { templates: async () => [] } },
-    "../companion/today-card": { TodayForYouCard: "TodayForYou" },
+    "../progress/editors": { Sheet: "Sheet" },
+    "../program-follow/program-context": { useProgram: hook("program", program) },
+    "../program-follow/active-program-card": { ActiveProgramCard: "ActiveProgram" },
+    "../coaching/use-coaching": { useCoaching: hook("coaching", coaching) },
+    "../coaching/model": { nextSession },
+    "../companion/companion-context": { useCompanion: hook("companion", companion) },
+    "../companion/reminders-panel": { ReminderSettingsPanel: "ReminderSettings" },
+    "../companion/native-status": { useCompanionNativeStatus: () => nativeStatus },
     "./analytics": { buildProAnalytics },
     "./analytics-panels": { AnalyticsPanels: "Analytics" },
-    "./training-tools": { TrainerPanel: "Trainer", TrainingTools: "Tools" },
+    "./training-tools": { WarmupCalculator: "Warmup", OneRepMax: "OneRepMax" },
+    "./use-studio-resources": { useStudioResources: hook("resources", resources) },
     "./use-pro-catalog": {
-      useProCatalog: () => {
-        calls.push("catalog-hook");
-        return {
-          items: [],
-          loading: false,
-          error: "",
-          refresh: async () => calls.push("catalog-refresh"),
-        };
-      },
+      useProCatalog: hook("catalog", {
+        items: [],
+        loading: false,
+        error: "",
+        refresh: async () => calls.push("catalog-refresh"),
+      }),
     },
-    "./hub-ui": Object.fromEntries(
+    "./studio-panels": Object.fromEntries(
       [
-        "GlassCard",
-        "ProAction",
-        "ProButton",
-        "ProPill",
-        "ProSection",
-        "ProStat",
-        "ProScene",
-        "Reveal",
-      ]
-        .map((name) => [name, name])
-        .concat([["PRO", { accent: "#D4F89A", muted: "#989DA5" }]]),
+        "MealBrief",
+        "MuscleBrief",
+        "StudioArt",
+        "StudioButton",
+        "StudioProgress",
+        "StudioSection",
+        "ToolTile",
+        "WeekRhythm",
+      ].map((n) => [n, n]),
     ),
-  };
-  const code = ts.transpileModule(
-    readFileSync(new URL("../src/features/pro/screen.tsx", import.meta.url), "utf8"),
-    {
-      compilerOptions: {
-        module: ts.ModuleKind.CommonJS,
-        target: ts.ScriptTarget.ES2022,
-        jsx: ts.JsxEmit.ReactJSX,
-        esModuleInterop: true,
+    "./hub-ui": {
+      ProScene: "ProScene",
+      ProPill: "ProPill",
+      PRO: {
+        accent: "#C5F460",
+        muted: "#A3A3A3",
+        gold: "#ECD7A8",
+        cyan: "#A9DDE3",
+        violet: "#C6BAF2",
       },
     },
-  ).outputText;
-  const exports = {};
-  vm.runInNewContext(code, {
-    exports,
-    Date,
-    Intl,
-    require(name) {
-      if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
-      if (!(name in dependencies)) throw Error(`Unexpected dependency ${name}`);
-      return dependencies[name];
-    },
-  });
+  };
+  function load(name) {
+    const exports = {};
+    const code = ts.transpileModule(
+      readFileSync(new URL(`../src/features/pro/${name}.tsx`, import.meta.url), "utf8"),
+      {
+        compilerOptions: {
+          module: ts.ModuleKind.CommonJS,
+          target: ts.ScriptTarget.ES2022,
+          jsx: ts.JsxEmit.ReactJSX,
+          esModuleInterop: true,
+        },
+      },
+    ).outputText;
+    vm.runInNewContext(code, {
+      exports,
+      Date,
+      Intl,
+      require(name) {
+        if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
+        if (name === "./member-workspace") return load("member-workspace");
+        if (!(name in dependencies)) throw Error(`Unexpected dependency ${name}`);
+        return dependencies[name];
+      },
+    });
+    return exports;
+  }
+  const { ProHubScreen } = load("screen");
   return {
     billing,
     progress,
     calls,
     session,
+    program,
+    coaching,
+    companion,
+    resources,
+    nativeStatus,
     render() {
       cursor = 0;
       const expand = (node) => {
@@ -150,147 +213,151 @@ function fixture() {
         if (typeof node.type === "function") return expand(node.type(node.props));
         return { ...node, props: { ...node.props, children: expand(node.props?.children) } };
       };
-      return expand(exports.ProHubScreen());
+      return expand(ProHubScreen());
     },
   };
 }
-const tab = (tree, label) =>
-  find(tree, "Pressable").find(
-    (node) => node.props.accessibilityRole === "tab" && node.props.accessibilityLabel === label,
+const action = (tree, title) =>
+  [...find(tree, "StudioButton"), ...find(tree, "ToolTile"), ...find(tree, "Pressable")].find(
+    (node) => node.props.title === title || node.props.accessibilityLabel === title,
   );
-const textOf = (node) =>
-  !node
-    ? ""
-    : Array.isArray(node)
-      ? node.map(textOf).join(" ")
-      : typeof node === "object"
-        ? textOf(node.props?.children)
-        : String(node);
 const assertBenefitsOnly = (tree) => {
-  for (const component of ["Analytics", "Trainer", "Tools", "TodayForYou", "ProStat"])
-    assert.equal(find(tree, component).length, 0, component);
+  assert.equal(find(tree, "ProMarketing")[0]?.props.embedded, true);
+  for (const name of ["Analytics", "MuscleBrief", "MealBrief", "Warmup", "ReminderSettings"])
+    assert.equal(find(tree, name).length, 0);
+};
+
+test("Free, signed-out and unverified accounts never mount private trainer data hooks", () => {
+  for (const kind of ["free", "checking", "failed", "signed-out"]) {
+    const f = fixture();
+    if (kind === "signed-out") f.session.user = null;
+    else f.billing.isPro = false;
+    if (kind === "checking") f.billing.loading = true;
+    if (kind === "failed") f.billing.error = "Offline";
+    assertBenefitsOnly(f.render());
+    assert.equal(
+      f.calls.some((call) => typeof call === "string" && call.endsWith("-hook")),
+      false,
+    );
+  }
+});
+test("Pro is one connected daily workspace with programs, muscle insights, meals and tools", () => {
+  const f = fixture(),
+    tree = f.render();
+  assert.ok(action(tree, "Choose my program"));
+  assert.equal(find(tree, "MuscleBrief").length, 1);
+  assert.equal(find(tree, "MealBrief").length, 1);
+  assert.ok(action(tree, "Warm-up & plates"));
+  assert.ok(action(tree, "Working weight guide"));
   assert.equal(
     find(tree, "Pressable").some((node) => node.props.accessibilityRole === "tab"),
     false,
   );
-  assert.ok(find(tree, "ProButton").some((node) => node.props.title === "Become a Pro"));
-};
-
-test("non-members see only benefits and membership actions without loading private training data", () => {
-  const f = fixture();
-  f.billing.isPro = false;
-  const tree = f.render();
-  assertBenefitsOnly(tree);
-  assert.equal(f.calls.includes("progress-hook"), false);
-  assert.equal(f.calls.includes("catalog-hook"), false);
-  assert.match(textOf(tree), /Unlimited graph history/);
-  find(tree, "ProButton")
-    .find((node) => node.props.title === "Become a Pro")
-    .props.onPress();
-  assert.equal(f.calls.at(-1), "/membership");
+  action(tree, "Choose my program").props.onPress();
+  assert.equal(f.calls.at(-1), "/explore/programs");
+  action(tree, "Build a personal plan").props.onPress();
+  assert.equal(f.calls.at(-1), "/coach/setup");
+  action(tree, "Open my exercise library").props.onPress();
+  assert.equal(f.calls.at(-1), "/exercises/custom");
+  find(tree, "MealBrief")[0].props.onOpen();
+  assert.equal(f.calls.at(-1), "/wellness");
 });
-
-test("checking and failed entitlement verification never mount the paid workspace", async () => {
+test("muscle insights open real paid analytics and all-time range selection", () => {
   const f = fixture();
-  f.billing.isPro = false;
-  f.billing.loading = true;
+  find(f.render(), "MuscleBrief")[0].props.onOpen();
   let tree = f.render();
-  assertBenefitsOnly(tree);
-  assert.match(textOf(tree), /Checking your membership/);
-  f.billing.loading = false;
-  f.billing.error = "Offline";
-  tree = f.render();
-  assertBenefitsOnly(tree);
-  assert.equal(f.calls.includes("progress-hook"), false);
-  await find(tree, "ProAction")
-    .find((node) => node.props.title === "Check membership again")
-    .props.onPress();
-  assert.equal(f.calls.at(-1), "billing-refresh");
-});
-
-test("signed-out sessions never mount a workspace even if a stale billing value says Pro", () => {
-  const f = fixture();
-  f.session.user = null;
-  assertBenefitsOnly(f.render());
-  assert.equal(f.calls.includes("progress-hook"), false);
-});
-
-test("Pro members can reach analytics, trainer, tools and billing", () => {
-  const f = fixture();
-  let tree = f.render();
-  find(tree, "Pressable")
-    .find((node) => node.props.accessibilityLabel === "Muscle insights")
-    .props.onPress();
-  tree = f.render();
   assert.equal(find(tree, "Analytics")[0].props.view, "muscles");
   find(tree, "ProPill")
     .find((node) => node.props.label === "All time")
     .props.onPress();
   assert.equal(find(f.render(), "Analytics")[0].props.data.previous, null);
-  tab(tree, "Trainer").props.onPress();
-  assert.equal(find(f.render(), "Trainer").length, 1);
-  tab(tree, "Tools").props.onPress();
-  assert.equal(find(f.render(), "Tools").length, 1);
-  find(tree, "Pressable")
-    .find((node) => node.props.accessibilityLabel === "Manage Pro membership")
-    .props.onPress();
-  assert.equal(f.calls.at(-1), "/membership");
 });
-
-test("membership expiration unmounts all paid content and stops paid data hooks", () => {
-  const f = fixture();
-  tab(f.render(), "Analytics").props.onPress();
-  assert.equal(find(f.render(), "Analytics").length, 1);
-  const privateReads = f.calls.filter((call) => call.endsWith("-hook")).length;
-  f.billing.isPro = false;
-  assertBenefitsOnly(f.render());
-  assert.equal(f.calls.filter((call) => call.endsWith("-hook")).length, privateReads);
-});
-
-test("verified members keep their workspace during a background membership refresh", () => {
-  const f = fixture();
-  f.billing.loading = true;
-  tab(f.render(), "Analytics").props.onPress();
-  assert.equal(find(f.render(), "Analytics").length, 1);
-});
-
-test("For you opens the daily briefing and routes shortcuts to the matching screen", () => {
+test("warmup, strength tools and reminder settings are immediately reachable", () => {
   const f = fixture();
   let tree = f.render();
-  find(tree, "ProAction")
-    .find((node) => node.props.title === "Your daily Pro companion")
-    .props.onPress();
+  action(tree, "Warm-up & plates").props.onPress();
   tree = f.render();
-  assert.equal(tab(tree, "For you").props.accessibilityState.selected, true);
-  assert.equal(find(tree, "TodayForYou").length, 1);
-  const actions = find(tree, "ProAction");
-  assert.equal(new Set(actions.map((node) => node.props.title)).size, actions.length);
-  for (const [title, destination] of [
-    ["Today’s readiness check-in", "readiness"],
-    ["A muscle focus that fits your plan", "focus"],
-    ["Your monthly training report", "reports"],
-    ["Your desktop planning workspace", "desktop"],
-  ]) {
-    actions.find((node) => node.props.title === title).props.onPress();
-    assert.equal(f.calls.at(-1), `/companion?tab=${destination}`);
+  assert.equal(find(tree, "Warmup").length, 1);
+  find(tree, "Warmup")[0].props.onClose();
+  action(tree, "Open estimated one-rep max calculator").props.onPress();
+  assert.equal(find(f.render(), "OneRepMax").length, 1);
+  action(tree, "Customize my reminders").props.onPress();
+  assert.equal(find(f.render(), "ReminderSettings").length, 1);
+});
+test("membership expiration unmounts paid resources while verified background refresh preserves the workspace", () => {
+  const f = fixture();
+  f.billing.loading = true;
+  assert.equal(find(f.render(), "MuscleBrief").length, 1);
+  const count = f.calls.filter((call) => typeof call === "string" && call.endsWith("-hook")).length;
+  f.billing.isPro = false;
+  assertBenefitsOnly(f.render());
+  assert.equal(
+    f.calls.filter((call) => typeof call === "string" && call.endsWith("-hook")).length,
+    count,
+  );
+});
+test("analytics never show an empty history while the journal is loading or unavailable", () => {
+  for (const unavailable of [false, true]) {
+    const f = fixture();
+    f.progress.loading = !unavailable;
+    f.progress.journal.workoutsUpdatedAt = null;
+    if (unavailable) f.progress.workoutError = "Offline";
+    let tree = f.render();
+    action(tree, "Your strength story").props.onPress();
+    tree = f.render();
+    assert.equal(find(tree, "Analytics").length, 0);
+    assert.equal(find(tree, "MuscleBrief").length, 0);
+    if (!unavailable) assert.ok(find(tree, "Loading").length);
+    action(tree, "Warm-up & plates").props.onPress();
+    assert.equal(find(f.render(), "Warmup").length, 1);
   }
 });
-
-test("independent training tools remain reachable while history is opening", () => {
+test("reminder preferences do not claim delivery when phone permission is denied", () => {
   const f = fixture();
-  f.progress.loading = true;
-  const tree = f.render();
-  assert.equal(find(tree, "Loading").length, 1);
-  tab(tree, "Tools").props.onPress();
-  assert.equal(find(f.render(), "Tools").length, 1);
+  f.companion.state.records = [
+    {
+      id: "reminders",
+      kind: "reminders",
+      data: {
+        enabled: true,
+        time: "18:00",
+        days: [1, 3, 5],
+        habits: { meals: { enabled: true, time: "12:00" } },
+      },
+    },
+  ];
+  f.nativeStatus.permission = "denied";
+  assert.match(textOf(f.render()), /2 reminder preferences enabled/);
+  assert.match(textOf(f.render()), /Notifications are off on this phone/);
 });
-
-test("pull to refresh updates the same progress, muscle metadata and entitlement sources", async () => {
+test("completed program sessions are not left planned on their original date", () => {
+  const f = fixture();
+  f.program.active = {
+    enrollment: { id: "enrollment", reminder_enabled: false },
+    slots: [{ date: "2026-11-14", status: "completed" }],
+  };
+  const tree = f.render();
+  assert.equal(find(tree, "ActiveProgram").length, 1);
+  assert.equal(
+    find(tree, "WeekRhythm")[0].props.days.find((day) => day.date === "2026-11-14").planned,
+    false,
+  );
+  assert.equal(action(tree, "Choose my program"), undefined);
+});
+test("pull to refresh updates all connected account resources", async () => {
   const f = fixture();
   find(f.render(), "TabScroll")[0].props.refreshControl.props.onRefresh();
   await Promise.resolve();
-  for (const source of ["progress-refresh", "catalog-refresh", "billing-refresh"])
-    assert.ok(f.calls.includes(source));
+  for (const source of [
+    "progress",
+    "program",
+    "coaching",
+    "catalog",
+    "resources",
+    "companion",
+    "billing",
+  ])
+    assert.ok(f.calls.includes(source + "-refresh"));
 });
 
 function loadUi(file, dependencies) {

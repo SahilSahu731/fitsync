@@ -2,11 +2,18 @@ import test, { type TestContext } from "node:test";
 import assert from "node:assert/strict";
 Object.assign(process.env, { SUPABASE_URL: "https://test.supabase.co", SUPABASE_SERVICE_ROLE_KEY: "test-service-role-key-not-real", GOOGLE_WEB_CLIENT_ID: "test.apps.googleusercontent.com", JWT_SECRET: "test-secret-".repeat(6), CLOUDINARY_CLOUD_NAME: "test", CLOUDINARY_API_KEY: "test", CLOUDINARY_API_SECRET: "test" });
 const { db } = await import("../src/config/supabase.js");
+const { billingService } = await import("../src/modules/billing/billing.service.js");
+const { freeEntitlement } = await import("../src/modules/billing/billing.policy.js");
 const { runProgramReminders } = await import("../src/modules/program-follow/program.reminder-worker.js");
 const { programDetail, resolveProgramSlot } = await import("../src/modules/program-follow/program.service.js");
 const { followSchema, reminderSchema } = await import("../src/modules/program-follow/program.routes.js");
 
-function setup(t: TestContext, options: { status?: string; consent?: boolean; auth?: boolean; enabled?: boolean; receipt?: string; ticketError?: string; networkError?: boolean; completed?: boolean } = {}) {
+function setup(t: TestContext, options: { status?: string; consent?: boolean; auth?: boolean; enabled?: boolean; receipt?: string; ticketError?: string; networkError?: boolean; completed?: boolean; pro?: boolean; billingError?: boolean } = {}) {
+  t.mock.method(billingService, "getEntitlement", async (userId: string) => {
+    assert.equal(userId, "owner");
+    if (options.billingError) throw new Error("Billing unavailable");
+    return options.pro === false ? freeEntitlement() : { ...freeEntitlement(), active: true, tier: "pro" as const, source: "revenuecat" as const };
+  });
   const now = new Date(); const today = now.toISOString().slice(0,10);
   const enrollment = { id: "enrollment", user_id: "owner", status: options.status ?? "active", timezone: "UTC", reminder_enabled: true, reminder_hour: now.getUTCHours(), reminder_minute: now.getUTCMinutes(), start_date: today, duration_weeks: 1, weekly_plan: [{ day_number: 1, rest: false }] };
   const updates: { table: string; values: any; filters: Record<string, unknown> }[] = [];
@@ -51,13 +58,26 @@ test("worker records Expo acceptance and uses bundled sound plus the program dee
   assert.ok(!state.updates.some(update => update.values.status === "sent"));
 });
 test("worker rechecks consent, sign-out, program status, device, and completed workouts before sending", async t => {
-  for (const options of [{ consent: false }, { auth: false }, { status: "switched" }, { enabled: false }, { completed: true }]) {
+  for (const options of [{ consent: false }, { auth: false }, { status: "switched" }, { enabled: false }, { completed: true }, { pro: false }]) {
     await t.test(JSON.stringify(options), async child => {
       const state = setup(child, options); await runProgramReminders();
       assert.equal(state.pushes.length, 0);
       assert.ok(state.updates.some(update => update.filters.id === "job" && update.values.status === "cancelled"));
     });
   }
+});
+test("billing failures never send a paid program reminder", async t => {
+  const state = setup(t, { billingError: true }); await runProgramReminders();
+  assert.equal(state.pushes.length, 0);
+  assert.ok(state.updates.some(update => update.filters.id === "job" && update.values.status === "failed"));
+});
+test("a copied routine stays free after expiry or verification failure without consuming its program slot", async t => {
+  for (const options of [{ pro: false }, { billingError: true }]) await t.test(JSON.stringify(options), async child => {
+    const state = setup(child, options);
+    assert.equal(await resolveProgramSlot("owner", "template"), null);
+    assert.equal(state.updates.length, 0);
+    assert.equal(state.pushes.length, 0);
+  });
 });
 test("expired push tokens are disabled and ambiguous failures are not retried", async t => {
   await t.test("expired token", async child => {

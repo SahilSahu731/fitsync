@@ -67,18 +67,31 @@ const goal = z
       ctx.addIssue({ code: "custom", path: ["target"], message: "Use a whole workout count." });
   });
 const clock = z.string().regex(/^(?:[01]\d|2[0-3]):[0-5]\d$/);
+const habitReminder = z.object({ enabled: z.boolean(), time: clock }).strict();
 const reminders = z
   .object({
     enabled: z.boolean(),
     time: clock,
-    days: z.array(z.number().int().min(1).max(7)).min(1).max(7),
+    days: z.array(z.number().int().min(1).max(7)).max(7),
     quietStart: clock,
     quietEnd: clock,
     snoozeMinutes: z.number().int().min(5).max(180),
     timezone: timezoneSchema,
+    habits: z
+      .object({
+        meals: habitReminder.optional(),
+        hydration: habitReminder.optional(),
+        sleep: habitReminder.optional(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
-  .refine((value) => new Set(value.days).size === value.days.length, "Choose each day once.");
+  .refine((value) => new Set(value.days).size === value.days.length, "Choose each day once.")
+  .refine(
+    (value) => !value.enabled || value.days.length > 0,
+    "Choose at least one training weekday.",
+  );
 const experiment = z
   .object({
     title: shortText,

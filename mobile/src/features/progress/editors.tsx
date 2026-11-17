@@ -1,7 +1,8 @@
 import { MotionPressable as Pressable } from "@/src/components/motion";
-import React, { useState } from "react";
+import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Keyboard,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -9,10 +10,16 @@ import {
   TextInput,
   View,
 } from "react-native";
+import DateTimePicker, { DateTimePickerAndroid } from "@react-native-community/datetimepicker";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import {
+  addDays,
+  dateLabel,
+  isTotalMetric,
+  latestMetrics,
   localDate,
   METRICS,
   METRIC_GROUPS,
@@ -22,22 +29,27 @@ import {
   weightValue,
   type Metric,
   type MetricEvent,
+  type MetricGroup,
 } from "./model";
 
-const inputClass = "min-h-14 rounded-2xl bg-white/5 px-4 py-4 font-poppins-medium text-lg text-ink";
 export function Sheet({
   title,
   subtitle,
   onClose,
   children,
   busy = false,
+  eyebrow,
+  footer,
 }: {
   title: string;
   subtitle?: string;
   onClose: () => void;
   children: React.ReactNode;
   busy?: boolean;
+  eyebrow?: string;
+  footer?: React.ReactNode;
 }) {
+  const insets = useSafeAreaInsets();
   return (
     <Modal
       visible
@@ -47,16 +59,30 @@ export function Sheet({
         if (!busy) onClose();
       }}
       statusBarTranslucent
+      navigationBarTranslucent
     >
       <KeyboardAvoidingView
         behavior={Platform.OS === "ios" ? "padding" : "height"}
         className="flex-1 justify-end bg-black/70"
       >
-        <View className="max-h-[90%] w-full max-w-2xl self-center rounded-t-[32px] bg-panel pt-3">
+        <View
+          accessibilityViewIsModal
+          className="max-h-[92%] w-full max-w-2xl self-center rounded-t-[32px] bg-panel pt-3"
+          style={{ flexShrink: 1 }}
+        >
           <View className="h-1 w-10 self-center rounded-full bg-white/20" />
           <View className="flex-row items-center justify-between px-6 pb-4 pt-5">
             <View className="flex-1 pr-3">
-              <Txt weight="medium" className="text-2xl tracking-[-0.7px]">
+              {!!eyebrow && (
+                <Txt weight="semibold" className="mb-1 text-[10px] tracking-[2px] text-muted">
+                  {eyebrow}
+                </Txt>
+              )}
+              <Txt
+                accessibilityRole="header"
+                weight="medium"
+                className="text-2xl tracking-[-0.7px]"
+              >
                 {title}
               </Txt>
               {subtitle && <Txt className="mt-1 text-xs leading-5 text-muted">{subtitle}</Txt>}
@@ -71,44 +97,69 @@ export function Sheet({
               <MaterialCommunityIcons name="close" size={22} color={C.ink} />
             </Pressable>
           </View>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerClassName="px-6 pb-12">
+          <ScrollView
+            keyboardShouldPersistTaps="handled"
+            keyboardDismissMode="on-drag"
+            showsVerticalScrollIndicator={false}
+            style={{ flexShrink: 1 }}
+            contentContainerStyle={{
+              paddingHorizontal: 24,
+              paddingBottom: footer == null ? Math.max(48, insets.bottom + 16) : 20,
+            }}
+          >
             {children}
           </ScrollView>
+          {footer != null && (
+            <View
+              className="border-t border-white/5 px-6 pt-4"
+              style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+            >
+              {footer}
+            </View>
+          )}
         </View>
       </KeyboardAvoidingView>
     </Modal>
   );
 }
-function Field({
-  label,
-  value,
-  onChange,
-  decimal = true,
-  disabled = false,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  decimal?: boolean;
-  disabled?: boolean;
-}) {
+
+const GROUP_ACCENTS: Record<MetricGroup, string> = {
+  activity: C.brand,
+  nutrition: "#EBC887",
+  body: "#8FC8F5",
+  recovery: "#BEAAED",
+};
+function metricGroup(metric: Metric): MetricGroup {
   return (
-    <View className="mb-4">
-      <Txt weight="medium" className="mb-2 text-xs text-muted">
-        {label}
-      </Txt>
-      <TextInput
-        editable={!disabled}
-        accessibilityLabel={label}
-        className={inputClass}
-        keyboardType={decimal ? "decimal-pad" : "default"}
-        value={value}
-        onChangeText={onChange}
-        placeholderTextColor="#676772"
-        placeholder={decimal ? "Not set" : "YYYY-MM-DD"}
-      />
-    </View>
+    (Object.keys(METRIC_GROUPS) as MetricGroup[]).find((key) =>
+      (METRIC_GROUPS[key].metrics as readonly Metric[]).includes(metric),
+    ) ?? "activity"
   );
+}
+function validDate(date: string) {
+  return (
+    /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+    Number.isFinite(Date.parse(`${date}T12:00:00Z`)) &&
+    new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) === date &&
+    date <= localDate()
+  );
+}
+// Native pickers use the device's calendar day, rather than a UTC timestamp.
+function calendarDate(date: string) {
+  return validDate(date) ? new Date(`${date}T12:00:00`) : new Date();
+}
+function metricHint(metric: Metric) {
+  if (metric === "water") return "Your total for the day. Quick adds build on the amount above.";
+  if (metric === "sleep") return "Log the hours you slept, including partial hours like 7.5.";
+  if (metric === "hrv")
+    return "Use the same wearable and measurement method for a consistent trend.";
+  if (metric === "caloriesActive")
+    return "Active energy from your wearable or activity log, excluding resting energy.";
+  if (metric === "caloriesIn")
+    return "Total food energy for the day, rather than an individual meal.";
+  return isTotalMetric(metric)
+    ? "Enter your total for this day."
+    : "A single measurement for this day.";
 }
 export function MetricEditor({
   initialMetric,
@@ -125,52 +176,106 @@ export function MetricEditor({
   onClose: () => void;
   onSave: (metric: Metric, date: string, value: number | null, notes: string) => Promise<void>;
 }) {
-  const [search, setSearch] = useState("");
-  const [group, setGroup] = useState<string>(
-    () =>
-      Object.entries(METRIC_GROUPS).find(([, group]) =>
-        (group.metrics as readonly Metric[]).includes(initialMetric),
-      )?.[0] ?? "activity",
-  );
+  const entries = useMemo(() => latestMetrics(events), [events]);
   const [metric, setMetric] = useState(initialMetric);
   const [date, setDate] = useState(initialDate);
-  const existing = events.find((entry) => entry.metric === metric && entry.date === date);
+  const existing = entries.find((entry) => entry.metric === metric && entry.date === date);
   const existingDisplay = (entry: MetricEvent | undefined, m: Metric) =>
     entry?.value == null
       ? ""
       : String(
           m === "weight" ? Math.round(weightValue(entry.value, unit) * 100) / 100 : entry.value,
         );
-  const [value, setValue] = useState(existingDisplay(existing, metric));
+  const [value, setValue] = useState(() => existingDisplay(existing, metric));
   const [notes, setNotes] = useState(existing?.notes ?? "");
+  const [notesOpen, setNotesOpen] = useState(Boolean(existing?.notes));
+  const [choosingMetric, setChoosingMetric] = useState(false);
+  const [search, setSearch] = useState("");
+  const [group, setGroup] = useState<MetricGroup>(() => metricGroup(initialMetric));
+  const [showDatePicker, setShowDatePicker] = useState(false);
+  const [customDate, setCustomDate] = useState(initialDate);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
+  const saving = useRef(false);
+  const drafts = useRef(new Map<string, { value: string; notes: string }>());
+  const draftKey = `${date}:${metric}`;
   const spec = METRICS[metric];
   const rating = RATING_LABELS[metric];
+  const selectedGroup = metricGroup(metric);
+  const accent = GROUP_ACCENTS[selectedGroup];
+  const displayUnit = metric === "weight" ? unit : spec.unit;
+  const today = localDate();
+  const yesterday = addDays(today, -1);
+  const dateTitle = validDate(date)
+    ? dateLabel(date, { month: "short", day: "numeric", year: "numeric" })
+    : "Choose a date";
   const choices = (Object.keys(METRICS) as Metric[]).filter((key) =>
     search.trim()
       ? METRICS[key].label.toLowerCase().includes(search.trim().toLowerCase())
-      : group === "all" ||
-        (METRIC_GROUPS[group as keyof typeof METRIC_GROUPS].metrics as readonly Metric[]).includes(
-          key,
-        ),
+      : (METRIC_GROUPS[group].metrics as readonly Metric[]).includes(key),
   );
-  const select = (nextMetric: Metric, nextDate: string) => {
-    const entry = events.find((e) => e.metric === nextMetric && e.date === nextDate);
+
+  function updateValue(next: string) {
+    if (saving.current) return;
+    drafts.current.set(draftKey, {
+      value: next,
+      notes: drafts.current.get(draftKey)?.notes ?? notes,
+    });
+    setValue(next);
+    setError("");
+  }
+  function updateNotes(next: string) {
+    if (saving.current) return;
+    drafts.current.set(draftKey, {
+      value: drafts.current.get(draftKey)?.value ?? value,
+      notes: next,
+    });
+    setNotes(next);
+  }
+  function select(nextMetric: Metric, nextDate: string) {
+    if (saving.current) return;
+    if (!drafts.current.has(draftKey)) drafts.current.set(draftKey, { value, notes });
+    const entry = entries.find((item) => item.metric === nextMetric && item.date === nextDate);
+    const draft = drafts.current.get(`${nextDate}:${nextMetric}`) ?? {
+      value: existingDisplay(entry, nextMetric),
+      notes: entry?.notes ?? "",
+    };
     setMetric(nextMetric);
     setDate(nextDate);
-    setValue(existingDisplay(entry, nextMetric));
-    setNotes(entry?.notes ?? "");
+    setValue(draft.value);
+    setNotes(draft.notes);
+    setNotesOpen(Boolean(draft.notes));
     setError("");
-  };
+  }
+  function close() {
+    if (saving.current) return;
+    Keyboard.dismiss();
+    onClose();
+  }
+  function chooseDate() {
+    if (saving.current) return;
+    Keyboard.dismiss();
+    const commit = (selected: Date) => {
+      const next = localDate(selected);
+      if (validDate(next)) select(metric, next);
+      else setError("Choose a valid date up to today.");
+    };
+    if (Platform.OS === "android") {
+      DateTimePickerAndroid.open({
+        mode: "date",
+        value: calendarDate(date),
+        maximumDate: new Date(),
+        onValueChange: (_, selected) => commit(selected),
+      });
+    } else {
+      setCustomDate(date);
+      setShowDatePicker((current) => !current);
+    }
+  }
   async function save(clear = false) {
-    if (
-      !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-      !Number.isFinite(Date.parse(`${date}T12:00:00Z`)) ||
-      new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) !== date ||
-      date > localDate()
-    ) {
-      setError("Choose a valid date up to today (YYYY-MM-DD).");
+    if (saving.current) return;
+    if (!validDate(date)) {
+      setError("Choose a valid date up to today.");
       return;
     }
     const amount = clear
@@ -184,208 +289,491 @@ export function MetricEditor({
       );
       return;
     }
+    // State updates alone cannot prevent two taps before React's next render.
+    saving.current = true;
     setBusy(true);
     setError("");
+    Keyboard.dismiss();
     try {
       await onSave(metric, date, amount, notes.trim());
       onClose();
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "Unable to save.");
+    } catch (failure) {
+      setError(failure instanceof Error ? failure.message : "Unable to save. Please try again.");
     } finally {
+      saving.current = false;
       setBusy(false);
     }
   }
+
   return (
     <Sheet
-      title="Log a check-in"
-      subtitle="Choose a metric and enter a daily total or measurement."
-      onClose={onClose}
+      eyebrow="YOUR PROGRESS"
+      title={choosingMetric ? "Choose a metric" : "Daily check-in"}
+      subtitle={
+        choosingMetric
+          ? "Make space for every part of your progress."
+          : "Small check-ins. A clearer picture of you."
+      }
+      onClose={close}
       busy={busy}
-    >
-      <TextInput
-        accessibilityLabel="Search tracking metrics"
-        editable={!busy}
-        value={search}
-        onChangeText={setSearch}
-        placeholder="Find a metric…"
-        placeholderTextColor={C.muted}
-        className={`${inputClass} mb-4 text-sm`}
-      />
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
-        <View className="flex-row gap-2">
-          {Object.entries(METRIC_GROUPS).map(([key, item]) => (
-            <Pressable
-              key={key}
-              accessibilityRole="button"
-              accessibilityState={{ selected: group === key }}
-              disabled={busy}
-              onPress={() => {
-                setGroup(key);
-                setSearch("");
-              }}
-              style={{
-                paddingHorizontal: 13,
-                minHeight: 44,
-                justifyContent: "center",
-                borderRadius: 16,
-                backgroundColor: group === key ? `${C.ink}18` : "#FFFFFF08",
-              }}
-            >
-              <Txt weight="semibold" className="text-xs text-ink">
-                {item.label}
-              </Txt>
-            </Pressable>
-          ))}
-        </View>
-      </ScrollView>
-      <View className="mb-5 flex-row flex-wrap gap-2">
-        {choices.map((key) => (
+      footer={
+        choosingMetric ? (
           <Pressable
-            key={key}
             accessibilityRole="button"
-            accessibilityState={{ selected: metric === key }}
-            disabled={busy}
-            onPress={() => select(key, date)}
-            style={{
-              paddingHorizontal: 12,
-              minHeight: 44,
-              justifyContent: "center",
-              borderRadius: 20,
-              backgroundColor: metric === key ? C.ink : "#FFFFFF08",
-            }}
+            accessibilityLabel="Back to check-in"
+            onPress={() => setChoosingMetric(false)}
+            className="min-h-14 flex-row items-center justify-center gap-2 rounded-2xl bg-elevated"
           >
-            <Txt
-              weight="semibold"
-              className="text-xs"
-              style={{ color: metric === key ? "#121218" : C.muted }}
-            >
-              {METRICS[key].label}
+            <MaterialCommunityIcons name="arrow-left" size={18} color={C.ink} />
+            <Txt weight="medium" className="text-sm">
+              Back to check-in
             </Txt>
           </Pressable>
-        ))}
-      </View>
-      {!choices.length && (
-        <Txt className="mb-4 text-sm text-muted">No metrics match your search.</Txt>
-      )}
-      <Field
-        disabled={busy}
-        label="Date (YYYY-MM-DD)"
-        decimal={false}
-        value={date}
-        onChange={(next) => select(metric, next)}
-      />
-      {rating ? (
-        <View className="mb-5">
-          <Txt className="mb-3 text-sm">{spec.label}</Txt>
-          <View className="flex-row gap-2">
-            {rating.map((label, index) => (
+        ) : (
+          <>
+            {!!error && (
+              <Txt
+                accessibilityRole="alert"
+                accessibilityLiveRegion="polite"
+                className="mb-3 text-xs leading-5"
+                style={{ color: "#FF9A94" }}
+              >
+                {error}
+              </Txt>
+            )}
+            <View className="flex-row items-center gap-3">
               <Pressable
-                key={label}
-                disabled={busy}
                 accessibilityRole="button"
-                accessibilityLabel={`${index + 1}: ${label}`}
-                accessibilityState={{ selected: Number(value) === index + 1 }}
-                onPress={() => setValue(String(index + 1))}
+                accessibilityLabel="Save check-in"
+                accessibilityState={{ disabled: busy, busy }}
+                disabled={busy}
+                onPress={() => void save()}
+                className="min-h-14 flex-1 flex-row items-center justify-center gap-2 rounded-2xl px-4"
+                style={{ backgroundColor: C.brand }}
+              >
+                {busy ? (
+                  <ActivityIndicator color={C.bg} />
+                ) : (
+                  <MaterialCommunityIcons name="check" size={20} color={C.bg} />
+                )}
+                <Txt weight="semibold" className="text-sm text-bg">
+                  {busy ? "Saving…" : "Save check-in"}
+                </Txt>
+              </Pressable>
+              {existing?.value != null && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Clear this day’s value"
+                  accessibilityHint="Removes the saved value for this metric and date."
+                  disabled={busy}
+                  onPress={() => void save(true)}
+                  className="h-14 w-14 items-center justify-center rounded-2xl bg-elevated"
+                >
+                  <MaterialCommunityIcons name="delete-outline" size={22} color={C.muted} />
+                </Pressable>
+              )}
+            </View>
+            <Txt className="mt-2 text-center text-[10px] leading-5 text-muted">
+              {existing?.value != null ? "Updates" : "Saves"} {spec.label.toLowerCase()} ·{" "}
+              {dateTitle}
+            </Txt>
+          </>
+        )
+      }
+    >
+      {choosingMetric ? (
+        <>
+          <View className="mb-4 flex-row items-center gap-3 rounded-2xl bg-elevated px-4">
+            <MaterialCommunityIcons name="magnify" size={21} color={C.muted} />
+            <TextInput
+              accessibilityLabel="Search tracking metrics"
+              value={search}
+              onChangeText={setSearch}
+              placeholder="Find a metric…"
+              placeholderTextColor={C.muted}
+              autoCorrect={false}
+              className="min-h-14 flex-1 font-poppins text-sm text-ink"
+            />
+          </View>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
+            <View className="flex-row gap-2">
+              {(Object.keys(METRIC_GROUPS) as MetricGroup[]).map((key) => (
+                <Pressable
+                  key={key}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Choose ${METRIC_GROUPS[key].label} metrics`}
+                  accessibilityState={{ selected: group === key && !search.trim() }}
+                  onPress={() => {
+                    setGroup(key);
+                    setSearch("");
+                  }}
+                  className="min-h-11 items-center justify-center rounded-full px-4"
+                  style={{
+                    backgroundColor:
+                      group === key && !search.trim() ? `${GROUP_ACCENTS[key]}20` : C.elevated,
+                  }}
+                >
+                  <Txt
+                    weight="medium"
+                    className="text-xs"
+                    style={{
+                      color: group === key && !search.trim() ? GROUP_ACCENTS[key] : C.muted,
+                    }}
+                  >
+                    {METRIC_GROUPS[key].label}
+                  </Txt>
+                </Pressable>
+              ))}
+            </View>
+          </ScrollView>
+          <View className="overflow-hidden rounded-2xl bg-white/[0.025]">
+            {choices.map((key, index) => {
+              const itemGroup = metricGroup(key);
+              const itemAccent = GROUP_ACCENTS[itemGroup];
+              return (
+                <Pressable
+                  key={key}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Select ${METRICS[key].label}`}
+                  accessibilityState={{ selected: metric === key }}
+                  onPress={() => {
+                    select(key, date);
+                    setChoosingMetric(false);
+                    setShowDatePicker(false);
+                    setGroup(itemGroup);
+                    setSearch("");
+                    Keyboard.dismiss();
+                  }}
+                  className="min-h-16 flex-row items-center gap-3 px-4 py-3"
+                  style={{ borderTopWidth: index ? 1 : 0, borderTopColor: "#FFFFFF08" }}
+                >
+                  <View
+                    className="h-9 w-9 items-center justify-center rounded-xl"
+                    style={{ backgroundColor: `${itemAccent}12` }}
+                  >
+                    <MaterialCommunityIcons
+                      name={METRIC_GROUPS[itemGroup].icon}
+                      size={19}
+                      color={itemAccent}
+                    />
+                  </View>
+                  <Txt className="flex-1 text-sm">{METRICS[key].label}</Txt>
+                  {metric === key ? (
+                    <MaterialCommunityIcons name="check-circle" size={21} color={itemAccent} />
+                  ) : (
+                    <Txt className="text-[11px] text-muted">
+                      {key === "weight" ? unit : METRICS[key].unit}
+                    </Txt>
+                  )}
+                </Pressable>
+              );
+            })}
+          </View>
+          {!choices.length && (
+            <Txt className="py-8 text-center text-sm text-muted">No metrics match your search.</Txt>
+          )}
+        </>
+      ) : (
+        <>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Change tracking metric"
+            accessibilityHint={`Currently tracking ${spec.label}. Opens all tracking metrics.`}
+            disabled={busy}
+            onPress={() => {
+              Keyboard.dismiss();
+              setGroup(selectedGroup);
+              setSearch("");
+              setChoosingMetric(true);
+              setShowDatePicker(false);
+            }}
+            className="mb-5 flex-row items-center gap-3 rounded-2xl border border-white/5 bg-elevated p-3"
+          >
+            <View
+              className="h-12 w-12 items-center justify-center rounded-2xl"
+              style={{ backgroundColor: `${accent}16` }}
+            >
+              <MaterialCommunityIcons
+                name={METRIC_GROUPS[selectedGroup].icon}
+                size={25}
+                color={accent}
+              />
+            </View>
+            <View className="flex-1">
+              <Txt className="mb-0.5 text-[10px] text-muted">
+                {METRIC_GROUPS[selectedGroup].label.toUpperCase()}
+              </Txt>
+              <Txt weight="medium" className="text-base">
+                {spec.label}
+              </Txt>
+            </View>
+            <View className="items-end gap-1 pr-1">
+              <MaterialCommunityIcons name="unfold-more-horizontal" size={20} color={C.muted} />
+              <Txt className="text-[9px] text-muted">Change</Txt>
+            </View>
+          </Pressable>
+
+          <View className="mb-5 flex-row gap-2">
+            {[
+              [today, "Today", "Log for today"],
+              [yesterday, "Yesterday", "Log for yesterday"],
+            ].map(([day, label, accessibilityLabel]) => (
+              <Pressable
+                key={day}
+                accessibilityRole="button"
+                accessibilityLabel={accessibilityLabel}
+                accessibilityState={{ selected: date === day }}
+                disabled={busy}
+                onPress={() => {
+                  select(metric, day);
+                  setShowDatePicker(false);
+                }}
+                className="min-h-11 flex-1 items-center justify-center rounded-xl border"
                 style={{
-                  flex: 1,
-                  minHeight: 52,
-                  borderRadius: 15,
-                  alignItems: "center",
-                  justifyContent: "center",
-                  backgroundColor: Number(value) === index + 1 ? C.ink : "#FFFFFF0A",
+                  borderColor: date === day ? `${accent}50` : "#FFFFFF0A",
+                  backgroundColor: date === day ? `${accent}12` : "transparent",
                 }}
               >
                 <Txt
-                  weight="semibold"
-                  style={{ color: Number(value) === index + 1 ? C.bg : C.ink, fontSize: 20 }}
+                  weight="medium"
+                  className="text-xs"
+                  style={{ color: date === day ? accent : C.muted }}
                 >
-                  {index + 1}
+                  {label}
                 </Txt>
               </Pressable>
             ))}
-          </View>
-          <Txt className="mt-3 text-xs text-muted">
-            {value ? rating[Number(value) - 1] : `1 · ${rating[0]}  →  5 · ${rating[4]}`}
-          </Txt>
-        </View>
-      ) : (
-        <Field
-          disabled={busy}
-          label={`${spec.label} (${metric === "weight" ? unit : spec.unit})`}
-          value={value}
-          onChange={setValue}
-        />
-      )}
-      {metric === "water" && (
-        <View className="mb-4 flex-row gap-2">
-          {[250, 500, 750].map((amount) => (
             <Pressable
-              key={amount}
-              disabled={busy}
               accessibilityRole="button"
-              onPress={() => setValue(String((Number(value) || 0) + amount))}
-              className="min-h-11 flex-1 items-center justify-center rounded-xl bg-white/5"
+              accessibilityLabel="Choose check-in date"
+              accessibilityHint={`Selected date: ${dateTitle}`}
+              accessibilityState={{
+                selected: date !== today && date !== yesterday,
+                expanded: showDatePicker,
+              }}
+              disabled={busy}
+              onPress={chooseDate}
+              className="min-h-11 flex-row items-center justify-center gap-1.5 rounded-xl border px-3"
+              style={{
+                borderColor: date !== today && date !== yesterday ? `${accent}50` : "#FFFFFF0A",
+                backgroundColor:
+                  date !== today && date !== yesterday ? `${accent}12` : "transparent",
+              }}
             >
-              <Txt className="text-xs text-ink">+ {amount} ml</Txt>
+              <MaterialCommunityIcons
+                name="calendar-blank-outline"
+                size={17}
+                color={date !== today && date !== yesterday ? accent : C.muted}
+              />
+              <Txt
+                className="text-xs"
+                style={{ color: date !== today && date !== yesterday ? accent : C.muted }}
+              >
+                {date !== today && date !== yesterday && validDate(date) ? dateLabel(date) : "Date"}
+              </Txt>
             </Pressable>
-          ))}
-        </View>
-      )}
-      {metric === "hrv" && (
-        <Txt className="mb-4 text-xs leading-5 text-muted">
-          Use readings from the same wearable and measurement method for a consistent trend.
-        </Txt>
-      )}
-      {metric === "caloriesActive" && (
-        <Txt className="mb-4 text-xs leading-5 text-muted">
-          Enter active energy from your wearable or activity log. This excludes resting energy.
-          FitSync does not invent calorie burn from workout duration.
-        </Txt>
-      )}
-      {metric === "caloriesIn" && (
-        <Txt className="mb-4 text-xs leading-5 text-muted">
-          Enter the day’s total food energy from your food log. This is a daily total, not an
-          individual meal.
-        </Txt>
-      )}
-      <Txt className="mb-2 text-xs text-muted">Notes (optional)</Txt>
-      <TextInput
-        editable={!busy}
-        accessibilityLabel="Check-in notes"
-        multiline
-        maxLength={500}
-        value={notes}
-        onChangeText={setNotes}
-        className={`${inputClass} min-h-[90px] align-top`}
-      />
-      {error && (
-        <Txt accessibilityRole="alert" className="mt-4 text-sm" style={{ color: "#FF9A94" }}>
-          {error}
-        </Txt>
-      )}
-      <Pressable
-        accessibilityRole="button"
-        disabled={busy}
-        onPress={() => void save()}
-        className="mt-6 min-h-14 items-center justify-center rounded-full bg-ink p-4"
-      >
-        {busy ? (
-          <ActivityIndicator color="#111" />
-        ) : (
-          <Txt weight="semibold" style={{ color: "#15151B" }}>
-            Save check-in
-          </Txt>
-        )}
-      </Pressable>
-      {existing && (
-        <Pressable
-          accessibilityRole="button"
-          disabled={busy}
-          onPress={() => void save(true)}
-          className="items-center py-5"
-        >
-          <Txt className="text-sm text-muted">Clear this day’s value</Txt>
-        </Pressable>
+          </View>
+          {showDatePicker && Platform.OS === "ios" && (
+            <View className="mb-5 overflow-hidden rounded-2xl bg-elevated">
+              <DateTimePicker
+                value={calendarDate(date)}
+                mode="date"
+                display="spinner"
+                themeVariant="dark"
+                maximumDate={new Date()}
+                disabled={busy}
+                onValueChange={(_, selected) => {
+                  const next = localDate(selected);
+                  if (validDate(next)) select(metric, next);
+                }}
+              />
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Done choosing date"
+                onPress={() => setShowDatePicker(false)}
+                className="min-h-11 items-center justify-center"
+              >
+                <Txt weight="medium" className="text-sm" style={{ color: accent }}>
+                  Done
+                </Txt>
+              </Pressable>
+            </View>
+          )}
+          {showDatePicker && Platform.OS === "web" && (
+            <View className="mb-5 flex-row items-center gap-3 rounded-2xl bg-elevated px-4">
+              <TextInput
+                accessibilityLabel="Custom check-in date"
+                value={customDate}
+                onChangeText={setCustomDate}
+                placeholder="YYYY-MM-DD"
+                placeholderTextColor={C.muted}
+                maxLength={10}
+                className="min-h-14 flex-1 font-poppins text-sm text-ink"
+              />
+              <Pressable
+                accessibilityRole="button"
+                onPress={() => {
+                  if (validDate(customDate)) {
+                    select(metric, customDate);
+                    setShowDatePicker(false);
+                  } else setError("Choose a valid date up to today.");
+                }}
+                className="min-h-11 justify-center px-3"
+              >
+                <Txt weight="medium" className="text-xs" style={{ color: accent }}>
+                  Apply
+                </Txt>
+              </Pressable>
+            </View>
+          )}
+
+          <View
+            className="mb-4 rounded-[24px] border px-5 pb-5 pt-4"
+            style={{ backgroundColor: `${accent}08`, borderColor: `${accent}25` }}
+          >
+            <View className="mb-2 flex-row items-center justify-between gap-2">
+              <Txt weight="medium" className="text-[10px] tracking-[1.5px] text-muted">
+                {rating
+                  ? "HOW DID IT FEEL?"
+                  : isTotalMetric(metric)
+                    ? "DAILY TOTAL"
+                    : "MEASUREMENT"}
+              </Txt>
+              {existing?.value != null && (
+                <Txt className="text-[9px]" style={{ color: accent }}>
+                  EDITING SAVED ENTRY
+                </Txt>
+              )}
+            </View>
+            {rating ? (
+              <>
+                <Txt
+                  weight="medium"
+                  className="mb-4 mt-2 text-xl"
+                  style={{ color: value ? accent : C.muted }}
+                >
+                  {value ? rating[Number(value) - 1] : "Choose your rating"}
+                </Txt>
+                <View className="flex-row gap-2">
+                  {rating.map((label, index) => (
+                    <Pressable
+                      key={label}
+                      disabled={busy}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${index + 1}: ${label}`}
+                      accessibilityState={{ selected: Number(value) === index + 1 }}
+                      onPress={() => updateValue(String(index + 1))}
+                      className="min-h-16 flex-1 items-center justify-center gap-1 rounded-2xl border"
+                      style={{
+                        backgroundColor: Number(value) === index + 1 ? accent : "#FFFFFF05",
+                        borderColor: Number(value) === index + 1 ? accent : "#FFFFFF0A",
+                      }}
+                    >
+                      <Txt
+                        weight="medium"
+                        className="text-2xl"
+                        style={{ color: Number(value) === index + 1 ? C.bg : C.ink }}
+                      >
+                        {index + 1}
+                      </Txt>
+                      <View
+                        className="h-1 w-4 rounded-full"
+                        style={{
+                          backgroundColor:
+                            Number(value) === index + 1 ? "#00000055" : `${accent}80`,
+                        }}
+                      />
+                    </Pressable>
+                  ))}
+                </View>
+                <View className="mt-3 flex-row justify-between gap-3">
+                  <Txt className="flex-1 text-[10px] text-muted">1 · {rating[0]}</Txt>
+                  <Txt className="flex-1 text-right text-[10px] text-muted">5 · {rating[4]}</Txt>
+                </View>
+              </>
+            ) : (
+              <>
+                <View className="min-h-[104px] flex-row items-center gap-2">
+                  <TextInput
+                    editable={!busy}
+                    accessibilityLabel={`${spec.label} in ${displayUnit}`}
+                    value={value}
+                    onChangeText={updateValue}
+                    selectTextOnFocus
+                    keyboardType={"integer" in spec && spec.integer ? "number-pad" : "decimal-pad"}
+                    returnKeyType="done"
+                    onSubmitEditing={() => void save()}
+                    maxLength={12}
+                    placeholder="—"
+                    placeholderTextColor={`${accent}50`}
+                    selectionColor={accent}
+                    className="min-h-[100px] flex-1 font-poppins-medium text-[48px] text-ink"
+                    style={{ paddingVertical: 8, includeFontPadding: false }}
+                  />
+                  <Txt className="text-lg text-muted">{displayUnit}</Txt>
+                </View>
+                <Txt className="text-[11px] leading-5 text-muted">{metricHint(metric)}</Txt>
+              </>
+            )}
+          </View>
+          {metric === "water" && (
+            <View className="mb-4 flex-row gap-2">
+              {[250, 500, 750].map((amount) => (
+                <Pressable
+                  key={amount}
+                  disabled={busy}
+                  accessibilityRole="button"
+                  accessibilityLabel={`Add ${amount} ml`}
+                  onPress={() =>
+                    updateValue(
+                      String((Number(drafts.current.get(draftKey)?.value ?? value) || 0) + amount),
+                    )
+                  }
+                  className="min-h-12 flex-1 flex-row items-center justify-center gap-1 rounded-xl bg-elevated"
+                >
+                  <MaterialCommunityIcons name="water-outline" size={16} color={accent} />
+                  <Txt weight="medium" className="text-xs">
+                    + {amount} ml
+                  </Txt>
+                </Pressable>
+              ))}
+            </View>
+          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={notesOpen ? "Hide check-in notes" : "Add a note"}
+            accessibilityState={{ expanded: notesOpen }}
+            disabled={busy}
+            onPress={() => setNotesOpen((current) => !current)}
+            className="min-h-12 flex-row items-center gap-2"
+          >
+            <MaterialCommunityIcons name="text-box-outline" size={19} color={C.muted} />
+            <Txt className="flex-1 text-xs text-muted">
+              {notesOpen || notes ? "Your note" : "Add a note"}{" "}
+              <Txt className="text-[10px] text-muted">· optional</Txt>
+            </Txt>
+            {!!notes.length && <Txt className="text-[10px] text-muted">{notes.length}/500</Txt>}
+            <MaterialCommunityIcons
+              name={notesOpen ? "chevron-up" : "plus"}
+              size={18}
+              color={C.muted}
+            />
+          </Pressable>
+          {notesOpen && (
+            <TextInput
+              editable={!busy}
+              accessibilityLabel="Check-in notes"
+              multiline
+              maxLength={500}
+              value={notes}
+              onChangeText={updateNotes}
+              placeholder="Anything you’d like to remember?"
+              placeholderTextColor={C.muted}
+              textAlignVertical="top"
+              className="min-h-[96px] rounded-2xl bg-elevated px-4 py-3 font-poppins text-sm leading-6 text-ink"
+            />
+          )}
+        </>
       )}
     </Sheet>
   );

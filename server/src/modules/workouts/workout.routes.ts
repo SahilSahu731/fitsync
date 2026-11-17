@@ -3,6 +3,7 @@ import { z } from "zod";
 
 import { asyncHandler } from "../../common/async-handler.js";
 import { requireAuth, getAuth } from "../../middleware/auth.js";
+import { requirePro } from "../billing/billing.middleware.js";
 
 import {
     createTemplateSchema,
@@ -68,7 +69,11 @@ router.get("/history", asyncHandler(async (req, res) => {
     res.json(await service.listHistory(getAuth(req).userId));
 }));
 
-router.post("/start", asyncHandler(async (req, res) => {
+router.post("/start", (req, res, next) => {
+    // Selecting a scheduled program slot is paid; ordinary workouts stay free.
+    if (req.body?.programSlotId) return requirePro(req, res, next);
+    next();
+}, asyncHandler(async (req, res) => {
     const input = z.object({
         templateId: z.uuid().optional(),
         programSlotId: z.uuid().optional()

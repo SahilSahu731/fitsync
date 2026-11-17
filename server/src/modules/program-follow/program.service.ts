@@ -1,6 +1,7 @@
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
 import { summarizeProgram } from "./program.analytics.js";
+import { billingService } from "../billing/billing.service.js";
 
 export function programError(error: { code?: string; message: string } | null, action: string) {
   if (!error) return;
@@ -79,5 +80,14 @@ export async function resolveProgramSlot(userId: string, templateId?: string, sl
   const slot = (result.data ?? []).find(row => !(row.workout_sessions ?? []).some((workout: any) => ["active", "completed"].includes(workout.status)));
   if (!slot) { if (slotId) throw new ApiError(409, "This session has already been started or completed."); return null; }
   if (!slot.template_id || (templateId && slot.template_id !== templateId)) throw new ApiError(409, "This routine is no longer available.");
+  if (!slotId) {
+    // A copied routine remains usable after Pro expires. Only attach it to the
+    // paid program when access is verified; billing outages must not block a
+    // normal workout or consume a planned program slot.
+    try {
+      const entitlement = await billingService.getEntitlement(userId);
+      if (!entitlement.active || entitlement.tier !== "pro") return null;
+    } catch { return null; }
+  }
   return slot;
 }

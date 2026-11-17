@@ -35,7 +35,7 @@ function GlassCard({
 }
 
 export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }) {
-  const { isPro } = useBilling();
+  const { isPro, loading: billingLoading } = useBilling();
   const { active, loading, error, refresh } = useProgram();
   useFocusEffect(
     useCallback(() => {
@@ -75,16 +75,17 @@ export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }
             <>
               <Pressable
                 accessibilityRole="button"
-                onPress={() => router.push("/explore/programs")}
+                disabled={billingLoading}
+                onPress={() => router.push(isPro ? "/explore/programs" : "/pro")}
                 className="flex-row items-center gap-3"
               >
                 <View className="h-11 w-11 items-center justify-center rounded-2xl border border-white/15 bg-white/10">
                   <MaterialCommunityIcons name="calendar-check-outline" size={24} color={C.ink} />
                 </View>
                 <View className="flex-1">
-                  <Txt weight="semibold">A plan for your next rep</Txt>
+                  <Txt weight="semibold">{isPro ? "A plan for your next rep" : "Your program, with Pro"}</Txt>
                   <Txt className="mt-1 text-xs text-muted">
-                    Follow a program. Know what to train today.
+                    {isPro ? "Follow a program. Know what to train today." : "Choose a program and know your next session."}
                   </Txt>
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} />

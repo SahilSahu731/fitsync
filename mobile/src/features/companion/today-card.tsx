@@ -1,5 +1,5 @@
-import React, { useMemo, useState } from "react";
-import { View } from "react-native";
+import React, { useImperativeHandle, useMemo, useState, type Ref } from "react";
+import { ActivityIndicator, View } from "react-native";
 import { router, type Href } from "expo-router";
 import { Txt } from "@/src/components/ui";
 import { useAppAlert } from "@/src/components/app-dialog";
@@ -20,7 +20,9 @@ import { WorkoutAction } from "../program-follow/workout-action";
 import type { FollowedProgram } from "../program-follow/api";
 import { suggestWorkingSetTargets } from "../pro/companion-insights";
 
-export function TodayForYouCard() {
+export type TodayCardHandle = { refresh: () => Promise<void> };
+
+export function TodayForYouCard({ refreshRef }: { refreshRef?: Ref<TodayCardHandle> } = {}) {
   const program = useProgram();
   const companion = useCompanion(),
     progress = useProgress(),
@@ -37,6 +39,17 @@ export function TodayForYouCard() {
     } | null>(null);
   const [working, setWorking] = useState(false),
     [error, setError] = useState("");
+  const refreshCoaching = coaching.refresh;
+  const refreshCompanion = companion.refresh;
+  useImperativeHandle(
+    refreshRef,
+    () => ({
+      refresh: async () => {
+        await Promise.allSettled([refreshCoaching(), refreshCompanion()]);
+      },
+    }),
+    [refreshCoaching, refreshCompanion],
+  );
   const today = localDate();
   const readinessRecord = companion.state.records.find(
     (item) => item.kind === "readiness" && item.date === today,
@@ -79,6 +92,10 @@ export function TodayForYouCard() {
         router.push("/(tabs)/train");
         return;
       }
+      if (!billing.isPro) {
+        router.push("/pro");
+        return;
+      }
       await workout.ensureSynced();
       const result = await coaching.mutate(`briefing-start:${day.id}`, (id) =>
         coaching.api.start(day.id, id),
@@ -110,6 +127,33 @@ export function TodayForYouCard() {
       if (value) setPreview({ plan: value, day, input: briefing.suggestion, sourceKey });
     });
   const adapted = validPreview?.plan.sessions.find((item) => item.id === day?.id);
+  if (
+    !workout.session &&
+    (program.loading || (coaching.loading && !coaching.data && !program.active))
+  ) {
+    return (
+      <View className="mb-5 flex-row items-center gap-3 rounded-[28px] border border-white/10 bg-panel p-6">
+        <ActivityIndicator color="#C5F460" />
+        <Txt className="flex-1 text-sm text-muted">Finding your next session…</Txt>
+      </View>
+    );
+  }
+  if (program.error && !program.active && !workout.session) {
+    return (
+      <View className="mb-5">
+        <GlassCard accent>
+          <Txt weight="medium" className="text-xl">
+            Your program couldn’t refresh.
+          </Txt>
+          <Txt className="mt-2 text-xs leading-6 text-muted">
+            Reconnect to see your scheduled session, or open your saved training.
+          </Txt>
+          <ProButton title="Retry program" onPress={() => void program.refresh()} />
+          <ProButton title="Open training" secondary onPress={() => router.push("/(tabs)/train")} />
+        </GlassCard>
+      </View>
+    );
+  }
   if (program.active?.enrollment.status === "active")
     return <ProgramBriefing detail={program.active} />;
   return (
@@ -141,8 +185,8 @@ export function TodayForYouCard() {
         {!!briefing.previous && (
           <Txt className="mt-3 text-xs leading-5 text-muted">
             Last matching session: {briefing.previous.name} ·{" "}
-            {dateLabel(workoutDate(briefing.previous))}. Your working-set history
-            appears beside each exercise in the logger.
+            {dateLabel(workoutDate(briefing.previous))}. Your working-set history appears beside
+            each exercise in the logger.
           </Txt>
         )}
         {billing.isPro && targetInsight && (
@@ -233,7 +277,9 @@ export function TodayForYouCard() {
                 : workout.session
                   ? "Resume workout"
                   : day
-                    ? "Start today’s session"
+                    ? billing.isPro
+                      ? "Start today’s session"
+                      : "Follow my plan with Pro"
                     : briefing.restDay || briefing.completedToday.length
                       ? "Review my week"
                       : "Choose a workout"
@@ -265,14 +311,26 @@ function ProgramBriefing({ detail }: { detail: FollowedProgram }) {
         <Txt className="text-[10px] tracking-[2px]" style={{ color: PRO.accent }}>
           TODAY FOR YOU · YOUR FOLLOWED PROGRAM
         </Txt>
+        {!!detail.enrollment.program_name && (
+          <Txt className="mt-3 text-xs text-muted">
+            {detail.enrollment.program_name} · Week {detail.week} of{" "}
+            {detail.enrollment.duration_weeks}
+          </Txt>
+        )}
         <Txt weight="medium" className="mt-3 text-[25px] leading-8">
           {workout.session?.name ?? focus.title}
         </Txt>
         <Txt className="mt-2 text-sm leading-6 text-muted">{focus.description}</Txt>
+        {!!detail.analytics && (
+          <Txt className="mt-3 text-xs" style={{ color: PRO.accent }}>
+            {detail.analytics.completed} of {detail.analytics.planned} program sessions completed
+          </Txt>
+        )}
         {!!last && (
           <Txt className="mt-3 text-xs leading-5 text-muted">
-            Last program session: {last.routineName} · {dateLabel(localDate(new Date(last.completedAt!)))} · {last.completedSets}{" "}
-            completed sets
+            Last program session: {last.routineName} ·{" "}
+            {dateLabel(localDate(new Date(last.completedAt!)))} · {last.completedSets} completed
+            sets
             {last.volumeKg > 0 ? ` · ${last.volumeKg.toLocaleString()} kg logged volume` : ""}.
           </Txt>
         )}

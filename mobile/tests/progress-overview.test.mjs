@@ -52,6 +52,19 @@ const react = {
   },
 };
 const component = (name) => (props) => ({ type: name, props, children: props.children ?? [] });
+const insights = load("../src/features/progress/insights.ts", {
+  "./model": model,
+  "./analytics": analytics,
+  "./report": report,
+});
+const dashboardUi = load("../src/features/progress/dashboard-ui.tsx", {
+  react,
+  "react-native": { View: "View" },
+  "@/src/components/motion": { MotionPressable: "Pressable", ProgressFill: "Fill" },
+  "@/src/components/ui": { Txt: "Text" },
+  "@/src/constants/theme": { C: { brand: "#C5F460" } },
+  "./visuals": { Icon: component("Icon") },
+});
 const { ProgressOverview } = load("../src/features/progress/overview.tsx", {
   react,
   "react-native": { View: "View", ScrollView: "Scroll" },
@@ -67,6 +80,13 @@ const { ProgressOverview } = load("../src/features/progress/overview.tsx", {
   },
   "./analytics": analytics,
   "./report": report,
+  "./insights": insights,
+  "./dashboard-ui": dashboardUi,
+  "./deep-analytics": { DeepAnalytics: component("DeepAnalytics") },
+  "./health-panels": {
+    BodyAnalytics: component("BodyAnalytics"),
+    RecoveryAnalytics: component("RecoveryAnalytics"),
+  },
   "./charts": { TrendChart: component("TrendChart"), Ring: component("Ring") },
   "./insight-charts": {
     HabitWeek: component("HabitWeek"),
@@ -168,18 +188,45 @@ test("storage loading disables logging and failed training does not look like a 
     assert.equal(v.nodes.find((n) => n.props.accessibilityLabel === label).props.disabled, true);
   assert.doesNotMatch(text(v.tree), /Start with one workout|See what’s getting stronger/);
 });
+test("topic navigation displays the requested analytics and preserves metric actions", () => {
+  let v = render({ isPro: true, billingChecking: true });
+  assert.equal(
+    v.nodes.some((n) => n.type === "BodyAnalytics" || n.type === "RecoveryAnalytics"),
+    false,
+  );
+  v.nodes
+    .find((n) => n.props.accessibilityRole === "tab" && text(n) === "Body & food")
+    .props.onPress();
+  v = v.rerender();
+  const body = v.nodes.find((n) => n.type === "BodyAnalytics");
+  assert.equal(body.props.isPro, false);
+  assert.equal(
+    v.nodes.some((n) => n.type === "CumulativeChart"),
+    false,
+  );
+  body.props.onMetric("protein");
+  v.nodes
+    .find((n) => n.props.accessibilityRole === "tab" && text(n) === "Recovery")
+    .props.onPress();
+  v = v.rerender();
+  v.nodes.find((n) => n.type === "RecoveryAnalytics").props.onMetric("sleep");
+  assert.equal(
+    v.nodes.some((n) => n.type === "BodyAnalytics"),
+    false,
+  );
+  assert.deepEqual(v.calls, [
+    ["onMetric", "protein"],
+    ["onMetric", "sleep"],
+  ]);
+});
 test("exercise preview compares real sessions in the selected weight unit and opens that exercise", () => {
-  const exercise = {
-    id: "bench:reps_weight",
-    name: "Bench press",
-    type: "reps_weight",
-    sessions: [
-      { timestamp: "2026-11-10T10:00:00Z", date: "2026-11-10", load: 50 },
-      { timestamp: "2026-11-14T10:00:00Z", date: "2026-11-14", load: 55 },
-    ],
-  };
-  const data = buildProgress([], [], 30, "2026-11-15", 3);
-  data.exercises = [exercise];
+  const data = buildProgress(
+    [workout("a", "2026-11-10", 20, 50), workout("b", "2026-11-14", 30, 55)],
+    [],
+    30,
+    "2026-11-15",
+    3,
+  );
   const v = render({ data, unit: "lb" });
   const chart = v.nodes.find(
     (n) => n.type === "TrendChart" && n.props.unit === "lb" && n.props.points.length > 0,
@@ -210,26 +257,28 @@ test("old daily logs remain viewable but older hydration trends are identified a
   assert.match(text(v.tree), /Older hydration trends require Pro/);
 });
 
-const workout = (id, date, minutes, load = 20) => ({
-  id,
-  name: `Workout ${id}`,
-  status: "completed",
-  started_at: `${date}T09:00:00Z`,
-  finished_at: `${date}T10:00:00Z`,
-  elapsed_seconds: minutes === null ? null : minutes * 60,
-  workout_session_exercises: [
-    {
-      id: `exercise-${id}`,
-      exercise_id: "bench",
-      exercise_name: "Bench press",
-      tracking_type: "reps_weight",
-      workout_logged_sets: [
-        { completed_at: `${date}T10:00:00Z`, set_type: "normal", weight_kg: load, reps: 10 },
-        { completed_at: `${date}T10:00:00Z`, set_type: "warmup", weight_kg: 1000, reps: 10 },
-      ],
-    },
-  ],
-});
+function workout(id, date, minutes, load = 20) {
+  return {
+    id,
+    name: `Workout ${id}`,
+    status: "completed",
+    started_at: `${date}T09:00:00Z`,
+    finished_at: `${date}T10:00:00Z`,
+    elapsed_seconds: minutes === null ? null : minutes * 60,
+    workout_session_exercises: [
+      {
+        id: `exercise-${id}`,
+        exercise_id: "bench",
+        exercise_name: "Bench press",
+        tracking_type: "reps_weight",
+        workout_logged_sets: [
+          { completed_at: `${date}T10:00:00Z`, set_type: "normal", weight_kg: load, reps: 10 },
+          { completed_at: `${date}T10:00:00Z`, set_type: "warmup", weight_kg: 1000, reps: 10 },
+        ],
+      },
+    ],
+  };
+}
 test("overview uses cumulative totals and switches to a real session-length distribution", () => {
   const data = buildProgress(
     [

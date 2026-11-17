@@ -8,6 +8,10 @@ import {
   reminderDate,
   reminderSnoozeAt,
   validReminderPreferences,
+  anyReminderEnabled,
+  reminderKindEnabled,
+  HABIT_REMINDERS,
+  type ReminderKind,
   type ReminderPreferences,
   type ReminderSession,
 } from "./reminder-model";
@@ -22,6 +26,7 @@ type Stored = {
   ownerId: string;
   items: {
     id: string;
+    kind?: ReminderKind;
     date: string;
     sessionId: string | null;
     at: number;
@@ -39,7 +44,7 @@ async function configure() {
   await configureWorkoutNotifications();
   if (Platform.OS === "android")
     await Notifications.setNotificationChannelAsync(CHANNEL, {
-      name: "Personal training reminders",
+      name: "Personal training & daily reminders",
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   await Notifications.setNotificationCategoryAsync(CATEGORY, [
@@ -96,9 +101,9 @@ export function reconcileCompanionReminders(input: {
       return { permission: "unsupported" as const, scheduled: 0, suppressedByQuietHours: 0 };
     const previous = await read();
     const valid = validReminderPreferences(input.prefs);
-    if (previous?.ownerId !== input.ownerId || !input.ownerId || !input.prefs.enabled || !valid)
-      await clear();
-    if (!input.ownerId || !input.prefs.enabled || !valid)
+    const enabled = anyReminderEnabled(input.prefs);
+    if (previous?.ownerId !== input.ownerId || !input.ownerId || !enabled || !valid) await clear();
+    if (!input.ownerId || !enabled || !valid)
       return { permission: "undetermined" as const, scheduled: 0, suppressedByQuietHours: 0 };
     await configure();
     const permission = await Notifications.getPermissionsAsync();
@@ -116,7 +121,8 @@ export function reconcileCompanionReminders(input: {
     const items: Stored["items"] = [];
     const now = input.now ?? Date.now();
     for (const item of planned) {
-      const id = `${PREFIX}${input.ownerId}-${item.date}`;
+      // Keep legacy training IDs stable; habits have separate per-day identities.
+      const id = `${PREFIX}${input.ownerId}-${item.kind === "training" ? "" : `${item.kind}-`}${item.date}`;
       const existing = old.find((saved) => saved.id === id);
       const next =
         existing?.snoozed &&
@@ -130,13 +136,18 @@ export function reconcileCompanionReminders(input: {
     // Retain today's delivered reminder so its Snooze action remains valid
     // when opening the app triggers a reconciliation before the action handler.
     for (const item of old) {
+      const kind = item.kind ?? "training";
+      if (!reminderKindEnabled(input.prefs, kind)) continue;
       const keepDelivered = item.date === reminderDate(now, input.prefs.timezone) && item.at <= now;
       if (!(item.snoozed && item.at > now) && !keepDelivered) continue;
       if (item.at > now && inReminderQuietHours(item.at, input.prefs)) continue;
-      if (items.some((next) => next.id === item.id) || input.completedDates.includes(item.date))
+      if (
+        items.some((next) => next.id === item.id) ||
+        (kind === "training" && input.completedDates.includes(item.date))
+      )
         continue;
       const session = input.sessions.find((next) => next.id === item.sessionId);
-      if (input.sessions.length && (!session || session.completed)) continue;
+      if (kind === "training" && input.sessions.length && (!session || session.completed)) continue;
       items.push(item);
     }
     const scheduled = await Notifications.getAllScheduledNotificationsAsync();
@@ -165,13 +176,23 @@ export function reconcileCompanionReminders(input: {
   });
 }
 async function schedule(ownerId: string, item: Stored["items"][number]) {
+  const kind = item.kind ?? "training";
   await Notifications.scheduleNotificationAsync({
     identifier: item.id,
     content: {
-      title: "Your FitSync training time",
+      title:
+        kind === "training"
+          ? "Your FitSync training time"
+          : `FitSync · ${HABIT_REMINDERS.find((habit) => habit.kind === kind)?.label ?? "Daily check-in"}`,
       body: item.title,
       categoryIdentifier: CATEGORY,
-      data: { type: "companion-reminder", ownerId, date: item.date, sessionId: item.sessionId },
+      data: {
+        type: "companion-reminder",
+        ownerId,
+        kind,
+        date: item.date,
+        sessionId: item.sessionId,
+      },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DATE,
@@ -185,7 +206,7 @@ export function handleCompanionReminderResponse(
   ownerId: string,
   prefs: ReminderPreferences,
 ) {
-  return enqueue(async (): Promise<"snoozed" | "open" | null> => {
+  return enqueue(async (): Promise<"snoozed" | "open" | "meals" | "hydration" | "sleep" | null> => {
     if (!response || !ownerId) return null;
     const request = response.notification.request;
     const data = request.content.data ?? {};
@@ -195,15 +216,21 @@ export function handleCompanionReminderResponse(
       !request.identifier.startsWith(PREFIX)
     )
       return null;
-    if (response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER) return "open";
-    if (response.actionIdentifier !== COMPANION_SNOOZE_ACTION || !prefs.enabled) return null;
+    const kind: ReminderKind =
+      data.kind === "meals" || data.kind === "hydration" || data.kind === "sleep"
+        ? data.kind
+        : "training";
+    if (!reminderKindEnabled(prefs, kind)) return null;
+    if (response.actionIdentifier === Notifications.DEFAULT_ACTION_IDENTIFIER)
+      return kind === "training" ? "open" : kind;
+    if (response.actionIdentifier !== COMPANION_SNOOZE_ACTION) return null;
     const stored = await read();
     const item =
       stored?.ownerId === ownerId
         ? stored.items.find((next) => next.id === request.identifier)
         : null;
     const at = reminderSnoozeAt(Date.now(), prefs);
-    if (!stored || !item || at === null) return null;
+    if (!stored || !item || (item.kind ?? "training") !== kind || at === null) return null;
     const next = { ...item, at, snoozed: true };
     stored.items = stored.items.map((saved) => (saved.id === item.id ? next : saved));
     await AsyncStorage.setItem(KEY, JSON.stringify(stored));

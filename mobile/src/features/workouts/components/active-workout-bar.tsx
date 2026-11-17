@@ -28,7 +28,7 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
   const pathname = usePathname();
   const segments = useSegments();
   const insets = useSafeAreaInsets();
-  const hidden = pathname.startsWith("/workout") || (!inline && segments[0] === "(tabs)");
+  const hidden = pathname.startsWith("/workout") || pathname === "/membership" || (!inline && segments[0] === "(tabs)");
   const { session, discard, busy } = useWorkout();
   const discardRequested = useRef(false);
 

@@ -1,4 +1,32 @@
 /** Personal reminders use dates in the user's selected IANA timezone. */
+export type HabitReminderKind = "meals" | "hydration" | "sleep";
+export type ReminderKind = "training" | HabitReminderKind;
+export type HabitReminder = { enabled: boolean; time: string };
+export const HABIT_REMINDERS: {
+  kind: HabitReminderKind;
+  label: string;
+  time: string;
+  body: string;
+}[] = [
+  {
+    kind: "meals",
+    label: "Meal planning",
+    time: "12:00",
+    body: "Take a moment for your meals and the week ahead.",
+  },
+  {
+    kind: "hydration",
+    label: "Hydration check-in",
+    time: "15:00",
+    body: "A moment to check in with your hydration and log what you drank.",
+  },
+  {
+    kind: "sleep",
+    label: "Wind down",
+    time: "21:00",
+    body: "Make a little space to wind down for the night.",
+  },
+];
 export type ReminderPreferences = {
   enabled: boolean;
   time: string;
@@ -7,9 +35,17 @@ export type ReminderPreferences = {
   quietEnd: string;
   snoozeMinutes: number;
   timezone: string;
+  /** Absent on older records. Each habit is opt-in and runs daily, including rest days. */
+  habits?: Partial<Record<HabitReminderKind, HabitReminder>>;
 };
 export type ReminderSession = { id: string; date: string; title: string; completed?: boolean };
-export type PlannedReminder = { date: string; sessionId: string | null; title: string; at: number };
+export type PlannedReminder = {
+  kind: ReminderKind;
+  date: string;
+  sessionId: string | null;
+  title: string;
+  at: number;
+};
 const DATE = /^\d{4}-\d{2}-\d{2}$/;
 const TIME = /^([01]\d|2[0-3]):([0-5]\d)$/;
 
@@ -39,10 +75,20 @@ export function validReminderPreferences(prefs: ReminderPreferences) {
   try {
     new Intl.DateTimeFormat("en", { timeZone: prefs.timezone }).format();
     return (
+      typeof prefs.enabled === "boolean" &&
       TIME.test(prefs.time) &&
       TIME.test(prefs.quietStart) &&
       TIME.test(prefs.quietEnd) &&
       prefs.days.every((day) => Number.isInteger(day) && day >= 1 && day <= 7) &&
+      new Set(prefs.days).size === prefs.days.length &&
+      (!prefs.enabled || prefs.days.length > 0) &&
+      Object.entries(prefs.habits ?? {}).every(
+        ([kind, value]) =>
+          HABIT_REMINDERS.some((habit) => habit.kind === kind) &&
+          value &&
+          typeof value.enabled === "boolean" &&
+          TIME.test(value.time),
+      ) &&
       Number.isInteger(prefs.snoozeMinutes) &&
       prefs.snoozeMinutes >= 5 &&
       prefs.snoozeMinutes <= 180
@@ -50,6 +96,12 @@ export function validReminderPreferences(prefs: ReminderPreferences) {
   } catch {
     return false;
   }
+}
+export function reminderKindEnabled(prefs: ReminderPreferences, kind: ReminderKind) {
+  return kind === "training" ? prefs.enabled : prefs.habits?.[kind]?.enabled === true;
+}
+export function anyReminderEnabled(prefs: ReminderPreferences) {
+  return prefs.enabled || HABIT_REMINDERS.some((habit) => reminderKindEnabled(prefs, habit.kind));
 }
 function minutes(time: string) {
   const [hour, minute] = time.split(":").map(Number);
@@ -86,7 +138,7 @@ export function planCompanionReminders(input: {
   const { prefs, sessions, completedDates, now = Date.now() } = input;
   const planned: PlannedReminder[] = [];
   let suppressedByQuietHours = 0;
-  if (!prefs.enabled || !validReminderPreferences(prefs))
+  if (!anyReminderEnabled(prefs) || !validReminderPreferences(prefs))
     return { planned, suppressedByQuietHours };
   const today = reminderDate(now, prefs.timezone);
   const midnight = Date.parse(`${today}T00:00:00Z`);
@@ -96,24 +148,25 @@ export function planCompanionReminders(input: {
   for (let offset = 0; offset < 14; offset++) {
     const day = new Date(midnight + offset * 86_400_000);
     const date = day.toISOString().slice(0, 10);
-    if (!prefs.days.includes(day.getUTCDay() || 7) || completed.has(date)) continue;
-    const allToday = sessions.filter((session) => session.date === date);
-    const session = allToday.find((item) => !item.completed);
-    // A supplied plan's rest days remain rest days. With no plan, selected
-    // weekdays are user-directed workout reminders.
-    if (sessions.length && !session) continue;
-    const at = reminderWallTime(date, prefs.time, prefs.timezone);
-    if (at === null || at <= now) continue;
-    if (inReminderQuietHours(at, prefs)) {
-      suppressedByQuietHours++;
-      continue;
+    const add = (kind: ReminderKind, time: string, title: string, sessionId: string | null) => {
+      const at = reminderWallTime(date, time, prefs.timezone);
+      if (at === null || at <= now) return;
+      if (inReminderQuietHours(at, prefs)) {
+        suppressedByQuietHours++;
+        return;
+      }
+      planned.push({ kind, date, sessionId, title, at });
+    };
+    for (const habit of HABIT_REMINDERS) {
+      const setting = prefs.habits?.[habit.kind];
+      if (setting?.enabled) add(habit.kind, setting.time, habit.body, null);
     }
-    planned.push({
-      date,
-      sessionId: session?.id ?? null,
-      title: session?.title ?? "Your training time",
-      at,
-    });
+    if (!prefs.enabled || !prefs.days.includes(day.getUTCDay() || 7) || completed.has(date))
+      continue;
+    const session = sessions.find((item) => item.date === date && !item.completed);
+    // Training respects planned rest days; daily habits do not depend on workouts.
+    if (sessions.length && !session) continue;
+    add("training", prefs.time, session?.title ?? "Your training time", session?.id ?? null);
   }
   return { planned, suppressedByQuietHours };
 }

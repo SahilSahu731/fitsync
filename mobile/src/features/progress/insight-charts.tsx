@@ -34,7 +34,7 @@ export function ActivityHeatmap({ days }: { days: { date: string; workouts: numb
             width={14}
             height={14}
             rx={4}
-            fill={day.workouts > 1 ? "#F5F5F5" : day.workouts ? "#888888" : "#FFFFFF0C"}
+            fill={day.workouts > 1 ? "#C5F460" : day.workouts ? "#789347" : "#FFFFFF0C"}
           />
         ))}
       </Svg>
@@ -42,7 +42,7 @@ export function ActivityHeatmap({ days }: { days: { date: string; workouts: numb
         <Txt className="text-[10px] text-muted">{active} active days</Txt>
         <View className="flex-row items-center gap-1.5">
           <Txt className="mr-1 text-[9px] text-muted">Less</Txt>
-          {["#FFFFFF0C", "#888888", "#F5F5F5"].map((color) => (
+          {["#FFFFFF0C", "#789347", "#C5F460"].map((color) => (
             <View
               key={color}
               className="h-2.5 w-2.5 rounded-[3px]"

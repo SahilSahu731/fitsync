@@ -145,6 +145,170 @@ test("nonexistent DST wall times are skipped and overnight quiet hours apply to 
     Date.parse("2026-11-17T08:00:00Z"),
   );
 });
+test("older reminder records keep habits off; daily habits respect timezone and quiet hours independently of training", () => {
+  const old = reminderModel.planCompanionReminders({
+    prefs,
+    sessions: [],
+    completedDates: [],
+    now: monday,
+  });
+  assert.equal(old.planned.length, 10);
+  assert.ok(old.planned.every((item) => item.kind === "training"));
+  const result = reminderModel.planCompanionReminders({
+    prefs: {
+      ...prefs,
+      enabled: false,
+      days: [],
+      timezone: "Asia/Kolkata",
+      habits: {
+        meals: { enabled: true, time: "12:00" },
+        hydration: { enabled: true, time: "15:00" },
+        sleep: { enabled: true, time: "23:00" },
+      },
+    },
+    sessions: [{ id: "done", title: "Upper", date: "2026-11-16", completed: true }],
+    completedDates: ["2026-11-16"],
+    now: Date.parse("2026-11-16T00:00:00Z"),
+  });
+  assert.equal(result.planned.length, 28);
+  assert.equal(result.suppressedByQuietHours, 14);
+  assert.equal(
+    result.planned.find((item) => item.kind === "meals").at,
+    Date.parse("2026-11-16T06:30:00Z"),
+  );
+  assert.ok(result.planned.some((item) => item.date === "2026-11-22" && item.kind === "hydration"));
+  assert.ok(result.planned.some((item) => item.date === "2026-11-16" && item.kind === "meals"));
+  assert.ok(result.planned.every((item) => item.sessionId === null));
+  assert.equal(
+    reminderModel.validReminderPreferences({
+      ...prefs,
+      habits: { sleep: { enabled: true, time: "25:00" } },
+    }),
+    false,
+  );
+  assert.equal(
+    reminderModel.validReminderPreferences({
+      ...prefs,
+      habits: { unknown: { enabled: true, time: "12:00" } },
+    }),
+    false,
+  );
+});
+test("daily categories have distinct stable IDs and disabling training preserves habit reminders", async () => {
+  const state = notifications();
+  const daily = {
+    meals: { enabled: true, time: "12:00" },
+    hydration: { enabled: true, time: "15:00" },
+    sleep: { enabled: true, time: "21:00" },
+  };
+  const input = {
+    ownerId: "alice",
+    prefs: { ...prefs, habits: daily },
+    sessions: [],
+    completedDates: [],
+    now: monday,
+  };
+  await state.api.reconcileCompanionReminders(input);
+  assert.equal(state.scheduled.size, 52);
+  assert.equal(new Set([...state.scheduled.keys()]).size, 52);
+  const count = state.calls.filter((call) => call[0] === "schedule").length;
+  await state.api.reconcileCompanionReminders(input);
+  assert.equal(state.calls.filter((call) => call[0] === "schedule").length, count);
+  await state.api.reconcileCompanionReminders({
+    ...input,
+    prefs: { ...input.prefs, enabled: false },
+  });
+  assert.equal(state.scheduled.size, 42);
+  assert.ok([...state.scheduled.values()].every((item) => item.content.data.kind !== "training"));
+  await state.api.reconcileCompanionReminders({
+    ...input,
+    prefs: {
+      ...input.prefs,
+      enabled: false,
+      habits: { ...daily, hydration: { enabled: false, time: "15:00" } },
+    },
+  });
+  assert.equal(state.scheduled.size, 28);
+  assert.ok([...state.scheduled.values()].every((item) => item.content.data.kind !== "hydration"));
+  await state.api.reconcileCompanionReminders({ ...input, ownerId: "bob" });
+  assert.ok([...state.scheduled.values()].every((item) => item.content.data.ownerId === "bob"));
+  // The Pro-expiry/sign-out bridge uses this same clearing operation.
+  await state.api.clearCompanionReminders();
+  assert.equal(state.scheduled.size, 0);
+});
+test("daily reminders route and snooze independently, and completed workouts do not cancel them", async () => {
+  const state = notifications();
+  const preferences = {
+    ...prefs,
+    enabled: false,
+    habits: {
+      meals: { enabled: true, time: "12:00" },
+      hydration: { enabled: true, time: "15:00" },
+    },
+  };
+  const input = {
+    ownerId: "alice",
+    prefs: preferences,
+    sessions: [],
+    completedDates: [],
+    now: monday,
+  };
+  await state.api.reconcileCompanionReminders(input);
+  const item = [...state.scheduled.values()].find((item) => item.content.data.kind === "meals");
+  const response = { actionIdentifier: "default", notification: { request: item } };
+  assert.equal(
+    await state.api.handleCompanionReminderResponse(response, "alice", preferences),
+    "meals",
+  );
+  assert.equal(await state.api.handleCompanionReminderResponse(response, "bob", preferences), null);
+  assert.equal(
+    await state.api.handleCompanionReminderResponse(response, "alice", {
+      ...preferences,
+      habits: {},
+    }),
+    null,
+  );
+  const after = Date.parse("2026-11-16T12:05:00Z");
+  state.setNow(after);
+  state.scheduled.delete(item.identifier);
+  state.presented.set(item.identifier, { request: item });
+  await state.api.reconcileCompanionReminders({
+    ...input,
+    now: after,
+    completedDates: ["2026-11-16"],
+  });
+  assert.equal(
+    await state.api.handleCompanionReminderResponse(
+      { ...response, actionIdentifier: state.api.COMPANION_SNOOZE_ACTION },
+      "alice",
+      preferences,
+    ),
+    "snoozed",
+  );
+  assert.equal(
+    state.scheduled.get(item.identifier).trigger.date.getTime(),
+    Date.parse("2026-11-16T12:35:00Z"),
+  );
+  await state.api.reconcileCompanionReminders({
+    ...input,
+    now: after,
+    completedDates: ["2026-11-16"],
+  });
+  assert.ok(state.scheduled.has(item.identifier));
+  const hydrated = [...state.scheduled.values()].find(
+    (item) => item.content.data.kind === "hydration",
+  );
+  assert.equal(
+    await state.api.handleCompanionReminderResponse(
+      { actionIdentifier: "default", notification: { request: hydrated } },
+      "alice",
+      preferences,
+    ),
+    "hydration",
+  );
+  await state.api.reconcileCompanionReminders({ ...input, prefs: { ...preferences, habits: {} } });
+  assert.equal(state.scheduled.size, 0);
+});
 test("reconciliation is idempotent and removes only companion reminders when ownership changes", async () => {
   const state = notifications();
   state.scheduled.set("fitsync-workout-rest", { identifier: "fitsync-workout-rest" });

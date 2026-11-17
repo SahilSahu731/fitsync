@@ -31,13 +31,19 @@ export function CoachPlanScreen() {
   const plan = resource.data?.plan ?? null;
   const day = plan?.sessions.find(item => item.id === selectedId) ?? nextSession(plan);
   const changeable = day?.status === "planned" || day?.status === "overdue";
-  const pro = (action: () => void) => billing.isPro ? action() : router.push("/pro");
+  const pro = (action: () => void) => {
+    if (billing.loading) return;
+    if (billing.isPro) action(); else router.push("/pro");
+  };
   const run = async (action: () => Promise<unknown>) => {
     setNotice(null);
     try { return await action(); } catch (failure) { alert("Could not update your plan", failure instanceof Error ? failure.message : "Please try again.", undefined, "error"); return null; }
   };
   const start = async () => {
     if (!day) return;
+    if (workout.session && workout.session.id === day.workoutId) { router.push("/workout"); return; }
+    if (billing.loading) return;
+    if (!billing.isPro) { router.push("/pro"); return; }
     if (workout.session && workout.session.id !== day.workoutId) { alert("You have a workout in progress", "Finish or discard your current workout before starting this session.", [{ text: "Keep planning", style: "cancel" }, { text: "Resume workout", onPress: () => router.push("/workout") }]); return; }
     await run(async () => {
       const result = await resource.mutate(`start:${day.id}`, async requestId => { await workout.ensureSynced(); return resource.api.start(day.id, requestId); });
@@ -73,15 +79,15 @@ export function CoachPlanScreen() {
     const result = await resource.mutate(`progression:${day.id}:${day.revision}:${incrementKg ?? "default"}`, async requestId => { await workout.ensureSynced(); return resource.api.progression(day, requestId, false, incrementKg); }, value => value).catch(() => null);
     if (result) { setProgressing(false); setNotice("Targets reviewed against your completed logs. Each exercise explains its next step."); }
   };
-  return <View className="flex-1 bg-bg"><CoachHeader title="Your personal plan" action={plan ? "Edit setup" : undefined} onAction={() => router.push("/coach/setup")} />
+  return <View className="flex-1 bg-bg"><CoachHeader title="Your personal plan" action={plan ? "Edit setup" : undefined} onAction={() => pro(() => router.push("/coach/setup"))} />
     <ScrollView ref={scroll} refreshControl={<RefreshControl refreshing={resource.loading} onRefresh={() => { void resource.refresh(); void billing.refresh(); }} tintColor={C.brand} />} contentContainerStyle={{ padding: 24, paddingBottom: 140 }}>
       {resource.error && <View className="mb-5 rounded-2xl bg-panel p-4"><Txt accessibilityRole="alert" className="text-sm leading-6">{resource.error}</Txt><CoachLink label="Reconnect" onPress={() => void resource.refresh()} icon="refresh" /></View>}
       {resource.loading && !resource.data && <ActivityIndicator color={C.ink} style={{ marginVertical: 40 }} />}
       {!resource.loading && resource.data && !plan && <>
         <View className="mb-6 h-16 w-16 items-center justify-center rounded-[23px] bg-white/5"><MaterialCommunityIcons name="calendar-heart" size={32} color={C.ink} /></View>
         <Txt weight="semibold" className="text-[36px] leading-[41px] tracking-[-1px]">A little direction.
-A lot more you.</Txt><Txt className="mb-7 mt-4 text-base leading-7 text-muted">Build a four-week starting plan around your goals, experience, time and equipment. Your workouts connect to the progress you already track.</Txt><PrimaryButton title="Build my starting plan" onPress={() => router.push("/coach/setup")} />
-        <View className="mt-7"><Card><Txt weight="semibold" className="text-lg">Start free. Adapt with Pro.</Txt><Txt className="mt-2 text-sm leading-6 text-muted">Create a plan and log your sessions for free. Pro helps with busy days, equipment changes, missed sessions and a weekly review.</Txt><CoachLink label="Explore FitSync Pro" onPress={() => router.push("/pro")} /></Card></View>
+A lot more you.</Txt><Txt className="mb-7 mt-4 text-base leading-7 text-muted">Build a four-week starting plan around your goals, experience, time and equipment. Your workouts connect to the progress you already track.</Txt><PrimaryButton title={billing.isPro ? "Build my starting plan" : "Build my program with Pro"} disabled={billing.loading} onPress={() => pro(() => router.push("/coach/setup"))} />
+        <View className="mt-7"><Card><Txt weight="semibold" className="text-lg">Your program. Your personal trainer.</Txt><Txt className="mt-2 text-sm leading-6 text-muted">Pro brings your personal program, session guidance, target reviews and schedule adjustments together. You can keep logging workouts and viewing saved workout history with Free.</Txt><CoachLink label="Explore FitSync Pro" onPress={() => router.push("/pro")} /></Card></View>
       </>}
       {plan && <>
         <View className="mb-3 flex-row items-center gap-2"><Txt weight="semibold" className="flex-1 text-xs tracking-[1.3px] text-ink">{GOAL_LABELS[plan.goal].toUpperCase()}</Txt>{billing.isPro && <Txt weight="semibold" className="text-xs text-ink">PRO</Txt>}</View>
@@ -94,10 +100,10 @@ A lot more you.</Txt><Txt className="mb-7 mt-4 text-base leading-7 text-muted">B
           <Txt weight="semibold" className="mt-3 text-[25px] leading-8">{day.name}</Txt><Txt className="mt-2 text-sm text-muted">{day.prescription.minutes} min · {EQUIPMENT_LABELS[day.prescription.equipment]}{day.prescription.effort === "easy" ? " · Easier effort" : ""}</Txt>
           <Notes items={day.prescription.explanation} />
           <View className="mt-5">{day.prescription.exercises.map((exercise, index) => <View key={`${index}:${exercise.exerciseId}`} className="py-4"><View className="flex-row items-start gap-3"><View className="mt-0.5 h-7 w-7 items-center justify-center rounded-full bg-elevated"><Txt className="text-xs text-muted">{index + 1}</Txt></View><View className="flex-1"><Txt weight="semibold" className="text-base">{exercise.name}</Txt><Txt className="mt-1 text-sm text-ink">{exerciseTarget(exercise, settings?.weightUnit)} · {exercise.restSeconds}s rest</Txt><Txt className="mt-2 text-xs leading-5 text-muted">{exercise.reason}</Txt></View></View></View>)}</View>
-          {day.status !== "completed" && <PrimaryButton title={day.status === "active" ? "Resume session" : "Start this session"} onPress={() => void start()} loading={resource.busy || workout.busy} />}
+          {day.status !== "completed" && <PrimaryButton title={workout.session?.id === day.workoutId ? "Resume session" : billing.loading ? "Checking membership…" : !billing.isPro ? "Continue my program with Pro" : day.status === "active" ? "Resume session" : "Start this session"} disabled={billing.loading && workout.session?.id !== day.workoutId} onPress={() => void start()} loading={resource.busy || workout.busy} />}
           {changeable && <CoachLink label={billing.isPro ? "Adapt this session" : "Adapt this session · Pro"} onPress={() => pro(() => setAdapting(true))} disabled={resource.busy} icon="tune-variant" />}
           {day.status === "active" && <Txt className="mt-3 text-xs leading-5 text-muted">Your workout is in progress. Make changes in the workout logger so your saved sets stay together.</Txt>}
-        </View> : <Card><Txt weight="semibold" className="text-xl">Four weeks, real effort.</Txt><Txt className="mt-3 text-sm leading-6 text-muted">Your sessions are complete. Review what you did, then build your next starting plan.</Txt><CoachLink label="Build my next plan" onPress={() => router.push("/coach/setup")} /></Card>}
+        </View> : <Card><Txt weight="semibold" className="text-xl">Four weeks, real effort.</Txt><Txt className="mt-3 text-sm leading-6 text-muted">Your sessions are complete. Review what you did, then build your next starting plan.</Txt><CoachLink label="Build my next plan" onPress={() => pro(() => router.push("/coach/setup"))} /></Card>}
         {changeable && <View className="mb-6"><Card><Txt weight="semibold" className="text-lg">Keep the plan moving</Txt><CoachLink label={billing.isPro ? "Review next targets from my logs" : "Progression review · Pro"} icon="trending-up" disabled={resource.busy} onPress={() => pro(() => setProgressing(true))} /><Txt className="text-xs leading-5 text-muted">Checks your completed sets before adjusting the next targets. You can review each exercise’s reason above.</Txt>{day.date !== localDate() && <CoachLink label="Move this session to today" icon="calendar-arrow-left" disabled={resource.busy} onPress={() => pro(() => move(localDate()))} />}<CoachLink label="Move this session to tomorrow" icon="calendar-arrow-right" disabled={resource.busy} onPress={() => pro(() => move(shiftDate(localDate(), 1)))} /></Card></View>}
         <View className="mb-6"><Card><View className="flex-row items-center gap-3"><MaterialCommunityIcons name="chart-timeline-variant" color={C.ink} size={26} /><Txt weight="semibold" className="flex-1 text-lg">Your weekly review</Txt></View><Txt className="mt-3 text-sm leading-6 text-muted">A clear look at your real activity, with practical next steps and honest notes about missing data.</Txt><CoachLink label={billing.isPro ? "Open weekly review" : "Explore weekly review · Pro"} onPress={() => pro(() => router.push("/coach/review"))} /></Card></View>
         <View className="mb-6"><Card><Txt weight="semibold" className="text-lg">The rest of your week</Txt><Txt className="mt-2 text-sm leading-6 text-muted">Find simple meal ideas and choose a commitment that helps you keep showing up.</Txt><CoachLink label="Meals & accountability" icon="heart-outline" onPress={() => router.push("/wellness")} /></Card></View>

@@ -1,6 +1,7 @@
 import { ProgramSetup } from "@/src/features/program-follow/program-setup";
 import { useProgram } from "@/src/features/program-follow/program-context";
 import { useAppAlert } from "@/src/components/app-dialog";
+import { useBilling } from "@/src/features/billing/billing-context";
 import React, { useCallback, useState } from "react";
 
 import {
@@ -96,6 +97,7 @@ function Tag({
 
 export default function ProgramDetailScreen() {
   const Alert = useAppAlert();
+  const billing = useBilling();
   const router = useRouter();
   const insets = useSafeAreaInsets();
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -145,7 +147,8 @@ export default function ProgramDetailScreen() {
   useFocusEffect(load);
 
   const handleSave = async () => {
-    if (!program || saving || saved) return;
+    if (!program || saving || saved || billing.loading) return;
+    if (!billing.isPro) { router.push("/pro"); return; }
 
     setSaving(true);
 
@@ -173,6 +176,17 @@ export default function ProgramDetailScreen() {
     } finally {
       setSaving(false);
     }
+  };
+
+  const chooseProgram = () => {
+    if (!program) return;
+    if (following?.enrollment.program_id === program.id) {
+      router.push({ pathname: "/programs/[id]", params: { id: following.enrollment.id } });
+      return;
+    }
+    if (billing.loading) return;
+    if (!billing.isPro) { router.push("/pro"); return; }
+    setFollowOpen(true);
   };
 
   const BackButton = (
@@ -533,12 +547,12 @@ export default function ProgramDetailScreen() {
         className="absolute bottom-0 left-0 right-0 bg-bg px-5 pt-4"
         style={{ paddingBottom: Math.max(insets.bottom, 16) }}
       >
-        <Pressable accessibilityRole="button" onPress={() => following?.enrollment.program_id === program.id ? router.push({ pathname: "/programs/[id]", params: { id: following.enrollment.id } }) : setFollowOpen(true)} className="mb-2 h-14 flex-row items-center justify-center rounded-full bg-ink"><MaterialCommunityIcons name="calendar-check-outline" size={22} color={C.bg} /><Txt weight="semibold" className="ml-2 text-base text-bg">{following?.enrollment.program_id === program.id ? "View my progress" : "Follow program"}</Txt></Pressable>
+        <Pressable accessibilityRole="button" disabled={billing.loading && following?.enrollment.program_id !== program.id} onPress={chooseProgram} className="mb-2 h-14 flex-row items-center justify-center rounded-full bg-ink"><MaterialCommunityIcons name={billing.isPro || following?.enrollment.program_id === program.id ? "calendar-check-outline" : "lock-outline"} size={22} color={C.bg} /><Txt weight="semibold" className="ml-2 text-base text-bg">{following?.enrollment.program_id === program.id ? "View my progress" : billing.loading ? "Checking membership…" : billing.isPro ? "Follow program" : "Choose this program · Pro"}</Txt></Pressable>
         <Pressable
           onPress={() => void handleSave()}
-          disabled={saving || saved}
+          disabled={saving || saved || billing.loading}
           accessibilityRole="button"
-          accessibilityLabel={saved ? "Program saved" : "Save program"}
+          accessibilityLabel={saved ? "Program saved" : billing.isPro ? "Save program" : "Save program with Pro"}
           className="h-11 flex-row items-center justify-center rounded-full bg-panel"
         >
           {saving ? (
@@ -555,7 +569,7 @@ export default function ProgramDetailScreen() {
                 className="ml-2 text-base"
                 style={{ color: saved ? GREEN : C.muted }}
               >
-                {saved ? "Saved to library" : "Save for later"}
+                {saved ? "Saved to library" : billing.isPro ? "Save for later" : "Save program · Pro"}
               </Txt>
             </>
           )}

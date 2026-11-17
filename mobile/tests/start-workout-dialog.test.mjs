@@ -323,7 +323,9 @@ function trainFixture({ workout: workoutOverrides = {}, program: programOverride
     },
     "expo-router": {
       useRouter: () => ({ push: (route) => calls.push(["navigate", route]) }),
-      useFocusEffect(callback) { onFocus = callback; },
+      useFocusEffect(callback) {
+        onFocus = callback;
+      },
     },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
     "@/src/components/tab-bar-motion": { TabScrollView: "ScrollView" },
@@ -345,6 +347,7 @@ function trainFixture({ workout: workoutOverrides = {}, program: programOverride
     "@react-native-async-storage/async-storage": { getItem: async () => null },
     "@/src/context/session": { useSession: () => ({ user: { id: "athlete" } }) },
     "@/src/features/workouts/components/train-actions": {},
+    "@/src/features/workouts/components/workout-controls": { WorkoutDrawer: "WorkoutDrawer" },
     "expo-image": { Image: "Image" },
     "@/src/features/workouts/components/training-section": { TrainingSection: "TrainingSection" },
     "@/src/features/workouts/summary": {
@@ -388,7 +391,9 @@ test("Train prioritizes an active workout over its program and only offers empty
   tree = screen.render();
   assert.equal(find(tree, "ActiveProgramCard").length, 0);
   assert.match(text(tree), /Push Day/);
-  find(tree, "Pressable").find((node) => text(node).includes("Resume workout")).props.onPress();
+  find(tree, "Pressable")
+    .find((node) => text(node).includes("Resume workout"))
+    .props.onPress();
   assert.deepEqual(screen.calls, [["navigate", "/workout"]]);
   assert.equal(find(tree, "StartWorkoutDialog").length, 0);
 
@@ -416,9 +421,15 @@ test("Train waits for workout and program checks and retains the program retry s
   assert.doesNotMatch(text(tree), /Start empty workout/);
 });
 
-test("Train refreshes its program on focus and places the coach button before the weekly summary", async () => {
+test("Train refreshes its program on focus and places the coach button before the workout action", async () => {
   let refreshed = 0;
-  const screen = trainFixture({ program: { refresh: async () => { refreshed++; } } });
+  const screen = trainFixture({
+    program: {
+      refresh: async () => {
+        refreshed++;
+      },
+    },
+  });
   screen.render();
   screen.focus();
   await screen.flush();
@@ -426,8 +437,8 @@ test("Train refreshes its program on focus and places the coach button before th
   const tree = screen.render();
   const children = find(tree, "ScrollView")[0].props.children;
   const coach = children.findIndex((node) => node?.type === "CoachHomeButton");
-  const week = children.findIndex((node) => /This Week/.test(text(node)));
-  assert.ok(coach >= 0 && week > coach);
+  const start = children.findIndex((node) => /Start empty workout/.test(text(node)));
+  assert.ok(coach >= 0 && start > coach);
   assert.equal(find(tree, "CoachHomeButton").length, 1);
   assert.doesNotMatch(text(tree), /Your plans/);
 });
@@ -437,7 +448,14 @@ test("the personal coach button opens coaching for Pro members and the upgrade p
   const billing = { isPro: false, loading: false };
   const screen = mount("../src/features/coaching/home-card.tsx", "CoachHomeButton", {
     "react-native": { View: "View", StyleSheet: { absoluteFill: {} } },
-    "react-native-reanimated": { __esModule: true, default: { View: "AnimatedView" }, useReducedMotion: () => true, useSharedValue: value => ({ value }), useAnimatedStyle: fn => fn(), FadeInDown: { duration: () => ({ springify: () => ({ damping: () => ({}) }) }) } },
+    "react-native-reanimated": {
+      __esModule: true,
+      default: { View: "AnimatedView" },
+      useReducedMotion: () => true,
+      useSharedValue: (value) => ({ value }),
+      useAnimatedStyle: (fn) => fn(),
+      FadeInDown: { duration: () => ({ springify: () => ({ damping: () => ({}) }) }) },
+    },
     "expo-linear-gradient": { LinearGradient: "Gradient" },
     "expo-blur": { BlurView: "Blur" },
     "expo-router": { router: { push: (route) => calls.push(route) } },

@@ -52,16 +52,15 @@ test("HTTP owner header accepts the signed-in account and rejects requests left 
 test("premium HTTP features fail closed when billing is not configured, even if the client sends pro:true", async t => {
   authDatabase(t);
   const rpc = t.mock.method(db, "rpc", () => { throw new Error("A client flag must never unlock a mutation"); });
-  for (const path of ["/sessions/00000000-0000-4000-8000-000000000004/adapt", "/sessions/00000000-0000-4000-8000-000000000004/progression", "/sessions/00000000-0000-4000-8000-000000000004/reschedule"]) {
+  for (const path of ["/plans", "/sessions/00000000-0000-4000-8000-000000000004/start", "/sessions/00000000-0000-4000-8000-000000000004/adapt", "/sessions/00000000-0000-4000-8000-000000000004/progression", "/sessions/00000000-0000-4000-8000-000000000004/reschedule"]) {
     const response = await request(path, { requestId, expectedRevision: 0, minutes: 30, pro: true });
     assert.equal(response.status, 503); assert.match((await response.json()).message, /not configured/);
   }
   assert.equal((await request("/review")).status, 503); assert.equal(rpc.mock.callCount(), 0);
 });
-test("free HTTP mutations reject malformed requests and cannot start another account's coaching day", async t => {
+test("free plan previews reject malformed requests without allowing a plan commit", async t => {
   authDatabase(t);
-  assert.equal((await request("/plans", { requestId, startDate: "2026-11-07", timezone: "Asia/Kolkata", userId: owner })).status, 400);
-  const rpc = t.mock.method(db, "rpc", async (_name: string, args: any) => { assert.equal(args.p_user_id, owner); return { data: null, error: { code: "P0002", message: "Session not found in your current plan." } }; });
-  assert.equal((await request("/sessions/00000000-0000-4000-8000-000000000099/start", { requestId })).status, 404);
-  assert.equal(rpc.mock.callCount(), 1);
+  const rpc = t.mock.method(db, "rpc", () => { throw new Error("A preview must never commit a plan"); });
+  assert.equal((await request("/plans/preview", { requestId, startDate: "2026-11-07", timezone: "Asia/Kolkata", userId: owner })).status, 400);
+  assert.equal(rpc.mock.callCount(), 0);
 });

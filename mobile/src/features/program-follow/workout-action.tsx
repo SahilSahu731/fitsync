@@ -6,24 +6,31 @@ import { useAppAlert } from "@/src/components/app-dialog";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import { useWorkout } from "@/src/features/workouts/workout-context";
+import { useBilling } from "@/src/features/billing/billing-context";
 import { useProgram } from "./program-context";
 import type { ProgramSlot } from "./api";
 
 export function WorkoutAction({ slot, title, quiet = false }: { slot: ProgramSlot; title?: string; quiet?: boolean }) {
   const workout = useWorkout();
+  const billing = useBilling();
   const { refresh } = useProgram();
   const Alert = useAppAlert();
   const [busy, setBusy] = useState(false);
   const pending = useRef(false);
   const completed = slot.status === "completed";
-  const unavailable = completed ? !slot.sessionId : !slot.templateId;
-  const label = unavailable ? "Session unavailable" : title ?? (completed ? "View workout log" : slot.status === "active" ? "Resume workout" : "Start workout");
+  const resuming = !!workout.session && workout.session.id === slot.sessionId;
+  const unavailable = completed ? !slot.sessionId : !resuming && !slot.templateId;
+  const checking = !completed && !resuming && billing.loading;
+  const locked = !completed && !resuming && !billing.isPro;
+  const label = unavailable ? "Session unavailable" : checking ? "Checking membership…" : locked ? "Continue my program with Pro" : title ?? (completed ? "View workout log" : slot.status === "active" ? "Resume workout" : "Start workout");
   const run = async () => {
     if (pending.current || workout.busy || unavailable) return;
     if (completed && slot.sessionId) { router.push({ pathname: "/workout/history/[id]", params: { id: slot.sessionId } }); return; }
+    if (resuming) { router.push("/workout"); return; }
+    if (billing.loading) return;
+    if (!billing.isPro) { router.push("/pro"); return; }
     if (workout.session) {
-      if (workout.session.id === slot.sessionId) router.push("/workout");
-      else Alert.alert("You have a workout in progress", "Finish or discard it before starting another session.", [{ text: "Stay here", style: "cancel" }, { text: "Resume workout", onPress: () => router.push("/workout") }]);
+      Alert.alert("You have a workout in progress", "Finish or discard it before starting another session.", [{ text: "Stay here", style: "cancel" }, { text: "Resume workout", onPress: () => router.push("/workout") }]);
       return;
     }
     pending.current = true; setBusy(true);
@@ -37,9 +44,9 @@ export function WorkoutAction({ slot, title, quiet = false }: { slot: ProgramSlo
   };
   const color = quiet ? C.ink : C.bg;
   return (
-    <Pressable onPress={() => void run()} disabled={busy || workout.busy || unavailable} accessibilityRole="button" accessibilityLabel={label}
-      className={`min-h-12 flex-row items-center justify-center gap-2 rounded-full px-5 py-3 ${quiet ? "bg-elevated" : "bg-ink"} ${busy || workout.busy || unavailable ? "opacity-50" : ""}`}>
-      {busy ? <ActivityIndicator color={color} /> : <><MaterialCommunityIcons name={completed ? "notebook-outline" : "play"} size={21} color={color} /><Txt weight="semibold" className="flex-shrink text-sm" style={{ color }}>{label}</Txt></>}
+    <Pressable onPress={() => void run()} disabled={busy || workout.busy || unavailable || checking} accessibilityRole="button" accessibilityLabel={label}
+      className={`min-h-12 flex-row items-center justify-center gap-2 rounded-full px-5 py-3 ${quiet ? "bg-elevated" : "bg-ink"} ${busy || workout.busy || unavailable || checking ? "opacity-50" : ""}`}>
+      {busy || checking ? <ActivityIndicator color={color} /> : <><MaterialCommunityIcons name={completed ? "notebook-outline" : locked ? "lock-outline" : "play"} size={21} color={color} /><Txt weight="semibold" className="flex-shrink text-sm" style={{ color }}>{label}</Txt></>}
     </Pressable>
   );
 }

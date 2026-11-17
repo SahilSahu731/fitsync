@@ -1,4 +1,6 @@
 import { apiRequest } from "@/src/services/api";
+import type { ReminderPreferences } from "./reminder-model";
+export type { ReminderPreferences } from "./reminder-model";
 
 export type Readiness = {
   sleepHours?: number;
@@ -17,15 +19,6 @@ export type Milestone = {
   deadline?: string;
   baseline?: number;
   completedAt?: string;
-};
-export type ReminderPreferences = {
-  enabled: boolean;
-  time: string;
-  days: number[];
-  quietStart: string;
-  quietEnd: string;
-  snoozeMinutes: number;
-  timezone: string;
 };
 export type Experiment = {
   title: string;

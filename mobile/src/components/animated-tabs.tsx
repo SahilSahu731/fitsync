@@ -167,7 +167,7 @@ export function AnimatedTabButton({
               }
             }}
           >
-            {label}
+            {/* {label} */}
           </Text>
         </View>
         <Animated.View
@@ -180,7 +180,7 @@ export function AnimatedTabButton({
           <TabArtwork name={artwork} color={focused ? ICON_ACTIVE : ICON_IDLE} />
         </Animated.View>
 
-        <Animated.View
+        {/* <Animated.View
           pointerEvents="none"
           accessible={false}
           className="h-5 overflow-hidden"
@@ -197,7 +197,7 @@ export function AnimatedTabButton({
           >
             {label}
           </Animated.Text>
-        </Animated.View>
+        </Animated.View> */}
       </MotionPressable>
     </Animated.View>
   );

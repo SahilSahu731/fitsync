@@ -29,6 +29,7 @@ import {
 } from "./model";
 import { buildProgress, metricSeries, workoutDate, summary } from "./analytics";
 import { MetricEditor, Sheet } from "./editors";
+import { CheckInDatePicker } from "./date-picker";
 import { StrengthSection } from "./strength";
 import { ConsistencySection } from "./consistency";
 import { MetricDetail } from "./metric-detail";
@@ -131,8 +132,6 @@ export function ProgressDashboard() {
   const [exerciseDetail, setExerciseDetail] = useState<string | null>(null);
   const [nutritionDetail, setNutritionDetail] = useState(false);
   const [dateEditor, setDateEditor] = useState(false);
-  const [dateInput, setDateInput] = useState(today);
-  const [dateError, setDateError] = useState("");
   const [message, setMessage] = useState("");
   const [messageError, setMessageError] = useState(false);
   const [historySearch, setHistorySearch] = useState("");
@@ -218,8 +217,6 @@ export function ProgressDashboard() {
     scroll.current?.scrollTo({ y: 0, animated: false });
   }
   function chooseDate() {
-    setDateInput(selectedDate);
-    setDateError("");
     setDateEditor(true);
   }
   function openWorkout(id: string) {
@@ -341,27 +338,26 @@ export function ProgressDashboard() {
           <RefreshControl
             refreshing={progress.refreshing && !progress.loading}
             onRefresh={() => void progress.refresh()}
-            tintColor={C.ink}
+            tintColor={C.brand}
           />
         }
-        contentContainerClassName="w-full max-w-2xl self-center px-6 pt-2 pb-48"
+        contentContainerClassName="w-full max-w-2xl self-center px-5 pt-2 pb-48"
       >
         <View className="mb-4 flex-row items-center justify-between gap-3">
           <Txt
             accessibilityRole="header"
             weight="medium"
-            className="min-w-0 flex-1 text-[28px] leading-10 tracking-[-1px]"
+            className="min-w-0 flex-1 text-[26px] leading-[44px] tracking-[-1.2px]"
           >
-            Progress
+            Your progress.
           </Txt>
           <MotionPressable
             accessibilityRole="button"
             accessibilityLabel="View your goals"
             onPress={() => setGoalEditor(true)}
             className="h-11 w-11 items-center justify-center rounded-full"
-            style={{ backgroundColor: "#FFFFFF0A", borderWidth: 1, borderColor: "#FFFFFF12" }}
           >
-            <Icon name="bullseye-arrow" color={C.ink} size={21} />
+            <Icon name="bullseye-arrow" color={"yellow"} size={23} />
           </MotionPressable>
           <MotionPressable
             accessibilityRole="button"
@@ -369,12 +365,11 @@ export function ProgressDashboard() {
             accessibilityHint="Preview your progress summary before sharing"
             onPress={() => setSharePreview(true)}
             className="h-11 w-11 items-center justify-center rounded-full"
-            style={{ backgroundColor: "#FFFFFF0A", borderWidth: 1, borderColor: "#FFFFFF12" }}
           >
-            <Icon name="share-variant-outline" color={C.ink} size={21} />
+            <Icon name="share-variant-outline" color={"white"} size={21} />
           </MotionPressable>
         </View>
-        <Txt className="-mt-2 mb-5 text-xs text-muted">Your work, made visible.</Txt>
+        <Txt className="-mt-1 mb-6 text-xs text-muted">See the work. Understand the change.</Txt>
         <View className="mb-4 flex-row gap-1 rounded-2xl bg-panel p-1.5">
           {VIEWS.map((item) => (
             <MotionPressable
@@ -384,7 +379,7 @@ export function ProgressDashboard() {
               onPress={() => navigate(item.id)}
               className="min-h-11 flex-1 flex-row items-center justify-center gap-1.5 rounded-xl px-2"
               style={{
-                backgroundColor: item.id === view ? C.ink : "transparent",
+                backgroundColor: item.id === view ? "#FFFFFF12" : "transparent",
               }}
             >
               <Icon
@@ -396,13 +391,13 @@ export function ProgressDashboard() {
                       : "calendar-check-outline"
                 }
                 size={17}
-                color={item.id === view ? C.bg : C.muted}
+                color={item.id === view ? C.brand : C.muted}
               />
               <Txt
                 weight="medium"
                 className="text-xs"
                 style={{
-                  color: item.id === view ? C.bg : C.muted,
+                  color: item.id === view ? C.ink : C.muted,
                 }}
               >
                 {item.label}
@@ -937,58 +932,16 @@ export function ProgressDashboard() {
         </Sheet>
       )}
       {dateEditor && (
-        <Sheet
-          title="Choose a date"
-          subtitle="Use YYYY-MM-DD to open a past check-in day."
+        <CheckInDatePicker
+          date={selectedDate}
+          today={today}
+          loggedDates={new Set([...metrics.map((entry) => entry.date), ...completed.map(workoutDate)])}
           onClose={() => setDateEditor(false)}
-        >
-          <TextInput
-            accessibilityLabel="Journal date YYYY-MM-DD"
-            placeholder="YYYY-MM-DD"
-            placeholderTextColor={C.muted}
-            autoCapitalize="none"
-            maxLength={10}
-            value={dateInput}
-            onChangeText={(value) => {
-              setDateInput(value);
-              setDateError("");
-            }}
-            style={{
-              padding: 17,
-              borderRadius: 16,
-              backgroundColor: C.elevated,
-              color: C.ink,
-              fontSize: 22,
-              fontFamily: "Poppins_500Medium",
-            }}
-          />
-          {!!dateError && (
-            <Txt accessibilityRole="alert" className="mt-3 text-sm" style={{ color: "#FF9A94" }}>
-              {dateError}
-            </Txt>
-          )}
-          <MotionPressable
-            accessibilityRole="button"
-            className="mt-5 items-center rounded-full bg-ink p-4"
-            onPress={() => {
-              if (
-                !/^\d{4}-\d{2}-\d{2}$/.test(dateInput) ||
-                !Number.isFinite(Date.parse(`${dateInput}T12:00:00Z`)) ||
-                new Date(`${dateInput}T12:00:00Z`).toISOString().slice(0, 10) !== dateInput ||
-                dateInput > today
-              ) {
-                setDateError("Choose a valid date up to today (YYYY-MM-DD).");
-                return;
-              }
-              setSelectedDate(dateInput);
-              setDateEditor(false);
-            }}
-          >
-            <Txt weight="semibold" className="text-bg">
-              Open this day
-            </Txt>
-          </MotionPressable>
-        </Sheet>
+          onSelect={(date) => {
+            setSelectedDate(date);
+            setDateEditor(false);
+          }}
+        />
       )}
     </ScreenEntrance>
   );

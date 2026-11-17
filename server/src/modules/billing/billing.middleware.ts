@@ -6,5 +6,5 @@ import { createProGuard } from "./billing.guard.js";
 export const requirePro = createProGuard({
   configured: billingService.configured,
   userId: req => getAuth(req).userId,
-  getEntitlement: billingService.getEntitlement
+  getEntitlement: userId => billingService.getEntitlement(userId)
 });

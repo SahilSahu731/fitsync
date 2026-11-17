@@ -15,7 +15,7 @@ import { Txt } from "@/src/components/ui";
 import { dateLabel } from "./model";
 import { Icon } from "./visuals";
 
-const ink = "#F4F4F5";
+const ink = "#C5F460";
 const muted = "#A1A1AA";
 const grid = "#FFFFFF12";
 const format = (value: number) => value.toLocaleString(undefined, { maximumFractionDigits: 1 });
@@ -92,7 +92,7 @@ export function CumulativeChart({ points, unit }: { points: CumulativePoint[]; u
   const gradientId = `cumulative-${useId().replace(/:/g, "")}`;
   const available = points
     .filter((point) => Number.isFinite(point.value) && point.value >= 0)
-    .toSorted((a, b) => a.date.localeCompare(b.date));
+    .sort((a, b) => a.date.localeCompare(b.date));
   if (!available.length) {
     return <EmptyChart>Complete a workout to start your cumulative training trend.</EmptyChart>;
   }
