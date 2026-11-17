@@ -147,12 +147,12 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
         }
       >
         <View className="mb-6 flex-row items-center gap-3">
-          <View className="h-9 w-9 items-center justify-center rounded-full bg-brand">
+          <View className="h-9 w-9 items-center justify-center rounded-full bg-yellow-400">
             <MaterialCommunityIcons name="star-four-points" size={20} color="#10130B" />
           </View>
           <View className="flex-1">
-            <Txt weight="semibold" className="text-[11px] tracking-[2px]">
-              FITSync <Txt className="text-brand">PRO</Txt>
+            <Txt weight="semibold" className="text-[13px]">
+              FitSync <Txt className="text-yellow-500">PRO</Txt>
             </Txt>
             <Txt className="mt-1 text-[9px] text-muted">Your personal training studio</Txt>
           </View>
@@ -160,17 +160,17 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
             accessibilityRole="button"
             accessibilityLabel="Customize trainer reminders"
             onPress={() => setSheet("reminders")}
-            className="h-11 w-11 items-center justify-center rounded-full border border-white/10"
+            className="h-11 w-11 items-center justify-center rounded-full"
           >
-            <MaterialCommunityIcons name="bell-outline" color={PRO.accent} size={21} />
+            <MaterialCommunityIcons name="bell" color={PRO.accent} size={21} />
           </Pressable>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Manage Pro membership"
             onPress={() => router.push("/membership")}
-            className="h-11 w-11 items-center justify-center rounded-full border border-white/10"
+            className="h-11 w-11 items-center justify-center rounded-full "
           >
-            <MaterialCommunityIcons name="cog-outline" color="#A3A3A3" size={21} />
+            <MaterialCommunityIcons name="cog-outline" color={"white"} size={21} />
           </Pressable>
         </View>
         <View className="mb-5 flex-row items-start gap-2">
@@ -183,7 +183,7 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
               weight="medium"
               className="text-[36px] leading-[45px] tracking-[-1.4px]"
             >
-              A plan.{"\n"}A little more you.
+              A plan. A little more you.
             </Txt>
           </View>
           <View className="-mr-2 mt-2 opacity-80">
@@ -206,7 +206,6 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
         )}
 
         <StudioSection
-          index="01 / YOUR DIRECTION"
           title="Your program."
           action="Explore"
           onPress={() => router.push("/explore/programs")}
@@ -307,14 +306,14 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
               {historyOpening || historyUnavailable ? "—" : completed.length}
               <Txt className="text-xs text-muted"> / {progress.goals.weeklyWorkouts}</Txt>
             </Txt>
-            <Txt className="mt-1 text-[9px] text-muted">workouts this week</Txt>
+            <Txt className="mt-1 text-sm text-muted">workouts this week</Txt>
           </View>
           <View className="flex-1 py-2">
             <Txt weight="medium" className="text-2xl tracking-[-0.5px]">
               {historyOpening || historyUnavailable ? "—" : briefData.allTime.workouts}
               <Txt className="text-xs text-muted"> sessions</Txt>
             </Txt>
-            <Txt className="mt-1 text-[9px] text-muted">your full saved history</Txt>
+            <Txt className="mt-1 text-sm text-muted">your full saved history</Txt>
           </View>
         </View>
 
@@ -386,7 +385,7 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
               Check in with sleep, energy and soreness before you train.
             </Txt>
           </View>
-          <MaterialCommunityIcons name="arrow-top-right" color={PRO.violet} size={18} />
+          <MaterialCommunityIcons name="arrow-right" color={PRO.violet} size={18} />
         </Pressable>
 
         <StudioSection index="04 / PREPARE WITH PURPOSE" title="Every set, considered." />
@@ -421,7 +420,7 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
                 Your exercise library.
               </Txt>
             </View>
-            <MaterialCommunityIcons name="arrow-top-right" color={PRO.accent} size={19} />
+            <MaterialCommunityIcons name="arrow-right" color={PRO.accent} size={19} />
           </View>
           <Txt className="mt-4 text-xs leading-6 text-muted">
             Your movements, equipment, muscle labels and technique notes. Add the exercises that

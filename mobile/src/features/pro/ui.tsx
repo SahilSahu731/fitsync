@@ -268,7 +268,7 @@ export function ProAction({
         </Txt>
         {subtitle && <Txt className="mt-1 text-[11px] leading-[17px] text-muted">{subtitle}</Txt>}
       </View>
-      <MaterialCommunityIcons name="arrow-top-right" color={PRO.muted} size={19} />
+      <MaterialCommunityIcons name="arrow-right" color={PRO.muted} size={19} />
     </MotionPressable>
   );
 }

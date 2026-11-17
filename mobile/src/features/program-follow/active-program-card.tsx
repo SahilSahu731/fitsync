@@ -144,7 +144,7 @@ export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }
       >
         <View className="flex-1">
           <View className="mb-2 flex-row items-center gap-2">
-            <Txt weight="medium" className="text-[8px]  text-ink">
+            <Txt weight="medium" className="text-[10px]  text-ink">
               Your Program
             </Txt>
             {isPro && <ProBadge />}

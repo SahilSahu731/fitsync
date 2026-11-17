@@ -70,7 +70,14 @@ function entry(metric, value, date = TODAY, notes = "") {
   };
 }
 
-function harness({ metric = "weight", date = TODAY, unit = "kg", events = [], save } = {}) {
+function harness({
+  metric = "weight",
+  date = TODAY,
+  unit = "kg",
+  events = [],
+  save,
+  keyboardOpen = false,
+} = {}) {
   const hooks = [];
   let cursor = 0;
   const saved = [];
@@ -136,6 +143,9 @@ function harness({ metric = "weight", date = TODAY, unit = "kg", events = [], sa
       C: { ink: "#FFFFFF", bg: "#000000", panel: "#111111", muted: "#A3A3A3", brand: "#C5F460" },
     },
     "./model": model,
+    "./keyboard-visibility": {
+      useKeyboardForm: () => ({ bottomInset: 0, keyboardOpen }),
+    },
   });
   const props = {
     initialMetric: metric,
@@ -433,4 +443,16 @@ test("save controls stay outside the scrolling fields with bottom safe-area room
       nodes(node).some((child) => child.props.accessibilityLabel === "Save check-in"),
   );
   assert.ok(footer, "Pinned save footer should accommodate the 28px bottom safe area");
+});
+
+test("an open keyboard compacts the sheet header while preserving the title and save action", () => {
+  const closed = harness();
+  assert.match(text(closed.render()), /YOUR PROGRESS/);
+  assert.match(text(closed.render()), /Small check-ins/);
+  const open = harness({ keyboardOpen: true });
+  const content = text(open.render());
+  assert.doesNotMatch(content, /YOUR PROGRESS|Small check-ins/);
+  assert.match(content, /Daily check-in/);
+  assert.ok(open.find("Save check-in"));
+  assert.ok(open.find("Body weight in kg"));
 });

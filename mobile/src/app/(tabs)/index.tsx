@@ -427,7 +427,7 @@ export default function HomeScreen() {
                   >
                     <View className="flex-row items-center justify-between">
                       <MaterialCommunityIcons name={item.icon} size={23} color={C.ink} />
-                      <MaterialCommunityIcons name="arrow-top-right" size={16} color={C.muted} />
+                      <MaterialCommunityIcons name="arrow-right" size={16} color={C.muted} />
                     </View>
                     <Txt weight="medium" className="mt-5 text-xs">
                       {item.title}

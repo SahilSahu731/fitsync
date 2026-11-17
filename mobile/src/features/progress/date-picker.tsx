@@ -129,12 +129,16 @@ export function CheckInDatePicker({
                     opacity: disabled ? 0.2 : day.inMonth || active ? 1 : 0.45,
                   }}
                 >
-                  <Txt weight={active || isToday ? "semibold" : "regular"} className="text-sm" style={{ color: active ? C.bg : isToday ? C.brand : C.ink }}>
+                  <Txt
+                    weight={active || isToday ? "semibold" : "regular"}
+                    className="text-sm"
+                    style={{ color: active ? C.bg : isToday ? C.brand : C.ink }}
+                  >
                     {day.day}
                   </Txt>
                   <View
                     className="mt-1 h-1 w-1 rounded-full"
-                    style={{ backgroundColor: hasData ? active ? C.bg : C.brand : "transparent" }}
+                    style={{ backgroundColor: hasData ? (active ? C.bg : C.brand) : "transparent" }}
                   />
                 </Pressable>
               );
@@ -160,7 +164,11 @@ export function CheckInDatePicker({
             onPress={() => select(item.date)}
             className="min-h-11 flex-1 items-center justify-center rounded-xl bg-elevated px-3"
           >
-            <Txt weight="medium" className="text-xs" style={{ color: selected === item.date ? C.brand : C.ink }}>
+            <Txt
+              weight="medium"
+              className="text-xs"
+              style={{ color: selected === item.date ? C.brand : C.ink }}
+            >
               {item.label}
             </Txt>
           </Pressable>

@@ -258,7 +258,7 @@ export function CoachHomeCard({ compact = false }: { compact?: boolean }) {
 
           <View className="h-11 w-11 items-center justify-center rounded-full bg-ink">
             <Animated.View style={arrowStyle}>
-              <MaterialCommunityIcons name="arrow-top-right" size={23} color={C.bg} />
+              <MaterialCommunityIcons name="arrow-right" size={23} color={C.bg} />
             </Animated.View>
           </View>
         </View>

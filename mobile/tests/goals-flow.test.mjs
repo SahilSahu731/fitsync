@@ -618,6 +618,9 @@ function valueDialogHarness(extra = {}) {
     "@/src/constants/theme": { C: {} },
     "./visuals": { Icon: "Icon" },
     "./goal-draft": { parseGoalValue },
+    "./keyboard-visibility": {
+      useKeyboardForm: () => ({ bottomInset: 0, keyboardOpen: false }),
+    },
   });
   const props = {
     goal: "water",

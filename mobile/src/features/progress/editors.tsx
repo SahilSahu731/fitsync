@@ -3,7 +3,6 @@ import React, { useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Keyboard,
-  KeyboardAvoidingView,
   Modal,
   Platform,
   ScrollView,
@@ -15,6 +14,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
+import { useKeyboardForm } from "./keyboard-visibility";
 import {
   addDays,
   dateLabel,
@@ -50,6 +50,16 @@ export function Sheet({
   footer?: React.ReactNode;
 }) {
   const insets = useSafeAreaInsets();
+  const {
+    viewportRef,
+    scrollRef,
+    bottomInset,
+    keyboardOpen,
+    onViewportLayout,
+    onFocus,
+    onScroll,
+    revealInput,
+  } = useKeyboardForm();
   return (
     <Modal
       visible
@@ -61,64 +71,80 @@ export function Sheet({
       statusBarTranslucent
       navigationBarTranslucent
     >
-      <KeyboardAvoidingView
-        behavior={Platform.OS === "ios" ? "padding" : "height"}
-        className="flex-1 justify-end bg-black/70"
-      >
+      <View ref={viewportRef} onLayout={onViewportLayout} className="flex-1 bg-black/70">
         <View
-          accessibilityViewIsModal
-          className="max-h-[92%] w-full max-w-2xl self-center rounded-t-[32px] bg-panel pt-3"
-          style={{ flexShrink: 1 }}
+          className="flex-1 justify-end"
+          style={{ paddingTop: insets.top + 12, paddingBottom: bottomInset }}
         >
-          <View className="h-1 w-10 self-center rounded-full bg-white/20" />
-          <View className="flex-row items-center justify-between px-6 pb-4 pt-5">
-            <View className="flex-1 pr-3">
-              {!!eyebrow && (
-                <Txt weight="semibold" className="mb-1 text-[10px] tracking-[2px] text-muted">
-                  {eyebrow}
-                </Txt>
-              )}
-              <Txt
-                accessibilityRole="header"
-                weight="medium"
-                className="text-2xl tracking-[-0.7px]"
-              >
-                {title}
-              </Txt>
-              {subtitle && <Txt className="mt-1 text-xs leading-5 text-muted">{subtitle}</Txt>}
-            </View>
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Close editor"
-              disabled={busy}
-              onPress={onClose}
-              className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
-            >
-              <MaterialCommunityIcons name="close" size={22} color={C.ink} />
-            </Pressable>
-          </View>
-          <ScrollView
-            keyboardShouldPersistTaps="handled"
-            keyboardDismissMode="on-drag"
-            showsVerticalScrollIndicator={false}
-            style={{ flexShrink: 1 }}
-            contentContainerStyle={{
-              paddingHorizontal: 24,
-              paddingBottom: footer == null ? Math.max(48, insets.bottom + 16) : 20,
-            }}
+          <View
+            accessibilityViewIsModal
+            className="w-full max-w-2xl self-center rounded-t-[32px] bg-panel pt-3"
+            style={{ maxHeight: keyboardOpen ? "100%" : "92%", flexShrink: 1 }}
           >
-            {children}
-          </ScrollView>
-          {footer != null && (
+            <View className="h-1 w-10 self-center rounded-full bg-white/20" />
             <View
-              className="border-t border-white/5 px-6 pt-4"
-              style={{ paddingBottom: Math.max(insets.bottom, 16) }}
+              className={`flex-row items-center justify-between px-6 ${keyboardOpen ? "py-2" : "pb-4 pt-5"}`}
             >
-              {footer}
+              <View className="flex-1 pr-3">
+                {!!eyebrow && !keyboardOpen && (
+                  <Txt weight="semibold" className="mb-1 text-[10px] tracking-[2px] text-muted">
+                    {eyebrow}
+                  </Txt>
+                )}
+                <Txt
+                  accessibilityRole="header"
+                  weight="medium"
+                  className="text-2xl tracking-[-0.7px]"
+                  style={{ lineHeight: 32 }}
+                >
+                  {title}
+                </Txt>
+                {subtitle && !keyboardOpen && (
+                  <Txt className="mt-1 text-xs leading-5 text-muted">{subtitle}</Txt>
+                )}
+              </View>
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Close editor"
+                disabled={busy}
+                onPress={onClose}
+                className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
+              >
+                <MaterialCommunityIcons name="close" size={22} color={C.ink} />
+              </Pressable>
             </View>
-          )}
+            <ScrollView
+              ref={scrollRef}
+              onFocus={onFocus}
+              onScroll={onScroll}
+              onLayout={revealInput}
+              onContentSizeChange={revealInput}
+              scrollEventThrottle={16}
+              automaticallyAdjustKeyboardInsets={false}
+              keyboardShouldPersistTaps="handled"
+              keyboardDismissMode="on-drag"
+              showsVerticalScrollIndicator={false}
+              style={{ flexShrink: 1, minHeight: 0 }}
+              contentContainerStyle={{
+                paddingHorizontal: 24,
+                paddingBottom: footer == null ? Math.max(48, insets.bottom + 16) : 20,
+              }}
+            >
+              {children}
+            </ScrollView>
+            {footer != null && (
+              <View
+                className="border-t border-white/5 px-6 pt-4"
+                style={{
+                  paddingBottom: keyboardOpen ? 12 : Math.max(insets.bottom, 16),
+                }}
+              >
+                {footer}
+              </View>
+            )}
+          </View>
         </View>
-      </KeyboardAvoidingView>
+      </View>
     </Modal>
   );
 }
@@ -392,7 +418,8 @@ export function MetricEditor({
               placeholder="Find a metric…"
               placeholderTextColor={C.muted}
               autoCorrect={false}
-              className="min-h-14 flex-1 font-poppins text-sm text-ink"
+              className="min-h-14 flex-1 font-poppins-regular text-sm text-ink"
+              style={{ paddingVertical: 14, lineHeight: 22 }}
             />
           </View>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-3">
@@ -608,7 +635,8 @@ export function MetricEditor({
                 placeholder="YYYY-MM-DD"
                 placeholderTextColor={C.muted}
                 maxLength={10}
-                className="min-h-14 flex-1 font-poppins text-sm text-ink"
+                className="min-h-14 flex-1 font-poppins-regular text-sm text-ink"
+                style={{ paddingVertical: 14, lineHeight: 22 }}
               />
               <Pressable
                 accessibilityRole="button"
@@ -708,7 +736,7 @@ export function MetricEditor({
                     placeholderTextColor={`${accent}50`}
                     selectionColor={accent}
                     className="min-h-[100px] flex-1 font-poppins-medium text-[48px] text-ink"
-                    style={{ paddingVertical: 8, includeFontPadding: false }}
+                    style={{ paddingVertical: 12, lineHeight: 64, textAlignVertical: "center" }}
                   />
                   <Txt className="text-lg text-muted">{displayUnit}</Txt>
                 </View>
@@ -770,7 +798,7 @@ export function MetricEditor({
               placeholder="Anything you’d like to remember?"
               placeholderTextColor={C.muted}
               textAlignVertical="top"
-              className="min-h-[96px] rounded-2xl bg-elevated px-4 py-3 font-poppins text-sm leading-6 text-ink"
+              className="min-h-[112px] rounded-2xl bg-elevated px-4 py-3 font-poppins-regular text-sm leading-6 text-ink"
             />
           )}
         </>

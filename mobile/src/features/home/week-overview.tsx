@@ -36,7 +36,7 @@ export function WeekOverview({
           onPress={onCalendar}
           className="h-11 w-11 items-center justify-center rounded-full bg-black/10"
         >
-          <MaterialCommunityIcons name="arrow-top-right" size={21} color={C.bg} />
+          <MaterialCommunityIcons name="arrow-right" size={21} color={C.bg} />
         </Pressable>
       </View>
       <View className="mt-2 flex-row items-end justify-between gap-3">

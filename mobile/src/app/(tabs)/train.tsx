@@ -131,7 +131,7 @@ function EmptyState({
           <Txt weight="medium" className="text-xs">
             {action}
           </Txt>
-          <MaterialCommunityIcons name="arrow-top-right" size={17} color={C.ink} />
+          <MaterialCommunityIcons name="arrow-right" size={17} color={C.ink} />
         </Pressable>
       )}
     </View>

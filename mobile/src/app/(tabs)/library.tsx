@@ -255,7 +255,7 @@ export default function ExploreHomeScreen() {
                 Explore now
               </Txt>
 
-              <MaterialCommunityIcons name="arrow-top-right" size={18} color={C.ink} />
+              <MaterialCommunityIcons name="arrow-right" size={18} color={C.ink} />
             </View>
           </Pressable>
         ) : null}

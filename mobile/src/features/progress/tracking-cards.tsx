@@ -177,7 +177,7 @@ export function TrainingStats({ data, unit }: { data: ProgressAnalytics; unit: "
       {stats.map((stat) => (
         <View key={stat.label} className="min-w-0 flex-1 rounded-[22px] bg-panel p-4">
           <Icon name={stat.icon} size={18} color={C.muted} />
-          <Txt weight="medium" className="mt-3 text-[22px] tracking-[-0.5px]">
+          <Txt weight="medium" className="mt-3 text-[22px] leading-8 tracking-[-0.5px]">
             {stat.value}
           </Txt>
           <Txt className="mt-1 text-[11px] text-muted">{stat.label}</Txt>
@@ -194,6 +194,7 @@ export function DailyMetricGrid({
   unit,
   onLog,
   onDetail,
+  disabled = false,
 }: {
   metrics: readonly Metric[];
   daily: (metric: Metric) => number | null;
@@ -201,6 +202,7 @@ export function DailyMetricGrid({
   unit: "kg" | "lb";
   onLog: (metric: Metric) => void;
   onDetail: (metric: Metric) => void;
+  disabled?: boolean;
 }) {
   const rows = Array.from({ length: Math.ceil(metrics.length / 2) }, (_, index) =>
     metrics.slice(index * 2, index * 2 + 2),
@@ -213,16 +215,23 @@ export function DailyMetricGrid({
             const value = daily(metric);
             const target = metric in goals ? goals[metric as keyof Goals] : null;
             return (
-              <View key={metric} className="min-w-0 flex-1 overflow-hidden rounded-[24px] bg-panel">
-                <View className="flex-row items-center justify-between pl-4 pr-1 pt-1">
+              <View
+                key={metric}
+                className="min-w-0 flex-1 rounded-[24px] border border-white/5 bg-panel"
+              >
+                <View className="flex-row items-center justify-between pl-4 pr-1 pt-2">
                   <Icon name={METRIC_ICONS[metric]} size={22} color={C.ink} />
                   <MotionPressable
                     accessibilityRole="button"
                     accessibilityLabel={`Log ${METRICS[metric].label}`}
-                    onPress={() => onLog(metric)}
+                    accessibilityState={{ disabled }}
+                    disabled={disabled}
+                    onPress={() => {
+                      if (!disabled) onLog(metric);
+                    }}
                     className="h-11 w-11 items-center justify-center"
                   >
-                    <Icon name="plus" size={20} color={C.muted} />
+                    <Icon name="plus" size={20} color={disabled ? "#555555" : C.muted} />
                   </MotionPressable>
                 </View>
                 <MotionPressable
@@ -231,26 +240,37 @@ export function DailyMetricGrid({
                   onPress={() => onDetail(metric)}
                   className="px-4 pb-4"
                 >
-                  <Txt weight="medium" className="mt-2 text-[28px] tracking-[-1px]">
-                    {displayMetric(metric, value, unit)}
-                    <Txt className="text-xs text-muted"> {displayUnit(metric, unit)}</Txt>
-                  </Txt>
-                  <Txt weight="medium" className="mt-1 text-sm">
+                  <Txt weight="medium" className="mt-1 text-xs leading-5">
                     {METRICS[metric].label}
                   </Txt>
-                  <View className="mt-3">
-                    <ProgressFill
-                      ratio={target ? (value ?? 0) / target : 0}
-                      color={C.ink}
-                      height={3}
-                    />
-                  </View>
-                  <Txt className="mt-2 text-[11px] text-muted">
+                  <Txt
+                    weight="medium"
+                    numberOfLines={1}
+                    adjustsFontSizeToFit
+                    minimumFontScale={0.65}
+                    className="mt-3 text-[28px] leading-[40px] tracking-[-0.8px]"
+                    style={{ includeFontPadding: false }}
+                  >
+                    {displayMetric(metric, value, unit)}
+                  </Txt>
+                  <Txt className="text-[11px] leading-5 text-muted">
+                    {displayUnit(metric, unit)}
+                  </Txt>
+                  {!!target && (
+                    <View className="mt-3">
+                      <ProgressFill
+                        ratio={target ? (value ?? 0) / target : 0}
+                        color={C.ink}
+                        height={3}
+                      />
+                    </View>
+                  )}
+                  <Txt className="mt-2 text-[10px] leading-5 text-muted">
                     {target
                       ? `Goal ${displayMetric(metric, target, unit)} ${displayUnit(metric, unit)}`
                       : value === null
-                        ? "Tap + to log"
-                        : "View history"}
+                        ? "Not logged · tap +"
+                        : (RATING_LABELS[metric]?.[value - 1] ?? "View history")}
                   </Txt>
                 </MotionPressable>
               </View>
@@ -270,6 +290,7 @@ export function MetricList({
   unit,
   onLog,
   onDetail,
+  disabled = false,
 }: {
   metrics: readonly Metric[];
   daily: (metric: Metric) => number | null;
@@ -277,6 +298,7 @@ export function MetricList({
   unit: "kg" | "lb";
   onLog: (metric: Metric) => void;
   onDetail: (metric: Metric) => void;
+  disabled?: boolean;
 }) {
   return (
     <View className="overflow-hidden rounded-[28px] bg-panel">
@@ -294,11 +316,11 @@ export function MetricList({
               <View className="h-11 w-11 items-center justify-center rounded-2xl bg-elevated">
                 <Icon name={METRIC_ICONS[metric]} color={C.ink} size={21} />
               </View>
-              <View className="flex-1">
-                <Txt weight="semibold" className="text-sm">
+              <View className="min-w-0 flex-1">
+                <Txt weight="semibold" className="text-sm leading-6">
                   {METRICS[metric].label}
                 </Txt>
-                <Txt className="mt-1 text-[11px] text-muted">
+                <Txt className="mt-1 text-[11px] leading-5 text-muted">
                   {value === null
                     ? "Not logged"
                     : (RATING_LABELS[metric]?.[value - 1] ??
@@ -307,15 +329,26 @@ export function MetricList({
                         : "View trend"))}
                 </Txt>
               </View>
-              <Txt weight="semibold" className="text-lg">
-                {displayMetric(metric, value, unit)}
-                <Txt className="text-[11px] text-muted"> {displayUnit(metric, unit)}</Txt>
-              </Txt>
+              <View className="max-w-[35%] items-end">
+                <Txt
+                  weight="semibold"
+                  numberOfLines={1}
+                  adjustsFontSizeToFit
+                  className="text-lg leading-7"
+                >
+                  {displayMetric(metric, value, unit)}
+                </Txt>
+                <Txt className="text-[11px] leading-5 text-muted">{displayUnit(metric, unit)}</Txt>
+              </View>
             </MotionPressable>
             <MotionPressable
               accessibilityRole="button"
               accessibilityLabel={`Log ${METRICS[metric].label}`}
-              onPress={() => onLog(metric)}
+              accessibilityState={{ disabled }}
+              disabled={disabled}
+              onPress={() => {
+                if (!disabled) onLog(metric);
+              }}
               className="ml-1 h-11 w-11 items-center justify-center"
             >
               <Icon
@@ -337,12 +370,14 @@ export function WeightCard({
   unit,
   onLog,
   onDetail,
+  disabled = false,
 }: {
   latest?: MetricEvent;
   weights: MetricEvent[];
   unit: "kg" | "lb";
   onLog: () => void;
   onDetail: () => void;
+  disabled?: boolean;
 }) {
   const first = weights[0];
   const last = weights.at(-1);
@@ -360,7 +395,11 @@ export function WeightCard({
         <MotionPressable
           accessibilityRole="button"
           accessibilityLabel="Log body weight"
-          onPress={onLog}
+          accessibilityState={{ disabled }}
+          disabled={disabled}
+          onPress={() => {
+            if (!disabled) onLog();
+          }}
           className="h-11 w-11 items-center justify-center rounded-full bg-elevated"
         >
           <Icon name="plus" size={20} />
@@ -371,13 +410,19 @@ export function WeightCard({
         accessibilityLabel="Explore body weight trends"
         onPress={onDetail}
       >
-        <View className="mb-4 mt-3 flex-row items-end justify-between">
-          <View>
-            <Txt weight="medium" className="text-[36px] tracking-[-1px]">
-              {latest ? weightValue(latest.value!, unit).toFixed(1) : "—"}
-              <Txt className="text-base text-muted"> {unit}</Txt>
-            </Txt>
-            <Txt className="mt-1 text-[11px] text-muted">
+        <View className="mb-4 mt-3 flex-row flex-wrap items-end justify-between gap-3">
+          <View className="min-w-0 flex-1">
+            <View className="flex-row flex-wrap items-baseline gap-x-2">
+              <Txt
+                weight="medium"
+                className="text-[36px] leading-[52px] tracking-[-1px]"
+                style={{ includeFontPadding: false }}
+              >
+                {latest ? weightValue(latest.value!, unit).toFixed(1) : "—"}
+              </Txt>
+              <Txt className="text-base leading-6 text-muted">{unit}</Txt>
+            </View>
+            <Txt className="mt-1 text-[11px] leading-5 text-muted">
               {latest
                 ? `Latest check-in · ${dateLabel(latest.date)}`
                 : "Add your first measurement"}

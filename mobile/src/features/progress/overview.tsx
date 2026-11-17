@@ -97,7 +97,7 @@ function DailyCell({
           weight="medium"
           numberOfLines={1}
           adjustsFontSizeToFit
-          className="mt-2 text-[25px] tracking-[-0.7px]"
+          className="mt-2 text-[25px] leading-9 tracking-[-0.7px]"
         >
           {numberLabel(value)}
           <Txt className="text-[10px] text-muted"> {unit}</Txt>
@@ -318,7 +318,7 @@ export function ProgressOverview({
               onChange={setChart}
             />
             <View className="mb-3 flex-row items-center justify-between gap-3">
-              <Txt weight="medium" className="text-[30px] tracking-[-1px]">
+              <Txt weight="medium" className="text-[30px] leading-[42px] tracking-[-1px]">
                 {numberLabel(currentValue)}
                 <Txt className="text-[10px] text-muted"> {chartUnit}</Txt>
               </Txt>
@@ -619,7 +619,7 @@ export function ProgressOverview({
               {numberLabel(daily("caloriesIn"), 0)} kcal · {numberLabel(daily("protein"))} g protein
             </Txt>
           </View>
-          <Icon name="arrow-top-right" color={ACCENTS.nutrition} size={21} />
+          <Icon name="arrow-right" color={ACCENTS.nutrition} size={21} />
         </Pressable>
         <Pressable
           accessibilityRole="button"

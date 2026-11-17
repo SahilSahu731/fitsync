@@ -196,7 +196,7 @@ export function ProgramProgress({
               </Txt>
             </View>
             <MaterialCommunityIcons
-              name="arrow-top-right"
+              name="arrow-right"
               size={20}
               color={C.muted}
             />

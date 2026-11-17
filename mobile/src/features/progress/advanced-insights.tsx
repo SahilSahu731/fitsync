@@ -90,7 +90,7 @@ export function AdvancedInsights({
           <Txt weight="medium" className="text-xs" style={{ color: C.ink }}>
             More advanced analytics
           </Txt>
-          <Icon name="arrow-top-right" size={18} color={C.ink} />
+          <Icon name="arrow-right" size={18} color={C.ink} />
         </Pressable>
       </View>
     );

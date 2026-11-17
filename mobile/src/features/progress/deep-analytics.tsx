@@ -51,7 +51,7 @@ export function DeepAnalytics({
         <Txt weight="medium" className="flex-1 text-[10px] tracking-[1.5px] text-brand">
           FITSYNC PRO
         </Txt>
-        <Icon name="arrow-top-right" size={21} color={C.brand} />
+        <Icon name="arrow-right" size={21} color={C.brand} />
       </View>
       <Txt weight="medium" className="mt-4 text-[23px] leading-8 tracking-[-0.6px]">
         Go deeper into your progress.

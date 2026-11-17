@@ -11,13 +11,12 @@ import type { Recipe, WellnessState } from "../wellness/api";
 import { PRO, type ProIcon } from "./hub-ui";
 
 export function StudioSection({
-  index,
   title,
   subtitle,
   action,
   onPress,
 }: {
-  index: string;
+  index?: string;
   title: string;
   subtitle?: string;
   action?: string;
@@ -25,10 +24,6 @@ export function StudioSection({
 }) {
   return (
     <View className="mb-4 mt-8">
-      <View className="flex-row items-center gap-2">
-        <View className="h-1 w-1 rounded-full bg-brand" />
-        <Txt className="text-[9px] tracking-[1.6px] text-muted">{index}</Txt>
-      </View>
       <View className="mt-2 flex-row items-center gap-3">
         <Txt
           accessibilityRole="header"
@@ -45,7 +40,7 @@ export function StudioSection({
             className="min-h-11 flex-row items-center gap-1"
           >
             <Txt className="text-[10px] text-brand">{action}</Txt>
-            <MaterialCommunityIcons name="arrow-top-right" size={16} color={PRO.accent} />
+            <MaterialCommunityIcons name="arrow-right" size={16} color={PRO.accent} />
           </Pressable>
         )}
       </View>
@@ -317,7 +312,7 @@ export function MealBrief({
         title={food?.plan ? "Meals & shopping list" : "Plan my meals"}
         onPress={onOpen}
         quiet
-        icon="arrow-top-right"
+        icon="arrow-right"
       />
     </View>
   );
@@ -345,7 +340,7 @@ export function ToolTile({
     >
       <View className="mb-5 flex-row items-center justify-between">
         <MaterialCommunityIcons name={icon} color={color} size={26} />
-        <MaterialCommunityIcons name="arrow-top-right" color={PRO.muted} size={16} />
+        <MaterialCommunityIcons name="arrow-right" color={PRO.muted} size={16} />
       </View>
       <Txt weight="medium" className="text-[14px] leading-6">
         {title}
@@ -363,37 +358,45 @@ export function WeekRhythm({
   days: { date: string; done: boolean; planned: boolean; today: boolean }[];
 }) {
   return (
-    <View className="mt-3 rounded-[24px] border border-white/5 bg-[#111111] p-4">
-      <View className="mb-4 flex-row justify-between">
-        <Txt weight="medium" className="text-xs">
+    <View className="mt-3 rounded-[28px] border border-white/10 bg-black px-2 py-4">
+      <View className="mx-2 mb-5 flex-row flex-wrap items-center justify-between gap-x-3 gap-y-1">
+        <Txt weight="medium" className="text-xs leading-5 text-white">
           {title}
         </Txt>
-        <Txt className="text-[9px] text-muted">Completed · Planned · Rest</Txt>
+        <Txt className="text-[9px] leading-4 text-white/45">Completed · Planned · Rest</Txt>
       </View>
-      <View className="flex-row justify-between gap-1">
+      <View className="flex-row justify-between gap-0.5">
         {days.map((day) => (
           <View
             key={day.date}
             accessible
             accessibilityLabel={`${dateLabel(day.date)}${day.today ? ", today" : ""}, ${day.done ? "completed" : day.planned ? "planned workout" : "no session planned"}`}
-            className={`min-w-0 flex-1 items-center rounded-2xl border px-1 py-3 ${day.today ? "border-brand/35 bg-brand/5" : "border-transparent"}`}
+            className="min-w-0 flex-1 items-center"
           >
-            <Txt className="text-[8px] text-muted">
+            <Txt className="text-[9px] leading-4 text-white/50">
               {new Date(`${day.date}T12:00:00Z`).toLocaleDateString(undefined, {
                 weekday: "narrow",
                 timeZone: "UTC",
               })}
             </Txt>
             <View
-              className={`my-2 h-7 w-7 items-center justify-center rounded-full ${day.done ? "bg-brand" : day.planned ? "border border-brand/35 bg-brand/5" : "bg-white/5"}`}
+              className={`my-2 w-full max-w-12 items-center justify-center rounded-full border p-px ${day.today ? "border-white/70" : "border-transparent"}`}
+              style={{ aspectRatio: 1 }}
             >
-              <MaterialCommunityIcons
-                name={day.done ? "check" : day.planned ? "dumbbell" : "minus"}
-                size={13}
-                color={day.done ? "#111" : day.planned ? PRO.accent : "#626262"}
-              />
+              <View
+                className={`w-full flex-1 items-center justify-center rounded-full border ${day.done ? "border-white bg-white" : day.planned ? "border-white/50 bg-black" : "border-white/10 bg-black"}`}
+              >
+                <MaterialCommunityIcons
+                  name={day.done ? "check" : day.planned ? "dumbbell" : "minus"}
+                  size={17}
+                  color={day.done ? "#000000" : day.planned ? "#FFFFFF" : "#FFFFFF55"}
+                />
+              </View>
             </View>
-            <Txt className={`text-[10px] ${day.today ? "text-brand" : "text-muted"}`}>
+            <Txt
+              weight="medium"
+              className={`text-[11px] leading-5 ${day.today ? "text-white" : "text-white/50"}`}
+            >
               {Number(day.date.slice(-2))}
             </Txt>
           </View>

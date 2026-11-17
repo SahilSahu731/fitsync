@@ -264,7 +264,7 @@ export function ProButton({
       </Txt>
       {!loading && (
         <MaterialCommunityIcons
-          name="arrow-top-right"
+          name="arrow-right"
           size={18}
           color={secondary ? "#FFFFFF" : "#000000"}
         />

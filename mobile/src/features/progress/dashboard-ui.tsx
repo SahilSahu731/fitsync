@@ -86,7 +86,7 @@ export function MetricTile({
     >
       <View className="flex-row items-center justify-between">
         <Icon name={icon} color={color} size={19} />
-        {onPress && <Icon name="arrow-top-right" size={14} color={C.muted} />}
+        {onPress && <Icon name="arrow-right" size={14} color={C.muted} />}
       </View>
       <Txt className="mt-3 text-[10px] text-muted">{label}</Txt>
       <Txt

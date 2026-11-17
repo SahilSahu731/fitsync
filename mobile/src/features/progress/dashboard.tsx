@@ -36,13 +36,14 @@ import { MetricDetail } from "./metric-detail";
 import { WalkCounter } from "./walk-counter";
 import { Icon, IconButton, PanelCard, SectionTitle, SmallButton } from "./visuals";
 import {
+  DailyMetricGrid,
   MetricList,
   TrainingStats,
-  WeightCard,
   compact,
   displayMetric,
   displayUnit,
 } from "./tracking-cards";
+import { TrackCards } from "./track-cards";
 import { ShareProgress } from "./share-progress";
 import { GoalsSummary } from "./goals-summary";
 import { ProgressOverview } from "./overview";
@@ -204,8 +205,11 @@ export function ProgressDashboard() {
     daily,
     goals,
     unit,
-    onLog: (metric: Metric) => setEditor({ metric, date: selectedDate }),
+    onLog: (metric: Metric) => {
+      if (canLog) setEditor({ metric, date: selectedDate });
+    },
     onDetail: setDetailMetric,
+    disabled: !canLog,
   };
   const dateTitle =
     selectedDate === today
@@ -229,7 +233,7 @@ export function ProgressDashboard() {
     setMessage(value === null ? "Check-in cleared." : `${METRICS[metric].label} saved.`);
   }
   async function addWater() {
-    if (waterBusy) return;
+    if (waterBusy || !canLog) return;
     setWaterBusy(true);
     setMessageError(false);
     try {
@@ -243,6 +247,7 @@ export function ProgressDashboard() {
     }
   }
   async function saveWalk(count: number, date: string) {
+    if (!canLog) throw new Error("Your journal is unavailable. Refresh Progress and try again.");
     if (savingWalk.current) throw new Error("This walk is already being saved.");
     savingWalk.current = true;
     try {
@@ -299,10 +304,16 @@ export function ProgressDashboard() {
         accessibilityRole="button"
         accessibilityLabel="Choose check-in date"
         onPress={chooseDate}
-        className="min-h-11 flex-1 flex-row items-center justify-center gap-2 rounded-full bg-panel px-3"
+        className="min-h-11 min-w-0 flex-1 flex-row items-center justify-center gap-1.5 rounded-full bg-panel px-2"
       >
         <Icon name="calendar-blank-outline" size={17} color={C.muted} />
-        <Txt weight="medium" className="text-sm">
+        <Txt
+          weight="medium"
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.8}
+          className="min-w-0 shrink text-sm leading-6"
+        >
           {dateTitle}
         </Txt>
         <Icon name="chevron-down" size={16} color={C.muted} />
@@ -504,21 +515,23 @@ export function ProgressDashboard() {
         {view === "health" && (
           <View className="mt-4">
             {dayPicker}
-            <View className="mb-4 h-14 flex-row items-center gap-3 rounded-2xl bg-panel px-4">
+            <View className="mb-4 min-h-14 flex-row items-center gap-3 rounded-2xl bg-panel px-4">
               <Icon name="magnify" color={C.muted} />
               <TextInput
                 accessibilityLabel="Search all health metrics"
-                placeholder="Search steps, calories, measurements…"
+                placeholder="Search all metrics"
                 placeholderTextColor={C.muted}
                 value={metricSearch}
                 onChangeText={setMetricSearch}
                 autoCorrect={false}
                 style={{
                   flex: 1,
+                  minWidth: 0,
                   color: C.ink,
                   fontFamily: "Poppins_400Regular",
                   fontSize: 14,
-                  height: "100%",
+                  minHeight: 56,
+                  paddingVertical: 12,
                 }}
               />
               {!!metricSearch && (
@@ -532,11 +545,7 @@ export function ProgressDashboard() {
                 </MotionPressable>
               )}
             </View>
-            <ScrollView
-              horizontal
-              showsHorizontalScrollIndicator={false}
-              contentContainerStyle={{ gap: 8 }}
-            >
+            <View className="flex-row flex-wrap gap-2">
               {(Object.keys(METRIC_GROUPS) as MetricGroup[]).map((key) => (
                 <MotionPressable
                   key={key}
@@ -548,12 +557,16 @@ export function ProgressDashboard() {
                   }}
                   style={{
                     flexDirection: "row",
+                    flexGrow: 1,
+                    flexBasis: "45%",
+                    minWidth: 0,
                     gap: 6,
                     minHeight: 44,
                     paddingHorizontal: 14,
                     borderRadius: 24,
                     alignItems: "center",
-                    backgroundColor: !metricSearch && group === key ? C.ink : C.panel,
+                    justifyContent: "center",
+                    backgroundColor: !metricSearch && group === key ? C.brand : C.panel,
                   }}
                 >
                   <Icon
@@ -565,55 +578,46 @@ export function ProgressDashboard() {
                     weight="medium"
                     style={{ color: !metricSearch && group === key ? C.bg : C.ink, fontSize: 13 }}
                   >
-                    {METRIC_GROUPS[key].label}
+                    {key === "activity" ? "Daily" : METRIC_GROUPS[key].label}
                   </Txt>
                 </MotionPressable>
               ))}
-            </ScrollView>
+            </View>
             <SectionTitle
-              title={metricSearch ? "Search results" : METRIC_GROUPS[group].label}
+              title={
+                metricSearch
+                  ? "Search results"
+                  : group === "activity"
+                    ? "Your daily essentials"
+                    : METRIC_GROUPS[group].label
+              }
               action="Goals"
               onAction={() => setGoalEditor(true)}
             />
-            {!metricSearch && group === "body" && (
-              <WeightCard
-                latest={latestWeight}
+            {!metricSearch ? (
+              <TrackCards
+                {...metricProps}
+                group={group}
+                canLog={canLog}
+                latestWeight={latestWeight}
                 weights={weights}
-                unit={unit}
-                onLog={() => setEditor({ metric: "weight", date: selectedDate })}
-                onDetail={() => setDetailMetric("weight")}
+                onWater={() => void addWater()}
+                waterBusy={waterBusy}
+                walkCounter={
+                  <WalkCounter draft={walkDraft} onDraftChange={setWalkDraft} onSave={saveWalk} />
+                }
               />
-            )}
-            {visibleMetrics.length ? (
-              <MetricList metrics={visibleMetrics} {...metricProps} />
+            ) : visibleMetrics.length ? (
+              <DailyMetricGrid metrics={visibleMetrics} {...metricProps} />
             ) : (
               <PanelCard>
                 <Txt className="text-sm text-muted">No metrics match this search.</Txt>
               </PanelCard>
             )}
             <Txt className="mt-3 text-xs leading-5 text-muted">
-              Values are for {selectedDate === today ? "today" : dateLabel(selectedDate)}. Tap a row
-              for its trend or + to log.
+              Values are for {selectedDate === today ? "today" : dateLabel(selectedDate)}. Tap a
+              value for its history, or + to log a check-in.
             </Txt>
-            {!metricSearch && group === "activity" && (
-              <PanelCard style={{ marginTop: 20 }}>
-                <WalkCounter draft={walkDraft} onDraftChange={setWalkDraft} onSave={saveWalk} />
-              </PanelCard>
-            )}
-            {!metricSearch && group === "nutrition" && (
-              <View className="mt-4">
-                <SmallButton
-                  label="Add 250 ml water"
-                  icon="water-plus-outline"
-                  onPress={() => void addWater()}
-                  disabled={waterBusy || !canLog}
-                />
-                <Txt className="mt-4 text-xs leading-5 text-muted">
-                  Food and active calories are separate daily totals. Active calories exclude
-                  resting energy.
-                </Txt>
-              </View>
-            )}
           </View>
         )}
 
@@ -935,7 +939,9 @@ export function ProgressDashboard() {
         <CheckInDatePicker
           date={selectedDate}
           today={today}
-          loggedDates={new Set([...metrics.map((entry) => entry.date), ...completed.map(workoutDate)])}
+          loggedDates={
+            new Set([...metrics.map((entry) => entry.date), ...completed.map(workoutDate)])
+          }
           onClose={() => setDateEditor(false)}
           onSelect={(date) => {
             setSelectedDate(date);

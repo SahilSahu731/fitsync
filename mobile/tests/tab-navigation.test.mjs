@@ -205,6 +205,7 @@ function progressFixture() {
     "@/src/features/billing/billing-context": { useBilling: () => billing },
     "./training-trends": { TrainingTrends: "Trends" },
     "./editors": { MetricEditor: "Editor", Sheet: "Sheet" },
+    "./date-picker": { CheckInDatePicker: "DatePicker" },
     "./consistency": { ConsistencySection: "Consistency" },
     "./metric-detail": { MetricDetail: "MetricDetail" },
     "./walk-counter": { WalkCounter: "WalkCounter" },
@@ -217,7 +218,9 @@ function progressFixture() {
       compact: (value) => String(value),
       TrainingStats: "Totals",
       MetricList: "MetricList",
+      DailyMetricGrid: "MetricGrid",
     },
+    "./track-cards": { TrackCards: "TrackCards" },
     "./use-progress": { useProgress: () => progress },
     "./visuals": { Icon: "Icon", PanelCard: "Panel", SectionTitle: "Title", SmallButton: "Button" },
   });
@@ -296,8 +299,165 @@ test("Progress retains Health and its check-in controls alongside the merged tra
       (input) => input.props.accessibilityLabel === "Search all health metrics",
     ),
   );
-  find(health, "MetricList")[0].props.onLog("water");
+  find(health, "TrackCards")[0].props.onLog("water");
   assert.equal(find(fixture.render(), "Editor")[0].props.initialMetric, "water");
+});
+
+test("Track metric search preserves every matching metric and the selected logging day", () => {
+  const fixture = progressFixture();
+  find(find(fixture.render(), "Overview")[0].props.dayPicker, "Pressable")
+    .find((button) => button.props.accessibilityLabel === "Choose check-in date")
+    .props.onPress();
+  find(fixture.render(), "DatePicker")[0].props.onSelect("2026-10-24");
+  find(fixture.render(), "Pressable")
+    .find(
+      (button) =>
+        button.props.accessibilityRole === "tab" &&
+        find(button, "Txt").some((label) => label.props.children === "Track"),
+    )
+    .props.onPress();
+  let tree = fixture.render();
+  find(tree, "Input")
+    .find((input) => input.props.accessibilityLabel === "Search all health metrics")
+    .props.onChangeText("water");
+  tree = fixture.render();
+  assert.equal(find(tree, "TrackCards").length, 0, "search replaces the category cards");
+  const results = find(tree, "MetricGrid")[0];
+  assert.deepEqual(Array.from(results.props.metrics), ["water"]);
+  results.props.onLog("water");
+  const editor = find(fixture.render(), "Editor")[0];
+  assert.equal(editor.props.initialMetric, "water");
+  assert.equal(editor.props.date, "2026-10-24");
+});
+
+test("Track cards cannot open or quick-save logs while journal storage is unavailable", () => {
+  const fixture = progressFixture();
+  fixture.progress.storageError = "Journal could not be loaded";
+  find(fixture.render(), "Pressable")
+    .find(
+      (button) =>
+        button.props.accessibilityRole === "tab" &&
+        find(button, "Txt").some((label) => label.props.children === "Track"),
+    )
+    .props.onPress();
+  const cards = find(fixture.render(), "TrackCards")[0].props;
+  assert.equal(cards.canLog, false);
+  cards.onLog("steps");
+  cards.onWater();
+  assert.equal(find(fixture.render(), "Editor").length, 0);
+});
+
+test("daily check-in date selection uses a calendar and opens logs for the chosen day", () => {
+  const fixture = progressFixture();
+  let overview = find(fixture.render(), "Overview")[0].props;
+  const rangeStart = overview.data.start;
+  find(overview.dayPicker, "Pressable")
+    .find((button) => button.props.accessibilityLabel === "Choose check-in date")
+    .props.onPress();
+  let tree = fixture.render();
+  let calendar = find(tree, "DatePicker")[0];
+  assert.ok(calendar, "Today opens the visual calendar");
+  assert.equal(calendar.props.date, today);
+  assert.equal(calendar.props.today, today);
+  assert.equal(
+    find(tree, "Input").some(
+      (input) => input.props.accessibilityLabel === "Journal date YYYY-MM-DD",
+    ),
+    false,
+    "the date selector no longer asks users to type a date",
+  );
+  calendar.props.onSelect("2026-10-24");
+  tree = fixture.render();
+  assert.equal(find(tree, "DatePicker").length, 0);
+  overview = find(tree, "Overview")[0].props;
+  assert.equal(overview.selectedDate, "2026-10-24");
+  assert.equal(overview.data.start, rangeStart, "daily selection does not re-anchor analytics");
+  assert.equal(overview.days, 30);
+  overview.onLog("water");
+  const editor = find(fixture.render(), "Editor")[0].props;
+  assert.equal(editor.initialMetric, "water");
+  assert.equal(editor.date, "2026-10-24");
+  editor.onClose();
+  overview = find(fixture.render(), "Overview")[0].props;
+  find(overview.dayPicker, "Pressable")
+    .find((button) => button.props.accessibilityLabel === "Choose check-in date")
+    .props.onPress();
+  calendar = find(fixture.render(), "DatePicker")[0];
+  assert.equal(calendar.props.date, "2026-10-24", "reopening keeps the chosen day");
+  calendar.props.onClose();
+  tree = fixture.render();
+  assert.equal(find(tree, "DatePicker").length, 0);
+  assert.equal(find(tree, "Overview")[0].props.selectedDate, "2026-10-24");
+});
+
+test("calendar markers use corrected check-ins and workouts while older daily logs remain available", () => {
+  const fixture = progressFixture();
+  const entry = (id, date, value, observedAt = `${date}T11:00:00Z`) => ({
+    id,
+    kind: "metric",
+    metric: "water",
+    date,
+    value,
+    observedAt,
+    notes: "",
+    source: "manual",
+  });
+  fixture.progress.journal.events = [
+    entry("zero", "2026-11-10", 0),
+    entry("old-value", "2026-11-09", 500),
+    entry("cleared", "2026-11-09", null, "2026-11-09T12:00:00Z"),
+    entry("archive", "2026-01-01", 1000),
+    { id: "goal", kind: "goals", goals: { water: 2000 }, observedAt: "2026-11-08T11:00:00Z" },
+  ];
+  let overview = find(fixture.render(), "Overview")[0].props;
+  find(overview.dayPicker, "Pressable")
+    .find((button) => button.props.accessibilityLabel === "Choose check-in date")
+    .props.onPress();
+  const calendar = find(fixture.render(), "DatePicker")[0].props;
+  assert.equal(calendar.loggedDates.has("2026-11-10"), true, "zero is a saved check-in");
+  assert.equal(
+    calendar.loggedDates.has("2026-11-09"),
+    false,
+    "a deleted value does not mark a day",
+  );
+  assert.equal(
+    calendar.loggedDates.has("2026-11-08"),
+    false,
+    "a goals change is not a daily check-in",
+  );
+  assert.equal(
+    calendar.loggedDates.has("2026-11-12"),
+    true,
+    "completed workouts mark their local day",
+  );
+  assert.equal(
+    calendar.loggedDates.has("2026-01-01"),
+    true,
+    "the journal keeps older recorded days",
+  );
+  calendar.onSelect("2026-01-01");
+  overview = find(fixture.render(), "Overview")[0].props;
+  assert.equal(overview.selectedDate, "2026-01-01");
+  assert.equal(overview.daily("water"), 1000);
+  assert.equal(overview.days, 30);
+  assert.equal(
+    overview.data.metrics.some((entry) => entry.date === "2026-01-01"),
+    false,
+  );
+  assert.equal(fixture.calls.length, 0, "past daily check-ins do not open the analytics paywall");
+  const tree = fixture.render();
+  find(tree, "Pressable")
+    .find(
+      (button) =>
+        button.props.accessibilityRole === "tab" &&
+        find(button, "Txt").some((label) => label.props.children === "Track"),
+    )
+    .props.onPress();
+  const track = fixture.render();
+  find(track, "Pressable")
+    .find((button) => button.props.accessibilityLabel === "Choose check-in date")
+    .props.onPress();
+  assert.equal(find(fixture.render(), "DatePicker")[0].props.date, "2026-01-01");
 });
 
 test("merged training distinguishes first sync, failures, cached data, and a real empty account", () => {
