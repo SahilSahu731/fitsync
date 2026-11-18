@@ -4,7 +4,7 @@ The new native modules require a **new Android development build**. Restarting M
 
 ## What changed
 
-- One logo source, `brand/mark.svg`, generates the website favicon, Apple touch icon, website logo, Android launcher/adaptive/themed icons, notification icon, and splash artwork. Run `npm run assets:generate` from `mobile` after editing it.
+- One transparent logo source, `brand/mark.png`, generates the website favicon, Apple touch icon, website logo, Android launcher/adaptive/themed icons, notification icon, and splash artwork. Run `npm run assets:generate` from `mobile` after replacing it.
 - Lime (`#C5F460`), black, white, and Inter now carry through both products.
 - Floating glass tabs sample the screen behind them on Android 12+ using Expo Blur's target API. Older Android versions and reduced-transparency settings get a readable solid surface. Every tab keeps its label and hit area as the selection changes.
 - Set-save and workout-completion sounds play after durable local saves, including offline workout logging. They respect silent mode and mix with music. Navigation uses subtle haptics without navigation sounds.
@@ -112,7 +112,7 @@ The repository currently targets Android. The reusable asset set includes an App
 
 | Area | Test | Expected result |
 | --- | --- | --- |
-| Branding | Launcher, themed icon, splash, sign-in, website tab and saved home-screen icon | New lime two-stroke mark; notification silhouette is white on transparency |
+| Branding | Launcher, themed icon, splash, sign-in, website tab and saved home-screen icon | White F with lime orbit; notification silhouette is white on transparency |
 | Glass tabs | Scroll behind the bar; switch all five tabs; open keyboard; rotate through accessibility settings | Live blur on Android 12+, stable labels, correct selected state, readable fallback, no recursive blur |
 | Tracking | Complete/undo sets, start a rest timer, save offline, reconnect, finish a workout | Saves remain durable; sound plays only after a successful new completion; no sound for undo or failed saves |
 | Sound | Toggle sound off, restart app, log another set; play music; enable silent mode | Preference persists; no app completion sounds when off; no interruption of music; silent mode respected |

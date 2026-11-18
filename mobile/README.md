@@ -60,7 +60,7 @@ Run commands from `mobile/`.
 
 - NativeWind scans `src/**/*.{js,jsx,ts,tsx}`. Keep screen and component classes in that tree.
 - After changing Tailwind or Metro configuration, restart with `npm start -- --clear`.
-- Edit `assets/brand/mark.svg`, then run `npm run assets:generate` to regenerate the app icon, Android adaptive/themed icons, splash image, and favicon.
+- Replace the shared transparent logo in `../brand/mark.png`, then run `npm run assets:generate` to regenerate the app icon, Android adaptive/themed icons, splash image, favicon, and the bundled `assets/brand/mark.png`.
 - The native splash holds until fonts, session restoration, layout, and the logo image are ready. `src/components/brand-reveal.tsx` then plays a short pulse and wordmark reveal; reduced-motion users skip it.
 - Launcher icons are static assets. The animation runs during app launch.
 - Native icon and splash configuration changes require a new Android build. To test the release splash, build an internal preview with `npx eas-cli@latest build --platform android --profile preview`, then install it. Expo Go and development builds do not reproduce the complete native splash experience.
@@ -123,4 +123,4 @@ Join our community of developers creating universal apps.
 
 ## Glass tabs, branding, calendar and billing upgrade
 
-See [the rebuild and device-test guide](../docs/mobile-upgrade.md) for the new native modules, EAS environment configuration, development APK rebuild, Play sandbox setup, and verification checklist. The shared logo source is `../brand/mark.svg`; regenerate all mobile and website assets with `npm run assets:generate`.
+See [the rebuild and device-test guide](../docs/mobile-upgrade.md) for the new native modules, EAS environment configuration, development APK rebuild, Play sandbox setup, and verification checklist. The shared transparent logo source is `../brand/mark.png`; regenerate all mobile and website assets, including the bundled `assets/brand/mark.png`, with `npm run assets:generate`.

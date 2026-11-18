@@ -11,7 +11,7 @@ export function Brand() {
       aria-label="FitSync home"
       className={`inline-flex items-center gap-1.5 rounded-sm whitespace-nowrap sm:gap-2.5 ${focusRing}`}
     >
-      <Image src="/brand/mark.svg" alt="" width={32} height={32} className="size-7 sm:size-8" />
+      <Image src="/brand/mark.png" alt="" width={32} height={32} className="size-7 sm:size-8" />
       <span className="text-[26px] leading-none font-semibold tracking-[-1.4px] sm:text-[30px]">
         FitSync<span className="text-brand">.</span>
       </span>
