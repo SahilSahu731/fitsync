@@ -9,12 +9,16 @@ export function NativeBuildRequired({ missing }: { missing: string[] }) {
   return (
     <SafeAreaView
       style={styles.screen}
-      onLayout={() => { void SplashScreen.hideAsync().catch(console.warn); }}
+      onLayout={() => {
+        void SplashScreen.hideAsync().catch(console.warn);
+      }}
     >
       <StatusBar style="light" />
       <View style={styles.content}>
         <Text style={styles.brand}>FITSYNC</Text>
-        <Text accessibilityRole="header" style={styles.title}>Update FitSync to continue</Text>
+        <Text accessibilityRole="header" style={styles.title}>
+          Update FitSync to continue
+        </Text>
         <Text style={styles.message}>
           Install the latest app build to enable secure sign-in and profile photos.
         </Text>
@@ -36,5 +40,5 @@ const styles = StyleSheet.create({
   brand: { color: C.brand, fontWeight: "800", fontSize: 18, letterSpacing: 2 },
   title: { color: C.ink, fontSize: 30, fontWeight: "700" },
   message: { color: C.muted, fontSize: 16, lineHeight: 24 },
-  details: { color: C.muted, fontSize: 13, lineHeight: 21 }
+  details: { color: C.muted, fontSize: 13, lineHeight: 21 },
 });

@@ -1,4 +1,3 @@
-
 import React, { useState } from "react";
 import { Redirect, Stack } from "expo-router";
 import { useSession } from "@/src/context/session";
@@ -22,7 +21,7 @@ export default function OnboardingLayout() {
   return (
     <Stack
       screenOptions={{
-        headerShown: false
+        headerShown: false,
       }}
     />
   );

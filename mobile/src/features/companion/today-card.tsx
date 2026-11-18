@@ -9,7 +9,7 @@ import { dateLabel, localDate } from "../progress/model";
 import { workoutDate } from "../progress/analytics";
 import { useWorkout } from "../workouts/workout-context";
 import { useCoaching } from "../coaching/use-coaching";
-import { GlassCard, ProAction, ProButton, PRO } from "../pro/ui";
+import { GlassCard, ProAction, ProButton, PRO } from "../pro/hub-ui";
 import { useCompanion } from "./companion-context";
 import { effectiveReadiness, todayBriefing } from "./model";
 import type { CompanionRecord } from "./api";

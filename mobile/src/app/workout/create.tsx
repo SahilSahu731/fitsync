@@ -11,7 +11,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { useAppAlert } from "@/src/components/app-dialog";
 import { Txt } from "@/src/components/ui";
@@ -19,6 +19,8 @@ import { C } from "@/src/constants/theme";
 import { useSession } from "@/src/context/session";
 import { ScreenEntrance } from "@/src/components/motion";
 import { workoutApi } from "@/src/features/workouts/api";
+import { apiSessionKey } from "@/src/services/api";
+import { appendRoutineSeed, loadRoutineSeed } from "@/src/features/workouts/routine-seed";
 import {
   newDraftExercise,
   newDraftSet,
@@ -43,6 +45,7 @@ export default function CreateWorkoutScreen() {
 }
 
 function RoutineBuilder({ ownerId }: { ownerId: string }) {
+  const { exerciseId } = useLocalSearchParams<{ exerciseId?: string }>();
   const insets = useSafeAreaInsets();
   const notesInput = useRef<TextInput>(null);
   const alive = useRef(true);
@@ -66,6 +69,51 @@ function RoutineBuilder({ ownerId }: { ownerId: string }) {
   const [saving, setSaving] = useState(false);
   const savingRef = useRef(false);
   const [error, setError] = useState("");
+  const [seedLoading, setSeedLoading] = useState(!!exerciseId);
+  const [seedError, setSeedError] = useState("");
+  const [seedAttempt, setSeedAttempt] = useState(0);
+  const seeded = useRef(new Set<string>());
+  const currentExercises = useRef(exercises);
+  useEffect(() => {
+    currentExercises.current = exercises;
+  }, [exercises]);
+  useEffect(() => {
+    if (!exerciseId || seeded.current.has(exerciseId)) {
+      setSeedLoading(false);
+      return;
+    }
+    let active = true;
+    const generation = apiSessionKey();
+    setSeedLoading(true);
+    setSeedError("");
+    void loadRoutineSeed(ownerId, exerciseId)
+      .then((exercise) => {
+        if (!active || !alive.current || generation !== apiSessionKey()) return;
+        if (
+          currentExercises.current.length >= 50 &&
+          !currentExercises.current.some((row) => row.exercise.id === exercise.id)
+        ) {
+          throw Error(
+            "This routine already has 50 exercises. Remove one before adding this movement.",
+          );
+        }
+        seeded.current.add(exerciseId);
+        setExercises((rows) => appendRoutineSeed(rows, exercise));
+      })
+      .catch((reason) => {
+        if (active && alive.current && generation === apiSessionKey()) {
+          setSeedError(
+            reason instanceof Error ? reason.message : "Could not add this exercise. Try again.",
+          );
+        }
+      })
+      .finally(() => {
+        if (active && alive.current && generation === apiSessionKey()) setSeedLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [ownerId, exerciseId, seedAttempt]);
   const selected = exercises.find((item) => item.id === menu);
   const detail = exercises.find((item) => item.id === details);
   const patch = (id: string, change: Partial<DraftExercise>) =>
@@ -102,7 +150,7 @@ function RoutineBuilder({ ownerId }: { ownerId: string }) {
     ]);
   };
   const save = async () => {
-    if (savingRef.current) return;
+    if (savingRef.current || seedLoading) return;
     Keyboard.dismiss();
     setError("");
     try {
@@ -149,10 +197,10 @@ function RoutineBuilder({ ownerId }: { ownerId: string }) {
             <Pressable
               accessibilityRole="button"
               accessibilityLabel="Save routine"
-              accessibilityState={{ disabled: saving, busy: saving }}
-              disabled={saving}
+              accessibilityState={{ disabled: saving || seedLoading, busy: saving }}
+              disabled={saving || seedLoading}
               onPress={() => void save()}
-              className={`min-h-11 min-w-20 items-center justify-center rounded-xl bg-white px-5 ${saving ? "opacity-60" : ""}`}
+              className={`min-h-11 min-w-20 items-center justify-center rounded-xl bg-white px-5 ${saving || seedLoading ? "opacity-60" : ""}`}
             >
               {saving ? (
                 <ActivityIndicator color={C.bg} />
@@ -163,6 +211,31 @@ function RoutineBuilder({ ownerId }: { ownerId: string }) {
               )}
             </Pressable>
           </View>
+          {(seedLoading || seedError) && (
+            <View className="mx-4 mb-3 rounded-2xl border border-white/10 bg-panel p-4">
+              <View className="flex-row items-center gap-3">
+                {seedLoading && <ActivityIndicator color={C.ink} size="small" />}
+                <Txt
+                  accessibilityRole={seedError ? "alert" : undefined}
+                  className="flex-1 text-xs leading-5 text-muted"
+                >
+                  {seedLoading ? "Adding your exercise to this routine…" : seedError}
+                </Txt>
+              </View>
+              {!!seedError && (
+                <Pressable
+                  accessibilityRole="button"
+                  accessibilityLabel="Retry adding exercise"
+                  onPress={() => setSeedAttempt((value) => value + 1)}
+                  className="mt-3 self-start rounded-full bg-ink px-4 py-2.5"
+                >
+                  <Txt weight="semibold" className="text-xs text-bg">
+                    Try again
+                  </Txt>
+                </Pressable>
+              )}
+            </View>
+          )}
           {!!error && (
             <View className="mx-4 mb-3 rounded-2xl border border-red-300/20 bg-red-500/10 p-3">
               <Txt

@@ -1,13 +1,7 @@
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useCallback, useEffect, useState } from "react";
 
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, View } from "react-native";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -63,33 +57,19 @@ function StatTile({
         {value}
       </Txt>
 
-      <Txt className="mt-0.5 text-[11px] tracking-wider text-muted">
-        {label}
-      </Txt>
+      <Txt className="mt-0.5 text-[11px] tracking-wider text-muted">{label}</Txt>
     </View>
   );
 }
 
-function Tag({
-  icon,
-  label,
-  color,
-}: {
-  icon: IconName;
-  label: string;
-  color: string;
-}) {
+function Tag({ icon, label, color }: { icon: IconName; label: string; color: string }) {
   return (
     <View
       className="flex-row items-center rounded-full px-4 py-2"
       style={{ backgroundColor: `${color}22` }}
     >
       <MaterialCommunityIcons name={icon} size={16} color={color} />
-      <Txt
-        weight="semibold"
-        className="ml-1.5 text-sm capitalize"
-        style={{ color }}
-      >
+      <Txt weight="semibold" className="ml-1.5 text-sm capitalize" style={{ color }}>
         {label}
       </Txt>
     </View>
@@ -135,9 +115,15 @@ export default function RoutineDetailScreen() {
   }, [id]);
 
   useEffect(() => {
-    let active = true; let cleanup: (() => void) | undefined;
-    queueMicrotask(() => { if (active) cleanup = load(); });
-    return () => { active = false; cleanup?.(); };
+    let active = true;
+    let cleanup: (() => void) | undefined;
+    queueMicrotask(() => {
+      if (active) cleanup = load();
+    });
+    return () => {
+      active = false;
+      cleanup?.();
+    };
   }, [load]);
 
   const handleSave = async () => {
@@ -199,21 +185,12 @@ export default function RoutineDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-bg px-8">
         {BackButton}
-        <MaterialCommunityIcons
-          name="cloud-off-outline"
-          size={44}
-          color={C.muted}
-        />
+        <MaterialCommunityIcons name="cloud-off-outline" size={44} color={C.muted} />
         <Txt weight="semibold" className="mt-4 text-lg">
           Routine unavailable
         </Txt>
-        <Txt className="mt-1 text-center text-sm text-muted">
-          We could not load this routine.
-        </Txt>
-        <Pressable
-          onPress={() => load()}
-          className="mt-5 rounded-full bg-ink px-6 py-3"
-        >
+        <Txt className="mt-1 text-center text-sm text-muted">We could not load this routine.</Txt>
+        <Pressable onPress={() => load()} className="mt-5 rounded-full bg-ink px-6 py-3">
           <Txt weight="semibold" className="text-bg">
             Try again
           </Txt>
@@ -261,15 +238,8 @@ export default function RoutineDetailScreen() {
         {/* Content sheet overlapping the image */}
         <View className="-mt-7 rounded-t-[30px] bg-bg px-5 pt-6">
           <View className="flex-row items-center">
-            <MaterialCommunityIcons
-              name="account-check-outline"
-              size={22}
-              color={C.ink}
-            />
-            <Txt
-              weight="semibold"
-              className="ml-1.5 text-lg tracking-wider text-ink"
-            >
+            <MaterialCommunityIcons name="account-check-outline" size={22} color={C.ink} />
+            <Txt weight="semibold" className="ml-1.5 text-lg tracking-wider text-ink">
               By {routine.author}
             </Txt>
           </View>
@@ -279,29 +249,15 @@ export default function RoutineDetailScreen() {
           </Txt>
 
           <View className="mt-4 flex-row flex-wrap gap-2">
-            <Tag
-              icon="signal-cellular-3"
-              label={routine.level}
-              color={levelColor}
-            />
-            <Tag
-              icon="dumbbell"
-              label={routine.equipment.replace(/_/g, " ")}
-              color={BLUE}
-            />
+            <Tag icon="signal-cellular-3" label={routine.level} color={levelColor} />
+            <Tag icon="dumbbell" label={routine.equipment.replace(/_/g, " ")} color={BLUE} />
             {routine.goal ? (
-              <Tag
-                icon="target"
-                label={routine.goal.replace(/_/g, " ")}
-                color={C.ink}
-              />
+              <Tag icon="target" label={routine.goal.replace(/_/g, " ")} color={C.ink} />
             ) : null}
           </View>
 
           {routine.description ? (
-            <Txt className="mt-4 text-[15px] leading-6 text-muted">
-              {routine.description}
-            </Txt>
+            <Txt className="mt-4 text-[15px] leading-6 text-muted">{routine.description}</Txt>
           ) : null}
 
           {/* Stats */}
@@ -335,10 +291,7 @@ export default function RoutineDetailScreen() {
           </View>
 
           {exercises.map((item, index) => (
-            <View
-              key={item.id}
-              className="mb-3 rounded-[22px] bg-panel p-4"
-            >
+            <View key={item.id} className="mb-3 rounded-[22px] bg-panel p-4">
               <View className="flex-row items-center">
                 <View className="h-11 w-11 items-center justify-center rounded-2xl bg-green-600/20">
                   <Txt weight="semibold" className="text-ink">
@@ -352,11 +305,7 @@ export default function RoutineDetailScreen() {
                   </Txt>
 
                   <View className="mt-1 flex-row items-center">
-                    <MaterialCommunityIcons
-                      name="timer-sand"
-                      size={13}
-                      color={C.muted}
-                    />
+                    <MaterialCommunityIcons name="timer-sand" size={13} color={C.muted} />
                     <Txt className="ml-1 text-xs text-muted">
                       Rest {formatRest(item.rest_seconds)}
                     </Txt>
@@ -381,9 +330,7 @@ export default function RoutineDetailScreen() {
                     color={GOLD}
                     style={{ marginTop: 2 }}
                   />
-                  <Txt className="ml-2 flex-1 text-sm leading-5 text-muted">
-                    {item.notes}
-                  </Txt>
+                  <Txt className="ml-2 flex-1 text-sm leading-5 text-muted">{item.notes}</Txt>
                 </View>
               )}
             </View>

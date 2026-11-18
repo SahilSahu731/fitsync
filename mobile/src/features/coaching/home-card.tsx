@@ -44,17 +44,14 @@ function GlassSurface({
     shimmer.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.quad) }),
-        withDelay(shimmerDelay, withTiming(0, { duration: 0 }))
+        withDelay(shimmerDelay, withTiming(0, { duration: 0 })),
       ),
-      -1
+      -1,
     );
   }, [reduceMotion, shimmer, shimmerDelay]);
 
   const shimmerStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: -120 + shimmer.value * (width + 240) },
-      { skewX: "-20deg" },
-    ],
+    transform: [{ translateX: -120 + shimmer.value * (width + 240) }, { skewX: "-20deg" }],
   }));
 
   const onLayout = (e: LayoutChangeEvent) => setWidth(e.nativeEvent.layout.width);
@@ -85,7 +82,9 @@ function GlassSurface({
 
       {/* Shimmer sweep */}
       {!reduceMotion && (
-        <Animated.View style={[{ position: "absolute", top: 0, bottom: 0, width: 90 }, shimmerStyle]}>
+        <Animated.View
+          style={[{ position: "absolute", top: 0, bottom: 0, width: 90 }, shimmerStyle]}
+        >
           <LinearGradient
             colors={["transparent", "rgba(255,255,255,0.28)", "transparent"]}
             start={{ x: 0, y: 0.5 }}
@@ -110,20 +109,17 @@ export function CoachHomeButton() {
     pulse.value = withRepeat(
       withTiming(1, { duration: 1800, easing: Easing.inOut(Easing.sin) }),
       -1,
-      true
+      true,
     );
     glow.value = withRepeat(
       withTiming(1, { duration: 2400, easing: Easing.inOut(Easing.sin) }),
       -1,
-      true
+      true,
     );
   }, [glow, pulse, reduceMotion]);
 
   const iconStyle = useAnimatedStyle(() => ({
-    transform: [
-      { scale: 1 + pulse.value * 0.12 },
-      { rotate: `${pulse.value * 20 - 10}deg` },
-    ],
+    transform: [{ scale: 1 + pulse.value * 0.12 }, { rotate: `${pulse.value * 20 - 10}deg` }],
   }));
 
   const glowStyle = useAnimatedStyle(() => ({
@@ -135,7 +131,9 @@ export function CoachHomeButton() {
     <Animated.View entering={FadeInDown.duration(500).springify().damping(16)} className="mb-4">
       <MotionPressable
         accessibilityRole="button"
-        accessibilityLabel={isPro ? "Open your Pro personal coach" : "Explore personal coaching with Pro"}
+        accessibilityLabel={
+          isPro ? "Open your Pro personal coach" : "Explore personal coaching with Pro"
+        }
         accessibilityState={{ disabled: loading, busy: loading }}
         disabled={loading}
         onPress={() => {
@@ -194,16 +192,13 @@ export function CoachHomeCard({ compact = false }: { compact?: boolean }) {
     float.value = withRepeat(
       withTiming(1, { duration: 2600, easing: Easing.inOut(Easing.sin) }),
       -1,
-      true
+      true,
     );
   }, [float, reduceMotion]);
 
   // arrow nudges toward the top-right, inviting a tap
   const arrowStyle = useAnimatedStyle(() => ({
-    transform: [
-      { translateX: float.value * 2 },
-      { translateY: float.value * -2 },
-    ],
+    transform: [{ translateX: float.value * 2 }, { translateY: float.value * -2 }],
   }));
 
   return (

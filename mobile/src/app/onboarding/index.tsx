@@ -1,20 +1,11 @@
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useEffect, useRef, useState } from "react";
-import {
-  ActivityIndicator,
-  BackHandler,
-  Keyboard,
-  View,
-} from "react-native";
+import { ActivityIndicator, BackHandler, Keyboard, View } from "react-native";
 import { useRouter } from "expo-router";
 import * as Haptics from "expo-haptics";
 import { useSession } from "@/src/context/session";
 import { C } from "@/src/constants/theme";
-import {
-  GoalStep,
-  ExperienceStep,
-  EquipmentStep,
-} from "@/src/components/onboarding/choice-steps";
+import { GoalStep, ExperienceStep, EquipmentStep } from "@/src/components/onboarding/choice-steps";
 import { MeasurementStep } from "@/src/components/onboarding/measurement-step";
 import { RoutineStep } from "@/src/components/onboarding/routine-step";
 import { AboutStep } from "@/src/components/onboarding/about-step";
@@ -30,9 +21,7 @@ export default function OnboardingScreen() {
   const { user, settings, saveProfile } = useSession();
   const { draft, setDraft, loaded, clearDraft } = useOnboardingDraft(user?.id);
   const [step, setStep] = useState(0);
-  const [weightUnit, setWeightUnit] = useState<"kg" | "lb">(
-    settings?.weightUnit ?? "kg",
-  );
+  const [weightUnit, setWeightUnit] = useState<"kg" | "lb">(settings?.weightUnit ?? "kg");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
   const [transitioning, setTransitioning] = useState(false);
@@ -109,15 +98,11 @@ export default function OnboardingScreen() {
       await saveProfile({ ...draft, completedAt: new Date().toISOString() });
       setComplete(true);
       void clearDraft();
-      void Haptics.notificationAsync(
-        Haptics.NotificationFeedbackType.Success,
-      ).catch(() => {});
+      void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (error) {
       Alert.alert(
         "Your setup hasn’t been saved yet",
-        error instanceof Error
-          ? error.message
-          : "Please try again. Your choices are still here.",
+        error instanceof Error ? error.message : "Please try again. Your choices are still here.",
       );
     } finally {
       saveInFlight.current = false;
@@ -126,22 +111,12 @@ export default function OnboardingScreen() {
   }
   if (!loaded)
     return (
-      <View
-        className="flex-1 items-center justify-center bg-bg"
-      >
-        <ActivityIndicator
-          color={C.ink}
-          accessibilityLabel="Loading your setup"
-        />
+      <View className="flex-1 items-center justify-center bg-bg">
+        <ActivityIndicator color={C.ink} accessibilityLabel="Loading your setup" />
       </View>
     );
   if (complete)
-    return (
-      <CompletionScreen
-        draft={draft}
-        onContinue={() => router.replace("/(tabs)")}
-      />
-    );
+    return <CompletionScreen draft={draft} onContinue={() => router.replace("/(tabs)")} />;
   const props = { draft, update: choose };
   return (
     <StepShell

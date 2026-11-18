@@ -20,7 +20,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable } from "@/src/components/motion";
 import { Txt } from "@/src/components/ui";
 
-// This treatment belongs to the Pro tab. The companion and other screens keep their own UI.
+// Shared neutral surfaces for the Pro studio and its companion screens.
 export { Reveal, ProStat } from "./ui";
 export const PRO = {
   accent: "#C5F460",

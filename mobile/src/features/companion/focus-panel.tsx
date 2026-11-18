@@ -7,7 +7,7 @@ import { useCoaching } from "../coaching/use-coaching";
 import { type FocusInput, type FocusPreview } from "../coaching/api";
 import { localDate } from "../progress/model";
 import { MUSCLES } from "../pro/analytics";
-import { GlassCard, ProButton, ProPill, ProSection } from "../pro/ui";
+import { GlassCard, ProButton, ProPill, ProSection } from "../pro/hub-ui";
 import { useCompanion } from "./companion-context";
 import type { CompanionRecord } from "./api";
 

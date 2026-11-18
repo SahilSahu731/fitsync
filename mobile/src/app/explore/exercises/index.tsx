@@ -12,7 +12,7 @@ import {
 } from "react-native";
 
 import { Image } from "expo-image";
-import { useRouter } from "expo-router";
+import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -20,6 +20,16 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 import { C } from "@/src/constants/theme";
 import { Txt } from "@/src/components/ui";
+import { useSession } from "@/src/context/session";
+import {
+  filterCustomExercises,
+  type ExerciseScope,
+} from "@/src/features/exercises/custom-discovery";
+import {
+  clearPickerCache,
+  loadCustomExerciseList,
+  subscribePickerCache,
+} from "@/src/features/exercises/picker-cache";
 
 import {
   Exercise,
@@ -94,12 +104,7 @@ function PickerSheet({
   const insets = useSafeAreaInsets();
 
   return (
-    <Modal
-      visible={visible}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
+    <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
       <View
         className="flex-1 justify-end"
         style={{
@@ -141,20 +146,12 @@ function PickerSheet({
                 >
                   <Txt
                     weight={selected ? "bold" : "medium"}
-                    className={`text-[15px] ${
-                      selected ? "text-ink" : "text-ink"
-                    }`}
+                    className={`text-[15px] ${selected ? "text-ink" : "text-ink"}`}
                   >
                     {option.label}
                   </Txt>
 
-                  {selected && (
-                    <MaterialCommunityIcons
-                      name="check"
-                      size={20}
-                      color={C.ink}
-                    />
-                  )}
+                  {selected && <MaterialCommunityIcons name="check" size={20} color={C.ink} />}
                 </Pressable>
               );
             })}
@@ -176,11 +173,7 @@ function levelOf(difficulty: string) {
     return 2;
   }
 
-  if (
-    value.includes("adv") ||
-    value.includes("hard") ||
-    value.includes("expert")
-  ) {
+  if (value.includes("adv") || value.includes("hard") || value.includes("expert")) {
     return 3;
   }
 
@@ -218,8 +211,7 @@ function ExerciseCard({
 }) {
   const image = exercise.media.find((media) => media.kind === "image");
 
-  const muscles =
-    exercise.primaryMuscles.map(pretty).join(", ") || exercise.regionLabel;
+  const muscles = exercise.primaryMuscles.map(pretty).join(", ") || exercise.regionLabel;
 
   return (
     <Pressable
@@ -257,6 +249,13 @@ function ExerciseCard({
         >
           <LevelBars difficulty={exercise.difficulty} />
         </View>
+        {exercise.isCustom && (
+          <View className="absolute bottom-2.5 left-2.5 rounded-full bg-ink px-3 py-1.5">
+            <Txt weight="semibold" className="text-[10px] text-bg">
+              MY EXERCISE
+            </Txt>
+          </View>
+        )}
       </View>
 
       <View className="px-3 pb-3 pt-2.5">
@@ -279,7 +278,14 @@ function ExerciseCard({
 }
 
 export default function LibraryScreen() {
+  const { user } = useSession();
+  return <OwnedLibraryScreen key={user?.id ?? "guest"} ownerId={user?.id ?? ""} />;
+}
+
+function OwnedLibraryScreen({ ownerId }: { ownerId: string }) {
   const router = useRouter();
+  const params = useLocalSearchParams<{ scope?: string; q?: string }>();
+  const [scope, setScope] = useState<ExerciseScope>(params.scope === "custom" ? "custom" : "all");
 
   const { width: screenWidth } = useWindowDimensions();
 
@@ -287,8 +293,8 @@ export default function LibraryScreen() {
 
   const [tax, setTax] = useState<ExerciseTaxonomies | null>(null);
 
-  const [search, setSearch] = useState("");
-  const [query, setQuery] = useState("");
+  const [search, setSearch] = useState(params.q ?? "");
+  const [query, setQuery] = useState(params.q ?? "");
 
   const [filters, setFilters] = useState<Filters>(EMPTY_FILTERS);
 
@@ -312,7 +318,25 @@ export default function LibraryScreen() {
 
   const [hasMore, setHasMore] = useState(false);
 
-  const queryKey = JSON.stringify([query, filters]);
+  const queryKey = JSON.stringify([query, filters, scope, ownerId, refreshKey]);
+
+  const refresh = useCallback(() => {
+    setPage(1);
+    setRefreshKey((value) => value + 1);
+  }, []);
+
+  useEffect(() => subscribePickerCache(refresh), [refresh]);
+  useFocusEffect(
+    useCallback(() => {
+      refresh();
+    }, [refresh]),
+  );
+
+  useEffect(() => {
+    // A link from the custom library can open this screen directly on My exercises.
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setScope(params.scope === "custom" ? "custom" : "all");
+  }, [params.scope]);
 
   useEffect(() => {
     let active = true;
@@ -384,7 +408,20 @@ export default function LibraryScreen() {
       pageSize: PAGE_SIZE,
     } as Parameters<typeof getExercises>[0];
 
-    getExercises(params)
+    const request =
+      scope === "custom"
+        ? loadCustomExerciseList(ownerId).then((owned) => {
+            const matching = filterCustomExercises(owned, query, filters);
+            return {
+              items: matching.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE),
+              total: matching.length,
+              page,
+              pageSize: PAGE_SIZE,
+            };
+          })
+        : getExercises(params);
+
+    request
       .then((res) => {
         if (!active) {
           return;
@@ -397,10 +434,7 @@ export default function LibraryScreen() {
 
           const seen = new Set(previous.map((item) => item.id));
 
-          return [
-            ...previous,
-            ...res.items.filter((item) => !seen.has(item.id)),
-          ];
+          return [...previous, ...res.items.filter((item) => !seen.has(item.id))];
         });
 
         loadedPage.current = page;
@@ -424,7 +458,7 @@ export default function LibraryScreen() {
     return () => {
       active = false;
     };
-  }, [query, filters, page, refreshKey, queryKey]);
+  }, [query, filters, page, refreshKey, queryKey, scope, ownerId]);
 
   const setFilter = useCallback((key: FilterKey, code: string) => {
     setFilters((previous) => ({
@@ -483,10 +517,52 @@ export default function LibraryScreen() {
           <MaterialCommunityIcons name="arrow-left" size={22} color={C.ink} />
         </Pressable>
 
-        <Txt weight="semibold" className="text-[30px] leading-9">
+        <Txt weight="semibold" className="flex-1 text-[28px] leading-9">
           Exercise library
         </Txt>
       </View>
+
+      <View className="mt-5 flex-row items-center gap-3">
+        <View className="flex-1 flex-row rounded-full bg-panel p-1">
+          {(
+            [
+              ["all", "All exercises"],
+              ["custom", "My exercises"],
+            ] as const
+          ).map(([value, label]) => (
+            <Pressable
+              key={value}
+              accessibilityRole="tab"
+              accessibilityState={{ selected: scope === value }}
+              onPress={() => {
+                setScope(value);
+                setPage(1);
+              }}
+              className={`min-h-12 flex-1 items-center justify-center rounded-full px-2 ${scope === value ? "bg-ink" : ""}`}
+            >
+              <Txt
+                weight="semibold"
+                className={`text-xs ${scope === value ? "text-bg" : "text-muted"}`}
+              >
+                {label}
+              </Txt>
+            </Pressable>
+          ))}
+        </View>
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="Manage custom exercises"
+          onPress={() => router.push("/exercises/custom")}
+          className="h-14 w-14 items-center justify-center rounded-full bg-panel"
+        >
+          <MaterialCommunityIcons name="playlist-edit" size={26} color={C.ink} />
+        </Pressable>
+      </View>
+      {scope === "custom" && (
+        <Txt className="mt-3 text-xs leading-5 text-muted">
+          Your active custom exercises. Select one to see its movement guide.
+        </Txt>
+      )}
 
       <View className="mt-5 flex-row items-center" style={{ gap: 10 }}>
         <View className="flex-1 flex-row items-center rounded-2xl bg-panel px-4">
@@ -496,6 +572,7 @@ export default function LibraryScreen() {
             value={search}
             onChangeText={setSearch}
             placeholder="Search exercises"
+            accessibilityLabel="Search exercise library"
             placeholderTextColor={C.muted}
             returnKeyType="search"
             autoCorrect={false}
@@ -507,11 +584,7 @@ export default function LibraryScreen() {
 
           {search.length > 0 && (
             <Pressable onPress={() => setSearch("")} hitSlop={10}>
-              <MaterialCommunityIcons
-                name="close-circle"
-                color={C.muted}
-                size={18}
-              />
+              <MaterialCommunityIcons name="close-circle" color={C.muted} size={18} />
             </Pressable>
           )}
         </View>
@@ -535,9 +608,7 @@ export default function LibraryScreen() {
               <Txt
                 weight="semibold"
                 numberOfLines={1}
-                className={`mr-1 flex-1 text-[13px] ${
-                  code ? "text-ink" : "text-ink"
-                }`}
+                className={`mr-1 flex-1 text-[13px] ${code ? "text-ink" : "text-ink"}`}
               >
                 {selectedLabel || item.label}
               </Txt>
@@ -581,9 +652,7 @@ export default function LibraryScreen() {
 
       {!loading && !error && items.length > 0 && (
         <Txt className="text-sm text-muted">
-          {hasMore
-            ? `Showing ${items.length} of ${total}`
-            : "All exercises loaded"}
+          {hasMore ? `Showing ${items.length} of ${total}` : "All exercises loaded"}
         </Txt>
       )}
 
@@ -621,17 +690,28 @@ export default function LibraryScreen() {
           onError={(error) => console.log("Image error:", error)}
         />
 
-        <Txt weight="semibold" className="mt-4 text-xl">
-          No exercises match
+        <Txt weight="semibold" className="mt-4 text-center text-xl">
+          {scope === "custom" && !query && !hasFilters ? "Make it your own" : "No exercises match"}
         </Txt>
 
         <Txt className="mt-1 text-center text-sm text-muted">
-          Try a different search or remove a filter.
+          {scope === "custom" && !query && !hasFilters
+            ? "Add your own movements to your library, then use them in workouts and routines."
+            : "Try a different search or remove a filter."}
         </Txt>
 
-        <Pressable onPress={clearAll} className="mt-5 rounded-full px-5 py-2.5">
-          <Txt weight="semibold" className="text-lg text-white underline">
-            Clear search and filters
+        <Pressable
+          onPress={
+            scope === "custom" && !query && !hasFilters
+              ? () => router.push("/exercises/custom")
+              : clearAll
+          }
+          className="mt-5 rounded-full bg-ink px-5 py-3.5"
+        >
+          <Txt weight="semibold" className="text-sm text-bg">
+            {scope === "custom" && !query && !hasFilters
+              ? "Build my library"
+              : "Clear search and filters"}
           </Txt>
         </Pressable>
       </View>
@@ -655,6 +735,8 @@ export default function LibraryScreen() {
         ListFooterComponent={footer}
         ListEmptyComponent={empty}
         onEndReached={loadMore}
+        refreshing={loading && page === 1 && items.length > 0}
+        onRefresh={() => clearPickerCache()}
         onEndReachedThreshold={0.1}
         renderItem={({ item }) => (
           <ExerciseCard
@@ -688,9 +770,7 @@ export default function LibraryScreen() {
             : []
         }
         value={activeDropdown ? filters[activeDropdown.key] : ""}
-        onSelect={(code) =>
-          activeDropdown && setFilter(activeDropdown.key, code)
-        }
+        onSelect={(code) => activeDropdown && setFilter(activeDropdown.key, code)}
         onClose={() => setOpenPicker(null)}
       />
     </View>

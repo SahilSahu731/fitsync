@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, Linking, TextInput, View } from "react-native";
 import { router } from "expo-router";
 import { Txt } from "@/src/components/ui";
@@ -16,7 +16,6 @@ import {
 } from "../coaching/model";
 import type { CoachingProfile, PlanPreview, WeeklyReview } from "../coaching/api";
 import { Sheet } from "../progress/editors";
-import { compact } from "../progress/tracking-cards";
 import {
   GlassCard,
   ProAction,
@@ -27,14 +26,8 @@ import {
   PRO,
   Reveal,
 } from "./hub-ui";
-import {
-  calculateWarmup,
-  DEFAULT_RAMPS,
-  estimateOneRepMax,
-  numeric,
-  parsePlates,
-  type Ramp,
-} from "./training-model";
+import { OneRepMax, WarmupCalculator } from "./tool-calculators";
+export { OneRepMax, WarmupCalculator } from "./tool-calculators";
 
 export type ProTool = "warmup" | "one-rep-max" | null;
 export function TrainingTools({
@@ -180,222 +173,6 @@ function Field({
         className="min-h-14 rounded-2xl bg-white/5 px-4 font-poppins-medium text-base text-ink"
       />
     </View>
-  );
-}
-const platePreset = (unit: "kg" | "lb") =>
-  unit === "kg" ? "20x2, 10x1, 5x1, 2.5x1, 1.25x1" : "45x2, 25x1, 10x1, 5x1, 2.5x1";
-export function WarmupCalculator({
-  onClose,
-  initialLoadKg,
-  exerciseName,
-}: {
-  onClose: () => void;
-  initialLoadKg?: number;
-  exerciseName?: string;
-}) {
-  const { settings } = useSession();
-  const [unit, setUnit] = useState<"kg" | "lb">(settings?.weightUnit ?? "kg");
-  const [target, setTarget] = useState(
-      initialLoadKg !== undefined && Number.isFinite(initialLoadKg) && initialLoadKg > 0
-        ? String(Math.round(initialLoadKg * (unit === "lb" ? 2.2046226218 : 1) * 100) / 100)
-        : "",
-    ),
-    [bar, setBar] = useState(unit === "kg" ? "20" : "45"),
-    [increment, setIncrement] = useState(unit === "kg" ? "2.5" : "5"),
-    [plates, setPlates] = useState(platePreset(unit));
-  const [ramps, setRamps] = useState<Ramp[]>(DEFAULT_RAMPS.map((r) => ({ ...r })));
-  const result = useMemo(() => {
-    if (!target.trim()) return { data: null, error: "" };
-    try {
-      const load = numeric(target),
-        barWeight = numeric(bar),
-        step = numeric(increment);
-      if (load === null || barWeight === null || step === null)
-        throw new Error("Enter a valid load, bar weight and rounding increment.");
-      return {
-        data: calculateWarmup(load, barWeight, parsePlates(plates), step, ramps),
-        error: "",
-      };
-    } catch (e) {
-      return { data: null, error: e instanceof Error ? e.message : "Check your inputs." };
-    }
-  }, [target, bar, increment, plates, ramps]);
-  return (
-    <Sheet
-      title="Warm-up calculator"
-      subtitle="Working load includes the bar. Plate counts are per side."
-      onClose={onClose}
-    >
-      <View className="mb-5 flex-row gap-2">
-        {(["kg", "lb"] as const).map((u) => (
-          <ProPill
-            key={u}
-            label={u}
-            selected={unit === u}
-            onPress={() => {
-              if (u === unit) return;
-              const factor = u === "lb" ? 1 / 0.45359237 : 0.45359237;
-              const value = numeric(target);
-              if (value !== null) setTarget((value * factor).toFixed(2));
-              setUnit(u);
-              setBar(u === "kg" ? "20" : "45");
-              setIncrement(u === "kg" ? "2.5" : "5");
-              setPlates(platePreset(u));
-            }}
-          />
-        ))}
-      </View>
-      <Txt className="mb-4 text-[11px] leading-5 text-muted">
-        Switching units converts your working load and selects the standard bar and plate inventory
-        for that unit. Edit these to match your equipment.
-      </Txt>
-      {exerciseName && (
-        <Txt className="mb-3 text-xs text-brand">
-          Starting from your saved target · {exerciseName}
-        </Txt>
-      )}
-      <Field label={`Working load · ${unit}`} value={target} onChange={setTarget} />
-      {!target.trim() && (
-        <Txt className="mb-4 text-xs leading-6 text-muted">
-          Enter the working load you plan to use. The calculator builds editable practice sets from
-          that load.
-        </Txt>
-      )}
-      <View className="flex-row gap-3">
-        <Field label={`Bar weight · ${unit}`} value={bar} onChange={setBar} />
-        <Field label={`Round down by · ${unit}`} value={increment} onChange={setIncrement} />
-      </View>
-      <Field
-        label={`Available plates · ${unit} × count per side`}
-        value={plates}
-        onChange={setPlates}
-        numeric={false}
-      />
-      <ProSection
-        title="Your practice stages"
-        description="Edit each percentage and rep count to suit the exercise. Duplicate achievable loads are combined."
-      />
-      <View className="gap-2">
-        {ramps.map((r, i) => (
-          <View key={i} className="flex-row items-center gap-3">
-            <Txt className="w-8 text-xs text-muted">{i + 1}</Txt>
-            <Field
-              label="% of working load"
-              value={String(r.percent)}
-              onChange={(v) =>
-                setRamps((rows) =>
-                  rows.map((row, idx) => (idx === i ? { ...row, percent: numeric(v) ?? 0 } : row)),
-                )
-              }
-            />
-            <Field
-              label="Reps"
-              value={String(r.reps)}
-              onChange={(v) =>
-                setRamps((rows) =>
-                  rows.map((row, idx) => (idx === i ? { ...row, reps: numeric(v) ?? 0 } : row)),
-                )
-              }
-            />
-          </View>
-        ))}
-      </View>
-      {!!result.error && (
-        <Txt accessibilityRole="alert" className="my-4 text-sm leading-6 text-red-300">
-          {result.error}
-        </Txt>
-      )}
-      {result.data && (
-        <Reveal>
-          <ProSection title="Your warm-up sets" />
-          {result.data.noBar && (
-            <Txt className="mb-4 text-xs leading-5 text-muted">
-              Your working load is at or below the selected bar. Use a lighter implement or unloaded
-              rehearsal; these lighter load suggestions are not checked against dumbbell
-              availability.
-            </Txt>
-          )}
-          <View className="gap-3">
-            {result.data.sets.map((s, i) => (
-              <GlassCard key={i}>
-                <View className="flex-row items-center gap-4">
-                  <View className="h-9 w-9 items-center justify-center rounded-full bg-white/5">
-                    <Txt className="text-xs">{i + 1}</Txt>
-                  </View>
-                  <View className="flex-1">
-                    <Txt weight="medium" className="text-xl">
-                      {compact(s.actual)} {unit} × {s.reps}
-                    </Txt>
-                    <Txt className="mt-1 text-[10px] text-muted">
-                      {compact(s.actualPercent)}% of working load
-                      {s.residual > 0.001 ? ` · rounded down from ${compact(s.desired)}` : ""}
-                    </Txt>
-                  </View>
-                </View>
-                <Txt className="mt-4 text-xs leading-5" style={{ color: PRO.accent }}>
-                  {result.data!.noBar
-                    ? "Lighter implement · verify availability"
-                    : s.perSide.length
-                      ? `Each side: ${s.perSide.map((p) => `${p.count} × ${compact(p.weight)} ${unit}`).join(" + ")}`
-                      : "Empty bar"}
-                </Txt>
-              </GlassCard>
-            ))}
-          </View>
-          {!result.data.sets.length && (
-            <Txt className="text-sm leading-6 text-muted">
-              No lighter stages fit these inputs. Try a smaller increment or a lighter implement.
-            </Txt>
-          )}
-          <Txt className="mt-5 text-xs leading-5 text-muted">
-            These are practice sets before your working sets. Choose comfortable repetitions and
-            rest, and change the ramp if it creates fatigue. No warm-up sets are added to your
-            workout automatically.
-          </Txt>
-        </Reveal>
-      )}
-    </Sheet>
-  );
-}
-export function OneRepMax({ onClose }: { onClose: () => void }) {
-  const { settings } = useSession();
-  const unit = settings?.weightUnit ?? "kg";
-  const [weight, setWeight] = useState("60"),
-    [reps, setReps] = useState("8");
-  let result: ReturnType<typeof estimateOneRepMax> | null = null,
-    error = "";
-  try {
-    result = estimateOneRepMax(numeric(weight) ?? 0, numeric(reps) ?? 0);
-  } catch (e) {
-    error = e instanceof Error ? e.message : "Check your input.";
-  }
-  return (
-    <Sheet
-      title="Estimated one-rep max"
-      subtitle="From one completed set of 1–12 repetitions"
-      onClose={onClose}
-    >
-      <Field label={`Weight · ${unit}`} value={weight} onChange={setWeight} />
-      <Field label="Completed repetitions" value={reps} onChange={setReps} />
-      {result ? (
-        <GlassCard accent>
-          <View className="flex-row gap-4">
-            <ProStat label="EPLEY ESTIMATE" value={compact(result.epley)} unit={unit} />
-            <ProStat label="BRZYCKI ESTIMATE" value={compact(result.brzycki)} unit={unit} />
-          </View>
-          <Txt className="mt-4 text-xs leading-5 text-muted">
-            Epley: load × (1 + reps / 30). Brzycki: load × 36 / (37 − reps). A single repetition
-            uses the logged load.
-          </Txt>
-        </GlassCard>
-      ) : (
-        <Txt className="my-4 text-sm text-red-300">{error}</Txt>
-      )}
-      <Txt className="mt-5 text-xs leading-5 text-muted">
-        These equations estimate a maximum from external-load strength sets. Technique, exercise and
-        fatigue affect accuracy. An estimate is not an instruction to attempt that weight.
-      </Txt>
-    </Sheet>
   );
 }
 

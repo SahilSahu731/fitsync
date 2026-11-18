@@ -23,7 +23,7 @@ import {
   type InsightReadiness,
   type ReplacementEvidence,
 } from "./companion-insights";
-import { GlassCard, PRO, ProAction, ProPill, ProSection, ProStat, Reveal } from "./ui";
+import { GlassCard, PRO, ProAction, ProPill, ProSection, ProStat, Reveal } from "./hub-ui";
 
 type Props = {
   workouts: ProgressWorkout[];

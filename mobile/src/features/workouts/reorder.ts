@@ -1,5 +1,5 @@
 export function moveItem<T extends { id: string }>(rows: T[], id: string, destination: number) {
-  const index = rows.findIndex(row => row.id === id);
+  const index = rows.findIndex((row) => row.id === id);
   if (index < 0) return rows;
   const target = Math.max(0, Math.min(rows.length - 1, destination));
   if (index === target) return rows;
@@ -8,8 +8,17 @@ export function moveItem<T extends { id: string }>(rows: T[], id: string, destin
   next.splice(target, 0, item);
   return next;
 }
-export function dragPosition(origin: number, dy: number, scrollDelta: number, count: number, rowHeight: number) {
-  return Math.max(0, Math.min(Math.max(0, count - 1) * rowHeight, origin * rowHeight + dy + scrollDelta));
+export function dragPosition(
+  origin: number,
+  dy: number,
+  scrollDelta: number,
+  count: number,
+  rowHeight: number,
+) {
+  return Math.max(
+    0,
+    Math.min(Math.max(0, count - 1) * rowHeight, origin * rowHeight + dy + scrollDelta),
+  );
 }
 export function edgeScroll(y: number, top: number, height: number) {
   if (height <= 0) return 0;

@@ -9,8 +9,13 @@ export type Entitlement = {
 };
 export type BillingStatus = { entitlement: Entitlement; configured: boolean };
 export const FREE_ENTITLEMENT: Entitlement = {
-  tier: "free", active: false, expiresAt: null, willRenew: false,
-  managementUrl: null, source: "none", sandbox: false,
+  tier: "free",
+  active: false,
+  expiresAt: null,
+  willRenew: false,
+  managementUrl: null,
+  source: "none",
+  sandbox: false,
 };
 
 // Only the authenticated server response can enable Pro. A successful store
@@ -24,13 +29,19 @@ export function periodLabel(period: string | null | undefined) {
   const match = period?.match(/^P(\d+)(D|W|M|Y)$/);
   if (!match) return "subscription period";
   const count = Number(match[1]);
-  const unit = ({ D: "day", W: "week", M: "month", Y: "year" } as const)[match[2] as "D" | "W" | "M" | "Y"];
+  const unit = ({ D: "day", W: "week", M: "month", Y: "year" } as const)[
+    match[2] as "D" | "W" | "M" | "Y"
+  ];
   return count === 1 ? unit : `${count} ${unit}s`;
 }
 
 export function subscriptionManagementUrl(value: string | null, platform: string) {
   if (value) {
-    try { if (new URL(value).protocol === "https:") return value; } catch { /* Use the store fallback below. */ }
+    try {
+      if (new URL(value).protocol === "https:") return value;
+    } catch {
+      /* Use the store fallback below. */
+    }
   }
   if (platform === "ios") return "https://apps.apple.com/account/subscriptions";
   if (platform === "android") return "https://play.google.com/store/account/subscriptions";
@@ -38,14 +49,26 @@ export function subscriptionManagementUrl(value: string | null, platform: string
 }
 
 export function isCancelledPurchase(error: unknown) {
-  return !!error && typeof error === "object" && "userCancelled" in error && error.userCancelled === true;
+  return (
+    !!error && typeof error === "object" && "userCancelled" in error && error.userCancelled === true
+  );
 }
 
 export function legalUrl(value: string | undefined) {
-  try { const url = new URL(value ?? ""); return url.protocol === "https:" ? url.toString() : null; } catch { return null; }
+  try {
+    const url = new URL(value ?? "");
+    return url.protocol === "https:" ? url.toString() : null;
+  } catch {
+    return null;
+  }
 }
 
-export async function confirmStorePurchase(sync: () => Promise<BillingStatus>): Promise<"active" | "pending"> {
-  try { return hasPro(await sync()) ? "active" : "pending"; }
-  catch { return "pending"; }
+export async function confirmStorePurchase(
+  sync: () => Promise<BillingStatus>,
+): Promise<"active" | "pending"> {
+  try {
+    return hasPro(await sync()) ? "active" : "pending";
+  } catch {
+    return "pending";
+  }
 }

@@ -24,15 +24,11 @@ export function ProgramProgress({
   const summary = useMemo(() => basicProgress(detail), [detail]);
   const [journal, setJournal] = useState(false);
   const { analytics: a, enrollment: e } = detail;
-  const volume = Math.round(
-    a.volumeKg * (unit === "lb" ? 2.2046226218 : 1),
-  ).toLocaleString();
+  const volume = Math.round(a.volumeKg * (unit === "lb" ? 2.2046226218 : 1)).toLocaleString();
   return (
     <View>
       <View className="mb-5">
-        <Txt className="text-[11px] tracking-widest text-ink">
-          YOUR TRAINING STORY
-        </Txt>
+        <Txt className="text-[11px] tracking-widest text-ink">YOUR TRAINING STORY</Txt>
         <Txt weight="semibold" className="mt-2 text-[29px]">
           Small steps. Real progress.
         </Txt>
@@ -58,10 +54,7 @@ export function ProgramProgress({
           { label: "MINUTES", value: String(a.minutes) },
           { label: `VOLUME · ${unit.toUpperCase()}`, value: volume },
         ].map((item, index) => (
-          <View
-            key={item.label}
-            className={`min-w-0 flex-1 px-3 ${index > 0 ? " " : ""}`}
-          >
+          <View key={item.label} className={`min-w-0 flex-1 px-3 ${index > 0 ? " " : ""}`}>
             <Txt
               weight="semibold"
               numberOfLines={1}
@@ -78,18 +71,13 @@ export function ProgramProgress({
       </View>
       {e.status === "active" && summary.toMilestone > 0 && (
         <View className="mb-6 flex-row items-center gap-3 rounded-2xl bg-white/5 px-4 py-3">
-          <MaterialCommunityIcons
-            name="flag-checkered"
-            size={24}
-            color={C.ink}
-          />
+          <MaterialCommunityIcons name="flag-checkered" size={24} color={C.ink} />
           <View className="flex-1">
             <Txt weight="semibold" className="text-sm">
               Next milestone · {summary.milestone} workouts
             </Txt>
             <Txt className="mt-1 text-xs text-muted">
-              {summary.toMilestone} more to get there. Every logged session
-              counts.
+              {summary.toMilestone} more to get there. Every logged session counts.
             </Txt>
           </View>
         </View>
@@ -115,11 +103,9 @@ export function ProgramProgress({
               width: 66,
               paddingVertical: 14,
               borderRadius: 18,
-              backgroundColor:
-                item.week === detail.week ? "#C5F46012" : C.panel,
+              backgroundColor: item.week === detail.week ? "#C5F46012" : C.panel,
               borderWidth: 1,
-              borderColor:
-                item.week === detail.week ? "#C5F46050" : "transparent",
+              borderColor: item.week === detail.week ? "#C5F46050" : "transparent",
               alignItems: "center",
             }}
           >
@@ -136,8 +122,7 @@ export function ProgramProgress({
                     width: 4,
                     height: 4,
                     borderRadius: 2,
-                    backgroundColor:
-                      index < item.completed ? C.brand : C.border,
+                    backgroundColor: index < item.completed ? C.brand : C.border,
                   }}
                 />
               ))}
@@ -157,9 +142,7 @@ export function ProgramProgress({
           Recent workouts
         </Txt>
         {summary.averageMinutes !== null && (
-          <Txt className="text-[11px] text-muted">
-            {summary.averageMinutes} min / workout avg
-          </Txt>
+          <Txt className="text-[11px] text-muted">{summary.averageMinutes} min / workout avg</Txt>
         )}
       </View>
       {summary.recent.length ? (
@@ -191,22 +174,16 @@ export function ProgramProgress({
                       timeZone: e.timezone,
                     })
                   : formatProgramDate(slot.date)}{" "}
-                · {slot.completedSets} sets ·{" "}
-                {Math.round(slot.durationSeconds / 60)} min
+                · {slot.completedSets} sets · {Math.round(slot.durationSeconds / 60)} min
               </Txt>
             </View>
-            <MaterialCommunityIcons
-              name="arrow-right"
-              size={20}
-              color={C.muted}
-            />
+            <MaterialCommunityIcons name="arrow-right" size={20} color={C.muted} />
           </Pressable>
         ))
       ) : (
         <View className="rounded-2xl p-5">
           <Txt className="text-sm leading-6 text-muted">
-            Your first completed workout starts the story. Log a session and it
-            will appear here.
+            Your first completed workout starts the story. Log a session and it will appear here.
           </Txt>
         </View>
       )}
@@ -239,11 +216,7 @@ export function ProgramProgress({
         <Txt weight="semibold" className="text-sm">
           Program journal
         </Txt>
-        <MaterialCommunityIcons
-          name={journal ? "minus" : "plus"}
-          size={21}
-          color={C.muted}
-        />
+        <MaterialCommunityIcons name={journal ? "minus" : "plus"} size={21} color={C.muted} />
       </Pressable>
       {journal &&
         detail.events.map((event) => (
@@ -273,8 +246,8 @@ export function ProgramProgress({
           </View>
         ))}
       <Txt className="mt-2 text-[11px] leading-4 text-muted">
-        Only completed sets in finished program workouts count. Volume is weight
-        × reps; bodyweight and timed sets may add no volume.
+        Only completed sets in finished program workouts count. Volume is weight × reps; bodyweight
+        and timed sets may add no volume.
       </Txt>
     </View>
   );

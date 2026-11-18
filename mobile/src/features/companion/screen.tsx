@@ -13,7 +13,9 @@ import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import * as ImagePicker from "expo-image-picker";
 import * as Linking from "expo-linking";
 import Slider from "@react-native-community/slider";
+import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Txt } from "@/src/components/ui";
+import { MotionPressable } from "@/src/components/motion";
 import { useAppAlert } from "@/src/components/app-dialog";
 import { useSession } from "@/src/context/session";
 import { useBilling } from "../billing/billing-context";
@@ -23,12 +25,14 @@ import { mutationId } from "../coaching/model";
 import { useProCatalog } from "../pro/use-pro-catalog";
 import { MUSCLES } from "../pro/analytics";
 import { CompanionInsightsPanel } from "../pro/companion-insights-panel";
-import { GlassCard, ProAction, ProButton, ProPill, ProScene, ProSection, PRO } from "../pro/ui";
+import { GlassCard, ProAction, ProButton, ProPill, ProScene, ProSection, PRO } from "../pro/hub-ui";
+import { FoodDiaryPanel } from "../nutrition/food-diary";
+import { MonthlyReportPanel } from "./monthly-report";
+import { useKeyboardForm } from "../progress/keyboard-visibility";
 import {
   type CompanionRecord,
   type Experiment,
   type Milestone,
-  type MonthlyReport,
   type Readiness,
 } from "./api";
 import { useCompanion } from "./companion-context";
@@ -37,40 +41,16 @@ import { TodayForYouCard } from "./today-card";
 import { ReminderSettingsPanel } from "./reminders-panel";
 import { FocusPanel } from "./focus-panel";
 import { useGoalExercises } from "./use-goal-exercises";
-import { readJournal } from "../progress/journal";
-import { useWorkout } from "../workouts/workout-context";
 import { useCoaching } from "../coaching/use-coaching";
 import { useProgram } from "../program-follow/program-context";
-
-const TABS = [
-  "today",
-  "readiness",
-  "insights",
-  "goals",
-  "focus",
-  "photos",
-  "nutrition",
-  "experiments",
-  "reminders",
-  "sharing",
-  "reports",
-  "desktop",
-] as const;
-type Tab = (typeof TABS)[number];
-const labels: Record<Tab, string> = {
-  today: "Today",
-  readiness: "Check-in",
-  insights: "Insights",
-  goals: "Milestones",
-  focus: "Muscle focus",
-  photos: "Photos",
-  nutrition: "Nutrition",
-  experiments: "Experiments",
-  reminders: "Reminders & devices",
-  sharing: "Coach sharing",
-  reports: "Reports",
-  desktop: "Web workspace",
-};
+import {
+  COMPANION_SECTIONS,
+  COMPANION_TABS,
+  CompanionDayBrief,
+  CompanionNavigation,
+  CompanionShortcuts,
+  type CompanionTab,
+} from "./workspace-ui";
 export function Field({
   label,
   value,
@@ -198,8 +178,22 @@ export function CompanionScreen() {
 }
 function AccountCompanionScreen() {
   const params = useLocalSearchParams<{ tab?: string; muscle?: string }>();
-  const tab: Tab = TABS.includes(params.tab as Tab) ? (params.tab as Tab) : "today";
-  const setTab = (next: Tab) => router.setParams({ tab: next });
+  const tab: CompanionTab = COMPANION_TABS.includes(params.tab as CompanionTab)
+    ? (params.tab as CompanionTab)
+    : "today";
+  const setTab = (next: CompanionTab) => router.setParams({ tab: next });
+  const {
+    viewportRef,
+    scrollRef: scroll,
+    bottomInset,
+    onViewportLayout,
+    onFocus,
+    onScroll,
+    revealInput,
+  } = useKeyboardForm();
+  useEffect(() => {
+    scroll.current?.scrollTo({ y: 0, animated: false });
+  }, [tab, scroll]);
   const companion = useCompanion(),
     progress = useProgress();
   const coaching = useCoaching(),
@@ -236,141 +230,166 @@ function AccountCompanionScreen() {
     }));
   return (
     <ProScene>
-      <ScrollView
-        keyboardShouldPersistTaps="handled"
-        contentContainerStyle={{ padding: 24, paddingBottom: 150 }}
-        refreshControl={
-          <RefreshControl
-            refreshing={companion.loading}
-            tintColor={PRO.accent}
-            onRefresh={() => {
-              void companion.refresh();
-              void progress.refresh();
-              void catalog.refresh();
-            }}
-          />
-        }
+      <View
+        ref={viewportRef}
+        onLayout={onViewportLayout}
+        className="flex-1"
+        style={{ paddingBottom: bottomInset }}
       >
-        <View className="mb-6 flex-row items-center justify-between">
-          <ProPill
-            label="‹ Back"
+        <View className="w-full max-w-2xl self-center flex-row items-center gap-3 px-5 pb-3 pt-4">
+          <MotionPressable
+            accessibilityRole="button"
+            accessibilityLabel="Go back"
             onPress={() => (router.canGoBack() ? router.back() : router.replace("/(tabs)/pro"))}
-          />
-          <Txt className="text-xs tracking-widest" style={{ color: PRO.accent }}>
-            YOUR PRO COMPANION
-          </Txt>
+            className="h-11 w-11 items-center justify-center rounded-full border border-white/5 bg-[#151515]"
+          >
+            <MaterialCommunityIcons name="arrow-left" color="#FFFFFF" size={21} />
+          </MotionPressable>
+          <View className="min-w-0 flex-1">
+            <Txt weight="medium" className="text-base tracking-[-0.4px]">
+              Companion
+            </Txt>
+            <Txt className="mt-0.5 text-[10px] text-muted">A part of your FitSync Studio</Txt>
+          </View>
+          <MotionPressable
+            accessibilityRole="button"
+            accessibilityLabel="Open reminder settings"
+            onPress={() => setTab("reminders")}
+            className="h-11 w-11 items-center justify-center rounded-full border border-white/5 bg-[#151515]"
+          >
+            <MaterialCommunityIcons name="bell-outline" color="#FFFFFF" size={21} />
+          </MotionPressable>
         </View>
-        <Txt weight="medium" className="text-[34px] leading-[41px] tracking-[-1px]">
-          A plan that knows you.
-        </Txt>
-        <Txt className="mb-6 mt-3 text-sm leading-6 text-muted">
-          Your training, check-ins and goals, connected to the same history.
-        </Txt>
-        <ScrollView horizontal showsHorizontalScrollIndicator={false} className="mb-6">
-          <View className="flex-row gap-2">
-            {TABS.map((item) => (
-              <ProPill
-                key={item}
-                label={labels[item]}
-                selected={tab === item}
-                onPress={() => setTab(item)}
-              />
-            ))}
-          </View>
-        </ScrollView>
-        {companion.error && (
-          <View className="mb-5">
-            <ProAction
-              icon="cloud-alert-outline"
-              title="Companion sync needs attention"
-              subtitle={`${companion.error} Your last loaded data is kept.`}
-              onPress={() => void companion.refresh()}
+        <ScrollView
+          ref={scroll}
+          onFocus={onFocus}
+          onScroll={onScroll}
+          onLayout={revealInput}
+          onContentSizeChange={revealInput}
+          scrollEventThrottle={16}
+          automaticallyAdjustKeyboardInsets={false}
+          keyboardDismissMode="on-drag"
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+          contentContainerClassName="w-full max-w-2xl self-center px-5 pt-3 pb-40"
+          refreshControl={
+            <RefreshControl
+              refreshing={companion.loading}
+              tintColor={PRO.accent}
+              onRefresh={() => {
+                void companion.refresh();
+                void progress.refresh();
+                void catalog.refresh();
+              }}
             />
-          </View>
-        )}
-        {!isPro && (
-          <View className="mb-5">
-            <ProAction
-              icon="star-four-points"
-              title="Personalise your training with Pro"
-              subtitle="Your saved records, deletion, sharing controls and reports stay accessible."
-              onPress={() => router.push("/membership")}
-            />
-          </View>
-        )}
-        {companion.loading && <ActivityIndicator className="mb-5" color={PRO.accent} />}
-        {tab === "today" && (
-          <>
-            <TodayForYouCard />
-            <View className="gap-3">
+          }
+        >
+          <CompanionNavigation tab={tab} onSelect={setTab} />
+          {tab !== "today" && (
+            <View className="mb-2">
+              <Txt className="mb-2 text-[9px] tracking-[1.8px] text-muted">
+                YOUR COMPANION / {COMPANION_SECTIONS[tab].label.toUpperCase()}
+              </Txt>
+              <Txt className="text-sm leading-6 text-muted">{COMPANION_SECTIONS[tab].detail}</Txt>
+            </View>
+          )}
+          {companion.error && (
+            <View className="mb-5">
               <ProAction
-                icon="chart-timeline-variant"
-                title="Understand your progress"
-                subtitle="Plateaus, training blocks and estimated recovery"
-                onPress={() => setTab("insights")}
-              />
-              <ProAction
-                icon="flag-checkered"
-                title="One goal at a time"
-                subtitle="Track a meaningful milestone from your real logs"
-                onPress={() => setTab("goals")}
-              />
-              <ProAction
-                icon="bell-outline"
-                title="Make space for your next session"
-                subtitle="Personal reminders, widgets and watch notification controls"
-                onPress={() => setTab("reminders")}
+                icon="cloud-alert-outline"
+                title="Companion sync needs attention"
+                subtitle={`${companion.error} Your last loaded data is kept.`}
+                onPress={() => void companion.refresh()}
               />
             </View>
-          </>
-        )}
-        {tab === "readiness" && !companion.loading && (
-          <ReadinessPanel key={today} record={readyRecord} />
-        )}
-        {tab === "insights" &&
-          (isPro ? (
-            <CompanionInsightsPanel
-              workouts={progress.journal.workouts}
-              metadata={catalog.items}
-              events={progress.journal.events}
-              today={today}
-              unit={settings?.weightUnit ?? "kg"}
-              readiness={{
-                date: today,
-                muscleSoreness: Object.fromEntries(
-                  (ready.soreness ?? []).map((item) => [item.muscle, item.level]),
-                ),
-              }}
-              experiments={experiments}
-              replacementEvidence={companion.replacements ?? undefined}
-              plannedDates={
-                program.active?.enrollment.status === "active"
-                  ? program.active.slots.map((slot) => slot.date)
-                  : coaching.data?.plan?.sessions.map((day) => day.date)
-              }
-              onAddExperiment={() => setTab("experiments")}
-              onSpecialise={(muscle) => {
-                router.setParams({ muscle, tab: "focus" });
-              }}
-            />
-          ) : (
-            <GlassCard>
-              <Txt className="text-sm leading-6">
-                Pro turns completed logs into evidence-based comparisons. Record workouts first;
-                missing data will stay visible.
-              </Txt>
-            </GlassCard>
-          ))}
-        {tab === "goals" && <GoalsPanel />}
-        {tab === "focus" && <FocusPanel muscle={params.muscle} />}
-        {tab === "photos" && <PhotosPanel />}
-        {tab === "nutrition" && <NutritionPanel />}
-        {tab === "experiments" && <ExperimentsPanel />}
-        {tab === "reminders" && <ReminderSettingsPanel />}
-        {tab === "sharing" && <SharingPanel />}
-        {tab === "reports" && <ReportsPanel />}
-        {tab === "desktop" && <DesktopWorkspacePanel />}
-      </ScrollView>
+          )}
+          {!isPro && (
+            <View className="mb-5">
+              <ProAction
+                icon="star-four-points"
+                title="Personalise your training with Pro"
+                subtitle="Your saved records, deletion, sharing controls and reports stay accessible."
+                onPress={() => router.push("/membership")}
+              />
+            </View>
+          )}
+          {companion.loading && <ActivityIndicator className="mb-5" color={PRO.accent} />}
+          {tab === "today" && (
+            <>
+              <CompanionDayBrief
+                name={user?.name ?? ""}
+                date={today}
+                readiness={ready}
+                hasCheckIn={!!readyRecord}
+                onSelect={setTab}
+              />
+              <TodayForYouCard />
+              <CompanionShortcuts onSelect={setTab} />
+              <ProSection title="Keep moving forward." eyebrow="YOUR NEXT SMALL WIN" />
+              <View className="gap-3">
+                <ProAction
+                  icon="chart-timeline-variant"
+                  title="See the bigger picture"
+                  subtitle="Explore the patterns in your training"
+                  onPress={() => setTab("insights")}
+                />
+                <ProAction
+                  icon="flag-checkered"
+                  title="Make your next milestone"
+                  subtitle="Choose something meaningful to work towards"
+                  onPress={() => setTab("goals")}
+                />
+              </View>
+            </>
+          )}
+          {tab === "readiness" && !companion.loading && (
+            <ReadinessPanel key={today} record={readyRecord} />
+          )}
+          {tab === "insights" &&
+            (isPro ? (
+              <CompanionInsightsPanel
+                workouts={progress.journal.workouts}
+                metadata={catalog.items}
+                events={progress.journal.events}
+                today={today}
+                unit={settings?.weightUnit ?? "kg"}
+                readiness={{
+                  date: today,
+                  muscleSoreness: Object.fromEntries(
+                    (ready.soreness ?? []).map((item) => [item.muscle, item.level]),
+                  ),
+                }}
+                experiments={experiments}
+                replacementEvidence={companion.replacements ?? undefined}
+                plannedDates={
+                  program.active?.enrollment.status === "active"
+                    ? program.active.slots.map((slot) => slot.date)
+                    : coaching.data?.plan?.sessions.map((day) => day.date)
+                }
+                onAddExperiment={() => setTab("experiments")}
+                onSpecialise={(muscle) => {
+                  router.setParams({ muscle, tab: "focus" });
+                }}
+              />
+            ) : (
+              <GlassCard>
+                <Txt className="text-sm leading-6">
+                  Pro turns completed logs into evidence-based comparisons. Record workouts first;
+                  missing data will stay visible.
+                </Txt>
+              </GlassCard>
+            ))}
+          {tab === "goals" && <GoalsPanel />}
+          {tab === "focus" && <FocusPanel muscle={params.muscle} />}
+          {tab === "photos" && <PhotosPanel />}
+          {tab === "nutrition" && <FoodDiaryPanel />}
+          {tab === "experiments" && <ExperimentsPanel />}
+          {tab === "reminders" && <ReminderSettingsPanel />}
+          {tab === "sharing" && <SharingPanel />}
+          {tab === "reports" && <ReportsPanel />}
+          {tab === "desktop" && <DesktopWorkspacePanel />}
+        </ScrollView>
+      </View>
     </ProScene>
   );
 }
@@ -491,7 +510,21 @@ function ReadinessPanel({ record }: { record?: CompanionRecord<"readiness"> }) {
             }, "Check-in saved with your shared sleep and energy readings. Refresh Progress if this phone is still reconnecting.");
           }}
         />
-        <ProButton title="Reload saved check-in (replace input)" secondary disabled={action.busy || companion.busy} onPress={() => { setSleep(null); setEnergy(null); setMinutes(initial.availableMinutes?.toString() ?? ""); setNote(initial.note ?? ""); setSoreness(Object.fromEntries((initial.soreness ?? []).map(item => [item.muscle, item.level]))); setBaseRevision(record?.revision ?? 0); }} />
+        <ProButton
+          title="Reload saved check-in (replace input)"
+          secondary
+          disabled={action.busy || companion.busy}
+          onPress={() => {
+            setSleep(null);
+            setEnergy(null);
+            setMinutes(initial.availableMinutes?.toString() ?? "");
+            setNote(initial.note ?? "");
+            setSoreness(
+              Object.fromEntries((initial.soreness ?? []).map((item) => [item.muscle, item.level])),
+            );
+            setBaseRevision(record?.revision ?? 0);
+          }}
+        />
       </GlassCard>
     </>
   );
@@ -922,92 +955,6 @@ function PhotosPanel() {
   );
 }
 
-function NutritionPanel() {
-  const progress = useProgress(),
-    action = useAction();
-  const [date, setDate] = useState(localDate());
-  const existing = latestMetrics(progress.journal.events).filter((event) => event.date === date);
-  const [values, setValues] = useState<Record<string, string>>({});
-  const metrics: Metric[] = [
-    "caloriesIn",
-    "protein",
-    "carbs",
-    "fat",
-    "water",
-    "fiber",
-    "sugar",
-    "sodium",
-  ];
-  return (
-    <>
-      <ProSection title="Nutrition at your pace." eyebrow="Optional daily totals" />
-      <GlassCard>
-        <Txt className="mb-4 text-sm leading-6 text-muted">
-          These are the same daily totals shown in Progress. Leave a field untouched to keep its
-          existing value. No prescribed calorie target or food logging requirement.
-        </Txt>
-        <Field
-          label="Nutrition date · YYYY-MM-DD"
-          value={date}
-          onChange={(value) => {
-            setDate(value);
-            setValues({});
-          }}
-        />
-        {metrics.map((metric) => (
-          <Field
-            key={metric}
-            label={`${METRICS[metric].label} · ${METRICS[metric].unit}`}
-            value={
-              values[metric] ?? existing.find((e) => e.metric === metric)?.value?.toString() ?? ""
-            }
-            onChange={(value) => setValues((current) => ({ ...current, [metric]: value }))}
-            numeric
-          />
-        ))}
-        {action.feedback}
-        <ProButton
-          title="Save changed daily totals"
-          loading={action.busy}
-          disabled={progress.loading}
-          onPress={() =>
-            void action.run(async () => {
-              if (
-                !/^\d{4}-\d{2}-\d{2}$/.test(date) ||
-                Number.isNaN(Date.parse(`${date}T12:00:00Z`)) ||
-                new Date(`${date}T12:00:00Z`).toISOString().slice(0, 10) !== date
-              )
-                throw new Error("Use a valid YYYY-MM-DD date.");
-              const changed = Object.entries(values);
-              if (!changed.length) throw new Error("Change at least one daily total.");
-              const validated = changed.map(([key, value]) => {
-                const metric = key as Metric;
-                return {
-                  metric,
-                  value: value.trim()
-                    ? number(value, METRICS[metric].label, METRICS[metric].min, METRICS[metric].max)
-                    : null,
-                };
-              });
-              for (const entry of validated) {
-                await progress.log(entry.metric, date, entry.value, "Daily nutrition total");
-              }
-              setValues({});
-            }, "Daily totals saved to your progress journal and queued for cloud sync.")
-          }
-        />
-        <View className="mt-3">
-          <ProButton
-            title="Open meal planning & saved meals"
-            secondary
-            onPress={() => router.push("/wellness")}
-          />
-        </View>
-      </GlassCard>
-    </>
-  );
-}
-
 function ExperimentsPanel() {
   const companion = useCompanion(),
     action = useAction(),
@@ -1239,67 +1186,43 @@ function SharingPanel() {
 
 function DesktopWorkspacePanel() {
   const action = useAction();
-  const origin = (() => { try { const url = new URL(process.env.EXPO_PUBLIC_WEB_URL ?? ""); return url.protocol === "https:" ? url.origin : null; } catch { return null; } })();
-  return <><ProSection eyebrow="The same FitSync account" title="A little more room to plan." /><GlassCard><Txt className="mb-5 text-sm leading-6 text-muted">Open your training workspace in a browser. Preview a plan, edit your personal routines, manage coach access and download monthly reports. Sign in with the same account to use the training you see here.</Txt><ProButton title="Open FitSync web workspace" disabled={!origin} loading={action.busy} onPress={() => void action.run(async () => { if (origin) await Linking.openURL(`${origin}/user/planner`); }, "")} />{!origin && <Txt className="mt-3 text-xs leading-5 text-muted">The web workspace link is unavailable in this build.</Txt>}{action.feedback}</GlassCard></>;
-}
-function ReportsPanel() {
-  const companion = useCompanion(),
-    progress = useProgress(),
-    action = useAction(),
-    workout = useWorkout();
-  const { user } = useSession();
-  const [month, setMonth] = useState(localDate().slice(0, 7)),
-    [report, setReport] = useState<MonthlyReport | null>(null);
+  const origin = (() => {
+    try {
+      const url = new URL(process.env.EXPO_PUBLIC_WEB_URL ?? "");
+      return url.protocol === "https:" ? url.origin : null;
+    } catch {
+      return null;
+    }
+  })();
   return (
     <>
-      <ProSection title="Your month, in perspective." eyebrow="Downloadable reports" />
+      <ProSection eyebrow="The same FitSync account" title="A little more room to plan." />
       <GlassCard>
         <Txt className="mb-5 text-sm leading-6 text-muted">
-          Generate a report from your synced workouts and latest measurement entries. Refresh first
-          to upload pending journal entries. Private photos and check-in notes are excluded.
+          Open your training workspace in a browser. Preview a plan, edit your personal routines,
+          manage coach access and download monthly reports. Sign in with the same account to use the
+          training you see here.
         </Txt>
-        <Field
-          label="Report month · YYYY-MM"
-          value={month}
-          onChange={(value) => {
-            setMonth(value);
-            setReport(null);
-          }}
-        />
-        {action.feedback}
         <ProButton
-          title="Generate monthly report"
+          title="Open FitSync web workspace"
+          disabled={!origin}
           loading={action.busy}
           onPress={() =>
             void action.run(async () => {
-              if (!/^\d{4}-(0[1-9]|1[0-2])$/.test(month))
-                throw new Error("Use YYYY-MM, for example 2026-11.");
-              await workout.ensureSynced();
-              await progress.refresh();
-              if (!user || (await readJournal(user.id)).pending.length)
-                throw new Error(
-                  "Some progress entries still need to sync. Reconnect and refresh before generating the report.",
-                );
-              setReport(await companion.api.report(month));
-            }, "Report generated from the server’s saved records.")
+              if (origin) await Linking.openURL(`${origin}/user/planner`);
+            }, "")
           }
         />
-        {report && (
-          <View className="mt-5">
-            <Txt selectable className="text-sm leading-6">
-              {report.text}
-            </Txt>
-            <View className="mt-5">
-              <ProButton
-                title="Share or save report text"
-                onPress={() =>
-                  void Share.share({ title: `FitSync ${report.month}`, message: report.text })
-                }
-              />
-            </View>
-          </View>
+        {!origin && (
+          <Txt className="mt-3 text-xs leading-5 text-muted">
+            The web workspace link is unavailable in this build.
+          </Txt>
         )}
+        {action.feedback}
       </GlassCard>
     </>
   );
+}
+function ReportsPanel() {
+  return <MonthlyReportPanel />;
 }

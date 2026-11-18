@@ -352,7 +352,7 @@ function cardFixture(options = {}) {
     "../progress/analytics": { workoutDate },
     "../workouts/workout-context": { useWorkout: () => workoutState },
     "../coaching/use-coaching": { useCoaching: () => coaching },
-    "../pro/ui": { GlassCard: "Card", ProAction: "Action", ProButton: "Button", PRO: {} },
+    "../pro/hub-ui": { GlassCard: "Card", ProAction: "Action", ProButton: "Button", PRO: {} },
     "./companion-context": { useCompanion: () => companion },
     "./model": { effectiveReadiness, todayBriefing },
     "../program-follow/program-context": { useProgram: () => program },

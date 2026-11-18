@@ -119,6 +119,14 @@ function fixture() {
     "../billing/billing-context": { useBilling: () => billing },
     "../billing/paywall": { ProScreen: "ProMarketing" },
     "../progress/use-progress": { useProgress: hook("progress", progress) },
+    "../nutrition/use-food-diary": {
+      useFoodDiary: () => ({
+        diary: { version: 1, entries: [], library: [] },
+        loading: false,
+        error: "",
+        refresh: async () => calls.push("food-refresh"),
+      }),
+    },
     "../progress/model": {
       ...model,
       localDate: (value) => (value ? model.localDate(value) : "2026-11-14"),
@@ -260,7 +268,7 @@ test("Pro is one connected daily workspace with programs, muscle insights, meals
   action(tree, "Open my exercise library").props.onPress();
   assert.equal(f.calls.at(-1), "/exercises/custom");
   find(tree, "MealBrief")[0].props.onOpen();
-  assert.equal(f.calls.at(-1), "/wellness");
+  assert.equal(f.calls.at(-1), "/nutrition");
 });
 test("muscle insights open real paid analytics and all-time range selection", () => {
   const f = fixture();

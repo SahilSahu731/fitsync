@@ -215,7 +215,7 @@ export async function listExercises(
 export async function listExercisePicker(page: number, search = "", ownerId?: string) {
   const pageSize = 15;
   let query = db.from("exercise_catalog")
-    .select("id,name,tracking_type,region_label,equipment,primary_muscles,secondary_muscles,media")
+    .select("id,name,owner_user_id,tracking_type,region_label,equipment,primary_muscles,secondary_muscles,media")
     .eq("status", "published").or(exerciseVisibility(ownerId));
   const tokens = search.toLowerCase().replace(/[^a-z0-9-]+/g, " ").trim().split(/\s+/).filter(Boolean);
   for (const token of tokens) {
@@ -229,7 +229,7 @@ export async function listExercisePicker(page: number, search = "", ownerId?: st
       const media = (row.media ?? []) as CatalogMedia[];
       const image = media.find(item => item.kind === "image");
       return {
-        id: row.id, name: row.name, trackingType: row.tracking_type,
+        id: row.id, name: row.name, isCustom: Boolean(row.owner_user_id), trackingType: row.tracking_type,
         regionLabel: row.region_label, equipment: row.equipment ?? [],
         primaryMuscles: row.primary_muscles ?? [], secondaryMuscles: row.secondary_muscles ?? [],
         imageUrl: image ? (image.provider === "supabase"

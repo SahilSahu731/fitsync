@@ -3,7 +3,7 @@ import { requireOptionalNativeModule } from "expo";
 const modules = {
   "expo-secure-store": "ExpoSecureStore",
   "expo-image-picker": "ExponentImagePicker",
-  "expo-blur": "ExpoBlur"
+  "expo-blur": "ExpoBlur",
 } as const;
 
 export function getMissingNativeModules(): string[] {
@@ -15,7 +15,7 @@ export function getMissingNativeModules(): string[] {
 function assertNativeModule(packageName: keyof typeof modules) {
   if (!requireOptionalNativeModule(modules[packageName])) {
     throw new Error(
-      `This FitSync build is missing ${packageName}. Install a new Android development build. Restarting Metro alone cannot add native modules.`
+      `This FitSync build is missing ${packageName}. Install a new Android development build. Restarting Metro alone cannot add native modules.`,
     );
   }
 }

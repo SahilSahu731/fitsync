@@ -11,5 +11,10 @@ export interface HealthAdapter {
   openSettings(): Promise<void>;
 }
 export type HealthSyncSettings = { version: 1; enabled: boolean; lastImportedAt: string | null };
-export const disabledHealthSync = (): HealthSyncSettings => ({ version: 1, enabled: false, lastImportedAt: null });
-export const sourceLabel = (source: HealthSource) => source === "healthkit" ? "Apple Health" : "Health Connect";
+export const disabledHealthSync = (): HealthSyncSettings => ({
+  version: 1,
+  enabled: false,
+  lastImportedAt: null,
+});
+export const sourceLabel = (source: HealthSource) =>
+  source === "healthkit" ? "Apple Health" : "Health Connect";

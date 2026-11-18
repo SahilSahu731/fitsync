@@ -24,13 +24,7 @@ export function WeekStrip({
         const selected = day.day === selectedDay;
         const done = day.slot?.status === "completed";
         const inProgress = day.slot?.status === "active";
-        const color = selected
-          ? C.bg
-          : done
-            ? "#D4D4D4"
-            : inProgress
-              ? "#BEBEBE"
-              : C.ink;
+        const color = selected ? C.bg : done ? "#D4D4D4" : inProgress ? "#BEBEBE" : C.ink;
         const status = done
           ? "Logged"
           : inProgress
@@ -64,11 +58,7 @@ export function WeekStrip({
                 marginBottom: 8,
                 alignItems: "center",
                 justifyContent: "center",
-                backgroundColor: selected
-                  ? "#F4F0E9"
-                  : day.today
-                    ? "#C5F46018"
-                    : "transparent",
+                backgroundColor: selected ? "#F4F0E9" : day.today ? "#C5F46018" : "transparent",
                 borderWidth: day.today && !selected ? 1 : 0,
                 borderColor: "#C5F46050",
               }}
@@ -82,11 +72,7 @@ export function WeekStrip({
               )}
             </View>
             {day.rest ? (
-              <MaterialCommunityIcons
-                name="weather-night"
-                size={11}
-                color={C.muted}
-              />
+              <MaterialCommunityIcons name="weather-night" size={11} color={C.muted} />
             ) : (
               <View
                 style={{
@@ -94,11 +80,7 @@ export function WeekStrip({
                   height: 4,
                   marginVertical: 3.5,
                   borderRadius: 2,
-                  backgroundColor: done
-                    ? "#D4D4D4"
-                    : inProgress
-                      ? "#BEBEBE"
-                      : C.brand,
+                  backgroundColor: done ? "#D4D4D4" : inProgress ? "#BEBEBE" : C.brand,
                 }}
               />
             )}

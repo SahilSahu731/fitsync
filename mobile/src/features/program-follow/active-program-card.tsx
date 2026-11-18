@@ -59,7 +59,11 @@ export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }
               <Txt weight="semibold">Your program couldn’t load</Txt>
               <Txt className="mt-1 text-sm text-muted">{error}</Txt>
               <View className="mt-2 flex-row gap-5">
-                <Pressable accessibilityRole="button" onPress={() => void refresh()} className="py-2">
+                <Pressable
+                  accessibilityRole="button"
+                  onPress={() => void refresh()}
+                  className="py-2"
+                >
                   <Txt className="text-sm text-ink">Try again</Txt>
                 </Pressable>
                 <Pressable
@@ -83,9 +87,13 @@ export function ActiveProgramCard({ hideEmpty = false }: { hideEmpty?: boolean }
                   <MaterialCommunityIcons name="calendar-check-outline" size={24} color={C.ink} />
                 </View>
                 <View className="flex-1">
-                  <Txt weight="semibold">{isPro ? "A plan for your next rep" : "Your program, with Pro"}</Txt>
+                  <Txt weight="semibold">
+                    {isPro ? "A plan for your next rep" : "Your program, with Pro"}
+                  </Txt>
                   <Txt className="mt-1 text-xs text-muted">
-                    {isPro ? "Follow a program. Know what to train today." : "Choose a program and know your next session."}
+                    {isPro
+                      ? "Follow a program. Know what to train today."
+                      : "Choose a program and know your next session."}
                   </Txt>
                 </View>
                 <MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} />

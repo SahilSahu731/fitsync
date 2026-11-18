@@ -80,10 +80,12 @@ export type CompanionState = {
 export type ReplacementEvidence = { exerciseId: string; date: string; requestId: string };
 export type MonthlyReport = {
   month: string;
+  timezone?: string;
   generatedAt: string;
   text: string;
   summary: unknown;
   workouts: unknown[];
+  exercises?: unknown[];
   measurements: unknown[];
 };
 export const defaultReminders = (): ReminderPreferences => ({

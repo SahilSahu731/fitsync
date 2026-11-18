@@ -18,6 +18,7 @@ import { WorkoutProvider } from "@/src/features/workouts/workout-context";
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 import { CompanionProvider } from "@/src/features/companion/companion-context";
 import { CompanionNativeBridge } from "@/src/features/companion/native-bridge";
+import { FoodReminderBridge } from "@/src/features/nutrition/reminder-bridge";
 
 import { useFonts } from "expo-font";
 import { Poppins_400Regular } from "@expo-google-fonts/poppins/400Regular";
@@ -99,6 +100,7 @@ function Navigator() {
 
       <ProgramNotificationLinks />
       <CompanionNativeBridge />
+      <FoodReminderBridge />
       <ActiveWorkoutBar />
 
       {showReveal ? <BrandReveal onReady={hideNativeSplash} onDone={finishReveal} /> : null}

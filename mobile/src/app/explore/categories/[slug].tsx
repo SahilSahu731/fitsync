@@ -62,9 +62,7 @@ export default function RoutineCategoryScreen() {
         {title}
       </Txt>
 
-      <Txt className="mb-7 text-sm text-muted">
-        Pick a workout and make it yours.
-      </Txt>
+      <Txt className="mb-7 text-sm text-muted">Pick a workout and make it yours.</Txt>
 
       {loading ? (
         <ActivityIndicator color={C.ink} />

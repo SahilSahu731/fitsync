@@ -1,4 +1,3 @@
-
 import { apiRequest } from "@/src/services/api";
 
 export type TaxonomyItem = {
@@ -45,11 +44,7 @@ export type Exercise = {
 
   difficulty: "beginner" | "intermediate" | "advanced";
 
-  trackingType:
-    | "reps_weight"
-    | "reps"
-    | "duration"
-    | "distance_duration";
+  trackingType: "reps_weight" | "reps" | "duration" | "distance_duration";
 
   movementPattern:
     | "push"
@@ -101,40 +96,23 @@ export type ExercisePage = {
 };
 
 export function getTaxonomies() {
-  return apiRequest<ExerciseTaxonomies>(
-    "/exercises/taxonomies"
-  );
+  return apiRequest<ExerciseTaxonomies>("/exercises/taxonomies");
 }
 
-export function getExercises(
-  filters: ExerciseFilters = {}
-) {
+export function getExercises(filters: ExerciseFilters = {}) {
   const params = Object.entries(filters)
-    .filter(([, value]) =>
-      value !== undefined &&
-      value !== ""
-    )
-    .map(([key, value]) =>
-      `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`
-    );
+    .filter(([, value]) => value !== undefined && value !== "")
+    .map(([key, value]) => `${encodeURIComponent(key)}=${encodeURIComponent(String(value))}`);
 
-  const query = params.length
-    ? `?${params.join("&")}`
-    : "";
+  const query = params.length ? `?${params.join("&")}` : "";
 
-  return apiRequest<ExercisePage>(
-    `/exercises${query}`
-  );
+  return apiRequest<ExercisePage>(`/exercises${query}`);
 }
 
 export function getExercise(id: string) {
-  return apiRequest<Exercise>(
-    `/exercises/${encodeURIComponent(id)}`
-  );
+  return apiRequest<Exercise>(`/exercises/${encodeURIComponent(id)}`);
 }
 
 export function pretty(code: string) {
-  return code
-    .replace(/[-_]/g, " ")
-    .replace(/\b\w/g, letter => letter.toUpperCase());
+  return code.replace(/[-_]/g, " ").replace(/\b\w/g, (letter) => letter.toUpperCase());
 }

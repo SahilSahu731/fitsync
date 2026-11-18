@@ -28,7 +28,10 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
   const pathname = usePathname();
   const segments = useSegments();
   const insets = useSafeAreaInsets();
-  const hidden = pathname.startsWith("/workout") || pathname === "/membership" || (!inline && segments[0] === "(tabs)");
+  const hidden =
+    pathname.startsWith("/workout") ||
+    pathname === "/membership" ||
+    (!inline && segments[0] === "(tabs)");
   const { session, discard, busy } = useWorkout();
   const discardRequested = useRef(false);
 
@@ -52,9 +55,10 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
 
   const currentExercise = [...session.workout_session_exercises]
     .sort((a, b) => a.position - b.position)
-    .find((exercise) =>
-      !exercise.workout_logged_sets.length ||
-      exercise.workout_logged_sets.some((set) => !set.completed_at),
+    .find(
+      (exercise) =>
+        !exercise.workout_logged_sets.length ||
+        exercise.workout_logged_sets.some((set) => !set.completed_at),
     );
   const currentSetIndex = [...(currentExercise?.workout_logged_sets ?? [])]
     .sort((a, b) => a.position - b.position)
@@ -72,7 +76,9 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
       {
         text: "Cancel",
         style: "cancel",
-        onPress: () => { discardRequested.current = false; },
+        onPress: () => {
+          discardRequested.current = false;
+        },
       },
       {
         text: "Discard",
@@ -116,23 +122,23 @@ export function ActiveWorkoutBar({ inline = false }: { inline?: boolean }) {
             onPress={() => router.push("/workout")}
             className="flex-1 flex-row items-center"
           >
-           <View className="items-end bg-orange-600/60 rounded-full p-2">
-            <MaterialCommunityIcons name="chevron-up" size={22} color={"white"} />
-          </View>
+            <View className="items-end bg-orange-600/60 rounded-full p-2">
+              <MaterialCommunityIcons name="chevron-up" size={22} color={"white"} />
+            </View>
 
-          <View className="ml-3 flex-1">
-            <Txt weight="semibold" className="" numberOfLines={1}>
-              {session.name}
+            <View className="ml-3 flex-1">
+              <Txt weight="semibold" className="" numberOfLines={1}>
+                {session.name}
+              </Txt>
+
+              <Txt className="text-xs text-muted" numberOfLines={1}>
+                {exerciseExcerpt}
+              </Txt>
+            </View>
+
+            <Txt weight="semibold" className="text-[#3edc4b] text-sm mr-4">
+              {formatTime(elapsed)}
             </Txt>
-
-            <Txt className="text-xs text-muted" numberOfLines={1}>
-              {exerciseExcerpt}
-            </Txt>
-          </View>
-
-          <Txt weight="semibold" className="text-[#3edc4b] text-sm mr-4">
-            {formatTime(elapsed)}
-          </Txt>
           </Pressable>
           <Pressable
             accessibilityRole="button"

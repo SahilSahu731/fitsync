@@ -7,26 +7,44 @@ import { useWorkout } from "@/src/features/workouts/workout-context";
 import { programFollowApi, type FollowedProgram } from "./api";
 import { notificationProgramId, registerProgramNotifications } from "./notifications";
 
-type Context = { active: FollowedProgram | null; loading: boolean; error: string; refresh: () => Promise<void>; };
+type Context = {
+  active: FollowedProgram | null;
+  loading: boolean;
+  error: string;
+  refresh: () => Promise<void>;
+};
 const ProgramContext = createContext<Context | null>(null);
 export function ProgramProvider({ children }: { children: React.ReactNode }) {
   const { user, ready } = useSession();
   const { session, dataRevision } = useWorkout();
-  const [snapshot, setSnapshot] = useState<{ userId: string; active: FollowedProgram | null; error: string } | null>(null);
+  const [snapshot, setSnapshot] = useState<{
+    userId: string;
+    active: FollowedProgram | null;
+    error: string;
+  } | null>(null);
   const generation = useRef(0);
   const userId = user?.id;
-  const active = snapshot?.userId === userId ? snapshot?.active ?? null : null;
+  const active = snapshot?.userId === userId ? (snapshot?.active ?? null) : null;
   const loading = !!userId && snapshot?.userId !== userId;
-  const error = snapshot?.userId === userId ? snapshot?.error ?? "" : "";
-  const invalidate = useCallback(() => { generation.current++; }, []);
+  const error = snapshot?.userId === userId ? (snapshot?.error ?? "") : "";
+  const invalidate = useCallback(() => {
+    generation.current++;
+  }, []);
   const refresh = useCallback(async () => {
     if (!userId || !ready) return;
     const request = ++generation.current;
     try {
       const next = await programFollowApi.active();
-      if (request === generation.current) { setSnapshot({ userId, active: next, error: "" }); }
+      if (request === generation.current) {
+        setSnapshot({ userId, active: next, error: "" });
+      }
     } catch (cause) {
-      if (request === generation.current) setSnapshot(previous => ({ userId, active: previous?.userId === userId ? previous.active : null, error: cause instanceof Error ? cause.message : "Could not load your program." }));
+      if (request === generation.current)
+        setSnapshot((previous) => ({
+          userId,
+          active: previous?.userId === userId ? previous.active : null,
+          error: cause instanceof Error ? cause.message : "Could not load your program.",
+        }));
     }
   }, [userId, ready]);
   useEffect(() => {
@@ -35,20 +53,35 @@ export function ProgramProvider({ children }: { children: React.ReactNode }) {
   }, [refresh, invalidate, session?.id, dataRevision]);
   useEffect(() => {
     if (!userId || !ready) return;
-    const subscription = AppState.addEventListener("change", state => { if (state === "active") void refresh(); });
+    const subscription = AppState.addEventListener("change", (state) => {
+      if (state === "active") void refresh();
+    });
     return () => subscription.remove();
   }, [refresh, userId, ready]);
   useEffect(() => {
     if (!userId || !ready || Platform.OS === "web") return;
     // Claim this installation for the signed-in account even without an active
     // program. Consent is checked separately on the server before every push.
-    const register = () => { void registerProgramNotifications().catch(() => { /* Explicit reminder settings surface registration failures. */ }); };
+    const register = () => {
+      void registerProgramNotifications().catch(() => {
+        /* Explicit reminder settings surface registration failures. */
+      });
+    };
     register();
-    const foreground = AppState.addEventListener("change", state => { if (state === "active") register(); });
+    const foreground = AppState.addEventListener("change", (state) => {
+      if (state === "active") register();
+    });
     const token = Notifications.addPushTokenListener(register);
-    return () => { foreground.remove(); token.remove(); };
+    return () => {
+      foreground.remove();
+      token.remove();
+    };
   }, [userId, ready]);
-  return <ProgramContext.Provider value={{ active, loading, error, refresh }}>{children}</ProgramContext.Provider>;
+  return (
+    <ProgramContext.Provider value={{ active, loading, error, refresh }}>
+      {children}
+    </ProgramContext.Provider>
+  );
 }
 export function useProgram() {
   const context = useContext(ProgramContext);
@@ -65,7 +98,12 @@ export function ProgramNotificationLinks() {
     let mounted = true;
     let lastId: string | null = null;
     const open = (response: Notifications.NotificationResponse | null) => {
-      if (!mounted || !response || response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER) return;
+      if (
+        !mounted ||
+        !response ||
+        response.actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER
+      )
+        return;
       const request = response.notification.request;
       if (lastId === request.identifier) return;
       lastId = request.identifier;
@@ -77,7 +115,10 @@ export function ProgramNotificationLinks() {
     };
     void Notifications.getLastNotificationResponseAsync().then(open).catch(console.warn);
     const subscription = Notifications.addNotificationResponseReceivedListener(open);
-    return () => { mounted = false; subscription.remove(); };
+    return () => {
+      mounted = false;
+      subscription.remove();
+    };
   }, [userId, ready]);
   return null;
 }

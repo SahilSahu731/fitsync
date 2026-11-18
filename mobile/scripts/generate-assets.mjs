@@ -34,21 +34,42 @@ for (const [name, size, options] of [
   if (options.background) image.removeAlpha();
   await image.png().toFile(path.join(output, name));
 }
-await sharp({ create: { width: 1024, height: 1024, channels: 4, background: "#101011" } }).png().toFile(path.join(output, "android-icon-background.png"));
+await sharp({ create: { width: 1024, height: 1024, channels: 4, background: "#101011" } })
+  .png()
+  .toFile(path.join(output, "android-icon-background.png"));
 await fs.copyFile(path.join(output, "icon.png"), path.join(repo, "web/public/logo.png"));
 await fs.writeFile(path.join(root, "assets/brand/mark.svg"), source);
 await fs.writeFile(path.join(repo, "web/public/brand/mark.svg"), source);
-await sharp(Buffer.from(svg(512, { background: true }))).removeAlpha().png().toFile(path.join(repo, "web/src/app/icon.png"));
-await sharp(Buffer.from(svg(180, { background: true }))).removeAlpha().png().toFile(path.join(repo, "web/src/app/apple-icon.png"));
-const favicon = await sharp(Buffer.from(svg(48, { background: true, scale: 1 }))).png().toBuffer();
+await sharp(Buffer.from(svg(512, { background: true })))
+  .removeAlpha()
+  .png()
+  .toFile(path.join(repo, "web/src/app/icon.png"));
+await sharp(Buffer.from(svg(180, { background: true })))
+  .removeAlpha()
+  .png()
+  .toFile(path.join(repo, "web/src/app/apple-icon.png"));
+const favicon = await sharp(Buffer.from(svg(48, { background: true, scale: 1 })))
+  .png()
+  .toBuffer();
 const header = Buffer.alloc(22);
-header.writeUInt16LE(1, 2); header.writeUInt16LE(1, 4);
-header[6] = 48; header[7] = 48;
-header.writeUInt16LE(1, 10); header.writeUInt16LE(32, 12);
-header.writeUInt32LE(favicon.length, 14); header.writeUInt32LE(22, 18);
+header.writeUInt16LE(1, 2);
+header.writeUInt16LE(1, 4);
+header[6] = 48;
+header[7] = 48;
+header.writeUInt16LE(1, 10);
+header.writeUInt16LE(32, 12);
+header.writeUInt32LE(favicon.length, 14);
+header.writeUInt32LE(22, 18);
 await fs.writeFile(path.join(repo, "web/src/app/favicon.ico"), Buffer.concat([header, favicon]));
 // Replace the unused starter Icon Composer artwork as well.
 await fs.writeFile(path.join(root, "assets/expo.icon/Assets/expo-symbol 2.svg"), svg(1024));
-const composer = { fill: { "automatic-gradient": "extended-srgb:0.06275,0.06275,0.06667,1.00000" }, groups: [{ layers: [{ "image-name": "expo-symbol 2.svg", name: "FitSync mark" }] }], "supported-platforms": { squares: "shared", circles: ["watchOS"] } };
-await fs.writeFile(path.join(root, "assets/expo.icon/icon.json"), JSON.stringify(composer, null, 2) + "\n");
+const composer = {
+  fill: { "automatic-gradient": "extended-srgb:0.06275,0.06275,0.06667,1.00000" },
+  groups: [{ layers: [{ "image-name": "expo-symbol 2.svg", name: "FitSync mark" }] }],
+  "supported-platforms": { squares: "shared", circles: ["watchOS"] },
+};
+await fs.writeFile(
+  path.join(root, "assets/expo.icon/icon.json"),
+  JSON.stringify(composer, null, 2) + "\n",
+);
 console.log("Generated all FitSync icons from brand/mark.svg.");

@@ -6,12 +6,26 @@ import ts from "typescript";
 
 function load(file, dependencies = {}) {
   const source = readFileSync(new URL(file, import.meta.url), "utf8");
-  const js = ts.transpileModule(source, { compilerOptions: { module: ts.ModuleKind.CommonJS, jsx: ts.JsxEmit.ReactJSX, esModuleInterop: true } }).outputText;
+  const js = ts.transpileModule(source, {
+    compilerOptions: {
+      module: ts.ModuleKind.CommonJS,
+      jsx: ts.JsxEmit.ReactJSX,
+      esModuleInterop: true,
+    },
+  }).outputText;
   const exports = {};
-  vm.runInNewContext(js, { exports, require: name => {
-    if (!(name in dependencies)) throw Error(`Unexpected dependency ${name}`);
-    return dependencies[name];
-  }, Date, Map, Set, Promise });
+  vm.runInNewContext(js, {
+    exports,
+    require: (name) => {
+      if (name === "./custom-discovery") return load("../src/features/exercises/custom-discovery.ts");
+      if (!(name in dependencies)) throw Error(`Unexpected dependency ${name}`);
+      return dependencies[name];
+    },
+    Date,
+    Map,
+    Set,
+    Promise,
+  });
   return exports;
 }
 const { dragNumber } = load("../src/features/workouts/number-input.ts");
@@ -25,39 +39,95 @@ test("weight and reps drag in both directions with fractional steps and limits",
 });
 
 test("number responder survives rerenders and preserves its drag origin", () => {
-  const slots = []; let cursor = 0; const responders = [];
+  const slots = [];
+  let cursor = 0;
+  const responders = [];
   const React = {
-    useRef(value) { const index = cursor++; return slots[index] ??= { current: value }; },
-    useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial; return [slots[index], () => {}]; },
-    useLayoutEffect(callback) { callback(); },
-    useEffect(callback) { callback(); }
+    useRef(value) {
+      const index = cursor++;
+      return (slots[index] ??= { current: value });
+    },
+    useState(initial) {
+      const index = cursor++;
+      if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial;
+      return [slots[index], () => {}];
+    },
+    useLayoutEffect(callback) {
+      callback();
+    },
+    useEffect(callback) {
+      callback();
+    },
   };
   const { NumberEntry } = load("../src/features/workouts/components/workout-controls.tsx", {
-    react: React, "react/jsx-runtime": { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) },
-    "react-native": { PanResponder: { create(config) { responders.push(config); return { panHandlers: {} }; } } },
-    "react-native-safe-area-context": {}, "@expo/vector-icons": {}, "@/src/constants/theme": { C: {} },
-    "@/src/components/ui": {}, "../number-input": { dragNumber }
+    react: React,
+    "react/jsx-runtime": {
+      jsx: (type, props) => ({ type, props }),
+      jsxs: (type, props) => ({ type, props }),
+    },
+    "react-native": {
+      PanResponder: {
+        create(config) {
+          responders.push(config);
+          return { panHandlers: {} };
+        },
+      },
+    },
+    "react-native-safe-area-context": {},
+    "@expo/vector-icons": {},
+    "@/src/constants/theme": { C: {} },
+    "@/src/components/ui": {},
+    "../number-input": { dragNumber },
   });
-  let value = "10"; let committed = "";
-  const render = (disabled = false) => { cursor = 0; NumberEntry({ label: "Reps", value, disabled, onChange: next => { value = next; }, onCommit: next => { committed = next; } }); };
-  render(); const pan = responders[0];
+  let value = "10";
+  let committed = "";
+  const render = (disabled = false) => {
+    cursor = 0;
+    NumberEntry({
+      label: "Reps",
+      value,
+      disabled,
+      onChange: (next) => {
+        value = next;
+      },
+      onCommit: (next) => {
+        committed = next;
+      },
+    });
+  };
+  render();
+  const pan = responders[0];
   assert.equal(pan.onMoveShouldSetPanResponderCapture(null, { dy: -20, dx: 1 }), true);
-  pan.onPanResponderGrant(); pan.onPanResponderMove(null, { dy: -20 });
+  pan.onPanResponderGrant();
+  pan.onPanResponderMove(null, { dy: -20 });
   assert.equal(value, "12");
-  render(); assert.equal(responders.length, 1);
-  pan.onPanResponderMove(null, { dy: -40 }); assert.equal(value, "14");
-  pan.onPanResponderRelease(); assert.equal(committed, "14");
+  render();
+  assert.equal(responders.length, 1);
+  pan.onPanResponderMove(null, { dy: -40 });
+  assert.equal(value, "14");
+  pan.onPanResponderRelease();
+  assert.equal(committed, "14");
   assert.equal(pan.onPanResponderTerminationRequest(), false);
-  render(true); assert.equal(pan.onMoveShouldSetPanResponderCapture(null, { dy: -20, dx: 1 }), false);
+  render(true);
+  assert.equal(pan.onMoveShouldSetPanResponderCapture(null, { dy: -20, dx: 1 }), false);
 });
 
 test("picker shares cached requests and loads later pages only on demand", async () => {
   const paths = [];
-  const picker = load("../src/features/exercises/picker-cache.ts", { "@/src/services/api": { apiRequest: async path => {
-    paths.push(path);
-    const page = Number(new URL(`http://test${path}`).searchParams.get("page"));
-    return { items: Array.from({ length: 15 }, (_, index) => ({ id: String((page - 1) * 15 + index) })), hasMore: true };
-  } } });
+  const picker = load("../src/features/exercises/picker-cache.ts", {
+    "@/src/services/api": {
+      apiRequest: async (path) => {
+        paths.push(path);
+        const page = Number(new URL(`http://test${path}`).searchParams.get("page"));
+        return {
+          items: Array.from({ length: 15 }, (_, index) => ({
+            id: String((page - 1) * 15 + index),
+          })),
+          hasMore: true,
+        };
+      },
+    },
+  });
   await Promise.all([picker.loadExercisePicker(), picker.loadExercisePicker()]);
   assert.equal(paths.length, 1);
   const first = await picker.loadPickerPage("", 1);
@@ -72,14 +142,20 @@ test("picker shares cached requests and loads later pages only on demand", async
 
 test("failed picker pages can be retried without discarding cached pages", async () => {
   let fail = false;
-  const picker = load("../src/features/exercises/picker-cache.ts", { "@/src/services/api": { apiRequest: async () => {
-    if (fail) throw Error("offline");
-    return { items: [{ id: "one" }], hasMore: true };
-  } } });
+  const picker = load("../src/features/exercises/picker-cache.ts", {
+    "@/src/services/api": {
+      apiRequest: async () => {
+        if (fail) throw Error("offline");
+        return { items: [{ id: "one" }], hasMore: true };
+      },
+    },
+  });
   await picker.loadPickerPage("", 1);
-  fail = true; await assert.rejects(picker.loadPickerPage("", 2), /offline/);
+  fail = true;
+  await assert.rejects(picker.loadPickerPage("", 2), /offline/);
   assert.equal(picker.cachedPickerPage("", 1).items[0].id, "one");
-  fail = false; assert.equal((await picker.loadPickerPage("", 2)).items.length, 1);
+  fail = false;
+  assert.equal((await picker.loadPickerPage("", 2)).items.length, 1);
 });
 
 test("reordering preserves all rows and accounts for scroll offset in both directions", () => {
@@ -87,9 +163,19 @@ test("reordering preserves all rows and accounts for scroll offset in both direc
   const rows = [{ id: "a" }, { id: "b" }, { id: "c" }];
   assert.equal(moveItem(rows, "a", 0), rows);
   assert.equal(moveItem(rows, "missing", 1), rows);
-  assert.equal(moveItem(rows, "a", 2).map(row => row.id).join(","), "b,c,a");
-  assert.equal(moveItem(rows, "c", -5).map(row => row.id).join(","), "c,a,b");
-  assert.equal(rows.map(row => row.id).join(","), "a,b,c");
+  assert.equal(
+    moveItem(rows, "a", 2)
+      .map((row) => row.id)
+      .join(","),
+    "b,c,a",
+  );
+  assert.equal(
+    moveItem(rows, "c", -5)
+      .map((row) => row.id)
+      .join(","),
+    "c,a,b",
+  );
+  assert.equal(rows.map((row) => row.id).join(","), "a,b,c");
   assert.equal(dragPosition(1, 40, 40, 3, 80), 160);
   assert.equal(dragPosition(1, -40, -40, 3, 80), 0);
   assert.equal(dragPosition(0, 5000, 0, 3, 80), 160);
@@ -108,7 +194,7 @@ test("routine targets preserve types and time targets and reject invalid input",
   assert.equal(input.exercises[0].sets[0].setType, "warmup");
   assert.equal(input.exercises[1].sets[0].targetDurationSeconds, 30);
   assert.equal(input.exercises[1].sets[0].targetReps, null);
-  assert.equal(new Set(strength.sets.map(set => set.id)).size, 3);
+  assert.equal(new Set(strength.sets.map((set) => set.id)).size, 3);
   strength.sets[0].reps = "2.5";
   assert.throws(() => routineInput("Leg day", "", [strength]), /whole number/);
   strength.sets[0].reps = "";
@@ -119,31 +205,69 @@ test("routine targets preserve types and time targets and reject invalid input",
 
 test("set badges have unique letters and colors for every supported type", () => {
   const { SET_TYPES } = load("../src/features/workouts/set-types.ts");
-  assert.equal(new Set(SET_TYPES.map(item => item.letter)).size, SET_TYPES.length);
-  assert.equal(new Set(SET_TYPES.map(item => item.color)).size, SET_TYPES.length);
-  assert.equal(SET_TYPES.find(item => item.value === "rest_pause").letter, "RP");
+  assert.equal(new Set(SET_TYPES.map((item) => item.letter)).size, SET_TYPES.length);
+  assert.equal(new Set(SET_TYPES.map((item) => item.color)).size, SET_TYPES.length);
+  assert.equal(SET_TYPES.find((item) => item.value === "rest_pause").letter, "RP");
 });
 
 test("reorder handle keeps its responder when its index changes mid-drag", () => {
-  const slots = []; let cursor = 0; const responders = [];
+  const slots = [];
+  let cursor = 0;
+  const responders = [];
   const React = {
-    useRef(value) { const index = cursor++; return slots[index] ??= { current: value }; },
-    useState(initial) { const index = cursor++; if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial; return [slots[index], () => {}]; },
-    useLayoutEffect(callback) { callback(); }
+    useRef(value) {
+      const index = cursor++;
+      return (slots[index] ??= { current: value });
+    },
+    useState(initial) {
+      const index = cursor++;
+      if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial;
+      return [slots[index], () => {}];
+    },
+    useLayoutEffect(callback) {
+      callback();
+    },
   };
   const { ReorderRow } = load("../src/features/workouts/components/reorder-training.tsx", {
-    react: React, "react/jsx-runtime": { jsx: (type, props) => ({ type, props }), jsxs: (type, props) => ({ type, props }) },
-    "react-native": { PanResponder: { create(config) { responders.push(config); return { panHandlers: {} }; } } },
-    "react-native-reanimated": { useAnimatedStyle: () => ({}), withTiming: value => value },
-    "react-native-safe-area-context": {}, "@expo/vector-icons": {}, "@/src/constants/theme": { C: {} },
-    "@/src/components/ui": {}, "../reorder": {}, "./exercise-image": {}
+    react: React,
+    "react/jsx-runtime": {
+      jsx: (type, props) => ({ type, props }),
+      jsxs: (type, props) => ({ type, props }),
+    },
+    "react-native": {
+      PanResponder: {
+        create(config) {
+          responders.push(config);
+          return { panHandlers: {} };
+        },
+      },
+    },
+    "react-native-reanimated": { useAnimatedStyle: () => ({}), withTiming: (value) => value },
+    "react-native-safe-area-context": {},
+    "@expo/vector-icons": {},
+    "@/src/constants/theme": { C: {} },
+    "@/src/components/ui": {},
+    "../reorder": {},
+    "./exercise-image": {},
   });
-  const moves = []; let ended = 0;
-  const render = index => {
+  const moves = [];
+  let ended = 0;
+  const render = (index) => {
     cursor = 0;
-    ReorderRow({ item: { id: "a", name: "Bench press" }, index, count: 3, disabled: false,
-      active: { get: () => "a" }, dragY: { get: () => 80 }, onStart: () => {},
-      onMove: (dy, y) => moves.push([index, dy, y]), onEnd: () => { ended = index + 1; }, onAdjust: () => {} });
+    ReorderRow({
+      item: { id: "a", name: "Bench press" },
+      index,
+      count: 3,
+      disabled: false,
+      active: { get: () => "a" },
+      dragY: { get: () => 80 },
+      onStart: () => {},
+      onMove: (dy, y) => moves.push([index, dy, y]),
+      onEnd: () => {
+        ended = index + 1;
+      },
+      onAdjust: () => {},
+    });
   };
   render(0);
   responders[0].onPanResponderMove(null, { dy: 30, moveY: 200 });
@@ -151,7 +275,10 @@ test("reorder handle keeps its responder when its index changes mid-drag", () =>
   responders[0].onPanResponderMove(null, { dy: 170, moveY: 340 });
   responders[0].onPanResponderRelease();
   assert.equal(responders.length, 1);
-  assert.deepEqual(moves, [[0, 30, 200], [2, 170, 340]]);
+  assert.deepEqual(moves, [
+    [0, 30, 200],
+    [2, 170, 340],
+  ]);
   assert.equal(ended, 3);
 });
 
@@ -160,13 +287,14 @@ test("set rows use empty and checked circles, with pending additions locking onl
   let pendingSetIds = [];
   const jsx = (type, props) => ({ type, props });
   const React = {
-    memo: component => component,
-    useState: value => [typeof value === "function" ? value() : value, () => {}],
-    useRef: value => ({ current: value }),
+    memo: (component) => component,
+    useState: (value) => [typeof value === "function" ? value() : value, () => {}],
+    useRef: (value) => ({ current: value }),
     useEffect() {},
   };
   const { SetRow } = load("../src/features/workouts/components/set-row.tsx", {
-    react: React, "react/jsx-runtime": { jsx, jsxs: jsx },
+    react: React,
+    "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { View: "View", Pressable: "Pressable", ActivityIndicator: "Spinner" },
     "@react-native-async-storage/async-storage": {},
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
@@ -180,18 +308,50 @@ test("set rows use empty and checked circles, with pending additions locking onl
     "../set-types": appearance,
     "../routine-draft": load("../src/features/workouts/routine-draft.ts"),
   });
-  const find = (node, type) => !node || typeof node !== "object" ? [] : Array.isArray(node) ? node.flatMap(child => find(child, type)) : [...(node.type === type ? [node] : []), ...find(node.props?.children, type)];
-  const row = completed => SetRow({ exerciseId: "exercise", number: 1, restSeconds: 90, set: { id: "row", set_type: "normal", reps: 8, weight_kg: 20, completed_at: completed ? "done" : null } });
+  const find = (node, type) =>
+    !node || typeof node !== "object"
+      ? []
+      : Array.isArray(node)
+        ? node.flatMap((child) => find(child, type))
+        : [...(node.type === type ? [node] : []), ...find(node.props?.children, type)];
+  const row = (completed) =>
+    SetRow({
+      exerciseId: "exercise",
+      number: 1,
+      restSeconds: 90,
+      set: {
+        id: "row",
+        set_type: "normal",
+        reps: 8,
+        weight_kg: 20,
+        completed_at: completed ? "done" : null,
+      },
+    });
   let tree = row(false);
-  assert.equal(find(tree, "Icon").some(icon => icon.props.name === "circle-outline"), true);
+  assert.equal(
+    find(tree, "Icon").some((icon) => icon.props.name === "circle-outline"),
+    true,
+  );
   assert.equal(find(tree, "Picker")[0].props.value, "normal");
-  assert.equal(find(tree, "Entry").every(entry => !entry.props.disabled), true);
+  assert.equal(
+    find(tree, "Entry").every((entry) => !entry.props.disabled),
+    true,
+  );
   tree = row(true);
-  assert.equal(find(tree, "Icon").some(icon => icon.props.name === "check-circle"), true);
+  assert.equal(
+    find(tree, "Icon").some((icon) => icon.props.name === "check-circle"),
+    true,
+  );
   pendingSetIds = ["another-row"];
-  assert.equal(find(row(false), "Entry").every(entry => !entry.props.disabled), true);
+  assert.equal(
+    find(row(false), "Entry").every((entry) => !entry.props.disabled),
+    true,
+  );
   pendingSetIds = ["row"];
-  assert.equal(find(row(false), "Entry").every(entry => entry.props.disabled), true);
+  assert.equal(
+    find(row(false), "Entry").every((entry) => entry.props.disabled),
+    true,
+  );
 });
 
 test("private exercise picker caches are isolated across account changes and refreshed after edits", async () => {

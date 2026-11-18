@@ -12,15 +12,26 @@ export function useOnboardingDraft(userId?: string) {
     let active = true;
     finished.current = false;
     if (!key) return;
-    void AsyncStorage.getItem(key).then(raw => {
-      if (active) setDraft(raw ? restoreDraft(JSON.parse(raw)) : { ...DEFAULT_DRAFT });
-    }).catch(() => { if (active) setDraft({ ...DEFAULT_DRAFT }); }).finally(() => { if (active) setLoadedKey(key); });
-    return () => { active = false; };
+    void AsyncStorage.getItem(key)
+      .then((raw) => {
+        if (active) setDraft(raw ? restoreDraft(JSON.parse(raw)) : { ...DEFAULT_DRAFT });
+      })
+      .catch(() => {
+        if (active) setDraft({ ...DEFAULT_DRAFT });
+      })
+      .finally(() => {
+        if (active) setLoadedKey(key);
+      });
+    return () => {
+      active = false;
+    };
   }, [key]);
   useEffect(() => {
     if (!key || key !== loadedKey || finished.current) return;
     // Serialize writes so a late autosave cannot recreate a completed draft.
-    writes.current = writes.current.then(() => AsyncStorage.setItem(key, JSON.stringify(draft))).catch(() => {});
+    writes.current = writes.current
+      .then(() => AsyncStorage.setItem(key, JSON.stringify(draft)))
+      .catch(() => {});
   }, [draft, key, loadedKey]);
   async function clearDraft() {
     finished.current = true;

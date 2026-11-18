@@ -29,9 +29,7 @@ export function ProgramToday({
     <View>
       <View className="mb-3 flex-row items-center justify-between">
         <Txt weight="semibold" className="text-xl">
-          {detail.enrollment.status === "active"
-            ? "Your next move"
-            : "Your journey"}
+          {detail.enrollment.status === "active" ? "Your next move" : "Your journey"}
         </Txt>
         <Txt className="text-xs text-muted">
           {formatProgramDate(detail.today, {
@@ -46,9 +44,7 @@ export function ProgramToday({
         style={{ borderColor: rest || complete ? "#D4D4D425" : "#C5F46030" }}
       >
         <LinearGradient
-          colors={
-            rest || complete ? ["#292929", "#161C19"] : ["#252525", "#1D1918"]
-          }
+          colors={rest || complete ? ["#292929", "#161C19"] : ["#252525", "#1D1918"]}
           start={{ x: 0, y: 0 }}
           end={{ x: 1, y: 1 }}
           style={{ padding: 20 }}
@@ -84,20 +80,14 @@ export function ProgramToday({
               <View className="items-center">
                 <ProgressRing
                   size={66}
-                  percent={
-                    week.planned
-                      ? Math.round((week.completed / week.planned) * 100)
-                      : 0
-                  }
+                  percent={week.planned ? Math.round((week.completed / week.planned) * 100) : 0}
                   label="This week completed"
                 />
                 <Txt className="mt-1 text-[11px] text-muted">THIS WEEK</Txt>
               </View>
             )}
           </View>
-          <Txt className="mb-5 mt-3 text-xs leading-5 text-muted">
-            {focus.description}
-          </Txt>
+          <Txt className="mb-5 mt-3 text-xs leading-5 text-muted">{focus.description}</Txt>
           {focus.slot ? (
             preview ? (
               <Pressable
@@ -108,11 +98,7 @@ export function ProgramToday({
                 <Txt weight="semibold" className="text-sm">
                   {focusAction(focus)}
                 </Txt>
-                <MaterialCommunityIcons
-                  name="arrow-down"
-                  size={19}
-                  color={C.ink}
-                />
+                <MaterialCommunityIcons name="arrow-down" size={19} color={C.ink} />
               </Pressable>
             ) : (
               <WorkoutAction
@@ -122,11 +108,7 @@ export function ProgramToday({
               />
             )
           ) : focus.kind === "unavailable" ? (
-            <Pressable
-              accessibilityRole="button"
-              onPress={onRefresh}
-              className="py-2"
-            >
+            <Pressable accessibilityRole="button" onPress={onRefresh} className="py-2">
               <Txt className="text-ink">Refresh plan</Txt>
             </Pressable>
           ) : detail.enrollment.status !== "active" ? (
@@ -138,11 +120,7 @@ export function ProgramToday({
               <Txt weight="semibold" className="text-sm">
                 View your progress
               </Txt>
-              <MaterialCommunityIcons
-                name="arrow-right"
-                size={19}
-                color={C.ink}
-              />
+              <MaterialCommunityIcons name="arrow-right" size={19} color={C.ink} />
             </Pressable>
           ) : null}
         </LinearGradient>

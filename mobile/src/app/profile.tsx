@@ -434,7 +434,10 @@ export default function ProfileScreen() {
         >
           <View className="flex-row items-center justify-between">
             <Icon name="crown-outline" size={26} color={C.bg} />
-            <Txt weight="medium" className="text-[10px] px-3 py-1 rounded-full bg-yellow-300 tracking-[1px] text-bg">
+            <Txt
+              weight="medium"
+              className="text-[10px] px-3 py-1 rounded-full bg-yellow-300 tracking-[1px] text-bg"
+            >
               FITSYNC PRO
             </Txt>
           </View>

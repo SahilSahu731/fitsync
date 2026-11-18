@@ -1,63 +1,20 @@
-
 import React from "react";
-import Svg, {
-  Circle,
-  G,
-  Line,
-  Path,
-  Rect,
-  Text as SvgText
-} from "react-native-svg";
+import Svg, { Circle, G, Line, Path, Rect, Text as SvgText } from "react-native-svg";
 
 import { C } from "@/src/constants/theme";
 
-export function AthleteArt({
-  width = 340,
-  height = 290
-}: {
-  width?: number;
-  height?: number;
-}) {
+export function AthleteArt({ width = 340, height = 290 }: { width?: number; height?: number }) {
   return (
     <Svg width={width} height={height} viewBox="0 0 350 300">
-      <Circle
-        cx="175"
-        cy="145"
-        r="119"
-        fill="#171719"
-        stroke="#363638"
-        strokeWidth="1"
-      />
+      <Circle cx="175" cy="145" r="119" fill="#171719" stroke="#363638" strokeWidth="1" />
 
-      <Circle
-        cx="175"
-        cy="145"
-        r="93"
-        fill="none"
-        stroke="#252528"
-        strokeWidth="20"
-      />
+      <Circle cx="175" cy="145" r="93" fill="none" stroke="#252528" strokeWidth="20" />
 
-      <Path
-        d="M36 264L90 22"
-        stroke="#C5F460"
-        strokeWidth="2"
-        opacity="0.7"
-      />
+      <Path d="M36 264L90 22" stroke="#C5F460" strokeWidth="2" opacity="0.7" />
 
-      <Path
-        d="M248 272L332 36"
-        stroke="#C5F460"
-        strokeWidth="2"
-        opacity="0.5"
-      />
+      <Path d="M248 272L332 36" stroke="#C5F460" strokeWidth="2" opacity="0.5" />
 
-      <Path
-        d="M47 47H103M246 240h53"
-        stroke="#C5F460"
-        strokeWidth="4"
-        strokeLinecap="round"
-      />
+      <Path d="M47 47H103M246 240h53" stroke="#C5F460" strokeWidth="4" strokeLinecap="round" />
 
       <G transform="translate(20 11)">
         <Line
@@ -70,12 +27,12 @@ export function AthleteArt({
           strokeLinecap="round"
         />
 
-        <Rect x="29" y="23" width="20" height="70" rx="5" fill="#C5F460"/>
-        <Rect x="17" y="35" width="11" height="46" rx="3" fill="#FFFFFF"/>
-        <Rect x="269" y="23" width="20" height="70" rx="5" fill="#C5F460"/>
-        <Rect x="291" y="35" width="11" height="46" rx="3" fill="#FFFFFF"/>
+        <Rect x="29" y="23" width="20" height="70" rx="5" fill="#C5F460" />
+        <Rect x="17" y="35" width="11" height="46" rx="3" fill="#FFFFFF" />
+        <Rect x="269" y="23" width="20" height="70" rx="5" fill="#C5F460" />
+        <Rect x="291" y="35" width="11" height="46" rx="3" fill="#FFFFFF" />
 
-        <Circle cx="163" cy="99" r="28" fill="#FFFFFF"/>
+        <Circle cx="163" cy="99" r="28" fill="#FFFFFF" />
 
         <Path
           d="M146 93C148 69 180 74 184 95"
@@ -115,14 +72,7 @@ export function AthleteArt({
         />
       </G>
 
-      <SvgText
-        x="17"
-        y="286"
-        fill={C.brand}
-        fontSize="12"
-        fontWeight="bold"
-        letterSpacing="4"
-      >
+      <SvgText x="17" y="286" fill={C.brand} fontSize="12" fontWeight="bold" letterSpacing="4">
         PUSH YOUR LIMITS.
       </SvgText>
     </Svg>

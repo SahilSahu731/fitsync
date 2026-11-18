@@ -9,10 +9,7 @@ import React, {
   useState,
 } from "react";
 
-import {
-  GoogleSignin,
-  isSuccessResponse,
-} from "@react-native-google-signin/google-signin";
+import { GoogleSignin, isSuccessResponse } from "@react-native-google-signin/google-signin";
 import { createAvatarForm } from "@/src/services/avatar-upload";
 
 import {
@@ -83,13 +80,9 @@ type SessionContextType = {
 
   saveProfile: (value: Profile) => Promise<void>;
 
-  updateAccount: (
-    value: Partial<Pick<AuthUser, "name" | "bio">>,
-  ) => Promise<void>;
+  updateAccount: (value: Partial<Pick<AuthUser, "name" | "bio">>) => Promise<void>;
 
-  updateFitness: (
-    value: Partial<Omit<Profile, "completedAt">>,
-  ) => Promise<void>;
+  updateFitness: (value: Partial<Omit<Profile, "completedAt">>) => Promise<void>;
 
   updateSettings: (value: Partial<UserSettings>) => Promise<void>;
 
@@ -135,13 +128,22 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     setSettings(null);
   }, []);
 
-  const accountRequest = useCallback(async (path: string, options: Parameters<typeof apiRequest>[1] = {}) => {
-    const ownerId = identity.current; const revision = generation.current;
-    if (!ownerId) throw new Error("Sign in to update your account.");
-    const response = await apiRequest<MeResponse>(path, { ...options, expectedOwnerId: ownerId });
-    if (identity.current !== ownerId || generation.current !== revision || response.user.id !== ownerId) throw new Error("Your account changed. Reopen this screen.");
-    return response;
-  }, []);
+  const accountRequest = useCallback(
+    async (path: string, options: Parameters<typeof apiRequest>[1] = {}) => {
+      const ownerId = identity.current;
+      const revision = generation.current;
+      if (!ownerId) throw new Error("Sign in to update your account.");
+      const response = await apiRequest<MeResponse>(path, { ...options, expectedOwnerId: ownerId });
+      if (
+        identity.current !== ownerId ||
+        generation.current !== revision ||
+        response.user.id !== ownerId
+      )
+        throw new Error("Your account changed. Reopen this screen.");
+      return response;
+    },
+    [],
+  );
 
   const reloadMe = useCallback(async () => {
     const data = await accountRequest("/me");
@@ -297,8 +299,11 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const signOut = useCallback(async () => {
     const account = identity.current;
-    identity.current = null; generation.current++;
-    await unregisterProgramNotifications().catch(() => console.warn("Could not unregister program reminders on this device."));
+    identity.current = null;
+    generation.current++;
+    await unregisterProgramNotifications().catch(() =>
+      console.warn("Could not unregister program reminders on this device."),
+    );
     try {
       await apiRequest("/auth/logout", {
         method: "POST",
@@ -378,9 +383,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     ],
   );
 
-  return (
-    <SessionContext.Provider value={value}>{children}</SessionContext.Provider>
-  );
+  return <SessionContext.Provider value={value}>{children}</SessionContext.Provider>;
 }
 
 export function useSession() {

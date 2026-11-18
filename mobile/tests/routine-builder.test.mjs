@@ -79,13 +79,22 @@ function load(relative, dependencies) {
   return exports;
 }
 
-function fixture({ create = async () => ({ id: "saved" }), signedIn = true } = {}) {
+function fixture({
+  create = async () => ({ id: "saved" }),
+  signedIn = true,
+  exerciseId,
+  seed = async () => {
+    throw Error("Exercise unavailable");
+  },
+} = {}) {
   const instances = new Map();
   const effects = [];
   const requests = [],
     routes = [],
     alerts = [];
   const session = { user: signedIn ? { id: "owner" } : null };
+  const params = { exerciseId };
+  const seedRequests = [];
   let current,
     cursor,
     seen,
@@ -149,6 +158,7 @@ function fixture({ create = async () => ({ id: "saved" }), signedIn = true } = {
       useSafeAreaInsets: () => ({ top: 24, bottom: 20 }),
     },
     "expo-router": {
+      useLocalSearchParams: () => params,
       useRouter: () => ({
         canGoBack: () => true,
         back: () => routes.push("back"),
@@ -162,6 +172,7 @@ function fixture({ create = async () => ({ id: "saved" }), signedIn = true } = {
       useAppAlert: () => ({ alert: (...args) => alerts.push(args) }),
     },
     "@/src/context/session": { useSession: () => session },
+    "@/src/services/api": { apiSessionKey: () => 1 },
     "@/src/components/motion": { ScreenEntrance: "Entrance" },
     "@/src/features/workouts/api": {
       workoutApi: {
@@ -186,6 +197,19 @@ function fixture({ create = async () => ({ id: "saved" }), signedIn = true } = {
       TrainActions: "TrainActions",
     },
   };
+  dependencies["@/src/features/workouts/routine-seed"] = load(
+    "../src/features/workouts/routine-seed.ts",
+    {
+      "@/src/services/api": {
+        apiRequest: (path, options) => {
+          seedRequests.push([path, options]);
+          return seed(path, options);
+        },
+      },
+      "../exercises/custom-discovery": load("../src/features/exercises/custom-discovery.ts", {}),
+      "./routine-draft": drafts,
+    },
+  );
   const card = load("../src/features/workouts/components/routine-exercise-card.tsx", {
     ...dependencies,
     "./exercise-image": { ExerciseImage: "ExerciseImage" },
@@ -220,6 +244,8 @@ function fixture({ create = async () => ({ id: "saved" }), signedIn = true } = {
     routes,
     alerts,
     session,
+    params,
+    seedRequests,
     get lateUpdates() {
       return lateUpdates;
     },
@@ -466,4 +492,116 @@ test("picker duplicates and repeated selections never create duplicate draft exe
   assert.deepEqual(Array.from(picker.props.existingIds), ["bench"]);
   await picker.props.onConfirm([bench, plank]);
   assert.equal(ofType(app.render(), "SetTypePicker").length, 6);
+});
+
+const seedId = "00000000-0000-4000-8000-000000000001";
+const seedExercise = {
+  ...bench,
+  id: seedId,
+  name: "My custom press",
+  status: "published",
+  isCustom: true,
+  regionLabel: "Upper body",
+  primaryMuscles: ["chest"],
+  secondaryMuscles: [],
+  equipment: ["dumbbell"],
+  media: [],
+};
+
+test("a library deep link seeds the selected exercise once and preserves edits made while it loads", async () => {
+  const pending = deferred();
+  const app = fixture({ exerciseId: seedId, seed: () => pending.promise });
+  assert.equal(button(app.render(), "Save routine").props.disabled, true);
+  name(app, "My own routine");
+  await add(app);
+  entry(app.render(), "Bench press, set 1 reps").props.onChange("6");
+  await save(app);
+  assert.equal(app.requests.length, 0);
+  pending.resolve(seedExercise);
+  await settle();
+  let tree = app.render();
+  assert.equal(button(tree, "Save routine").props.disabled, false);
+  assert.equal(input(tree, "Routine name").props.value, "My own routine");
+  assert.equal(entry(tree, "Bench press, set 1 reps").props.value, "6");
+  assert.equal(ofType(tree, "SetTypePicker").length, 6);
+  entry(tree, "My custom press, set 1 weight in kg").props.onChange("22.5");
+  app.params.exerciseId = undefined;
+  app.render();
+  app.params.exerciseId = seedId;
+  tree = app.render();
+  assert.equal(entry(tree, "My custom press, set 1 weight in kg").props.value, "22.5");
+  assert.equal(app.seedRequests.length, 1);
+  assert.equal(app.seedRequests[0][1].expectedOwnerId, "owner");
+  await save(app);
+  assert.equal(app.requests[0][0].exercises[1].exerciseId, seedId);
+});
+
+test("a seeded exercise already selected in the picker is deduplicated without resetting its targets", async () => {
+  const pending = deferred();
+  const app = fixture({ exerciseId: seedId, seed: () => pending.promise });
+  await add(app, [{ ...bench, id: seedId }]);
+  entry(app.render(), "Bench press, set 1 reps").props.onChange("5");
+  pending.resolve(seedExercise);
+  await settle();
+  const tree = app.render();
+  assert.equal(ofType(tree, "SetTypePicker").length, 3);
+  assert.equal(entry(tree, "Bench press, set 1 reps").props.value, "5");
+});
+
+test("missing, archived and invalid exercise links show a useful error and permit a network retry", async () => {
+  let attempts = 0;
+  const app = fixture({
+    exerciseId: seedId,
+    seed: async () => {
+      if (++attempts === 1) throw Error("Connection lost");
+      return seedExercise;
+    },
+  });
+  app.render();
+  await settle();
+  assert.match(text(app.render()), /Connection lost/);
+  button(app.render(), "Retry adding exercise").props.onPress();
+  app.render();
+  await settle();
+  assert.equal(ofType(app.render(), "SetTypePicker").length, 3);
+  const archived = fixture({
+    exerciseId: seedId,
+    seed: async () => ({ ...seedExercise, status: "archived" }),
+  });
+  archived.render();
+  await settle();
+  assert.match(text(archived.render()), /no longer available/);
+  assert.equal(ofType(archived.render(), "SetTypePicker").length, 0);
+  const invalid = fixture({ exerciseId: "../../another-account" });
+  invalid.render();
+  await settle();
+  assert.match(text(invalid.render()), /exercise link is invalid/);
+  assert.equal(invalid.seedRequests.length, 0);
+});
+
+test("switching accounts or leaving during a seed load discards the late exercise", async () => {
+  const pending = deferred();
+  const app = fixture({
+    exerciseId: seedId,
+    seed: async (_path, options) => {
+      if (options.expectedOwnerId === "owner") return pending.promise;
+      throw Error("Exercise not found");
+    },
+  });
+  app.render();
+  app.session.user = { id: "different-owner" };
+  app.render();
+  pending.resolve(seedExercise);
+  await settle();
+  const tree = app.render();
+  assert.equal(ofType(tree, "SetTypePicker").length, 0);
+  assert.doesNotMatch(text(tree), /My custom press/);
+  assert.match(text(tree), /Exercise not found/);
+  const later = deferred();
+  const leaving = fixture({ exerciseId: seedId, seed: () => later.promise });
+  leaving.render();
+  leaving.unmount();
+  later.resolve(seedExercise);
+  await settle();
+  assert.equal(leaving.lateUpdates, 0);
 });

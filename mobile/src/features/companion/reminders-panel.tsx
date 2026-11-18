@@ -6,7 +6,7 @@ import { MotionPressable } from "@/src/components/motion";
 import { useSession } from "@/src/context/session";
 import { useBilling } from "../billing/billing-context";
 import { useProgram } from "../program-follow/program-context";
-import { GlassCard, ProButton, PRO } from "../pro/ui";
+import { GlassCard, ProButton, PRO } from "../pro/hub-ui";
 import { defaultReminders, type CompanionRecord, type ReminderPreferences } from "./api";
 import { useCompanion } from "./companion-context";
 import {

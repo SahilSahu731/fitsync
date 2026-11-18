@@ -5,6 +5,7 @@ import vm from "node:vm";
 import ts from "typescript";
 import { buildProAnalytics } from "../src/features/pro/analytics.ts";
 import { dateLabel } from "../src/features/progress/model.ts";
+import * as foodModel from "../src/features/nutrition/model.ts";
 
 function fixture() {
   const slots = [];
@@ -24,7 +25,11 @@ function fixture() {
       },
     },
     "react/jsx-runtime": { jsx, jsxs: jsx },
-    "react-native": { View: "View", ScrollView: "ScrollView" },
+    "react-native": {
+      View: "View",
+      ScrollView: "ScrollView",
+      useWindowDimensions: () => ({ width: 390, height: 844, scale: 3, fontScale: 1 }),
+    },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
     "react-native-svg": {
       __esModule: true,
@@ -36,7 +41,9 @@ function fixture() {
     },
     "@/src/components/motion": { MotionPressable: "Pressable", ProgressFill: "ProgressFill" },
     "@/src/components/ui": { Txt: "Txt" },
-    "../workouts/components/muscle-focus": { Body: "Body" },
+    "./anatomical-body": { AnatomicalBody: "AnatomicalBody" },
+    "../nutrition/model": foodModel,
+    "../nutrition/components": { PlateArt: "PlateArt" },
     "../progress/model": { dateLabel },
     "./hub-ui": { PRO: { accent: "#C5F460", gold: "#ECD7A8", muted: "#A3A3A3" } },
   };
@@ -165,36 +172,93 @@ test("muscle brief shows real mapped coverage and separate primary/supporting in
   });
   assert.match(text(tree), /3 of 4 working sets have muscle labels/);
   assert.match(text(tree), /Counts show involvement, not a recovery or growth score/);
-  assert.match(text(tree), /2primary sets/);
-  assert.match(text(tree), /0 supporting sets/);
+  assert.match(text(tree), /2\s*primary sets/);
+  assert.match(text(tree), /0\s*supporting sets/);
   assert.match(text(tree), new RegExp(dateLabel(today)));
-  const body = nodes(tree, (node) => node.type === "Body")[0];
-  assert.equal(body.props.selected, "chest");
-  assert.equal(body.props.intensity.chest, 1);
-  assert.equal(body.props.intensity["upper-back"], 0.5);
-  assert.equal(body.props.muscles.includes("unknown"), false);
+  const bodies = nodes(tree, (node) => node.type === "AnatomicalBody");
+  assert.equal(bodies.length, 2);
+  assert.equal(bodies[0].props.back, false);
+  assert.equal(bodies[1].props.back, true);
+  for (const body of bodies) {
+    assert.equal(body.props.selected, "chest");
+    assert.equal(body.props.intensity.chest, 1);
+    assert.equal(body.props.intensity["upper-back"], 0.5);
+    assert.equal(body.props.intensity.triceps, 1);
+    assert.equal(body.props.intensity.biceps, 0.5);
+    assert.equal(body.props.muscles.includes("unknown"), false);
+  }
+  assert.equal(
+    button(tree, "Select chest muscle").props.accessibilityHint,
+    "2 primary sets and 0 supporting sets.",
+  );
+  assert.equal(
+    button(tree, "Select triceps muscle").props.accessibilityHint,
+    "0 primary sets and 2 supporting sets.",
+  );
   button(tree, "Explore advanced muscle insights").props.onPress();
   assert.deepEqual(calls, ["open"]);
 });
 
-test("muscle selection and front/back controls retain accessible names and selected state", () => {
+test("front and back anatomy and muscle rows share selection without hiding either view", () => {
   const ui = fixture();
   const props = { data: analytics(), error: "", loading: false, onOpen() {}, onRetry() {} };
   let tree = ui.render("MuscleBrief", props);
   assert.equal(button(tree, "Select chest muscle").props.accessibilityState.selected, true);
-  button(tree, "Select upper back muscle").props.onPress();
+  nodes(tree, (node) => node.type === "AnatomicalBody")[1].props.onSelect("upper-back");
   tree = ui.render("MuscleBrief", props);
   assert.equal(button(tree, "Select upper back muscle").props.accessibilityState.selected, true);
   assert.equal(button(tree, "Select chest muscle").props.accessibilityState.selected, false);
-  assert.match(text(tree), /1primary sets/);
-  button(tree, "Show back muscles").props.onPress();
-  tree = ui.render("MuscleBrief", props);
-  assert.equal(nodes(tree, (node) => node.type === "Body")[0].props.back, true);
-  button(tree, "Show front muscles");
-  nodes(tree, (node) => node.type === "Body")[0].props.onSelect("triceps");
+  assert.match(text(tree), /1\s*primary sets/);
+  let bodies = nodes(tree, (node) => node.type === "AnatomicalBody");
+  assert.equal(bodies[0].props.selected, "upper-back");
+  assert.equal(bodies[1].props.selected, "upper-back");
+  assert.equal(bodies[0].props.back, false);
+  assert.equal(bodies[1].props.back, true);
+  bodies[0].props.onSelect("triceps");
   tree = ui.render("MuscleBrief", props);
   assert.equal(button(tree, "Select triceps muscle").props.accessibilityState.selected, true);
-  assert.match(text(tree), /0primary sets2 supporting sets/);
+  assert.match(text(tree), /0\s*primary sets\s*2\s*supporting sets/);
+  button(tree, "Select chest muscle").props.onPress();
+  tree = ui.render("MuscleBrief", props);
+  bodies = nodes(tree, (node) => node.type === "AnatomicalBody");
+  assert.equal(bodies[0].props.selected, "chest");
+  assert.equal(bodies[1].props.selected, "chest");
+  assert.equal(button(tree, "Select chest muscle").props.accessibilityState.selected, true);
+});
+
+test("supporting-only muscles remain selectable without being counted as primary sets", () => {
+  const ui = fixture();
+  const props = { data: analytics(), error: "", loading: false, onOpen() {}, onRetry() {} };
+  let tree = ui.render("MuscleBrief", props);
+  button(tree, "Select biceps muscle").props.onPress();
+  tree = ui.render("MuscleBrief", props);
+  assert.equal(button(tree, "Select biceps muscle").props.accessibilityState.selected, true);
+  assert.match(text(tree), /0\s*primary sets\s*1\s*supporting sets/);
+  assert.match(text(tree), new RegExp(dateLabel(today)));
+  for (const body of nodes(tree, (node) => node.type === "AnatomicalBody")) {
+    assert.equal(body.props.selected, "biceps");
+  }
+});
+
+test("selecting an untrained muscle on the anatomy exposes its zero-count details and row", () => {
+  const ui = fixture();
+  const props = { data: analytics(), error: "", loading: false, onOpen() {}, onRetry() {} };
+  let tree = ui.render("MuscleBrief", props);
+  assert.equal(
+    nodes(tree, (node) => node.props.accessibilityLabel === "Select calves muscle").length,
+    0,
+  );
+  nodes(tree, (node) => node.type === "AnatomicalBody")[1].props.onSelect("calves");
+  tree = ui.render("MuscleBrief", props);
+  const selected = button(tree, "Select calves muscle");
+  assert.equal(selected.props.accessibilityState.selected, true);
+  assert.equal(selected.props.accessibilityHint, "0 primary sets and 0 supporting sets.");
+  assert.match(text(tree), /0\s*primary sets\s*0\s*supporting sets/);
+  assert.match(text(tree), /No mapped sets yet/);
+  for (const body of nodes(tree, (node) => node.type === "AnatomicalBody")) {
+    assert.equal(body.props.selected, "calves");
+    assert.equal(body.props.muscles.includes("calves"), false);
+  }
 });
 
 test("empty or failed muscle refresh exposes missing data and a working retry without invented counts", () => {
@@ -207,7 +271,7 @@ test("empty or failed muscle refresh exposes missing data and a working retry wi
     onOpen() {},
     onRetry: () => calls.push("retry"),
   });
-  assert.match(text(tree), /—primary sets/);
+  assert.match(text(tree), /—\s*primary sets/);
   assert.match(text(tree), /No mapped sets yet/);
   assert.match(text(tree), /0 of 0 working sets have muscle labels/);
   const retry = nodes(
@@ -219,84 +283,55 @@ test("empty or failed muscle refresh exposes missing data and a working retry wi
   assert.deepEqual(calls, ["retry"]);
 });
 
-const preferences = (extra = {}) => ({
-  diet: "any",
-  servings: 1,
-  exclude: [],
-  maxPrepMinutes: 30,
-  favoriteIds: [],
+const diaryFood = (id, extra = {}) => ({
+  id,
+  date: today,
+  meal: "breakfast",
+  name: "My oats",
+  quantity: 150,
+  unit: "g",
+  basisAmount: 100,
+  nutrition: { calories: 100, protein: 10, carbs: 20, fat: 3, fiber: 2, sugar: 1, sodium: 5 },
+  status: "eaten",
+  time: "08:00",
+  remind: false,
+  note: "",
   ...extra,
 });
-const food = () => ({
-  preferences: preferences({ diet: "vegan", servings: 4 }),
-  plan: {
-    week: "2026-11-16",
-    servings: 2,
-    preferences: preferences({ diet: "vegetarian", servings: 2 }),
-    days: [
-      {
-        date: today,
-        meals: [
-          { slot: "breakfast", recipeId: "oats" },
-          { slot: "lunch", recipeId: "missing" },
-        ],
-      },
-      { date: "2026-11-18", meals: [{ slot: "dinner", recipeId: "tomorrow" }] },
-    ],
-  },
-  groceries: [],
-  commitment: null,
-});
-const recipes = [
-  { id: "oats", name: "Berry overnight oats", meal: "breakfast", minutes: 10 },
-  { id: "tomorrow", name: "Tomorrow's lentil soup", meal: "dinner", minutes: 20 },
-];
-
-test("meal brief uses today's real recipes and the saved menu snapshot rather than changed preferences", () => {
+test("meal brief shows user's eaten totals and planned portions without recipe suggestions", () => {
   const calls = [];
   const tree = fixture().render("MealBrief", {
-    food: food(),
-    recipes,
+    entries: [
+      diaryFood("eaten"),
+      diaryFood("planned", { name: "My lunch", status: "planned", quantity: 200, time: "13:00" }),
+      diaryFood("future", { name: "Tomorrow food", date: "2026-11-18" }),
+    ],
     today,
     loading: false,
     error: "",
-    onOpen: () => calls.push("meals"),
+    onOpen: () => calls.push("food"),
   });
-  assert.match(text(tree), /vegetarian · 2 servings/);
-  assert.doesNotMatch(text(tree), /vegan|4 servings/);
-  assert.match(text(tree), /Berry overnight oats/);
-  assert.match(text(tree), /10 min/);
-  assert.match(text(tree), /Open saved meal/);
-  assert.doesNotMatch(text(tree), /Tomorrow's lentil soup/);
-  assert.equal(nodes(tree, (node) => node.type === "Txt" && text(node) === "0 min").length, 0);
-  button(tree, "Meals & shopping list").props.onPress();
-  const mealRows = nodes(
-    tree,
-    (node) => node.type === "Pressable" && text(node).includes("Berry overnight oats"),
-  );
-  assert.equal(mealRows.length, 1);
-  mealRows[0].props.onPress();
-  assert.deepEqual(calls, ["meals", "meals"]);
+  assert.match(text(tree), /150/);
+  assert.match(text(tree), /200 planned/);
+  assert.match(text(tree), /My lunch/);
+  assert.doesNotMatch(text(tree), /Tomorrow food/);
+  button(tree, "Open my food diary").props.onPress();
+  button(tree, "Open planned food: My lunch").props.onPress();
+  assert.deepEqual(calls, ["food", "food"]);
 });
-
-test("meal brief has actionable loading, setup and refresh-error states", () => {
+test("meal brief has loading, empty diary and read-error states", () => {
   const ui = fixture();
-  const props = { food: null, recipes: [], today, loading: true, error: "", onOpen() {} };
-  const loading = ui.render("MealBrief", props);
-  assert.match(text(loading), /Opening your meal plan…/);
-  assert.doesNotMatch(text(loading), /Berry overnight oats|0 servings/);
-  const setup = ui.render("MealBrief", {
+  const props = { entries: [], today, loading: true, error: "", onOpen() {} };
+  assert.match(text(ui.render("MealBrief", props)), /Opening your food diary/);
+  const empty = ui.render("MealBrief", {
     ...props,
     loading: false,
-    error: "Meal plan could not refresh.",
+    error: "Food diary could not open.",
   });
-  assert.match(text(setup), /Give your week a little structure/);
-  assert.match(
-    text(setup),
-    /Choose your diet, ingredients to avoid, portions and preparation time/,
-  );
-  assert.match(text(setup), /Meal plan could not refresh/);
-  button(setup, "Plan my meals");
+  assert.match(text(empty), /Build a menu that feels like you/);
+  assert.match(text(empty), /how much, and its nutrition/);
+  assert.match(text(empty), /Food diary could not open/);
+  button(empty, "Add my first food");
 });
 
 test("weekly rhythm distinguishes completed, planned and rest days and announces today", () => {

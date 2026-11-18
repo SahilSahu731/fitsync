@@ -1,12 +1,20 @@
 import React, { useEffect, useState } from "react";
-import { AccessibilityInfo, Animated, Easing, Image, StyleSheet, View, useAnimatedValue } from "react-native";
+import {
+  AccessibilityInfo,
+  Animated,
+  Easing,
+  Image,
+  StyleSheet,
+  View,
+  useAnimatedValue,
+} from "react-native";
 import { Txt } from "@/src/components/ui";
 import { useReducedAppMotion } from "./motion";
 import { C } from "@/src/constants/theme";
 
 export function BrandReveal({
   onReady,
-  onDone
+  onDone,
 }: {
   onReady: () => Promise<void>;
   onDone: () => void;
@@ -45,36 +53,36 @@ export function BrandReveal({
               toValue: 1.08,
               duration: 280,
               easing: Easing.out(Easing.cubic),
-              useNativeDriver: true
+              useNativeDriver: true,
             }),
             Animated.spring(scale, {
               toValue: 1,
               damping: 16,
               stiffness: 180,
               mass: 0.6,
-              useNativeDriver: true
-            })
+              useNativeDriver: true,
+            }),
           ]),
           Animated.timing(pulse, {
             toValue: 1,
             duration: 850,
             easing: Easing.out(Easing.cubic),
-            useNativeDriver: true
+            useNativeDriver: true,
           }),
           Animated.timing(caption, {
             toValue: 1,
             duration: 450,
             delay: 100,
             easing: Easing.out(Easing.cubic),
-            useNativeDriver: true
-          })
+            useNativeDriver: true,
+          }),
         ]),
         Animated.delay(160),
         Animated.timing(opacity, {
           toValue: 0,
           duration: 260,
-          useNativeDriver: true
-        })
+          useNativeDriver: true,
+        }),
       ]);
       animation.start(({ finished }) => {
         if (finished && !cancelled) onDone();
@@ -102,8 +110,10 @@ export function BrandReveal({
             styles.ring,
             {
               opacity: pulse.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.4, 0] }),
-              transform: [{ scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) }]
-            }
+              transform: [
+                { scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) },
+              ],
+            },
           ]}
         />
         <Animated.View style={{ transform: [{ scale }] }}>
@@ -120,14 +130,21 @@ export function BrandReveal({
             styles.caption,
             {
               opacity: caption,
-              transform: [{ translateY: caption.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) }]
-            }
+              transform: [
+                { translateY: caption.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
+              ],
+            },
           ]}
         >
           <Txt weight="semibold" style={styles.wordmark}>
-            FIT<Txt weight="semibold" style={styles.accent}>SYNC</Txt>
+            FIT
+            <Txt weight="semibold" style={styles.accent}>
+              SYNC
+            </Txt>
           </Txt>
-          <Txt weight="medium" style={styles.tagline}>BUILT FOR THE NEXT REP.</Txt>
+          <Txt weight="medium" style={styles.tagline}>
+            BUILT FOR THE NEXT REP.
+          </Txt>
         </Animated.View>
       </View>
     </Animated.View>
@@ -140,7 +157,7 @@ const styles = StyleSheet.create({
     zIndex: 50,
     backgroundColor: C.bg,
     alignItems: "center",
-    justifyContent: "center"
+    justifyContent: "center",
   },
   mark: { width: 200, height: 200, alignItems: "center", justifyContent: "center" },
   image: { width: 200, height: 200 },
@@ -150,10 +167,10 @@ const styles = StyleSheet.create({
     height: 184,
     borderRadius: 92,
     borderWidth: 1,
-    borderColor: C.brand
+    borderColor: C.brand,
   },
   caption: { position: "absolute", top: 204, width: 300, alignItems: "center" },
   wordmark: { fontSize: 36, letterSpacing: -1.2, color: C.ink },
   accent: { color: C.brand },
-  tagline: { marginTop: 10, fontSize: 10, letterSpacing: 2.4, color: C.muted }
+  tagline: { marginTop: 10, fontSize: 10, letterSpacing: 2.4, color: C.muted },
 });

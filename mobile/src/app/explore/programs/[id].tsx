@@ -4,13 +4,7 @@ import { useAppAlert } from "@/src/components/app-dialog";
 import { useBilling } from "@/src/features/billing/billing-context";
 import React, { useCallback, useState } from "react";
 
-import {
-  ActivityIndicator,
-  Image,
-  Pressable,
-  ScrollView,
-  View,
-} from "react-native";
+import { ActivityIndicator, Image, Pressable, ScrollView, View } from "react-native";
 
 import { useFocusEffect, useLocalSearchParams, useRouter } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -20,10 +14,7 @@ import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 
-import {
-  catalogApi,
-  type ProgramDetail,
-} from "@/src/features/training-catalog/api";
+import { catalogApi, type ProgramDetail } from "@/src/features/training-catalog/api";
 
 type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
@@ -62,33 +53,19 @@ function StatTile({
         {value}
       </Txt>
 
-      <Txt className="mt-0.5 text-[11px] tracking-wider text-muted">
-        {label}
-      </Txt>
+      <Txt className="mt-0.5 text-[11px] tracking-wider text-muted">{label}</Txt>
     </View>
   );
 }
 
-function Tag({
-  icon,
-  label,
-  color,
-}: {
-  icon: IconName;
-  label: string;
-  color: string;
-}) {
+function Tag({ icon, label, color }: { icon: IconName; label: string; color: string }) {
   return (
     <View
       className="flex-row items-center rounded-full px-4 py-2"
       style={{ backgroundColor: `${color}22` }}
     >
       <MaterialCommunityIcons name={icon} size={18} color={color} />
-      <Txt
-        weight="semibold"
-        className="ml-1.5 text-sm capitalize"
-        style={{ color }}
-      >
+      <Txt weight="semibold" className="ml-1.5 text-sm capitalize" style={{ color }}>
         {label}
       </Txt>
     </View>
@@ -121,10 +98,7 @@ export default function ProgramDetailScreen() {
 
     async function run() {
       try {
-        const [detail, mine] = await Promise.all([
-          catalogApi.program(id),
-          catalogApi.myPrograms(),
-        ]);
+        const [detail, mine] = await Promise.all([catalogApi.program(id), catalogApi.myPrograms()]);
 
         if (!active) return;
 
@@ -148,7 +122,10 @@ export default function ProgramDetailScreen() {
 
   const handleSave = async () => {
     if (!program || saving || saved || billing.loading) return;
-    if (!billing.isPro) { router.push("/pro"); return; }
+    if (!billing.isPro) {
+      router.push("/pro");
+      return;
+    }
 
     setSaving(true);
 
@@ -169,10 +146,7 @@ export default function ProgramDetailScreen() {
         "success",
       );
     } catch (error) {
-      Alert.alert(
-        "Could not save",
-        error instanceof Error ? error.message : "Please try again.",
-      );
+      Alert.alert("Could not save", error instanceof Error ? error.message : "Please try again.");
     } finally {
       setSaving(false);
     }
@@ -185,7 +159,10 @@ export default function ProgramDetailScreen() {
       return;
     }
     if (billing.loading) return;
-    if (!billing.isPro) { router.push("/pro"); return; }
+    if (!billing.isPro) {
+      router.push("/pro");
+      return;
+    }
     setFollowOpen(true);
   };
 
@@ -215,21 +192,12 @@ export default function ProgramDetailScreen() {
     return (
       <View className="flex-1 items-center justify-center bg-bg px-8">
         {BackButton}
-        <MaterialCommunityIcons
-          name="cloud-off-outline"
-          size={44}
-          color={C.muted}
-        />
+        <MaterialCommunityIcons name="cloud-off-outline" size={44} color={C.muted} />
         <Txt weight="semibold" className="mt-4 text-lg">
           Program unavailable
         </Txt>
-        <Txt className="mt-1 text-center text-sm text-muted">
-          {error || "Program not found."}
-        </Txt>
-        <Pressable
-          onPress={() => load()}
-          className="mt-5 rounded-full bg-ink px-6 py-3"
-        >
+        <Txt className="mt-1 text-center text-sm text-muted">{error || "Program not found."}</Txt>
+        <Pressable onPress={() => load()} className="mt-5 rounded-full bg-ink px-6 py-3">
           <Txt weight="semibold" className="text-bg">
             Try again
           </Txt>
@@ -238,9 +206,7 @@ export default function ProgramDetailScreen() {
     );
   }
 
-  const days = [...program.training_program_days].sort(
-    (a, b) => a.day_number - b.day_number,
-  );
+  const days = [...program.training_program_days].sort((a, b) => a.day_number - b.day_number);
   const workoutDays = days.filter((day) => day.training_routines).length;
   const showCover = Boolean(program.cover_url) && !coverFailed;
   const levelColor = LEVEL_COLOR[program.level] ?? C.brand;
@@ -277,15 +243,8 @@ export default function ProgramDetailScreen() {
         {/* Content sheet overlapping the image */}
         <View className="-mt-7 rounded-t-[30px] bg-bg px-5 pt-6">
           <View className="flex-row items-center">
-            <MaterialCommunityIcons
-              name="check-decagram"
-              size={20}
-              color={C.ink}
-            />
-            <Txt
-              weight="semibold"
-              className="ml-1.5 text-sm tracking-wider text-ink"
-            >
+            <MaterialCommunityIcons name="check-decagram" size={20} color={C.ink} />
+            <Txt weight="semibold" className="ml-1.5 text-sm tracking-wider text-ink">
               By {program.author}
             </Txt>
           </View>
@@ -295,27 +254,13 @@ export default function ProgramDetailScreen() {
           </Txt>
 
           {program.tagline ? (
-            <Txt className="mt-2 text-base leading-6 text-white/80">
-              {program.tagline}
-            </Txt>
+            <Txt className="mt-2 text-base leading-6 text-white/80">{program.tagline}</Txt>
           ) : null}
 
           <View className="mt-4 flex-row flex-wrap gap-2">
-            <Tag
-              icon="signal-cellular-3"
-              label={program.level}
-              color={levelColor}
-            />
-            <Tag
-              icon="target"
-              label={program.goal.replace(/_/g, " ")}
-              color={C.ink}
-            />
-            <Tag
-              icon="dumbbell"
-              label={program.equipment.replace(/_/g, " ")}
-              color={BLUE}
-            />
+            <Tag icon="signal-cellular-3" label={program.level} color={levelColor} />
+            <Tag icon="target" label={program.goal.replace(/_/g, " ")} color={C.ink} />
+            <Tag icon="dumbbell" label={program.equipment.replace(/_/g, " ")} color={BLUE} />
           </View>
 
           {/* Stats */}
@@ -347,9 +292,7 @@ export default function ProgramDetailScreen() {
                 About this program
               </Txt>
 
-              <Txt className="text-[15px] leading-6 text-muted">
-                {program.description}
-              </Txt>
+              <Txt className="text-[15px] leading-6 text-muted">{program.description}</Txt>
             </>
           ) : null}
 
@@ -358,32 +301,21 @@ export default function ProgramDetailScreen() {
             Weekly schedule
           </Txt>
 
-          <Txt className="mb-5 mt-1 text-sm text-muted">
-            Your training week, day by day.
-          </Txt>
+          <Txt className="mb-5 mt-1 text-sm text-muted">Your training week, day by day.</Txt>
 
           {days.map((day) => {
             const routine = day.training_routines;
             const exercises = routine?.training_routine_exercises
-              ? [...routine.training_routine_exercises].sort(
-                  (a, b) => a.position - b.position,
-                )
+              ? [...routine.training_routine_exercises].sort((a, b) => a.position - b.position)
               : [];
             const open = Boolean(expanded[day.id]);
 
             // Recovery day
             if (!routine) {
               return (
-                <View
-                  key={day.id}
-                  className="mb-3 flex-row items-center rounded-[22px] p-4"
-                >
+                <View key={day.id} className="mb-3 flex-row items-center rounded-[22px] p-4">
                   <View className="h-12 w-12 items-center justify-center rounded-2xl bg-blue-400/15">
-                    <MaterialCommunityIcons
-                      name="weather-night"
-                      size={26}
-                      color={BLUE}
-                    />
+                    <MaterialCommunityIcons name="weather-night" size={26} color={BLUE} />
                   </View>
 
                   <View className="ml-3 flex-1">
@@ -393,19 +325,14 @@ export default function ProgramDetailScreen() {
                     <Txt weight="semibold" className="text-lg">
                       {day.label}
                     </Txt>
-                    <Txt className="mt-0.5 text-sm text-muted">
-                      Recovery day
-                    </Txt>
+                    <Txt className="mt-0.5 text-sm text-muted">Recovery day</Txt>
                   </View>
                 </View>
               );
             }
 
             return (
-              <View
-                key={day.id}
-                className="mb-3 overflow-hidden rounded-[22px] bg-panel"
-              >
+              <View key={day.id} className="mb-3 overflow-hidden rounded-[22px] bg-panel">
                 <Pressable
                   onPress={() =>
                     router.push({
@@ -432,33 +359,20 @@ export default function ProgramDetailScreen() {
                     </Txt>
 
                     <View className="mt-1 flex-row items-center">
-                      <MaterialCommunityIcons
-                        name="timer-outline"
-                        size={16}
-                        color={C.muted}
-                      />
-                      <Txt className="ml-1 text-sm text-muted">
-                        {routine.estimated_minutes} min
-                      </Txt>
+                      <MaterialCommunityIcons name="timer-outline" size={16} color={C.muted} />
+                      <Txt className="ml-1 text-sm text-muted">{routine.estimated_minutes} min</Txt>
 
                       <View
                         className="ml-3 h-1.5 w-1.5 rounded-full"
                         style={{
-                          backgroundColor:
-                            LEVEL_COLOR[routine.level] ?? C.muted,
+                          backgroundColor: LEVEL_COLOR[routine.level] ?? C.muted,
                         }}
                       />
-                      <Txt className="ml-1.5 text-sm capitalize text-muted">
-                        {routine.level}
-                      </Txt>
+                      <Txt className="ml-1.5 text-sm capitalize text-muted">{routine.level}</Txt>
                     </View>
                   </View>
 
-                  <MaterialCommunityIcons
-                    name="chevron-right"
-                    size={24}
-                    color={"white"}
-                  />
+                  <MaterialCommunityIcons name="chevron-right" size={24} color={"white"} />
                 </Pressable>
 
                 {exercises.length > 0 ? (
@@ -481,8 +395,7 @@ export default function ProgramDetailScreen() {
                           color={"white"}
                         />
                         <Txt className="ml-2 text-sm text-muted">
-                          {exercises.length}{" "}
-                          {exercises.length === 1 ? "exercise" : "exercises"}
+                          {exercises.length} {exercises.length === 1 ? "exercise" : "exercises"}
                         </Txt>
                       </View>
 
@@ -499,24 +412,16 @@ export default function ProgramDetailScreen() {
                           <View
                             key={item.id}
                             className={`flex-row items-center py-2.5 ${
-                              index === exercises.length - 1
-                                ? ""
-                                : " "
+                              index === exercises.length - 1 ? "" : " "
                             }`}
                           >
                             <View className="h-6 w-6 items-center justify-center rounded-full bg-elevated">
-                              <Txt
-                                weight="semibold"
-                                className="text-[11px] text-muted"
-                              >
+                              <Txt weight="semibold" className="text-[11px] text-muted">
                                 {index + 1}
                               </Txt>
                             </View>
 
-                            <Txt
-                              className="ml-3 flex-1 text-[13px]"
-                              numberOfLines={1}
-                            >
+                            <Txt className="ml-3 flex-1 text-[13px]" numberOfLines={1}>
                               {item.exercises.name}
                             </Txt>
 
@@ -540,19 +445,55 @@ export default function ProgramDetailScreen() {
         </View>
       </ScrollView>
 
-      {followOpen && <ProgramSetup program={program} onClose={() => setFollowOpen(false)} onSaved={result => { setFollowOpen(false); setSaved(true); router.push({ pathname: "/programs/[id]", params: { id: result.enrollment.id } }); }} />}
+      {followOpen && (
+        <ProgramSetup
+          program={program}
+          onClose={() => setFollowOpen(false)}
+          onSaved={(result) => {
+            setFollowOpen(false);
+            setSaved(true);
+            router.push({ pathname: "/programs/[id]", params: { id: result.enrollment.id } });
+          }}
+        />
+      )}
 
       {/* Follow the plan, or bookmark it for later. */}
       <View
         className="absolute bottom-0 left-0 right-0 bg-bg px-5 pt-4"
         style={{ paddingBottom: Math.max(insets.bottom, 16) }}
       >
-        <Pressable accessibilityRole="button" disabled={billing.loading && following?.enrollment.program_id !== program.id} onPress={chooseProgram} className="mb-2 h-14 flex-row items-center justify-center rounded-full bg-ink"><MaterialCommunityIcons name={billing.isPro || following?.enrollment.program_id === program.id ? "calendar-check-outline" : "lock-outline"} size={22} color={C.bg} /><Txt weight="semibold" className="ml-2 text-base text-bg">{following?.enrollment.program_id === program.id ? "View my progress" : billing.loading ? "Checking membership…" : billing.isPro ? "Follow program" : "Choose this program · Pro"}</Txt></Pressable>
+        <Pressable
+          accessibilityRole="button"
+          disabled={billing.loading && following?.enrollment.program_id !== program.id}
+          onPress={chooseProgram}
+          className="mb-2 h-14 flex-row items-center justify-center rounded-full bg-ink"
+        >
+          <MaterialCommunityIcons
+            name={
+              billing.isPro || following?.enrollment.program_id === program.id
+                ? "calendar-check-outline"
+                : "lock-outline"
+            }
+            size={22}
+            color={C.bg}
+          />
+          <Txt weight="semibold" className="ml-2 text-base text-bg">
+            {following?.enrollment.program_id === program.id
+              ? "View my progress"
+              : billing.loading
+                ? "Checking membership…"
+                : billing.isPro
+                  ? "Follow program"
+                  : "Choose this program · Pro"}
+          </Txt>
+        </Pressable>
         <Pressable
           onPress={() => void handleSave()}
           disabled={saving || saved || billing.loading}
           accessibilityRole="button"
-          accessibilityLabel={saved ? "Program saved" : billing.isPro ? "Save program" : "Save program with Pro"}
+          accessibilityLabel={
+            saved ? "Program saved" : billing.isPro ? "Save program" : "Save program with Pro"
+          }
           className="h-11 flex-row items-center justify-center rounded-full bg-panel"
         >
           {saving ? (
@@ -569,7 +510,11 @@ export default function ProgramDetailScreen() {
                 className="ml-2 text-base"
                 style={{ color: saved ? GREEN : C.muted }}
               >
-                {saved ? "Saved to library" : billing.isPro ? "Save for later" : "Save program · Pro"}
+                {saved
+                  ? "Saved to library"
+                  : billing.isPro
+                    ? "Save for later"
+                    : "Save program · Pro"}
               </Txt>
             </>
           )}

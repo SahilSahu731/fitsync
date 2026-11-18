@@ -4,7 +4,8 @@ import { createStoreSession } from "./store-session";
 
 export function revenueCatKey() {
   if (Platform.OS === "ios") return process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY?.trim() || null;
-  if (Platform.OS === "android") return process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY?.trim() || null;
+  if (Platform.OS === "android")
+    return process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY?.trim() || null;
   return null;
 }
 
@@ -13,7 +14,9 @@ export function loadPurchases(): typeof Purchases {
     throw new Error("Subscribe or restore in the FitSync iOS or Android app.");
   }
   if (!NativeModules.RNPurchases) {
-    throw new Error("This build does not support store purchases yet. Install the latest FitSync build to subscribe or restore.");
+    throw new Error(
+      "This build does not support store purchases yet. Install the latest FitSync build to subscribe or restore.",
+    );
   }
   // RevenueCat touches native modules at import time. An older installed binary
   // must still be able to open the app and read its server subscription status.

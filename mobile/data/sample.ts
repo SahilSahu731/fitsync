@@ -1,4 +1,3 @@
-
 export type DemoExercise = {
   id: string;
   name: string;
@@ -20,8 +19,8 @@ export const exercises: DemoExercise[] = [
     tips: [
       "Keep both feet planted.",
       "Lower the bar under control.",
-      "Use a spotter or safety bars when appropriate."
-    ]
+      "Use a spotter or safety bars when appropriate.",
+    ],
   },
   {
     id: "incline-dumbbell",
@@ -33,8 +32,8 @@ export const exercises: DemoExercise[] = [
     tips: [
       "Set the bench to a moderate incline.",
       "Keep wrists stacked.",
-      "Use controlled repetitions."
-    ]
+      "Use controlled repetitions.",
+    ],
   },
   {
     id: "lat-pulldown",
@@ -46,8 +45,8 @@ export const exercises: DemoExercise[] = [
     tips: [
       "Keep your torso stable.",
       "Pull elbows down toward your sides.",
-      "Avoid jerking the cable."
-    ]
+      "Avoid jerking the cable.",
+    ],
   },
   {
     id: "seated-row",
@@ -56,11 +55,7 @@ export const exercises: DemoExercise[] = [
     equipment: "Cable",
     focus: "Mid-back",
     sets: "3 × 12",
-    tips: [
-      "Maintain a neutral back.",
-      "Move your elbows back smoothly.",
-      "Control the return."
-    ]
+    tips: ["Maintain a neutral back.", "Move your elbows back smoothly.", "Control the return."],
   },
   {
     id: "shoulder-press",
@@ -69,11 +64,7 @@ export const exercises: DemoExercise[] = [
     equipment: "Dumbbell",
     focus: "Front delts · Triceps",
     sets: "3 × 10",
-    tips: [
-      "Brace the torso.",
-      "Use a comfortable range of motion.",
-      "Avoid swinging weights."
-    ]
+    tips: ["Brace the torso.", "Use a comfortable range of motion.", "Avoid swinging weights."],
   },
   {
     id: "lateral-raise",
@@ -82,11 +73,7 @@ export const exercises: DemoExercise[] = [
     equipment: "Dumbbell",
     focus: "Side delts",
     sets: "3 × 12",
-    tips: [
-      "Use manageable weights.",
-      "Keep a soft bend in elbows.",
-      "Avoid shrugging up."
-    ]
+    tips: ["Use manageable weights.", "Keep a soft bend in elbows.", "Avoid shrugging up."],
   },
   {
     id: "barbell-squat",
@@ -95,11 +82,7 @@ export const exercises: DemoExercise[] = [
     equipment: "Barbell",
     focus: "Quads · Glutes",
     sets: "3 × 8",
-    tips: [
-      "Keep feet grounded.",
-      "Brace your trunk.",
-      "Use safeties and a comfortable depth."
-    ]
+    tips: ["Keep feet grounded.", "Brace your trunk.", "Use safeties and a comfortable depth."],
   },
   {
     id: "leg-press",
@@ -111,8 +94,8 @@ export const exercises: DemoExercise[] = [
     tips: [
       "Keep hips against the seat.",
       "Control the lowering phase.",
-      "Avoid locking knees forcefully."
-    ]
+      "Avoid locking knees forcefully.",
+    ],
   },
   {
     id: "romanian-deadlift",
@@ -121,11 +104,7 @@ export const exercises: DemoExercise[] = [
     equipment: "Barbell",
     focus: "Hamstrings · Glutes",
     sets: "3 × 10",
-    tips: [
-      "Hinge from your hips.",
-      "Keep the load close.",
-      "Stop before your back rounds."
-    ]
+    tips: ["Hinge from your hips.", "Keep the load close.", "Stop before your back rounds."],
   },
   {
     id: "biceps-curl",
@@ -134,11 +113,7 @@ export const exercises: DemoExercise[] = [
     equipment: "Dumbbell",
     focus: "Biceps",
     sets: "3 × 12",
-    tips: [
-      "Avoid swinging the arms.",
-      "Keep elbows close to your sides.",
-      "Lower with control."
-    ]
+    tips: ["Avoid swinging the arms.", "Keep elbows close to your sides.", "Lower with control."],
   },
   {
     id: "triceps-pushdown",
@@ -147,11 +122,7 @@ export const exercises: DemoExercise[] = [
     equipment: "Cable",
     focus: "Triceps",
     sets: "3 × 12",
-    tips: [
-      "Keep shoulders relaxed.",
-      "Extend elbows smoothly.",
-      "Do not use momentum."
-    ]
+    tips: ["Keep shoulders relaxed.", "Extend elbows smoothly.", "Do not use momentum."],
   },
   {
     id: "plank",
@@ -160,12 +131,8 @@ export const exercises: DemoExercise[] = [
     equipment: "Bodyweight",
     focus: "Core stabilization",
     sets: "3 × 30 sec",
-    tips: [
-      "Keep your body in one line.",
-      "Breathe steadily.",
-      "Stop if you lose control."
-    ]
-  }
+    tips: ["Keep your body in one line.", "Breathe steadily.", "Stop if you lose control."],
+  },
 ];
 
 export const demoPlans = [
@@ -182,8 +149,8 @@ export const demoPlans = [
       "incline-dumbbell",
       "seated-row",
       "shoulder-press",
-      "lateral-raise"
-    ]
+      "lateral-raise",
+    ],
   },
   {
     id: "lower",
@@ -192,11 +159,7 @@ export const demoPlans = [
     minutes: 50,
     count: 3,
     tag: "DAY 02",
-    exerciseIds: [
-      "barbell-squat",
-      "leg-press",
-      "romanian-deadlift"
-    ]
+    exerciseIds: ["barbell-squat", "leg-press", "romanian-deadlift"],
   },
   {
     id: "arms",
@@ -205,10 +168,6 @@ export const demoPlans = [
     minutes: 30,
     count: 3,
     tag: "DAY 03",
-    exerciseIds: [
-      "biceps-curl",
-      "triceps-pushdown",
-      "plank"
-    ]
-  }
+    exerciseIds: ["biceps-curl", "triceps-pushdown", "plank"],
+  },
 ];

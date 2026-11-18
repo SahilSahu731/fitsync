@@ -8,9 +8,7 @@ export default function AddWorkoutExercise() {
   const { session, addExercises, busy } = useWorkout();
   return (
     <ExercisePicker
-      existingIds={
-        session?.workout_session_exercises.map((item) => item.exercise_id) ?? []
-      }
+      existingIds={session?.workout_session_exercises.map((item) => item.exercise_id) ?? []}
       disabled={busy}
       onClose={() => router.back()}
       onConfirm={async (items) => {

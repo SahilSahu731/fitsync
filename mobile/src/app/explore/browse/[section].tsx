@@ -19,18 +19,11 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { C } from "@/src/constants/theme";
 import { Txt } from "@/src/components/ui";
 
-import {
-  exploreApi,
-  EXPLORE_SECTIONS,
-  type ExploreCard,
-} from "@/src/features/explore/api";
+import { exploreApi, EXPLORE_SECTIONS, type ExploreCard } from "@/src/features/explore/api";
 
 import { SECTION_ICONS } from "@/src/features/explore/components";
 
-import {
-  EXPLORE_LABELS,
-  openExploreCard,
-} from "@/src/features/explore/navigation";
+import { EXPLORE_LABELS, openExploreCard } from "@/src/features/explore/navigation";
 
 // ------------------------------------------------------------------
 // Configuration
@@ -131,18 +124,12 @@ function FilterDropdown({
       <Txt
         weight="semibold"
         numberOfLines={1}
-        className={`mr-1 flex-1 text-[13px] ${
-          active ? "text-ink" : "text-ink"
-        }`}
+        className={`mr-1 flex-1 text-[13px] ${active ? "text-ink" : "text-ink"}`}
       >
         {selected?.label ?? config.label}
       </Txt>
 
-      <MaterialCommunityIcons
-        name="chevron-down"
-        size={17}
-        color={active ? C.brand : C.muted}
-      />
+      <MaterialCommunityIcons name="chevron-down" size={17} color={active ? C.brand : C.muted} />
     </Pressable>
   );
 }
@@ -166,26 +153,12 @@ function FilterSheet({
 
   const config = filter ? FILTER_CONFIG[filter] : null;
 
-  const options = config
-    ? [{ value: "", label: config.allLabel }, ...config.options]
-    : [];
+  const options = config ? [{ value: "", label: config.allLabel }, ...config.options] : [];
 
   return (
-    <Modal
-      visible={filter !== null}
-      transparent
-      animationType="slide"
-      onRequestClose={onClose}
-    >
-      <View
-        className="flex-1 justify-end"
-        style={{ backgroundColor: "rgba(0,0,0,0.65)" }}
-      >
-        <Pressable
-          className="flex-1"
-          onPress={onClose}
-          accessibilityLabel="Close filters"
-        />
+    <Modal visible={filter !== null} transparent animationType="slide" onRequestClose={onClose}>
+      <View className="flex-1 justify-end" style={{ backgroundColor: "rgba(0,0,0,0.65)" }}>
+        <Pressable className="flex-1" onPress={onClose} accessibilityLabel="Close filters" />
 
         <View className="rounded-t-[28px] bg-bg" style={{ maxHeight: "75%" }}>
           <View className="items-center pt-3">
@@ -221,9 +194,7 @@ function FilterSheet({
                 >
                   <Txt
                     weight={selected ? "bold" : "medium"}
-                    className={`text-[15px] ${
-                      selected ? "text-ink" : "text-ink"
-                    }`}
+                    className={`text-[15px] ${selected ? "text-ink" : "text-ink"}`}
                   >
                     {option.label}
                   </Txt>
@@ -234,11 +205,7 @@ function FilterSheet({
                     }`}
                   >
                     {selected ? (
-                      <MaterialCommunityIcons
-                        name="check"
-                        color={C.bg}
-                        size={16}
-                      />
+                      <MaterialCommunityIcons name="check" color={C.bg} size={16} />
                     ) : null}
                   </View>
                 </Pressable>
@@ -289,22 +256,14 @@ function BrowseCard({
             style={{ width: "100%", height: "100%" }}
           />
         ) : (
-          <MaterialCommunityIcons
-            name={SECTION_ICONS[card.section]}
-            size={40}
-            color={C.ink}
-          />
+          <MaterialCommunityIcons name={SECTION_ICONS[card.section]} size={40} color={C.ink} />
         )}
 
         <View
           className="absolute bottom-2 left-2 right-2 self-start rounded-lg px-2.5 py-1.5"
           style={{ backgroundColor: "rgba(0,0,0,0.76)" }}
         >
-          <Txt
-            weight="semibold"
-            numberOfLines={1}
-            className="text-[11px] text-white"
-          >
+          <Txt weight="semibold" numberOfLines={1} className="text-[11px] text-white">
             {card.meta}
           </Txt>
         </View>
@@ -372,17 +331,11 @@ export default function ExploreBrowseScreen() {
         ? ["level"]
         : [];
 
-  const activeCount = visibleFilters.filter((key) =>
-    Boolean(filters[key]),
-  ).length;
+  const activeCount = visibleFilters.filter((key) => Boolean(filters[key])).length;
 
-  const effectiveLevel = visibleFilters.includes("level")
-    ? filters.level || undefined
-    : undefined;
+  const effectiveLevel = visibleFilters.includes("level") ? filters.level || undefined : undefined;
 
-  const effectiveGoal = visibleFilters.includes("goal")
-    ? filters.goal || undefined
-    : undefined;
+  const effectiveGoal = visibleFilters.includes("goal") ? filters.goal || undefined : undefined;
 
   const effectiveEquipment = visibleFilters.includes("equipment")
     ? filters.equipment || undefined
@@ -444,14 +397,7 @@ export default function ExploreBrowseScreen() {
     return () => {
       active = false;
     };
-  }, [
-    section,
-    query,
-    effectiveLevel,
-    effectiveGoal,
-    effectiveEquipment,
-    retry,
-  ]);
+  }, [section, query, effectiveLevel, effectiveGoal, effectiveEquipment, retry]);
 
   const loadMore = async () => {
     if (!section || loading || loadMorePending.current || !hasMore) {
@@ -481,10 +427,7 @@ export default function ExploreBrowseScreen() {
       setItems((previous) => {
         const seen = new Set(previous.map((item) => item.id));
 
-        return [
-          ...previous,
-          ...result.items.filter((item) => !seen.has(item.id)),
-        ];
+        return [...previous, ...result.items.filter((item) => !seen.has(item.id))];
       });
 
       setPage(nextPage);
@@ -545,12 +488,11 @@ export default function ExploreBrowseScreen() {
           <MaterialCommunityIcons name="arrow-left" size={22} color={C.ink} />
         </Pressable>
         <View>
+          <Txt weight="semibold" className="text-[26px] leading-9">
+            {title}
+          </Txt>
 
-        <Txt weight="semibold" className="text-[26px] leading-9">
-          {title}
-        </Txt>
-
-        <Txt className="mt-1 text-sm text-muted">Find your next favorite.</Txt>
+          <Txt className="mt-1 text-sm text-muted">Find your next favorite.</Txt>
         </View>
       </View>
 
@@ -570,16 +512,8 @@ export default function ExploreBrowseScreen() {
         />
 
         {search.length > 0 ? (
-          <Pressable
-            onPress={() => setSearch("")}
-            hitSlop={10}
-            accessibilityLabel="Clear search"
-          >
-            <MaterialCommunityIcons
-              name="close-circle"
-              size={19}
-              color={C.muted}
-            />
+          <Pressable onPress={() => setSearch("")} hitSlop={10} accessibilityLabel="Clear search">
+            <MaterialCommunityIcons name="close-circle" size={19} color={C.muted} />
           </Pressable>
         ) : null}
       </View>
@@ -601,9 +535,7 @@ export default function ExploreBrowseScreen() {
       {/* Results and filter reset */}
       <View className="mt-5 flex-row items-center justify-between">
         <Txt className="text-sm text-muted">
-          {loading
-            ? "Finding content..."
-            : `${total} ${total === 1 ? "result" : "results"}`}
+          {loading ? "Finding content..." : `${total} ${total === 1 ? "result" : "results"}`}
         </Txt>
 
         {activeCount > 0 ? (
@@ -612,11 +544,7 @@ export default function ExploreBrowseScreen() {
             accessibilityRole="button"
             className="flex-row items-center gap-1"
           >
-            <MaterialCommunityIcons
-              name="close-circle-outline"
-              size={16}
-              color={C.ink}
-            />
+            <MaterialCommunityIcons name="close-circle-outline" size={16} color={C.ink} />
 
             <Txt weight="semibold" className="text-sm text-ink">
               Clear filters
@@ -727,11 +655,7 @@ export default function ExploreBrowseScreen() {
         ListEmptyComponent={empty}
         ListFooterComponent={footer}
         renderItem={({ item }) => (
-          <BrowseCard
-            card={item}
-            width={cardWidth}
-            onPress={() => openExploreCard(router, item)}
-          />
+          <BrowseCard card={item} width={cardWidth} onPress={() => openExploreCard(router, item)} />
         )}
       />
 

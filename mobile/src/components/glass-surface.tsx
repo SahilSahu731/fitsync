@@ -36,9 +36,9 @@ export function GlassSurface({
     sweep.value = withRepeat(
       withSequence(
         withTiming(1, { duration: 1400, easing: Easing.inOut(Easing.quad) }),
-        withDelay(shimmerDelay, withTiming(0, { duration: 0 }))
+        withDelay(shimmerDelay, withTiming(0, { duration: 0 })),
       ),
-      -1
+      -1,
     );
   }, [animate, shimmerDelay, sweep]);
 

@@ -32,7 +32,7 @@ const dependencies = {
   "../exercises/api": { pretty: String },
   "./analytics": { MUSCLES: [] },
   "./companion-insights": insights,
-  "./ui": {
+  "./hub-ui": {
     GlassCard: "Card",
     ProAction: "Action",
     ProPill: "Pill",

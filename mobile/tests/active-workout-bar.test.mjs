@@ -233,8 +233,8 @@ test("the existing layout uses the tab bar glass surface and preserves icon styl
   const bar = fixture();
   const tree = bar.render();
   assert.equal(find(tree, "TabGlassSurface").length, 1);
-  const surface = find(tree, "View").find(
-    (node) => /^overflow-hidden rounded-\[\d+px\]$/.test(node.props.className ?? ""),
+  const surface = find(tree, "View").find((node) =>
+    /^overflow-hidden rounded-\[\d+px\]$/.test(node.props.className ?? ""),
   );
   assert.ok(surface, "an opaque background must not cover the glass surface");
   assert.match(text(tree), /Push Day/);

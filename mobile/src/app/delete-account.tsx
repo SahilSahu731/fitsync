@@ -9,13 +9,10 @@ import {
   Pressable,
   ScrollView,
   TextInput,
-  View
+  View,
 } from "react-native";
 
-import {
-  Redirect,
-  useRouter
-} from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -46,7 +43,7 @@ export default function DeleteAccountScreen() {
       [
         {
           text: "Cancel",
-          style: "cancel"
+          style: "cancel",
         },
         {
           text: "Delete permanently",
@@ -61,75 +58,53 @@ export default function DeleteAccountScreen() {
             } catch (error) {
               Alert.alert(
                 "Deletion failed",
-                error instanceof Error
-                  ? error.message
-                  : "Please try again."
+                error instanceof Error ? error.message : "Please try again.",
               );
             } finally {
               setBusy(false);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   };
 
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-bg"
-      behavior={
-        Platform.OS === "ios" ? "padding" : undefined
-      }
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       <ScrollView
         contentContainerStyle={{
           padding: 24,
-          flexGrow: 1
+          flexGrow: 1,
         }}
       >
         <Pressable
           onPress={() => router.back()}
           className="mb-10 h-11 w-11 items-center justify-center rounded-full"
         >
-          <MaterialCommunityIcons
-            name="arrow-left"
-            size={23}
-            color={C.ink}
-          />
+          <MaterialCommunityIcons name="arrow-left" size={23} color={C.ink} />
         </Pressable>
 
         <View className="h-20 w-20 items-center justify-center rounded-3xl bg-[#321C1D]">
-          <MaterialCommunityIcons
-            name="alert-outline"
-            color="#FF8278"
-            size={44}
-          />
+          <MaterialCommunityIcons name="alert-outline" color="#FF8278" size={44} />
         </View>
 
-        <Txt
-          weight="semibold"
-          className="mt-8 text-[37px] leading-[41px]"
-        >
+        <Txt weight="semibold" className="mt-8 text-[37px] leading-[41px]">
           DELETE YOUR{"\n"}
-          <Txt
-            weight="semibold"
-            className="text-[37px] text-[#FF8278]"
-          >
+          <Txt weight="semibold" className="text-[37px] text-[#FF8278]">
             ACCOUNT.
           </Txt>
         </Txt>
 
         <Txt className="mt-5 text-sm leading-6 text-muted">
-          We&apos;re sorry to see you go. If you permanently
-          delete your account, your FitSync information
-          will be removed from our database.
+          We&apos;re sorry to see you go. If you permanently delete your account, your FitSync
+          information will be removed from our database.
         </Txt>
 
         <View className="mt-8 rounded-2xl bg-[#25191A] p-5">
-          <Txt
-            weight="semibold"
-            className="text-sm text-[#FF9B89]"
-          >
+          <Txt weight="semibold" className="text-sm text-[#FF9B89]">
             WHAT WILL BE DELETED?
           </Txt>
 
@@ -138,31 +113,35 @@ export default function DeleteAccountScreen() {
             "Saved fitness measurements and goals",
             "Your training preferences and settings",
             "Your uploaded profile image",
-            "All active FitSync sessions"
-          ].map(item => (
-            <View
-              key={item}
-              className="mt-4 flex-row items-start"
-            >
-              <MaterialCommunityIcons
-                name="close-circle-outline"
-                size={18}
-                color="#FF8278"
-              />
+            "All active FitSync sessions",
+          ].map((item) => (
+            <View key={item} className="mt-4 flex-row items-start">
+              <MaterialCommunityIcons name="close-circle-outline" size={18} color="#FF8278" />
 
-              <Txt className="ml-3 flex-1 text-sm text-ink">
-                {item}
-              </Txt>
+              <Txt className="ml-3 flex-1 text-sm text-ink">{item}</Txt>
             </View>
           ))}
         </View>
 
-        {entitlement.source === "revenuecat" && <View className="mt-6 rounded-2xl bg-panel p-5"><Txt className="text-sm leading-6">Deleting your account does not cancel your store subscription.</Txt><Pressable className="mt-3" onPress={() => void manage().catch(error => Alert.alert("Subscription", error.message))}><Txt weight="semibold" className="text-ink">Manage or cancel subscription</Txt></Pressable></View>}
+        {entitlement.source === "revenuecat" && (
+          <View className="mt-6 rounded-2xl bg-panel p-5">
+            <Txt className="text-sm leading-6">
+              Deleting your account does not cancel your store subscription.
+            </Txt>
+            <Pressable
+              className="mt-3"
+              onPress={() =>
+                void manage().catch((error) => Alert.alert("Subscription", error.message))
+              }
+            >
+              <Txt weight="semibold" className="text-ink">
+                Manage or cancel subscription
+              </Txt>
+            </Pressable>
+          </View>
+        )}
 
-        <Txt
-          weight="semibold"
-          className="mb-3 mt-8 text-xs tracking-[1px] text-muted"
-        >
+        <Txt weight="semibold" className="mb-3 mt-8 text-xs tracking-[1px] text-muted">
           TYPE DELETE TO CONFIRM
         </Txt>
 
@@ -175,7 +154,7 @@ export default function DeleteAccountScreen() {
           placeholderTextColor={C.muted}
           className="font-poppins-regular h-14 rounded-2xl bg-panel px-4 text-base text-ink"
           style={{
-            fontFamily: "Poppins_700Bold"
+            fontFamily: "Poppins_700Bold",
           }}
         />
 
@@ -188,33 +167,22 @@ export default function DeleteAccountScreen() {
             weight="semibold"
             className="text-sm"
             style={{
-              color:
-                confirmation === "DELETE"
-                  ? C.bg
-                  : C.muted
+              color: confirmation === "DELETE" ? C.bg : C.muted,
             }}
           >
-            {busy
-              ? "DELETING ACCOUNT..."
-              : "DELETE ACCOUNT PERMANENTLY"}
+            {busy ? "DELETING ACCOUNT..." : "DELETE ACCOUNT PERMANENTLY"}
           </Txt>
         </Pressable>
 
-        <Pressable
-          onPress={() => router.back()}
-          className="mt-5 items-center py-3"
-        >
-          <Txt
-            weight="semibold"
-            className="text-sm text-muted"
-          >
+        <Pressable onPress={() => router.back()} className="mt-5 items-center py-3">
+          <Txt weight="semibold" className="text-sm text-muted">
             KEEP MY ACCOUNT
           </Txt>
         </Pressable>
 
         <Txt className="mt-6 text-center text-xs leading-5 text-muted">
-          This deletes your FitSync data, not your Google
-          account. The operation requires internet access.
+          This deletes your FitSync data, not your Google account. The operation requires internet
+          access.
         </Txt>
       </ScrollView>
     </KeyboardAvoidingView>

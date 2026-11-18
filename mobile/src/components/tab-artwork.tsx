@@ -1,4 +1,3 @@
-
 import React from "react";
 import { View } from "react-native";
 import Svg, { G, Path, Rect } from "react-native-svg";
@@ -30,12 +29,17 @@ const ARTWORK = {
   ),
 
   library: (
-    <>
-      <Path d="M12 6.3C9.4 4.7 6.4 4.4 3.5 5.2v13c2.9-.8 5.9-.5 8.5 1.1 2.6-1.6 5.6-1.9 8.5-1.1v-13C17.6 4.4 14.6 4.7 12 6.3Z" />
-      <Path d="M12 6.3v13M6.75 9l2.25.4M15 9.4l2.25-.4M6.75 12l2.25.4M15 12.4l2.25-.4" />
-    </>
-  ),
+    <G fill="currentColor" stroke="none">
+      {/* First book */}
+      <Rect x={3} y={3} width={4} height={20} rx={2} />
 
+      {/* Second book */}
+      <Rect x={9} y={3} width={4} height={20} rx={2} />
+
+      {/* Third book — tilted */}
+      <Rect x={15} y={4.4} width={4} height={20} rx={2} transform="rotate(-20 15 4.4)" />
+    </G>
+  ),
   pro: (
     <>
       {/* Diamond silhouette */}
@@ -58,11 +62,7 @@ type TabArtworkProps = {
   size?: number;
 };
 
-export function TabArtwork({
-  name,
-  color,
-  size = 24,
-}: TabArtworkProps) {
+export function TabArtwork({ name, color, size = 24 }: TabArtworkProps) {
   return (
     <View
       pointerEvents="none"
@@ -74,7 +74,8 @@ export function TabArtwork({
       <Svg
         width={size}
         height={size}
-        viewBox="0 0 24 24"
+        viewBox={name === "library" ? "0 0 30 30" : "0 0 24 24"}
+        color={color}
         fill="none"
         stroke={color}
         strokeWidth={1.5}

@@ -16,7 +16,7 @@ import {
   type MetricGroup,
 } from "../progress/model";
 import { compact, displayMetric, displayUnit } from "../progress/tracking-cards";
-import { Body } from "../workouts/components/muscle-focus";
+import { AnatomicalBody } from "./anatomical-body";
 import { pretty } from "../exercises/api";
 import type { useProgress } from "../progress/use-progress";
 import { modesFor, type ProAnalytics, type RecordMode } from "./analytics";
@@ -283,7 +283,7 @@ function MusclePanel({
           {trained.length} muscle groups with primary work. Tap any group below for its details.
         </Txt>
         <View className="mt-4 flex-row items-center justify-center gap-4">
-          <Body
+          <AnatomicalBody
             muscles={trained}
             back={showBack}
             size={130}

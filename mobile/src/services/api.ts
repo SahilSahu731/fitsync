@@ -1,8 +1,6 @@
-
 import { loadSecureStore } from "./native-modules";
 
-const API_URL =
-  process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "");
+const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "");
 
 const REFRESH_KEY = "fitsync.refresh-token.v1";
 
@@ -24,11 +22,18 @@ function withCredentials<T>(operation: () => Promise<T>): Promise<T> {
 }
 
 function assertGeneration(generation: number) {
-  if (generation !== sessionGeneration) throw new HttpError(409, "The signed-in account changed. Reopen this screen.");
+  if (generation !== sessionGeneration)
+    throw new HttpError(409, "The signed-in account changed. Reopen this screen.");
 }
 
 async function persistTokens(tokens: SessionTokens, generation: number): Promise<boolean> {
-  if (typeof tokens.accessToken !== "string" || !tokens.accessToken || typeof tokens.refreshToken !== "string" || !tokens.refreshToken) throw new HttpError(502, "The server returned an invalid session. Please sign in again.");
+  if (
+    typeof tokens.accessToken !== "string" ||
+    !tokens.accessToken ||
+    typeof tokens.refreshToken !== "string" ||
+    !tokens.refreshToken
+  )
+    throw new HttpError(502, "The server returned an invalid session. Please sign in again.");
   return withCredentials(async () => {
     if (generation !== sessionGeneration) return false;
     const SecureStore = await loadSecureStore();
@@ -50,7 +55,7 @@ export type SessionTokens = {
 export class HttpError extends Error {
   constructor(
     public status: number,
-    message: string
+    message: string,
   ) {
     super(message);
   }
@@ -58,9 +63,7 @@ export class HttpError extends Error {
 
 function baseUrl() {
   if (!API_URL) {
-    throw new Error(
-      "Missing EXPO_PUBLIC_API_URL in mobile/.env"
-    );
+    throw new Error("Missing EXPO_PUBLIC_API_URL in mobile/.env");
   }
 
   return API_URL;
@@ -68,18 +71,25 @@ function baseUrl() {
 
 type JsonResponse = { ok: boolean; status: number; result: unknown };
 const REQUEST_TIMEOUT_MS = 20_000;
-const requestTimedOut = () => new HttpError(408, "The request timed out. Check your connection and retry; saved workout updates remain queued.");
+const requestTimedOut = () =>
+  new HttpError(
+    408,
+    "The request timed out. Check your connection and retry; saved workout updates remain queued.",
+  );
 
 async function fetchJson(url: string, init: RequestInit): Promise<JsonResponse> {
   const controller = new AbortController();
   let timer: ReturnType<typeof setTimeout> | undefined;
   const deadline = new Promise<never>((_resolve, reject) => {
-    timer = setTimeout(() => { controller.abort(); reject(requestTimedOut()); }, REQUEST_TIMEOUT_MS);
+    timer = setTimeout(() => {
+      controller.abort();
+      reject(requestTimedOut());
+    }, REQUEST_TIMEOUT_MS);
   });
   try {
     const request = (async () => {
       const response = await fetch(url, { ...init, signal: controller.signal });
-      const result: unknown = await response.json().catch(error => {
+      const result: unknown = await response.json().catch((error) => {
         if (controller.signal.aborted) throw error;
         return {};
       });
@@ -103,19 +113,22 @@ async function readResponse<T>(response: JsonResponse): Promise<T> {
   if (!response.ok) {
     throw new HttpError(
       response.status,
-      result && typeof result === "object" && "message" in result && typeof result.message === "string" ? result.message : "Request failed."
+      result &&
+        typeof result === "object" &&
+        "message" in result &&
+        typeof result.message === "string"
+        ? result.message
+        : "Request failed.",
     );
   }
 
   return result as T;
 }
 
-export async function storeSessionTokens(
-  tokens: SessionTokens
-) {
+export async function storeSessionTokens(tokens: SessionTokens) {
   const generation = ++sessionGeneration;
   accessToken = null;
-  if (!await persistTokens(tokens, generation)) assertGeneration(generation);
+  if (!(await persistTokens(tokens, generation))) assertGeneration(generation);
 }
 
 export async function clearSessionTokens() {
@@ -129,20 +142,15 @@ export async function clearSessionTokens() {
   });
 }
 
-export async function googleBackendLogin(
-  idToken: string
-) {
+export async function googleBackendLogin(idToken: string) {
   const generation = sessionGeneration;
-  const response = await fetchJson(
-    `${baseUrl()}/api/auth/google`,
-    {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify({ idToken })
-    }
-  );
+  const response = await fetchJson(`${baseUrl()}/api/auth/google`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({ idToken }),
+  });
 
   assertGeneration(generation);
 
@@ -169,18 +177,15 @@ async function performRefresh(generation: number): Promise<boolean> {
   if (!savedToken) return false;
 
   try {
-    const response = await fetchJson(
-      `${baseUrl()}/api/auth/refresh`,
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-          refreshToken: savedToken
-        })
-      }
-    );
+    const response = await fetchJson(`${baseUrl()}/api/auth/refresh`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        refreshToken: savedToken,
+      }),
+    });
 
     if (generation !== sessionGeneration) return false;
 
@@ -189,8 +194,7 @@ async function performRefresh(generation: number): Promise<boolean> {
       return false;
     }
 
-    const tokens =
-      await readResponse<SessionTokens>(response);
+    const tokens = await readResponse<SessionTokens>(response);
 
     if (generation !== sessionGeneration) return false;
     // Refreshing the same account does not begin a new session generation.
@@ -230,15 +234,12 @@ type RequestOptions = {
   expectedOwnerId?: string;
 };
 
-export async function apiRequest<T>(
-  path: string,
-  options: RequestOptions = {}
-): Promise<T> {
+export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
   const generation = sessionGeneration;
   const makeRequest = async () => {
     assertGeneration(generation);
     const headers: Record<string, string> = {
-      Accept: "application/json"
+      Accept: "application/json",
     };
 
     if (accessToken) {
@@ -253,13 +254,7 @@ export async function apiRequest<T>(
     return fetchJson(`${baseUrl()}/api${path}`, {
       method: options.method || "GET",
       headers,
-      body:
-        options.form ??
-        (
-          options.json !== undefined
-            ? JSON.stringify(options.json)
-            : undefined
-        )
+      body: options.form ?? (options.json !== undefined ? JSON.stringify(options.json) : undefined),
     });
   };
 
@@ -271,10 +266,7 @@ export async function apiRequest<T>(
 
     if (!refreshed) {
       if (accessToken) assertGeneration(generation);
-      throw new HttpError(
-        401,
-        "Please sign in again."
-      );
+      throw new HttpError(401, "Please sign in again.");
     }
 
     response = await makeRequest();

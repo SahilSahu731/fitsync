@@ -1,10 +1,8 @@
 import { apiRequest } from "@/src/services/api";
 
 export type Level = "beginner" | "intermediate" | "advanced";
-export type Goal =
-  | "muscle" | "strength" | "fat_loss" | "endurance" | "general";
-export type Equipment =
-  | "gym" | "dumbbells" | "bodyweight" | "bands" | "mixed";
+export type Goal = "muscle" | "strength" | "fat_loss" | "endurance" | "general";
+export type Equipment = "gym" | "dumbbells" | "bodyweight" | "bands" | "mixed";
 
 export type Program = {
   id: string;
@@ -101,38 +99,31 @@ function queryString(filters: Record<string, string | undefined>) {
 
 export const catalogApi = {
   programs: (filters: Filters = {}) =>
-    apiRequest<Program[]>(
-      `/catalog/programs${queryString(filters)}`
-    ),
+    apiRequest<Program[]>(`/catalog/programs${queryString(filters)}`),
 
-  program: (id: string) =>
-    apiRequest<ProgramDetail>(`/catalog/programs/${id}`),
+  program: (id: string) => apiRequest<ProgramDetail>(`/catalog/programs/${id}`),
 
-  categories: () =>
-    apiRequest<Category[]>("/catalog/categories"),
+  categories: () => apiRequest<Category[]>("/catalog/categories"),
 
   routines: (category?: string) =>
-    apiRequest<Routine[]>(
-      `/catalog/routines${queryString({ category })}`
-    ),
+    apiRequest<Routine[]>(`/catalog/routines${queryString({ category })}`),
 
-  routine: (id: string) =>
-    apiRequest<Routine>(`/catalog/routines/${id}`),
+  routine: (id: string) => apiRequest<Routine>(`/catalog/routines/${id}`),
 
   saveProgram: (id: string) =>
-    apiRequest<{ saved: boolean; savedProgramId: string }>(
-      `/catalog/programs/${id}/save`,
-      { method: "POST", json: {} }
-    ),
+    apiRequest<{ saved: boolean; savedProgramId: string }>(`/catalog/programs/${id}/save`, {
+      method: "POST",
+      json: {},
+    }),
 
   saveRoutine: (id: string) =>
-    apiRequest<{ saved: boolean; templateId: string }>(
-      `/catalog/routines/${id}/save`,
-      { method: "POST", json: {} }
-    ),
+    apiRequest<{ saved: boolean; templateId: string }>(`/catalog/routines/${id}/save`, {
+      method: "POST",
+      json: {},
+    }),
 
-  deleteSavedProgram: (id: string) => apiRequest<void>(`/catalog/my-programs/${id}`, { method: "DELETE" }),
+  deleteSavedProgram: (id: string) =>
+    apiRequest<void>(`/catalog/my-programs/${id}`, { method: "DELETE" }),
 
-  myPrograms: () =>
-    apiRequest<SavedProgram[]>("/catalog/my-programs")
+  myPrograms: () => apiRequest<SavedProgram[]>("/catalog/my-programs"),
 };

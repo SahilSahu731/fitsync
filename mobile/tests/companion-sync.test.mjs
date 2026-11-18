@@ -316,7 +316,7 @@ test("reminder form preserves an edited draft and its old revision when a remote
     "@/src/context/session": { useSession: () => ({ user: { id: "alice" } }) },
     "../billing/billing-context": { useBilling: () => ({ isPro: true }) },
     "../program-follow/program-context": { useProgram: () => ({ active: null }) },
-    "../pro/ui": { GlassCard: "Card", ProButton: "Button", PRO: {} },
+    "../pro/hub-ui": { GlassCard: "Card", ProButton: "Button", PRO: {} },
     "./api": { defaultReminders: () => ({ ...prefs }) },
     "./companion-context": { useCompanion: () => companion },
     "./reminder-model": { validReminderPreferences, anyReminderEnabled, HABIT_REMINDERS },

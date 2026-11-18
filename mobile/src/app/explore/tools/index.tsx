@@ -8,10 +8,14 @@ import { useRouter } from "expo-router";
 import { ExploreHeader, ToolTile } from "@/src/features/explore/components";
 import { usePublishedTools } from "@/src/features/explore/use-tools";
 
-
 export default function ExploreToolsScreen() {
   const router = useRouter();
-  const { tools: TOOLS, loading: toolsLoading, error: toolsError, reload: reloadTools } = usePublishedTools();
+  const {
+    tools: TOOLS,
+    loading: toolsLoading,
+    error: toolsError,
+    reload: reloadTools,
+  } = usePublishedTools();
 
   return (
     <ScrollView
@@ -27,8 +31,16 @@ export default function ExploreToolsScreen() {
         onBack={() => router.back()}
       />
 
-      {toolsError && <Pressable onPress={reloadTools}><Txt className="mb-4 text-ink">{toolsError} Tap to retry.</Txt></Pressable>}
-      {!toolsError && !TOOLS.length && <Txt className="text-muted">{toolsLoading ? "Loading tools…" : "No published tools yet."}</Txt>}
+      {toolsError && (
+        <Pressable onPress={reloadTools}>
+          <Txt className="mb-4 text-ink">{toolsError} Tap to retry.</Txt>
+        </Pressable>
+      )}
+      {!toolsError && !TOOLS.length && (
+        <Txt className="text-muted">
+          {toolsLoading ? "Loading tools…" : "No published tools yet."}
+        </Txt>
+      )}
       <View className="gap-3">
         {Array.from(
           {

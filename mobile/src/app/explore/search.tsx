@@ -1,12 +1,6 @@
 import React, { useEffect, useState } from "react";
 
-import {
-  ActivityIndicator,
-  Pressable,
-  ScrollView,
-  TextInput,
-  View,
-} from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, TextInput, View } from "react-native";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 
@@ -22,15 +16,9 @@ import {
   type ExploreSection,
 } from "@/src/features/explore/api";
 
-import {
-  ExploreCardTile,
-  ExploreHeader,
-} from "@/src/features/explore/components";
+import { ExploreCardTile, ExploreHeader } from "@/src/features/explore/components";
 
-import {
-  EXPLORE_LABELS,
-  openExploreCard,
-} from "@/src/features/explore/navigation";
+import { EXPLORE_LABELS, openExploreCard } from "@/src/features/explore/navigation";
 
 import { usePublishedTools } from "@/src/features/explore/use-tools";
 
@@ -46,9 +34,7 @@ export default function ExploreSearch() {
 
   const [query, setQuery] = useState((initial ?? "").trim());
 
-  const [results, setResults] = useState<
-    Partial<Record<ExploreSection, ExploreCard[]>>
-  >({});
+  const [results, setResults] = useState<Partial<Record<ExploreSection, ExploreCard[]>>>({});
 
   const [unavailable, setUnavailable] = useState<ExploreSection[]>([]);
 
@@ -114,14 +100,11 @@ export default function ExploreSearch() {
   }, [query]);
 
   const matches = TOOLS.filter((tool) =>
-    `${tool.name} ${tool.description}`
-      .toLowerCase()
-      .includes(query.toLowerCase()),
+    `${tool.name} ${tool.description}`.toLowerCase().includes(query.toLowerCase()),
   );
 
   const found =
-    EXPLORE_SECTIONS.some((section) => (results[section]?.length ?? 0) > 0) ||
-    matches.length > 0;
+    EXPLORE_SECTIONS.some((section) => (results[section]?.length ?? 0) > 0) || matches.length > 0;
 
   return (
     <ScrollView
@@ -132,7 +115,11 @@ export default function ExploreSearch() {
         paddingBottom: 100,
       }}
     >
-      {toolsError && <Pressable onPress={reloadTools}><Txt className="mb-4 text-ink">Tools unavailable. Tap to retry.</Txt></Pressable>}
+      {toolsError && (
+        <Pressable onPress={reloadTools}>
+          <Txt className="mb-4 text-ink">Tools unavailable. Tap to retry.</Txt>
+        </Pressable>
+      )}
       <ExploreHeader title="Search Explore" onBack={() => router.back()} />
 
       <View className="h-14 flex-row items-center rounded-2xl bg-panel px-4">
@@ -151,9 +138,7 @@ export default function ExploreSearch() {
       {loading ? <ActivityIndicator color={C.ink} className="mt-10" /> : null}
 
       {!loading && query && !found ? (
-        <Txt className="mt-8 text-sm text-muted">
-          No matches found. Try another search term.
-        </Txt>
+        <Txt className="mt-8 text-sm text-muted">No matches found. Try another search term.</Txt>
       ) : null}
 
       {!loading && unavailable.length ? (

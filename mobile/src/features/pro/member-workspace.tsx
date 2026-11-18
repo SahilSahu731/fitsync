@@ -20,6 +20,7 @@ import { useCompanion } from "../companion/companion-context";
 import type { CompanionRecord } from "../companion/api";
 import { ReminderSettingsPanel } from "../companion/reminders-panel";
 import { useCompanionNativeStatus } from "../companion/native-status";
+import { useFoodDiary } from "../nutrition/use-food-diary";
 import { buildProAnalytics, type ProPeriod } from "./analytics";
 import { AnalyticsPanels, type AnalyticsView } from "./analytics-panels";
 import { WarmupCalculator, OneRepMax, type ProTool } from "./training-tools";
@@ -41,14 +42,15 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
   const { user, settings } = useSession();
   const billing = useBilling();
   const progress = useProgress();
+  const foodDiary = useFoodDiary();
   const program = useProgram();
   const coaching = useCoaching();
   const companion = useCompanion();
   const reminderStatus = useCompanionNativeStatus(ownerId);
   const catalog = useProCatalog(ownerId);
-  const today = localDate();
+  const today = String(localDate());
   const week = addDays(today, -((new Date(`${today}T12:00:00Z`).getUTCDay() + 6) % 7));
-  const resources = useStudioResources(ownerId, week);
+  const resources = useStudioResources(ownerId);
   const unit = settings?.weightUnit ?? "kg";
   const [sheet, setSheet] = useState<"analytics" | "reminders" | null>(null);
   const [view, setView] = useState<AnalyticsView>("muscles");
@@ -117,10 +119,13 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
     !!issue && !progress.journal.workoutsUpdatedAt && !briefData.allTime.workouts;
   const historyOpening =
     progress.loading || (!progress.journal.workoutsUpdatedAt && progress.refreshing);
-  const openAnalytics = useCallback((nextView: AnalyticsView) => {
-    setView(nextView);
-    setSheet("analytics");
-  }, []);
+  const openAnalytics = useCallback(
+    (nextView: AnalyticsView) => {
+      setView(nextView);
+      setSheet("analytics");
+    },
+    [setView, setSheet],
+  );
   const refresh = () =>
     void Promise.allSettled([
       progress.refresh(),
@@ -129,6 +134,7 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
       catalog.refresh(),
       resources.refresh(),
       companion.refresh(),
+      foodDiary.refresh(),
       billing.refresh(),
     ]);
   const coachRoute = plan ? ("/coach" as const) : ("/coach/setup" as const);
@@ -363,12 +369,11 @@ export function MemberWorkspace({ ownerId }: { ownerId: string }) {
 
         <StudioSection index="03 / FUEL & RECOVER" title="Good training starts here." />
         <MealBrief
-          food={resources.food}
-          recipes={resources.recipes}
+          entries={foodDiary.diary.entries}
           today={today}
-          loading={resources.loading}
-          error={resources.mealError}
-          onOpen={() => router.push("/wellness")}
+          loading={foodDiary.loading}
+          error={foodDiary.error}
+          onOpen={() => router.push("/nutrition")}
         />
         <Pressable
           accessibilityRole="button"

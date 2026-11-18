@@ -9,13 +9,10 @@ import {
   Pressable,
   ScrollView,
   TextInput,
-  View
+  View,
 } from "react-native";
 
-import {
-  Redirect,
-  useRouter
-} from "expo-router";
+import { Redirect, useRouter } from "expo-router";
 
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
@@ -23,11 +20,7 @@ import * as Haptics from "expo-haptics";
 
 import { C } from "@/src/constants/theme";
 
-import {
-  Pill,
-  PrimaryButton,
-  Txt
-} from "@/src/components/ui";
+import { Pill, PrimaryButton, Txt } from "@/src/components/ui";
 
 import {
   useSession,
@@ -35,15 +28,14 @@ import {
   type Equipment,
   type Experience,
   type Gender,
-  type Goal
+  type Goal,
 } from "@/src/context/session";
 
 // ======================================================
 // TYPES
 // ======================================================
 
-type IconName =
-  keyof typeof MaterialCommunityIcons.glyphMap;
+type IconName = keyof typeof MaterialCommunityIcons.glyphMap;
 
 type ChoiceOption = {
   label: string;
@@ -57,126 +49,113 @@ type ChoiceOption = {
 const GOALS: ChoiceOption[] = [
   {
     label: "Build Muscle",
-    value: "muscle"
+    value: "muscle",
   },
   {
     label: "Strength",
-    value: "strength"
+    value: "strength",
   },
   {
     label: "Lose Fat",
-    value: "fat_loss"
+    value: "fat_loss",
   },
   {
     label: "Fitness",
-    value: "fitness"
-  }
+    value: "fitness",
+  },
 ];
 
 const EXPERIENCE: ChoiceOption[] = [
   {
     label: "Beginner",
-    value: "beginner"
+    value: "beginner",
   },
   {
     label: "Intermediate",
-    value: "intermediate"
+    value: "intermediate",
   },
   {
     label: "Advanced",
-    value: "advanced"
-  }
+    value: "advanced",
+  },
 ];
 
 const GENDER: ChoiceOption[] = [
   {
     label: "Male",
-    value: "male"
+    value: "male",
   },
   {
     label: "Female",
-    value: "female"
+    value: "female",
   },
   {
     label: "Prefer not to say",
-    value: "prefer_not_to_say"
-  }
+    value: "prefer_not_to_say",
+  },
 ];
 
 const BODY_TYPES: ChoiceOption[] = [
   {
     label: "Slim",
-    value: "slim"
+    value: "slim",
   },
   {
     label: "Medium",
-    value: "medium"
+    value: "medium",
   },
   {
     label: "Broad",
-    value: "broad"
+    value: "broad",
   },
   {
     label: "Not specified",
-    value: "none"
-  }
+    value: "none",
+  },
 ];
 
 const EQUIPMENT: ChoiceOption[] = [
   {
     label: "Full Gym",
-    value: "gym"
+    value: "gym",
   },
   {
     label: "Dumbbells",
-    value: "dumbbells"
+    value: "dumbbells",
   },
   {
     label: "Bodyweight",
-    value: "bodyweight"
-  }
+    value: "bodyweight",
+  },
 ];
 
 const DURATION: ChoiceOption[] = [
   {
     label: "30 min",
-    value: "30"
+    value: "30",
   },
   {
     label: "45 min",
-    value: "45"
+    value: "45",
   },
   {
     label: "60 min",
-    value: "60"
-  }
+    value: "60",
+  },
 ];
 
 // ======================================================
 // REUSABLE FIELD COMPONENTS
 // ======================================================
 
-function SectionTitle({
-  title,
-  subtitle
-}: {
-  title: string;
-  subtitle?: string;
-}) {
+function SectionTitle({ title, subtitle }: { title: string; subtitle?: string }) {
   return (
     <View className="mb-5 mt-8">
-      <Txt
-        weight="semibold"
-        className="text-[23px] tracking-tight"
-      >
+      <Txt weight="semibold" className="text-[23px] tracking-tight">
         {title}
       </Txt>
 
-      {subtitle ? (
-        <Txt className="mt-1 text-xs leading-5 text-muted">
-          {subtitle}
-        </Txt>
-      ) : null}
+      {subtitle ? <Txt className="mt-1 text-xs leading-5 text-muted">{subtitle}</Txt> : null}
     </View>
   );
 }
@@ -189,7 +168,7 @@ function InputField({
   keyboardType = "default",
   multiline = false,
   maxLength = 100,
-  suffix
+  suffix,
 }: {
   label: string;
   value: string;
@@ -202,18 +181,13 @@ function InputField({
 }) {
   return (
     <View className="mb-5">
-      <Txt
-        weight="medium"
-        className="mb-2 text-xs tracking-[1px] text-muted"
-      >
+      <Txt weight="medium" className="mb-2 text-xs tracking-[1px] text-muted">
         {label}
       </Txt>
 
       <View
         className={`flex-row rounded-2xl bg-panel px-4 ${
-          multiline
-            ? "min-h-[110px] py-3"
-            : "h-14 items-center"
+          multiline ? "min-h-[110px] py-3" : "h-14 items-center"
         }`}
       >
         <TextInput
@@ -227,16 +201,12 @@ function InputField({
           className="font-poppins-regular flex-1 text-base text-ink"
           style={{
             fontFamily: "Poppins_500Medium",
-            textAlignVertical:
-              multiline ? "top" : "center"
+            textAlignVertical: multiline ? "top" : "center",
           }}
         />
 
         {suffix ? (
-          <Txt
-            weight="semibold"
-            className="ml-2 text-sm text-ink"
-          >
+          <Txt weight="semibold" className="ml-2 text-sm text-ink">
             {suffix}
           </Txt>
         ) : null}
@@ -249,7 +219,7 @@ function ChoiceField({
   title,
   options,
   value,
-  onChange
+  onChange,
 }: {
   title: string;
   options: ChoiceOption[];
@@ -258,15 +228,12 @@ function ChoiceField({
 }) {
   return (
     <View className="mb-6">
-      <Txt
-        weight="medium"
-        className="mb-3 text-xs tracking-[1px] text-muted"
-      >
+      <Txt weight="medium" className="mb-3 text-xs tracking-[1px] text-muted">
         {title}
       </Txt>
 
       <View className="flex-row flex-wrap gap-2">
-        {options.map(option => (
+        {options.map((option) => (
           <Pill
             key={option.value}
             label={option.label}
@@ -283,24 +250,12 @@ function ChoiceField({
   );
 }
 
-function InfoRow({
-  icon,
-  text
-}: {
-  icon: IconName;
-  text: string;
-}) {
+function InfoRow({ icon, text }: { icon: IconName; text: string }) {
   return (
     <View className="flex-row items-start">
-      <MaterialCommunityIcons
-        name={icon}
-        color={C.ink}
-        size={19}
-      />
+      <MaterialCommunityIcons name={icon} color={C.ink} size={19} />
 
-      <Txt className="ml-3 flex-1 text-xs leading-5 text-muted">
-        {text}
-      </Txt>
+      <Txt className="ml-3 flex-1 text-xs leading-5 text-muted">{text}</Txt>
     </View>
   );
 }
@@ -313,87 +268,48 @@ export default function EditProfileScreen() {
   const Alert = useAppAlert();
   const router = useRouter();
 
-  const {
-    user,
-    profile,
-    settings,
-    updateAccount,
-    updateFitness,
-    uploadAvatar,
-    removeAvatar
-  } = useSession();
+  const { user, profile, settings, updateAccount, updateFitness, uploadAvatar, removeAvatar } =
+    useSession();
 
-  const weightUnit =
-    settings?.weightUnit ?? "kg";
+  const weightUnit = settings?.weightUnit ?? "kg";
 
   // ====================================================
   // LOCAL FORM STATE
   // ====================================================
 
-  const [name, setName] = useState(
-    user?.name ?? ""
-  );
+  const [name, setName] = useState(user?.name ?? "");
 
-  const [bio, setBio] = useState(
-    user?.bio ?? ""
-  );
+  const [bio, setBio] = useState(user?.bio ?? "");
 
-  const [height, setHeight] = useState(
-    String(profile?.heightCm ?? 175)
-  );
+  const [height, setHeight] = useState(String(profile?.heightCm ?? 175));
 
   const [weight, setWeight] = useState(() => {
     const kilograms = profile?.weightKg ?? 70;
 
     if (weightUnit === "lb") {
-      return (
-        kilograms * 2.2046226218
-      ).toFixed(1);
+      return (kilograms * 2.2046226218).toFixed(1);
     }
 
     return String(kilograms);
   });
 
-  const [gender, setGender] =
-    useState<Gender>(
-      profile?.gender ?? "prefer_not_to_say"
-    );
+  const [gender, setGender] = useState<Gender>(profile?.gender ?? "prefer_not_to_say");
 
-  const [bodyType, setBodyType] =
-    useState<BodyType | null>(
-      profile?.bodyType ?? null
-    );
+  const [bodyType, setBodyType] = useState<BodyType | null>(profile?.bodyType ?? null);
 
-  const [goal, setGoal] =
-    useState<Goal>(
-      profile?.goal ?? "muscle"
-    );
+  const [goal, setGoal] = useState<Goal>(profile?.goal ?? "muscle");
 
-  const [experience, setExperience] =
-    useState<Experience>(
-      profile?.experience ?? "beginner"
-    );
+  const [experience, setExperience] = useState<Experience>(profile?.experience ?? "beginner");
 
-  const [trainingDays, setTrainingDays] =
-    useState<number>(
-      profile?.trainingDays ?? 4
-    );
+  const [trainingDays, setTrainingDays] = useState<number>(profile?.trainingDays ?? 4);
 
-  const [minutes, setMinutes] =
-    useState<30 | 45 | 60>(
-      profile?.minutesPerWorkout ?? 45
-    );
+  const [minutes, setMinutes] = useState<30 | 45 | 60>(profile?.minutesPerWorkout ?? 45);
 
-  const [equipment, setEquipment] =
-    useState<Equipment>(
-      profile?.equipment ?? "gym"
-    );
+  const [equipment, setEquipment] = useState<Equipment>(profile?.equipment ?? "gym");
 
-  const [saving, setSaving] =
-    useState(false);
+  const [saving, setSaving] = useState(false);
 
-  const [uploading, setUploading] =
-    useState(false);
+  const [uploading, setUploading] = useState(false);
 
   const [slowOperation, setSlowOperation] = useState(false);
   useEffect(() => {
@@ -407,15 +323,11 @@ export default function EditProfileScreen() {
   // ====================================================
 
   if (!user) {
-    return (
-      <Redirect href="/(auth)/sign-in" />
-    );
+    return <Redirect href="/(auth)/sign-in" />;
   }
 
   if (!profile) {
-    return (
-      <Redirect href="/onboarding" />
-    );
+    return <Redirect href="/onboarding" />;
   }
 
   // ====================================================
@@ -426,18 +338,14 @@ export default function EditProfileScreen() {
     if (uploading || saving) return;
 
     try {
-      const result =
-        await ImagePicker.launchImageLibraryAsync({
-          mediaTypes: ["images"],
-          allowsEditing: true,
-          aspect: [1, 1],
-          quality: 0.7
-        });
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ["images"],
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.7,
+      });
 
-      if (
-        result.canceled ||
-        !result.assets.length
-      ) {
+      if (result.canceled || !result.assets.length) {
         return;
       }
 
@@ -445,32 +353,16 @@ export default function EditProfileScreen() {
 
       const maxSize = 3 * 1024 * 1024;
 
-      if (
-        image.fileSize &&
-        image.fileSize > maxSize
-      ) {
-        Alert.alert(
-          "Image too large",
-          "Choose a photo smaller than 3 MB."
-        );
+      if (image.fileSize && image.fileSize > maxSize) {
+        Alert.alert("Image too large", "Choose a photo smaller than 3 MB.");
 
         return;
       }
 
-      const mimeType =
-        image.mimeType || "image/jpeg";
+      const mimeType = image.mimeType || "image/jpeg";
 
-      if (
-        ![
-          "image/jpeg",
-          "image/png",
-          "image/webp"
-        ].includes(mimeType)
-      ) {
-        Alert.alert(
-          "Unsupported image",
-          "Please select a JPEG, PNG, or WebP image."
-        );
+      if (!["image/jpeg", "image/png", "image/webp"].includes(mimeType)) {
+        Alert.alert("Unsupported image", "Please select a JPEG, PNG, or WebP image.");
 
         return;
       }
@@ -478,10 +370,7 @@ export default function EditProfileScreen() {
       setSlowOperation(false);
       setUploading(true);
 
-      await uploadAvatar(
-        image.uri,
-        mimeType
-      );
+      await uploadAvatar(image.uri, mimeType);
 
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
 
@@ -489,14 +378,12 @@ export default function EditProfileScreen() {
         "Photo updated",
         "Your new profile picture has been saved.",
         undefined,
-        "success"
+        "success",
       );
     } catch (error) {
       Alert.alert(
         "Upload failed",
-        error instanceof Error
-          ? error.message
-          : "Could not upload your photo."
+        error instanceof Error ? error.message : "Could not upload your photo.",
       );
     } finally {
       setUploading(false);
@@ -516,7 +403,7 @@ export default function EditProfileScreen() {
       [
         {
           text: "Cancel",
-          style: "cancel"
+          style: "cancel",
         },
         {
           text: "Remove photo",
@@ -528,20 +415,20 @@ export default function EditProfileScreen() {
             try {
               await removeAvatar();
 
-              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
+              void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(
+                () => {},
+              );
             } catch (error) {
               Alert.alert(
                 "Could not remove photo",
-                error instanceof Error
-                  ? error.message
-                  : "Please try again."
+                error instanceof Error ? error.message : "Please try again.",
               );
             } finally {
               setUploading(false);
             }
-          }
-        }
-      ]
+          },
+        },
+      ],
     );
   }
 
@@ -559,73 +446,40 @@ export default function EditProfileScreen() {
 
     const inputWeight = Number(weight);
 
-    const weightKg =
-      weightUnit === "lb"
-        ? inputWeight / 2.2046226218
-        : inputWeight;
+    const weightKg = weightUnit === "lb" ? inputWeight / 2.2046226218 : inputWeight;
 
-    const roundedKg =
-      Number(weightKg.toFixed(1));
+    const roundedKg = Number(weightKg.toFixed(1));
 
     // ------------------------------------
     // VALIDATION
     // ------------------------------------
 
-    if (
-      trimmedName.length < 2 ||
-      trimmedName.length > 100
-    ) {
-      Alert.alert(
-        "Invalid name",
-        "Enter a name containing 2–100 characters."
-      );
+    if (trimmedName.length < 2 || trimmedName.length > 100) {
+      Alert.alert("Invalid name", "Enter a name containing 2–100 characters.");
 
       return;
     }
 
     if (trimmedBio.length > 250) {
-      Alert.alert(
-        "Bio too long",
-        "Your bio can contain up to 250 characters."
-      );
+      Alert.alert("Bio too long", "Your bio can contain up to 250 characters.");
 
       return;
     }
 
-    if (
-      !Number.isFinite(heightCm) ||
-      heightCm < 100 ||
-      heightCm > 250
-    ) {
-      Alert.alert(
-        "Invalid height",
-        "Enter a height between 100 and 250 cm."
-      );
+    if (!Number.isFinite(heightCm) || heightCm < 100 || heightCm > 250) {
+      Alert.alert("Invalid height", "Enter a height between 100 and 250 cm.");
 
       return;
     }
 
-    if (
-      !Number.isFinite(roundedKg) ||
-      roundedKg < 25 ||
-      roundedKg > 350
-    ) {
-      Alert.alert(
-        "Invalid weight",
-        "Enter a valid weight within the supported range."
-      );
+    if (!Number.isFinite(roundedKg) || roundedKg < 25 || roundedKg > 350) {
+      Alert.alert("Invalid weight", "Enter a valid weight within the supported range.");
 
       return;
     }
 
-    if (
-      trainingDays < 1 ||
-      trainingDays > 7
-    ) {
-      Alert.alert(
-        "Invalid schedule",
-        "Choose a valid weekly training frequency."
-      );
+    if (trainingDays < 1 || trainingDays > 7) {
+      Alert.alert("Invalid schedule", "Choose a valid weekly training frequency.");
 
       return;
     }
@@ -642,11 +496,18 @@ export default function EditProfileScreen() {
     try {
       const accountChanged = trimmedName !== user.name || trimmedBio !== (user.bio ?? "");
       const fitnessUpdate = {
-        heightCm, weightKg: roundedKg, gender, bodyType, goal, experience,
-        trainingDays, minutesPerWorkout: minutes, equipment
+        heightCm,
+        weightKg: roundedKg,
+        gender,
+        bodyType,
+        goal,
+        experience,
+        trainingDays,
+        minutesPerWorkout: minutes,
+        equipment,
       };
       const fitnessChanged = Object.entries(fitnessUpdate).some(
-        ([key, value]) => value !== profile[key as keyof typeof fitnessUpdate]
+        ([key, value]) => value !== profile[key as keyof typeof fitnessUpdate],
       );
 
       if (accountChanged) {
@@ -663,10 +524,10 @@ export default function EditProfileScreen() {
         [
           {
             text: "Done",
-            onPress: () => router.back()
-          }
+            onPress: () => router.back(),
+          },
         ],
-        "success"
+        "success",
       );
     } catch (error) {
       Alert.alert(
@@ -675,7 +536,7 @@ export default function EditProfileScreen() {
           ? "Your account information was saved, but some fitness details were not. Please try again."
           : error instanceof Error
             ? error.message
-            : "Please try again."
+            : "Please try again.",
       );
     } finally {
       setSaving(false);
@@ -689,11 +550,7 @@ export default function EditProfileScreen() {
   return (
     <KeyboardAvoidingView
       className="flex-1 bg-bg"
-      behavior={
-        Platform.OS === "ios"
-          ? "padding"
-          : undefined
-      }
+      behavior={Platform.OS === "ios" ? "padding" : undefined}
     >
       {/* Header */}
 
@@ -703,25 +560,14 @@ export default function EditProfileScreen() {
           disabled={saving || uploading}
           className="h-11 w-11 items-center justify-center"
         >
-          <MaterialCommunityIcons
-            name="arrow-left"
-            color={C.ink}
-            size={23}
-          />
+          <MaterialCommunityIcons name="arrow-left" color={C.ink} size={23} />
         </Pressable>
 
-        <Txt
-          weight="semibold"
-          className="text-xl tracking-tight"
-        >
+        <Txt weight="semibold" className="text-xl tracking-tight">
           Edit Profile
         </Txt>
 
-        <MaterialCommunityIcons
-          name="account-edit"
-          color={"white"}
-          size={24}
-        />
+        <MaterialCommunityIcons name="account-edit" color={"white"} size={24} />
       </View>
 
       <ScrollView
@@ -730,12 +576,11 @@ export default function EditProfileScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{
           paddingHorizontal: 24,
-          paddingBottom: 35
+          paddingBottom: 35,
         }}
       >
         <Txt className="mt-3 text-sm leading-6 text-muted">
-          Your information, training preferences,
-          and goals—all in one place.
+          Your information, training preferences, and goals—all in one place.
         </Txt>
 
         {/* ==================================
@@ -743,47 +588,31 @@ export default function EditProfileScreen() {
         ================================== */}
 
         <View className="mt-7 items-center rounded-[28px]">
-          <Pressable
-            disabled={uploading || saving}
-            onPress={choosePhoto}
-            className="relative"
-          >
+          <Pressable disabled={uploading || saving} onPress={choosePhoto} className="relative">
             <View className="h-36 w-36 overflow-hidden rounded-full bg-ink">
               {user.avatarUrl ? (
                 <Image
                   source={{
-                    uri: user.avatarUrl
+                    uri: user.avatarUrl,
                   }}
                   className="h-full w-full"
                   resizeMode="cover"
                 />
               ) : (
                 <View className="h-full w-full items-center justify-center">
-                  <Txt
-                    weight="semibold"
-                    className="text-5xl text-bg"
-                  >
-                    {(
-                      user.name[0] || "A"
-                    ).toUpperCase()}
+                  <Txt weight="semibold" className="text-5xl text-bg">
+                    {(user.name[0] || "A").toUpperCase()}
                   </Txt>
                 </View>
               )}
             </View>
 
             <View className="absolute -bottom-1 -right-1 h-11 w-11 items-center justify-center rounded-full bg-ink">
-              <MaterialCommunityIcons
-                name="camera-plus"
-                color={C.bg}
-                size={20}
-              />
+              <MaterialCommunityIcons name="camera-plus" color={C.bg} size={20} />
             </View>
           </Pressable>
 
-          <Txt
-            weight="semibold"
-            className="mt-6 text-lg"
-          >
+          <Txt weight="semibold" className="mt-6 text-lg">
             YOUR LOOK. YOUR IDENTITY.
           </Txt>
 
@@ -792,13 +621,8 @@ export default function EditProfileScreen() {
             disabled={uploading || saving}
             className="mt-3 rounded-full px-5 py-2.5"
           >
-            <Txt
-              weight="semibold"
-              className="text-xs text-ink"
-            >
-              {uploading
-                ? "UPLOADING..."
-                : "CHANGE PROFILE PHOTO"}
+            <Txt weight="semibold" className="text-xs text-ink">
+              {uploading ? "UPLOADING..." : "CHANGE PROFILE PHOTO"}
             </Txt>
           </Pressable>
 
@@ -808,9 +632,7 @@ export default function EditProfileScreen() {
               disabled={uploading || saving}
               className="mt-3 px-3 py-2"
             >
-              <Txt className="text-xs text-muted">
-                Remove uploaded photo
-              </Txt>
+              <Txt className="text-xs text-muted">Remove uploaded photo</Txt>
             </Pressable>
           )}
         </View>
@@ -819,10 +641,7 @@ export default function EditProfileScreen() {
             PERSONAL INFORMATION
         ================================== */}
 
-        <SectionTitle
-          title="Personal Information"
-          subtitle=""
-        />
+        <SectionTitle title="Personal Information" subtitle="" />
 
         <InputField
           label="Name"
@@ -842,23 +661,16 @@ export default function EditProfileScreen() {
         />
 
         <View className="mb-3 rounded-2xl bg-panel p-4">
-          <Txt
-            weight="semibold"
-            className="text-xs text-muted"
-          >
+          <Txt weight="semibold" className="text-xs text-muted">
             CONNECTED GOOGLE ACCOUNT
           </Txt>
 
-          <Txt
-            weight="medium"
-            className="mt-2 text-sm"
-          >
+          <Txt weight="medium" className="mt-2 text-sm">
             {user.email}
           </Txt>
 
           <Txt className="mt-2 text-xs leading-5 text-muted">
-            Your email is managed by your Google
-            account and cannot be edited here.
+            Your email is managed by your Google account and cannot be edited here.
           </Txt>
         </View>
 
@@ -866,10 +678,7 @@ export default function EditProfileScreen() {
             BODY INFORMATION
         ================================== */}
 
-        <SectionTitle
-          title="Body Information"
-          subtitle=""
-        />
+        <SectionTitle title="Body Information" subtitle="" />
 
         <View className="flex-row gap-3">
           <View className="flex-1">
@@ -905,9 +714,7 @@ export default function EditProfileScreen() {
             title="Gender (Optional)"
             options={GENDER}
             value={gender}
-            onChange={value =>
-              setGender(value as Gender)
-            }
+            onChange={(value) => setGender(value as Gender)}
           />
         </View>
 
@@ -915,13 +722,7 @@ export default function EditProfileScreen() {
           title="Body Build (Optional)"
           options={BODY_TYPES}
           value={bodyType ?? "none"}
-          onChange={value =>
-            setBodyType(
-              value === "none"
-                ? null
-                : (value as BodyType)
-            )
-          }
+          onChange={(value) => setBodyType(value === "none" ? null : (value as BodyType))}
         />
 
         <View className="rounded-2xl bg-elevated p-4">
@@ -935,51 +736,35 @@ export default function EditProfileScreen() {
             FITNESS GOAL
         ================================== */}
 
-        <SectionTitle
-          title="Your Fitness Goal"
-          subtitle=""
-        />
+        <SectionTitle title="Your Fitness Goal" subtitle="" />
 
         <ChoiceField
           title="Main Goal"
           options={GOALS}
           value={goal}
-          onChange={value =>
-            setGoal(value as Goal)
-          }
+          onChange={(value) => setGoal(value as Goal)}
         />
 
         <ChoiceField
           title="Training Experience"
           options={EXPERIENCE}
           value={experience}
-          onChange={value =>
-            setExperience(
-              value as Experience
-            )
-          }
+          onChange={(value) => setExperience(value as Experience)}
         />
 
         {/* ==================================
             TRAINING SCHEDULE
         ================================== */}
 
-        <SectionTitle
-          title="Training Schedule"
-          subtitle=""
-        />
+        <SectionTitle title="Training Schedule" subtitle="" />
 
-        <Txt
-          weight="medium"
-          className="mb-3 text-xs tracking-[1px] text-muted"
-        >
+        <Txt weight="medium" className="mb-3 text-xs tracking-[1px] text-muted">
           Training days per week
         </Txt>
 
         <View className="mb-6 flex-row gap-2">
-          {[2, 3, 4, 5, 6].map(days => {
-            const selected =
-              trainingDays === days;
+          {[2, 3, 4, 5, 6].map((days) => {
+            const selected = trainingDays === days;
 
             return (
               <Pressable
@@ -989,18 +774,14 @@ export default function EditProfileScreen() {
                   setTrainingDays(days);
                 }}
                 className={`h-14 flex-1 items-center justify-center rounded-2xl  ${
-                  selected
-                    ? " bg-ink"
-                    : " bg-panel"
+                  selected ? " bg-ink" : " bg-panel"
                 }`}
               >
                 <Txt
                   weight="semibold"
                   className="text-xl"
                   style={{
-                    color: selected
-                      ? C.bg
-                      : C.ink
+                    color: selected ? C.bg : C.ink,
                   }}
                 >
                   {days}
@@ -1014,22 +795,14 @@ export default function EditProfileScreen() {
           title="Workout Duration"
           options={DURATION}
           value={String(minutes)}
-          onChange={value =>
-            setMinutes(
-              Number(value) as 30 | 45 | 60
-            )
-          }
+          onChange={(value) => setMinutes(Number(value) as 30 | 45 | 60)}
         />
 
         <ChoiceField
           title="Equipments"
           options={EQUIPMENT}
           value={equipment}
-          onChange={value =>
-            setEquipment(
-              value as Equipment
-            )
-          }
+          onChange={(value) => setEquipment(value as Equipment)}
         />
 
         {/* ==================================
@@ -1037,17 +810,13 @@ export default function EditProfileScreen() {
         ================================== */}
 
         <View className="mt-5 rounded-[24px] bg-[#202020] p-5">
-          <Txt
-            weight="semibold"
-            className="text-lg text-ink"
-          >
+          <Txt weight="semibold" className="text-lg text-ink">
             Your Journey Starts here.
           </Txt>
 
           <Txt className="mt-2 text-sm leading-6 text-muted">
-            Your updated training preferences
-            will be saved to your FitSync account
-            and available the next time you sign in.
+            Your updated training preferences will be saved to your FitSync account and available
+            the next time you sign in.
           </Txt>
         </View>
       </ScrollView>
@@ -1059,23 +828,21 @@ export default function EditProfileScreen() {
           <View accessibilityLiveRegion="polite" className="mb-3.5 flex-row items-center gap-3">
             <ActivityIndicator size="small" color={C.ink} />
             <View style={{ flex: 1 }}>
-              <Txt weight="semibold">{uploading ? "Updating your photo…" : "Saving your changes…"}</Txt>
+              <Txt weight="semibold">
+                {uploading ? "Updating your photo…" : "Saving your changes…"}
+              </Txt>
               <Txt className="mt-[3px] text-[13px] text-muted">
-                {slowOperation ? "This is taking longer than usual. Still waiting for the server…" : "We'll confirm as soon as it's saved."}
+                {slowOperation
+                  ? "This is taking longer than usual. Still waiting for the server…"
+                  : "We'll confirm as soon as it's saved."}
               </Txt>
             </View>
           </View>
         )}
         <PrimaryButton
-          title={
-            saving
-              ? "SAVING..."
-              : "SAVE CHANGES →"
-          }
+          title={saving ? "SAVING..." : "SAVE CHANGES →"}
           loading={saving}
-          disabled={
-            saving || uploading
-          }
+          disabled={saving || uploading}
           onPress={saveChanges}
         />
       </View>

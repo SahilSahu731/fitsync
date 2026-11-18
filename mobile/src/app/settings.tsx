@@ -27,8 +27,7 @@ export default function SettingsScreen() {
   const Alert = useAppAlert();
   const router = useRouter();
 
-  const { user, settings, updateSettings, redoOnboarding, signOut } =
-    useSession();
+  const { user, settings, updateSettings, redoOnboarding, signOut } = useSession();
 
   const { active: program } = useProgram();
   const [remindersOpen, setRemindersOpen] = useState(false);
@@ -102,10 +101,7 @@ export default function SettingsScreen() {
       }}
     >
       <View className="flex-row items-center gap-4">
-        <Pressable
-          onPress={() => router.back()}
-          className="inline-flex"
-        >
+        <Pressable onPress={() => router.back()} className="inline-flex">
           <MaterialCommunityIcons name="arrow-left" color={C.ink} size={23} />
         </Pressable>
         <Txt weight="medium" className="text-[22px]">
@@ -113,7 +109,7 @@ export default function SettingsScreen() {
         </Txt>
       </View>
 
-       <SettingsHeader title="Training" />
+      <SettingsHeader title="Training" />
 
       <View className="rounded-2xl bg-panel p-5">
         <Txt weight="semibold" className="">
@@ -121,8 +117,8 @@ export default function SettingsScreen() {
         </Txt>
 
         <Txt className="mb-4 mt-1 text-sm text-muted">
-          Your preferred unit for future workout logging. Body measurements are
-          currently entered in kg.
+          Your preferred unit for future workout logging. Body measurements are currently entered in
+          kg.
         </Txt>
 
         <View className="flex-row gap-2">
@@ -145,9 +141,7 @@ export default function SettingsScreen() {
           Default rest timer
         </Txt>
 
-        <Txt className="mb-4 mt-1 text-xs text-muted">
-          Choose the preferred rest duration.
-        </Txt>
+        <Txt className="mb-4 mt-1 text-xs text-muted">Choose the preferred rest duration.</Txt>
 
         <View className="flex-row flex-wrap gap-2">
           {([30, 60, 90, 120, 180] as const).map((value) => (
@@ -168,7 +162,35 @@ export default function SettingsScreen() {
       <ExperienceSettings />
       <SettingsHeader title="Your schedule & membership" />
       <View className="overflow-hidden rounded-2xl bg-panel">
-        {[{ title: "Training calendar", detail: "Plans, completed workouts, and calendar export", icon: "calendar-month-outline" as const, route: "/calendar" as const }, { title: "Membership & billing", detail: "Subscription, payment methods, and receipts", icon: "credit-card-outline" as const, route: "/billing" as const }].map((item, index) => <Pressable key={item.route} onPress={() => router.push(item.route)} className={`min-h-20 flex-row items-center gap-4 p-5 ${index === 0 ? " " : ""}`}><MaterialCommunityIcons name={item.icon} size={24} color={C.ink} /><View className="flex-1"><Txt weight="semibold" className="text-base">{item.title}</Txt><Txt className="mt-1 text-xs leading-5 text-muted">{item.detail}</Txt></View><MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} /></Pressable>)}
+        {[
+          {
+            title: "Training calendar",
+            detail: "Plans, completed workouts, and calendar export",
+            icon: "calendar-month-outline" as const,
+            route: "/calendar" as const,
+          },
+          {
+            title: "Membership & billing",
+            detail: "Subscription, payment methods, and receipts",
+            icon: "credit-card-outline" as const,
+            route: "/billing" as const,
+          },
+        ].map((item, index) => (
+          <Pressable
+            key={item.route}
+            onPress={() => router.push(item.route)}
+            className={`min-h-20 flex-row items-center gap-4 p-5 ${index === 0 ? " " : ""}`}
+          >
+            <MaterialCommunityIcons name={item.icon} size={24} color={C.ink} />
+            <View className="flex-1">
+              <Txt weight="semibold" className="text-base">
+                {item.title}
+              </Txt>
+              <Txt className="mt-1 text-xs leading-5 text-muted">{item.detail}</Txt>
+            </View>
+            <MaterialCommunityIcons name="chevron-right" size={22} color={C.muted} />
+          </Pressable>
+        ))}
       </View>
       {/* Notification preference */}
 
@@ -176,11 +198,7 @@ export default function SettingsScreen() {
 
       <View className="flex-row items-center rounded-2xl bg-panel p-5">
         <View className="mr-4 h-12 w-12 items-center justify-center">
-          <MaterialCommunityIcons
-            name="bell-outline"
-            size={23}
-            color={"white"}
-          />
+          <MaterialCommunityIcons name="bell-outline" size={23} color={"white"} />
         </View>
 
         <View className="flex-1">
@@ -210,12 +228,22 @@ export default function SettingsScreen() {
       </View>
 
       <Txt className="mt-2 text-xs leading-5 text-muted">
-        Choose the time in your program reminder settings. Turning this off
-        silences daily program reminders on all your devices.
+        Choose the time in your program reminder settings. Turning this off silences daily program
+        reminders on all your devices.
       </Txt>
 
-      {program && <Pressable onPress={() => setRemindersOpen(true)} className="self-start py-3"><Txt className="text-sm text-ink">Change reminder time</Txt></Pressable>}
-      {remindersOpen && program && <ProgramSetup enrollment={program.enrollment} onClose={() => setRemindersOpen(false)} onSaved={() => setRemindersOpen(false)} />}
+      {program && (
+        <Pressable onPress={() => setRemindersOpen(true)} className="self-start py-3">
+          <Txt className="text-sm text-ink">Change reminder time</Txt>
+        </Pressable>
+      )}
+      {remindersOpen && program && (
+        <ProgramSetup
+          enrollment={program.enrollment}
+          onClose={() => setRemindersOpen(false)}
+          onSaved={() => setRemindersOpen(false)}
+        />
+      )}
 
       {/* Personal setup */}
 
@@ -230,16 +258,10 @@ export default function SettingsScreen() {
         <View className="ml-4 flex-1">
           <Txt weight="semibold">Edit personal information</Txt>
 
-          <Txt className="mt-1 text-xs text-muted">
-            Profile, weight, height, fitness goals
-          </Txt>
+          <Txt className="mt-1 text-xs text-muted">Profile, weight, height, fitness goals</Txt>
         </View>
 
-        <MaterialCommunityIcons
-          name="chevron-right"
-          color={C.muted}
-          size={23}
-        />
+        <MaterialCommunityIcons name="chevron-right" color={C.muted} size={23} />
       </Pressable>
 
       <Pressable
@@ -251,16 +273,10 @@ export default function SettingsScreen() {
         <View className="ml-4 flex-1">
           <Txt weight="semibold">Redo onboarding</Txt>
 
-          <Txt className="mt-1 text-xs text-muted">
-            Start fitness setup again
-          </Txt>
+          <Txt className="mt-1 text-xs text-muted">Start fitness setup again</Txt>
         </View>
 
-        <MaterialCommunityIcons
-          name="chevron-right"
-          color={C.muted}
-          size={23}
-        />
+        <MaterialCommunityIcons name="chevron-right" color={C.muted} size={23} />
       </Pressable>
 
       {/* Account */}
@@ -268,48 +284,31 @@ export default function SettingsScreen() {
       <SettingsHeader title="Account & Privacy" />
 
       <View className="rounded-2xl bg-panel">
-        <Pressable
-          onPress={logout}
-          className="flex-row items-center p-5"
-        >
+        <Pressable onPress={logout} className="flex-row items-center p-5">
           <MaterialCommunityIcons name="logout" color={C.ink} size={23} />
 
           <Txt weight="semibold" className="ml-4 flex-1">
             Sign out
           </Txt>
 
-          <MaterialCommunityIcons
-            name="chevron-right"
-            color={C.muted}
-            size={23}
-          />
+          <MaterialCommunityIcons name="chevron-right" color={C.muted} size={23} />
         </Pressable>
 
         <Pressable
           onPress={() => router.push("/delete-account")}
           className="flex-row items-center p-5"
         >
-          <MaterialCommunityIcons
-            name="delete-outline"
-            color="#FF8278"
-            size={23}
-          />
+          <MaterialCommunityIcons name="delete-outline" color="#FF8278" size={23} />
 
           <Txt weight="semibold" className="ml-4 flex-1 text-[#FF8278]">
             Delete account
           </Txt>
 
-          <MaterialCommunityIcons
-            name="chevron-right"
-            color="#FF8278"
-            size={23}
-          />
+          <MaterialCommunityIcons name="chevron-right" color="#FF8278" size={23} />
         </Pressable>
       </View>
 
-      <Txt className="mt-8 text-center text-muted">
-        FitSync · Made for your next rep.
-      </Txt>
+      <Txt className="mt-8 text-center text-muted">FitSync · Made for your next rep.</Txt>
     </ScrollView>
   );
 }

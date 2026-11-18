@@ -6,31 +6,14 @@ import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import type { Routine } from "../api";
 
-export function RoutineCard({
-  routine,
-  onPress
-}: {
-  routine: Routine;
-  onPress: () => void;
-}) {
+export function RoutineCard({ routine, onPress }: { routine: Routine; onPress: () => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      className="mb-3 flex-row overflow-hidden rounded-2xl bg-panel"
-    >
+    <Pressable onPress={onPress} className="mb-3 flex-row overflow-hidden rounded-2xl bg-panel">
       {routine.image_url ? (
-        <Image
-          source={{ uri: routine.image_url }}
-          className="h-28 w-28"
-          resizeMode="cover"
-        />
+        <Image source={{ uri: routine.image_url }} className="h-28 w-28" resizeMode="cover" />
       ) : (
         <View className="h-28 w-28 items-center justify-center bg-elevated">
-          <MaterialCommunityIcons
-            name="dumbbell"
-            size={32}
-            color={C.ink}
-          />
+          <MaterialCommunityIcons name="dumbbell" size={32} color={C.ink} />
         </View>
       )}
 
