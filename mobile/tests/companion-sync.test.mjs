@@ -162,6 +162,7 @@ function contextFixture(options = {}) {
     calls = [];
   let owner = "alice";
   const stateGates = options.stateGates ?? {};
+  const usageGates = options.usageGates ?? {};
   const module = load("companion-context.tsx", {
     react: runtime.react,
     "react/jsx-runtime": { jsx, jsxs: jsx },
@@ -172,15 +173,21 @@ function contextFixture(options = {}) {
     "@/src/services/api": { HttpError },
     "./api": {
       companionForOwner: (id) => ({
-        exerciseUsage: async () => ({
-          replacements: [
-            {
-              originalExerciseId: `${id}-original`,
-              replacementExerciseId: `${id}-replacement`,
-              date: "2026-11-16",
-            },
-          ],
-        }),
+        exerciseUsage: async () => {
+          calls.push(["usage", id]);
+          const next = usageGates[id]?.shift();
+          if (next) return await next.promise;
+          if (options.usageError) throw options.usageError;
+          return {
+            replacements: [
+              {
+                originalExerciseId: `${id}-original`,
+                replacementExerciseId: `${id}-replacement`,
+                date: "2026-11-16",
+              },
+            ],
+          };
+        },
         state: async () => {
           calls.push(["state", id]);
           const next = stateGates[id]?.shift();
@@ -210,6 +217,19 @@ function find(node, type) {
   if (Array.isArray(node)) return node.flatMap((item) => find(item, type));
   return [...(node.type === type ? [node] : []), ...find(node.props?.children, type)];
 }
+
+test("an unavailable exercise-usage endpoint does not discard saved companion preferences", async () => {
+  const fixture = contextFixture({ usageError: new Error("Exercise usage is unavailable") });
+  fixture.remote.alice = state("alice", 7);
+  const instance = fixture.mount("alice");
+  await instance.settle();
+  assert.equal(context(instance).state.records[0]?.revision, 7);
+  assert.equal(context(instance).state.records[0]?.data.time, "18:00");
+  assert.equal(context(instance).state.photos[0]?.id, "alice-photo");
+  assert.equal(context(instance).loading, false);
+  assert.equal(context(instance).replacements, null);
+  instance.unmount();
+});
 
 test("switching accounts prevents an older in-flight state response exposing private photos or records", async () => {
   const gate = deferred(),

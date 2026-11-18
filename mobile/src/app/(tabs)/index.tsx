@@ -1,83 +1,50 @@
 import React, { useCallback, useMemo, useRef, useState } from "react";
-import { ActivityIndicator, Image, RefreshControl, View } from "react-native";
-import { useFocusEffect, useRouter, type Href } from "expo-router";
+import { ActivityIndicator, RefreshControl, View } from "react-native";
+import { useFocusEffect, useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { TabScrollView } from "@/src/components/tab-bar-motion";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
 import { SectionHeading, Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import { useSession } from "@/src/context/session";
-import { HomeGoals } from "@/src/features/progress/home-goals";
 import { useProgress } from "@/src/features/progress/use-progress";
 import { dateLabel, localDate, METRICS, type Metric } from "@/src/features/progress/model";
 import { MetricEditor } from "@/src/features/progress/editors";
 import { useWorkout } from "@/src/features/workouts/workout-context";
 import { WorkoutSyncNotice } from "@/src/features/workouts/components/workout-sync-notice";
 import { StartWorkoutDialog } from "@/src/features/workouts/components/start-workout-dialog";
-import { TodayForYouCard, type TodayCardHandle } from "@/src/features/companion/today-card";
+import { HomeWorkoutCard, type HomeWorkoutCardHandle } from "@/src/features/home/workout-card";
+import { HomeTopBar } from "@/src/features/home/top-bar";
+import { HomeReminderSheet } from "@/src/features/home/reminder-sheet";
+import { HomeQuickLog, HomeEssentials } from "@/src/features/home/quick-access";
+import { useBilling } from "@/src/features/billing/billing-context";
 import { useProgram } from "@/src/features/program-follow/program-context";
 import { DailyOverview } from "@/src/features/home/daily-overview";
 import { WeekOverview } from "@/src/features/home/week-overview";
 import { homeSnapshot } from "@/src/features/home/model";
 
-type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
-const TOOLKIT: { title: string; subtitle: string; icon: IconName; route: Href }[] = [
-  {
-    title: "Personal coach",
-    subtitle: "A plan built for you",
-    icon: "star-four-points-outline",
-    route: "/coach",
-  },
-  {
-    title: "Meals & habits",
-    subtitle: "Plan, shop, stay on track",
-    icon: "food-apple-outline",
-    route: "/wellness",
-  },
-  {
-    title: "Companion",
-    subtitle: "Check in & find your focus",
-    icon: "account-heart-outline",
-    route: "/companion",
-  },
-  {
-    title: "Health sync",
-    subtitle: "Connect your health data",
-    icon: "heart-pulse",
-    route: "/health-sync",
-  },
-  {
-    title: "Fitness tools",
-    subtitle: "Calculators & more",
-    icon: "tune-variant",
-    route: "/explore/tools",
-  },
-  {
-    title: "FitSync Pro",
-    subtitle: "Explore your Pro workspace",
-    icon: "crown-outline",
-    route: "/(tabs)/pro",
-  },
-];
-
 export default function HomeScreen() {
   const router = useRouter();
   const { user, settings } = useSession();
   const workout = useWorkout();
+  const billing = useBilling();
   const program = useProgram();
   const progress = useProgress();
   const ownerId = user?.id ?? "";
+  const [remindersOwner, setRemindersOwner] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
-  const [failedAvatar, setFailedAvatar] = useState<string | null>(null);
   const [startOwner, setStartOwner] = useState<string | null>(null);
   const [refreshing, setRefreshing] = useState(false);
-  const [editor, setEditor] = useState<{ ownerId: string; metric: Metric; date: string } | null>(
-    null,
-  );
+  const [editor, setEditor] = useState<{
+    ownerId: string;
+    metric: Metric;
+    date: string;
+    picker?: boolean;
+  } | null>(null);
   const [notice, setNotice] = useState<{ ownerId: string; text: string } | null>(null);
-  const [waterOwner, setWaterOwner] = useState<string | null>(null);
-  const waterLock = useRef<string | null>(null);
-  const todayCard = useRef<TodayCardHandle>(null);
+  const [waterOwners, setWaterOwners] = useState<string[]>([]);
+  const waterLock = useRef(new Set<string>());
+  const todayCard = useRef<HomeWorkoutCardHandle>(null);
   useFocusEffect(
     useCallback(() => {
       // Return from background and midnight rollover both refresh the logging date.
@@ -102,11 +69,10 @@ export default function HomeScreen() {
   const canLog = Boolean(ownerId) && !progress.loading && !progress.storageError;
   const syncIssue = progress.syncError || progress.workoutError || progress.storageError;
   const unavailable = progress.loading || Boolean(progress.storageError);
-  const waterBusy = Boolean(ownerId) && waterOwner === ownerId;
-  const trainingBlocked =
-    workout.busy || workout.loading || workout.pendingCompletion || program.loading;
-  const openLog = (metric: Metric) => {
-    if (canLog) setEditor({ ownerId, metric, date: today });
+  const waterBusy = Boolean(ownerId) && waterOwners.includes(ownerId);
+  const trainingBlocked = workout.busy || workout.loading || workout.pendingCompletion;
+  const openLog = (metric: Metric, picker = false) => {
+    if (canLog) setEditor({ ownerId, metric, date: today, picker });
   };
   async function refresh() {
     setRefreshing(true);
@@ -122,10 +88,10 @@ export default function HomeScreen() {
     }
   }
   async function addWater() {
-    if (!canLog || waterLock.current === ownerId) return;
+    if (!canLog || waterLock.current.has(ownerId)) return;
     const writingOwner = ownerId;
-    waterLock.current = writingOwner;
-    setWaterOwner(writingOwner);
+    waterLock.current.add(writingOwner);
+    setWaterOwners((current) => [...current, writingOwner]);
     try {
       await progress.increment("water", today, 250, "Added 250 ml of water.");
       setNotice({ ownerId: writingOwner, text: "250 ml added to today’s water." });
@@ -135,17 +101,18 @@ export default function HomeScreen() {
         text: error instanceof Error ? error.message : "Could not save water. Please try again.",
       });
     } finally {
-      if (waterLock.current === writingOwner) waterLock.current = null;
-      setWaterOwner((current) => (current === writingOwner ? null : current));
+      waterLock.current.delete(writingOwner);
+      setWaterOwners((current) => current.filter((id) => id !== writingOwner));
     }
   }
   function openTraining() {
-    if (!ownerId || trainingBlocked) return;
+    if (!ownerId) return;
     if (workout.session) router.push("/workout");
-    else if (program.active?.enrollment.status === "active") {
-      router.push({ pathname: "/programs/[id]", params: { id: program.active.enrollment.id } });
-    } else if (program.error) router.push("/(tabs)/train");
-    else setStartOwner(ownerId);
+    else if (!trainingBlocked) setStartOwner(ownerId);
+  }
+  function openFood() {
+    if (billing.isPro) router.push({ pathname: "/nutrition", params: { date: today } });
+    else openLog("caloriesIn");
   }
 
   return (
@@ -153,101 +120,67 @@ export default function HomeScreen() {
       <TabScrollView
         className="flex-1"
         showsVerticalScrollIndicator={false}
-        contentContainerClassName={`w-full max-w-2xl self-center px-6 pt-6 ${workout.session ? "pb-56" : "pb-44"}`}
+        contentContainerClassName={`w-full max-w-2xl self-center px-5 pt-4 ${workout.session ? "pb-56" : "pb-44"}`}
         refreshControl={
           <RefreshControl
             refreshing={refreshing || (progress.refreshing && !progress.loading)}
             onRefresh={() => void refresh()}
-            tintColor={C.brand}
+            tintColor="#FFFFFF"
           />
         }
       >
-        <View className="mb-7 flex-row items-center justify-between gap-4">
-          <View className="min-w-0 flex-1">
-            <View className="flex-row items-center gap-2">
-              <View className="h-1.5 w-1.5 rounded-full bg-brand" />
-              <Txt weight="medium" className="text-[10px] tracking-[1px] text-muted">
-                {dateLabel(today, {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
-                }).toUpperCase()}
-              </Txt>
-            </View>
-            <Txt className="mt-4 text-sm text-muted">{greeting},</Txt>
-            <Txt
-              accessibilityRole="header"
-              weight="medium"
-              numberOfLines={1}
-              adjustsFontSizeToFit
-              className="mt-0.5 text-[34px] leading-[44px] tracking-[-1.3px]"
-            >
-              {firstName}.
+        <HomeTopBar
+          key={`home-topbar:${ownerId}`}
+          user={user}
+          isPro={billing.isPro}
+          onPro={() => router.push("/(tabs)/pro")}
+          onReminders={() => setRemindersOwner(ownerId)}
+          onProfile={() => router.push("/profile")}
+        />
+        <View className="mb-6">
+          <View className="mb-2 flex-row flex-wrap items-center gap-x-2 gap-y-1">
+            <Txt className="text-[10px] tracking-[1.3px] text-muted">
+              {dateLabel(today, { weekday: "long", month: "short", day: "numeric" }).toUpperCase()}
             </Txt>
-          </View>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Open your profile"
-            onPress={() => router.push("/profile")}
-            className="h-14 w-14 items-center justify-center overflow-hidden rounded-full border  bg-panel"
-          >
-            {user?.avatarUrl && failedAvatar !== user.avatarUrl ? (
-              <Image
-                source={{ uri: user.avatarUrl }}
-                onError={() => setFailedAvatar(user.avatarUrl ?? null)}
-                className="h-full w-full"
-                resizeMode="cover"
-              />
-            ) : (
-              <Txt weight="medium" className="text-xl text-brand">
-                {firstName[0].toUpperCase()}
-              </Txt>
+            {billing.isPro && (
+              <View className="rounded-full bg-white/10 px-2 py-0.5">
+                <Txt weight="medium" className="text-[9px] tracking-[0.5px]">
+                  PRO
+                </Txt>
+              </View>
             )}
-          </Pressable>
+          </View>
+          <Txt
+            accessibilityRole="header"
+            weight="medium"
+            className="text-[28px] leading-[38px] tracking-[-1px]"
+          >
+            {greeting}, {firstName}.
+          </Txt>
+          <Txt className="mt-1 text-xs leading-5 text-muted">
+            A little movement. A little care. Your day, in sync.
+          </Txt>
         </View>
-
         <WorkoutSyncNotice />
-        <TodayForYouCard refreshRef={todayCard} />
-        <View className="mb-8 mt-1 flex-row gap-2">
-          {(
-            [
-              {
-                label: workout.session ? "Resume" : "Train",
-                icon: "dumbbell",
-                action: openTraining,
-                disabled: trainingBlocked,
-              },
-              { label: "Log", icon: "plus", action: () => openLog("weight"), disabled: !canLog },
-              {
-                label: "Calendar",
-                icon: "calendar-month-outline",
-                action: () => router.push("/calendar"),
-                disabled: false,
-              },
-              {
-                label: "Explore",
-                icon: "compass-outline",
-                action: () => router.push("/(tabs)/library"),
-                disabled: false,
-              },
-            ] satisfies { label: string; icon: IconName; action: () => void; disabled: boolean }[]
-          ).map((item) => (
-            <Pressable
-              key={item.label}
-              accessibilityRole="button"
-              accessibilityLabel={item.label === "Log" ? "Log a daily check-in" : item.label}
-              accessibilityState={{ disabled: item.disabled }}
-              disabled={item.disabled}
-              onPress={item.action}
-              className="min-w-0 flex-1 items-center gap-2 rounded-[20px] bg-panel px-1 py-4"
-              style={{ opacity: item.disabled ? 0.45 : 1 }}
-            >
-              <MaterialCommunityIcons name={item.icon} size={23} color={C.ink} />
-              <Txt weight="medium" numberOfLines={1} className="text-[10px]">
-                {item.label}
-              </Txt>
-            </Pressable>
-          ))}
+        <HomeWorkoutCard
+          key={`home-workout:${ownerId}`}
+          today={today}
+          onStart={openTraining}
+          refreshRef={todayCard}
+        />
+        <View className="mb-7 mt-6">
+          <SectionHeading
+            title="Quick log"
+            action="Progress"
+            onAction={() => router.push("/(tabs)/progress")}
+          />
+          <HomeQuickLog
+            disabled={!canLog}
+            onWater={() => openLog("water")}
+            onSteps={() => openLog("steps")}
+            onFood={openFood}
+            onMore={() => openLog("weight", true)}
+          />
         </View>
 
         {!!syncIssue && (
@@ -265,21 +198,12 @@ export default function HomeScreen() {
                 Tap to reconnect and refresh your dashboard.
               </Txt>
             </View>
-            <MaterialCommunityIcons name="refresh" size={19} color={C.brand} />
+            <MaterialCommunityIcons name="refresh" size={19} color="#FFFFFF" />
           </Pressable>
         )}
-        <ScreenEntrance delay={60}>
-          <WeekOverview
-            snapshot={snapshot}
-            today={today}
-            target={progress.hasGoals ? progress.goals.weeklyWorkouts : null}
-            loading={unavailable}
-            onCalendar={() => router.push("/calendar")}
-          />
-        </ScreenEntrance>
-        <ScreenEntrance delay={100} className="mt-8">
+        <ScreenEntrance delay={100}>
           <SectionHeading
-            title="Your daily picture"
+            title="Today at a glance"
             action="All progress"
             onAction={() => router.push("/(tabs)/progress")}
           />
@@ -293,6 +217,7 @@ export default function HomeScreen() {
             waterBusy={waterBusy}
             onLog={openLog}
             onWater={() => void addWater()}
+            onNutrition={() => router.push({ pathname: "/nutrition", params: { date: today } })}
           />
           {notice?.ownerId === ownerId && (
             <View
@@ -311,21 +236,17 @@ export default function HomeScreen() {
             </View>
           )}
         </ScreenEntrance>
-        <View className="mt-5">
-          <HomeGoals
-            ownerId={ownerId}
-            hasGoals={progress.hasGoals}
-            ready={!progress.loading && !progress.refreshing && !syncIssue}
-            activeWorkout={Boolean(workout.session)}
-            goals={progress.goals}
-            events={progress.journal.events}
-            workouts={progress.journal.workouts}
-            unit={unit}
-            completed={snapshot.weeklyCount}
-            onRetry={() => void refresh()}
+        <ScreenEntrance delay={120} className="mt-7">
+          <WeekOverview
+            snapshot={snapshot}
+            today={today}
+            target={progress.hasGoals ? progress.goals.weeklyWorkouts : null}
+            loading={unavailable}
+            onGoals={() => router.push("/goals")}
+            onCalendar={() => router.push("/calendar")}
           />
-        </View>
-        <ScreenEntrance delay={140} className="mt-3">
+        </ScreenEntrance>
+        <ScreenEntrance delay={140} className="mt-7">
           <SectionHeading
             title="Recent sessions"
             action="History"
@@ -334,7 +255,7 @@ export default function HomeScreen() {
           <View className="overflow-hidden rounded-[24px] border border-white/5 bg-panel px-4">
             {unavailable ? (
               <View className="flex-row items-center gap-3 py-7">
-                {progress.loading && <ActivityIndicator size="small" color={C.brand} />}
+                {progress.loading && <ActivityIndicator size="small" color="#FFFFFF" />}
                 <Txt className="text-xs text-muted">
                   {progress.loading
                     ? "Opening your workout history…"
@@ -342,7 +263,7 @@ export default function HomeScreen() {
                 </Txt>
               </View>
             ) : snapshot.recent.length ? (
-              snapshot.recent.map((item, index) => {
+              snapshot.recent.slice(0, 2).map((item, index) => {
                 const date = localDate(new Date(item.finished_at!));
                 const sets = item.workout_session_exercises.reduce(
                   (total, exercise) =>
@@ -364,7 +285,7 @@ export default function HomeScreen() {
                     className={`min-h-20 flex-row items-center gap-3 py-4 ${index ? "border-t border-white/5" : ""}`}
                   >
                     <View className="h-11 w-11 items-center justify-center rounded-2xl bg-elevated">
-                      <MaterialCommunityIcons name="check" size={21} color={C.brand} />
+                      <MaterialCommunityIcons name="check" size={21} color="#FFFFFF" />
                     </View>
                     <View className="min-w-0 flex-1">
                       <Txt weight="medium" numberOfLines={1} className="text-sm">
@@ -394,60 +315,44 @@ export default function HomeScreen() {
                 </Txt>
                 <Pressable
                   accessibilityRole="button"
-                  accessibilityState={{ disabled: trainingBlocked }}
-                  disabled={trainingBlocked}
+                  accessibilityState={{ disabled: !workout.session && trainingBlocked }}
+                  disabled={!workout.session && trainingBlocked}
                   onPress={progress.workoutError ? () => void refresh() : openTraining}
                   className="mt-3 min-h-11 flex-row items-center gap-2 self-start"
                 >
-                  <Txt weight="medium" className="text-xs text-brand">
+                  <Txt weight="medium" className="text-xs text-white">
                     {progress.workoutError
                       ? "Try again"
                       : workout.session
                         ? "Resume workout"
                         : "Start a workout"}
                   </Txt>
-                  <MaterialCommunityIcons name="arrow-right" size={16} color={C.brand} />
+                  <MaterialCommunityIcons name="arrow-right" size={16} color="#FFFFFF" />
                 </Pressable>
               </View>
             )}
           </View>
         </ScreenEntrance>
         <ScreenEntrance delay={180} className="mt-8">
-          <SectionHeading title="Built around you" />
-          <Txt className="-mt-1 mb-4 text-xs text-muted">Everything you need, a little closer.</Txt>
-          <View className="gap-3">
-            {[TOOLKIT.slice(0, 2), TOOLKIT.slice(2, 4), TOOLKIT.slice(4, 6)].map((row, index) => (
-              <View key={index} className="flex-row gap-3">
-                {row.map((item) => (
-                  <Pressable
-                    key={item.title}
-                    accessibilityRole="button"
-                    onPress={() => router.push(item.route)}
-                    className="min-w-0 flex-1 rounded-[22px] bg-panel p-4"
-                  >
-                    <View className="flex-row items-center justify-between">
-                      <MaterialCommunityIcons name={item.icon} size={23} color={C.ink} />
-                      <MaterialCommunityIcons name="arrow-right" size={16} color={C.muted} />
-                    </View>
-                    <Txt weight="medium" className="mt-5 text-xs">
-                      {item.title}
-                    </Txt>
-                    <Txt className="mt-1 text-[10px] leading-5 text-muted">{item.subtitle}</Txt>
-                  </Pressable>
-                ))}
-              </View>
-            ))}
-          </View>
+          <SectionHeading
+            title="Your essentials"
+            action="Explore"
+            onAction={() => router.push("/(tabs)/library")}
+          />
+          <HomeEssentials onNavigate={(route) => router.push(route)} />
         </ScreenEntrance>
-        <View className="mt-9 flex-row items-center justify-center gap-2">
-          <View className="h-1 w-1 rounded-full bg-brand" />
-          <Txt className="text-[10px] tracking-[1px] text-muted">A LITTLE MORE IN SYNC.</Txt>
-        </View>
       </TabScrollView>
+      {remindersOwner === ownerId && Boolean(ownerId) && (
+        <HomeReminderSheet
+          key={`home-reminders:${ownerId}`}
+          onClose={() => setRemindersOwner(null)}
+        />
+      )}
       {editor?.ownerId === ownerId && canLog && (
         <MetricEditor
-          key={`${editor.ownerId}-${editor.metric}-${editor.date}`}
+          key={`home-check-in:${editor.ownerId}:${editor.metric}:${editor.date}`}
           initialMetric={editor.metric}
+          startWithPicker={editor.picker}
           date={editor.date}
           events={snapshot.metrics}
           unit={unit}
@@ -463,7 +368,7 @@ export default function HomeScreen() {
       )}
       {startOwner === ownerId && Boolean(ownerId) && (
         <StartWorkoutDialog
-          key={ownerId}
+          key={`home-start:${ownerId}`}
           disabled={trainingBlocked || Boolean(workout.session)}
           onStart={workout.start}
           onClose={() => setStartOwner(null)}

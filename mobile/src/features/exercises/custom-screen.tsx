@@ -102,13 +102,16 @@ function CustomLibrary({ ownerId }: { ownerId: string }) {
   const locked = useRef(false),
     alive = useRef(true),
     sequence = useRef(0);
+  const invalidate = useCallback(() => {
+    sequence.current++;
+  }, []);
   useEffect(() => {
     alive.current = true;
     return () => {
       alive.current = false;
-      sequence.current++;
+      invalidate();
     };
-  }, []);
+  }, [invalidate]);
   const refresh = useCallback(async () => {
     if (!ownerId) {
       setLoading(false);

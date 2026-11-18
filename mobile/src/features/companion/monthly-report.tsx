@@ -329,7 +329,7 @@ function Stat({
 }) {
   return (
     <View className="min-w-0 flex-1">
-      <Txt className="text-[11px] text-muted">{label}</Txt>
+      <Txt className="min-h-8 text-[11px] leading-4 text-muted">{label}</Txt>
       <View className="mt-2 flex-row flex-wrap items-baseline gap-x-1">
         <Txt
           accessibilityLabel={`${reportNumber(value)}${unit ? ` ${unit}` : ""}`}

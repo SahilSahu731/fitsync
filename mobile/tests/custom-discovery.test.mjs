@@ -88,6 +88,24 @@ test("custom selection keeps the catalog ID and tracking type used by workouts a
   assert.equal(row.imageUrl, "image");
 });
 
+test("natural muscle and equipment labels match hyphenated taxonomy codes", () => {
+  const rows = [
+    exercise("row", {
+      name: "My row",
+      primaryMuscles: ["upper-back"],
+      secondaryMuscles: ["front-delts"],
+      equipment: ["pull-up-bar"],
+    }),
+  ];
+  assert.equal(discovery.filterCustomExercises(rows, "upper back").length, 1);
+  assert.equal(discovery.filterCustomExercises(rows, "front delts").length, 1);
+  assert.equal(discovery.filterCustomExercises(rows, "pull up bar upper-back").length, 1);
+  assert.equal(
+    discovery.filterCustomExercises(rows, "upper back", { muscle: "upper-back" }).length,
+    1,
+  );
+});
+
 test("My picker paginates after filtering and never needs Pro or the public catalog", async () => {
   const calls = [];
   const rows = Array.from({ length: 37 }, (_, index) => exercise(String(index).padStart(2, "0")));

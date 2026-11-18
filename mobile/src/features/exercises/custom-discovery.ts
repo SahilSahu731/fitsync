@@ -13,7 +13,7 @@ export function filterCustomExercises(
 ) {
   const tokens = query
     .toLowerCase()
-    .replace(/[^a-z0-9-]+/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
     .trim()
     .split(/\s+/)
     .filter(Boolean);
@@ -26,12 +26,11 @@ export function filterCustomExercises(
       const muscles = [...exercise.primaryMuscles, ...exercise.secondaryMuscles];
       if (filters.muscle && !muscles.includes(filters.muscle)) return false;
       if (filters.equipment && !exercise.equipment.includes(filters.equipment)) return false;
-      return tokens.every(
-        (token) =>
-          exercise.name.toLowerCase().includes(token) ||
-          muscles.includes(token) ||
-          exercise.equipment.includes(token),
-      );
+      const searchable = [exercise.name, ...muscles, ...exercise.equipment]
+        .join(" ")
+        .toLowerCase()
+        .replace(/[^a-z0-9]+/g, " ");
+      return tokens.every((token) => searchable.includes(token));
     })
     .sort((a, b) => a.name.localeCompare(b.name) || a.id.localeCompare(b.id));
 }

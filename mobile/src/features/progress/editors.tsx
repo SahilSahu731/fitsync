@@ -86,11 +86,11 @@ export function Sheet({
               className={`flex-row items-center justify-between px-6 ${keyboardOpen ? "py-2" : "pb-4 pt-5"}`}
             >
               <View className="flex-1 pr-3">
-                {!!eyebrow && !keyboardOpen && (
+                {/* {!!eyebrow && !keyboardOpen && (
                   <Txt weight="semibold" className="mb-1 text-[10px] tracking-[2px] text-muted">
                     {eyebrow}
                   </Txt>
-                )}
+                )} */}
                 <Txt
                   accessibilityRole="header"
                   weight="medium"
@@ -189,6 +189,7 @@ function metricHint(metric: Metric) {
 }
 export function MetricEditor({
   initialMetric,
+  startWithPicker = false,
   date: initialDate,
   events,
   unit,
@@ -196,6 +197,7 @@ export function MetricEditor({
   onSave,
 }: {
   initialMetric: Metric;
+  startWithPicker?: boolean;
   date: string;
   events: MetricEvent[];
   unit: "kg" | "lb";
@@ -215,7 +217,7 @@ export function MetricEditor({
   const [value, setValue] = useState(() => existingDisplay(existing, metric));
   const [notes, setNotes] = useState(existing?.notes ?? "");
   const [notesOpen, setNotesOpen] = useState(Boolean(existing?.notes));
-  const [choosingMetric, setChoosingMetric] = useState(false);
+  const [choosingMetric, setChoosingMetric] = useState(startWithPicker);
   const [search, setSearch] = useState("");
   const [group, setGroup] = useState<MetricGroup>(() => metricGroup(initialMetric));
   const [showDatePicker, setShowDatePicker] = useState(false);

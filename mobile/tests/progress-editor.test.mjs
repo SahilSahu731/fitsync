@@ -77,6 +77,7 @@ function harness({
   events = [],
   save,
   keyboardOpen = false,
+  startWithPicker = false,
 } = {}) {
   const hooks = [];
   let cursor = 0;
@@ -149,6 +150,7 @@ function harness({
   });
   const props = {
     initialMetric: metric,
+    startWithPicker,
     date,
     unit,
     events,
@@ -211,6 +213,22 @@ function harness({
   };
   return h;
 }
+
+test("quick check-ins can open the metric picker and save the selected metric in one editor", async () => {
+  const h = harness({ startWithPicker: true });
+  assert.ok(h.find("Search tracking metrics"));
+  assert.equal(
+    h.render().some((node) => node.props.accessibilityLabel === "Body weight in kg"),
+    false,
+  );
+  h.press("Choose Activity metrics");
+  h.press("Select Steps");
+  h.input("Steps in steps", "4321");
+  h.press("Save check-in");
+  await flush();
+  assert.deepEqual(h.saved, [["steps", TODAY, 4321, ""]]);
+  assert.equal(h.closed, 1);
+});
 
 test("weight logs display pounds but save kilograms with trimmed notes", async () => {
   const h = harness({ unit: "lb", events: [entry("weight", 80, TODAY, "Morning")] });

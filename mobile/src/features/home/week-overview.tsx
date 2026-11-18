@@ -1,9 +1,8 @@
 import React from "react";
 import { View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
-import { MotionPressable as Pressable, ProgressFill } from "@/src/components/motion";
+import { MotionPressable as Pressable } from "@/src/components/motion";
 import { Txt } from "@/src/components/ui";
-import { C } from "@/src/constants/theme";
 import { dateLabel } from "../progress/model";
 import type { HomeSnapshot } from "./model";
 
@@ -13,91 +12,99 @@ export function WeekOverview({
   target,
   loading,
   onCalendar,
+  onGoals,
 }: {
   snapshot: HomeSnapshot;
   today: string;
   target: number | null;
   loading: boolean;
   onCalendar: () => void;
+  onGoals?: () => void;
 }) {
   const hasTarget = target != null && Number.isFinite(target) && target > 0;
+  const reached = hasTarget && !loading && snapshot.weeklyCount >= target;
   return (
-    <View className="overflow-hidden rounded-[28px] bg-brand p-5">
-      <View className="flex-row items-center justify-between gap-3">
-        <View className="min-w-0 flex-1 flex-row items-center gap-2">
-          <MaterialCommunityIcons name="chart-timeline-variant" size={19} color={C.bg} />
-          <Txt weight="semibold" className="flex-1 text-[10px] tracking-[1.5px] text-bg">
-            YOUR WEEK IN MOTION
+    <View className="rounded-[28px] border border-white/5 bg-panel p-5">
+      <View className="flex-row items-start justify-between gap-3">
+        <View className="min-w-0 flex-1">
+          <Txt className="text-[9px] tracking-[1.8px] text-muted">LITTLE BY LITTLE</Txt>
+          <Txt
+            accessibilityRole="header"
+            weight="medium"
+            className="mt-1 text-xl tracking-[-0.5px]"
+          >
+            Your weekly rhythm
           </Txt>
         </View>
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="Open training calendar"
           onPress={onCalendar}
-          className="h-11 w-11 items-center justify-center rounded-full bg-black/10"
+          className="h-11 w-11 items-center justify-center rounded-full bg-white/5"
         >
-          <MaterialCommunityIcons name="arrow-right" size={21} color={C.bg} />
+          <MaterialCommunityIcons name="calendar-blank-outline" size={21} color="#FFFFFF" />
         </Pressable>
       </View>
-      <View className="mt-2 flex-row items-end justify-between gap-3">
-        <View className="flex-1">
-          <Txt weight="medium" className="text-[44px] leading-[56px] tracking-[-2px] text-bg">
-            {loading ? "—" : snapshot.weeklyCount}
-            {hasTarget && <Txt className="text-xl tracking-normal text-black/50"> / {target}</Txt>}
-          </Txt>
-          <Txt className="text-xs text-black/70">
-            {hasTarget ? "of your weekly sessions" : "sessions completed"}
-          </Txt>
-        </View>
-        <View className="items-end pb-1">
-          <Txt weight="semibold" className="text-xl text-bg">
-            {loading ? "—" : snapshot.weeklyMinutes}
-            <Txt className="text-[11px] text-black/60"> min</Txt>
-          </Txt>
-          <Txt className="mt-1 text-[10px] text-black/60">recorded training</Txt>
-        </View>
-      </View>
-      {hasTarget && !loading && (
-        <View className="mt-5">
-          <ProgressFill
-            ratio={snapshot.weeklyCount / target}
-            color={C.bg}
-            trackColor="#00000020"
-            height={4}
-          />
-        </View>
-      )}
-      <View className="mt-5 flex-row justify-between gap-1 border-t border-black/10 pt-4">
-        {snapshot.days.map((day) => (
-          <View
-            key={day.date}
-            className="items-center gap-2"
-            style={{ opacity: day.date > today ? 0.4 : 1 }}
-          >
-            <Txt className="text-[10px] text-black/70">
-              {dateLabel(day.date, { weekday: "narrow" })}
-            </Txt>
-            <View
-              accessible
-              accessibilityLabel={`${dateLabel(day.date, { weekday: "long", day: "numeric" })}: ${loading ? "loading" : `${day.count} completed sessions`}${day.date === today ? ", today" : ""}`}
-              className={`h-7 w-7 items-center justify-center rounded-full ${day.count && !loading ? "bg-black" : day.date === today ? "border border-black/50" : "bg-black/10"}`}
-            >
-              {day.count && !loading ? (
-                <MaterialCommunityIcons name="check" size={16} color={C.brand} />
-              ) : (
-                <Txt weight="medium" className="text-[11px] text-bg">
-                  {dateLabel(day.date, { day: "numeric" })}
-                </Txt>
-              )}
-            </View>
-          </View>
-        ))}
-      </View>
-      {hasTarget && !loading && snapshot.weeklyCount >= target && (
-        <Txt weight="medium" className="mt-4 text-xs text-bg">
-          Weekly goal reached. Every session counts.
+      <View className="mb-5 mt-5 flex-row items-baseline gap-2">
+        <Txt weight="medium" className="text-[32px] leading-[42px] tracking-[-1px]">
+          {loading ? "—" : snapshot.weeklyCount}
+          {hasTarget && <Txt className="text-lg tracking-normal text-muted"> / {target}</Txt>}
         </Txt>
-      )}
+        <Txt className="min-w-0 flex-1 text-[11px] text-muted">sessions this week</Txt>
+        <Txt className="text-[11px] text-muted">{loading ? "—" : snapshot.weeklyMinutes} min</Txt>
+      </View>
+      <View className="flex-row gap-1.5">
+        {snapshot.days.map((day) => {
+          const completed = !loading && day.count > 0;
+          const isToday = day.date === today;
+          return (
+            <View key={day.date} className="min-w-0 flex-1 items-center gap-2">
+              <Txt className="text-[10px] text-muted">
+                {dateLabel(day.date, { weekday: "narrow" })}
+              </Txt>
+              <View
+                accessible
+                accessibilityLabel={`${dateLabel(day.date, { weekday: "long", day: "numeric" })}: ${loading ? "loading" : `${day.count} completed sessions`}${isToday ? ", today" : ""}`}
+                className={`w-full items-center justify-center rounded-full ${completed ? "bg-white" : isToday ? "border border-white/60 bg-white/5" : "bg-white/5"}`}
+                style={{ aspectRatio: 1, opacity: day.date > today ? 0.35 : 1 }}
+              >
+                {completed ? (
+                  <MaterialCommunityIcons name="check" size={17} color="#000000" />
+                ) : (
+                  <Txt weight="medium" className="text-[11px]">
+                    {dateLabel(day.date, { day: "numeric" })}
+                  </Txt>
+                )}
+              </View>
+              <View className={`h-1 w-1 rounded-full ${isToday ? "bg-white" : "bg-transparent"}`} />
+            </View>
+          );
+        })}
+      </View>
+      <View className="mt-4 flex-row items-center gap-3 border-t border-white/5 pt-2">
+        <View className="min-w-0 flex-1">
+          <Txt className="text-[10px] leading-5 text-muted">
+            {reached
+              ? "Weekly goal reached. Keep your own pace."
+              : hasTarget
+                ? "Every session is a step forward."
+                : "Set a weekly goal that works for you."}
+          </Txt>
+        </View>
+        {onGoals && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Manage your goals"
+            onPress={onGoals}
+            className="min-h-11 flex-row items-center gap-1.5"
+          >
+            <Txt weight="medium" className="text-[11px]">
+              {hasTarget ? "Goals" : "Set goal"}
+            </Txt>
+            <MaterialCommunityIcons name="arrow-right" size={14} color="#FFFFFF" />
+          </Pressable>
+        )}
+      </View>
     </View>
   );
 }

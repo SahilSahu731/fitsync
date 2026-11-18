@@ -357,16 +357,19 @@ export function CustomExerciseEditor({
             )}
             <View className="flex-row gap-3">
               {step > 0 && (
-                <View className="w-24">
-                  <ProButton
-                    title="Back"
-                    secondary
+                <View className="w-14">
+                  <Pressable
+                    accessibilityRole="button"
+                    accessibilityLabel="Back"
                     disabled={busy}
                     onPress={() => {
                       setStep(step - 1);
                       setError("");
                     }}
-                  />
+                    className="h-14 w-14 items-center justify-center rounded-full bg-white/5"
+                  >
+                    <MaterialCommunityIcons name="arrow-left" size={21} color="#FFFFFF" />
+                  </Pressable>
                 </View>
               )}
               <View className="flex-1">
@@ -388,7 +391,7 @@ export function CustomExerciseEditor({
       }
     >
       {choice ? (
-        <View className="gap-3">
+        <View className="gap-3" pointerEvents={busy ? "none" : "auto"}>
           {(choice === "primaryMuscles" || choice === "secondaryMuscles") && (
             <View className="flex-row items-center justify-center rounded-[24px] border border-white/10 bg-black/30 py-4">
               <AnatomicalBody size={78} muscles={draft[choice]} />
@@ -451,7 +454,7 @@ export function CustomExerciseEditor({
             })}
         </View>
       ) : (
-        <View className="gap-5">
+        <View className="gap-5" pointerEvents={busy ? "none" : "auto"}>
           <View className="mb-1 flex-row gap-2">
             {["Basics", "Technique", "Review"].map((label, index) => (
               <View key={label} className="min-w-0 flex-1">
