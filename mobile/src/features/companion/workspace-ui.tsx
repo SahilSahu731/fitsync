@@ -220,7 +220,7 @@ export function CompanionDayBrief({
         <Txt weight="semibold" className="flex-1 text-xs text-black">
           {hasCheckIn ? "Update today’s check-in" : "How are you feeling?"}
         </Txt>
-        <MaterialCommunityIcons name="arrow-top-right" color="#000000" size={20} />
+        <MaterialCommunityIcons name="arrow-right" color="#000000" size={20} />
       </MotionPressable>
     </View>
   );
@@ -261,7 +261,7 @@ export function CompanionShortcuts({ onSelect }: { onSelect: (next: CompanionTab
           >
             <View className="mb-5 flex-row items-center justify-between">
               <MaterialCommunityIcons name={item.icon} color="#FFFFFF" size={24} />
-              <MaterialCommunityIcons name="arrow-top-right" color={PRO.muted} size={17} />
+              <MaterialCommunityIcons name="arrow-right" color={PRO.muted} size={17} />
             </View>
             <Txt weight="medium" className="text-sm">
               {item.label}

@@ -160,7 +160,13 @@ function fixture(options = {}) {
   const billing = { isPro: options.isPro ?? true, loading: false };
   const prefs = options.prefs ?? basePreferences();
   const companion = {
-    state: { records: [{ id: "reminders", kind: "reminders", revision: 3, data: prefs }] },
+    state: {
+      records: options.records ?? [
+        { id: "reminders", kind: "reminders", revision: 3, data: prefs },
+      ],
+    },
+    stateLoaded: options.stateLoaded ?? true,
+    stateError: options.stateError ?? null,
     loading: options.companionLoading ?? false,
     busy: false,
     error: options.companionError ?? "",
@@ -309,6 +315,76 @@ test("The simple dialog has three opt-in reminders and native time controls, wit
   assert.equal(ui.calls.closes, 1);
 });
 
+test("an unrelated companion error does not lock loaded reminder preferences", async () => {
+  const ui = fixture({ companionError: "Exercise usage could not refresh" });
+  for (const label of ["Workout reminders", "Water reminders", "Diet reminders"])
+    assert.equal(control(ui.instance.tree, label, "switch").props.disabled, false);
+  assert.doesNotMatch(text(ui.instance.tree), /saved reminders couldn’t refresh/);
+  ui.toggle("Water reminders", true);
+  ui.save();
+  await ui.instance.settle();
+  assert.equal(ui.calls.saves.length, 1);
+  assert.equal(ui.calls.saves[0][2].habits.hydration.enabled, true);
+  assert.equal(ui.calls.closes, 1);
+});
+
+test("a program refresh error only blocks workout controls, leaving water and diet editable", async () => {
+  const ui = fixture({ program: enrollment(), programError: "Program is offline" });
+  assert.equal(control(ui.instance.tree, "Workout reminders", "switch").props.disabled, true);
+  assert.equal(control(ui.instance.tree, "Water reminders", "switch").props.disabled, false);
+  assert.equal(control(ui.instance.tree, "Diet reminders", "switch").props.disabled, false);
+  ui.toggle("Workout reminders", false);
+  assert.equal(control(ui.instance.tree, "Workout reminders", "switch").props.value, true);
+  ui.toggle("Diet reminders", true);
+  ui.chooseTime("Choose diet reminder time", 13, 10);
+  ui.save();
+  await ui.instance.settle();
+  assert.equal(ui.calls.saves.length, 1);
+  assert.equal(ui.calls.saves[0][2].habits.meals.time, "13:10");
+  assert.equal(ui.calls.saves[0][2].habits.meals.enabled, true);
+  assert.equal(ui.calls.saves[0][2].enabled, false);
+  assert.equal(ui.calls.saves[0][2].time, "18:00");
+  assert.deepEqual(ui.calls.saves[0][2].days, [1, 3, 5]);
+  assert.equal(ui.calls.programs.length, 0);
+  assert.equal(ui.calls.closes, 1);
+});
+
+test("a failed background settings refresh retains editable saved preferences and their revision", async () => {
+  const ui = fixture({ stateError: "Offline", stateLoaded: true });
+  for (const label of ["Workout reminders", "Water reminders", "Diet reminders"])
+    assert.equal(control(ui.instance.tree, label, "switch").props.disabled, false);
+  ui.toggle("Water reminders", true);
+  ui.save();
+  await ui.instance.settle();
+  assert.equal(ui.calls.saves[0][4], 3);
+  assert.equal(ui.calls.saves[0][2].habits.sleep.time, "21:00");
+  assert.equal(ui.calls.closes, 1);
+});
+
+test("an initial settings failure blocks saving defaults until the real preferences load", async () => {
+  const ui = fixture({ stateError: "Offline", stateLoaded: false, records: [] });
+  for (const label of ["Workout reminders", "Water reminders", "Diet reminders"])
+    assert.equal(control(ui.instance.tree, label, "switch").props.disabled, true);
+  control(ui.instance.tree, "Retry reminders");
+  ui.toggle("Water reminders", true);
+  ui.save();
+  await ui.instance.settle();
+  assert.equal(ui.calls.saves.length, 0);
+  assert.equal(ui.calls.permissions, 0);
+  ui.companion.state = {
+    records: [{ id: "reminders", kind: "reminders", revision: 8, data: basePreferences() }],
+  };
+  ui.companion.stateLoaded = true;
+  ui.companion.stateError = null;
+  ui.instance.render();
+  assert.equal(control(ui.instance.tree, "Water reminders", "switch").props.disabled, false);
+  ui.toggle("Water reminders", true);
+  ui.save();
+  await ui.instance.settle();
+  assert.equal(ui.calls.saves[0][4], 8);
+  assert.equal(ui.calls.closes, 1);
+});
+
 test("Permission denial leaves the enabled draft available to retry and opens phone settings", async () => {
   const ui = fixture({ permission: false });
   ui.toggle("Diet reminders", true);
@@ -451,6 +527,57 @@ test("A partial personal save is not duplicated when the program update is retri
   assert.equal(ui.calls.programs.length, 2);
   assert.equal(ui.calls.closes, 1);
 });
+
+test("a draft created without a program retains that captured identity after later habit edits", async () => {
+  const ui = fixture();
+  ui.toggle("Water reminders", true);
+  ui.program.active = { enrollment: enrollment() };
+  ui.instance.render();
+  assert.equal(control(ui.instance.tree, "Workout reminders", "switch").props.disabled, true);
+  ui.toggle("Diet reminders", true);
+  assert.equal(control(ui.instance.tree, "Workout reminders", "switch").props.disabled, true);
+  assert.match(text(ui.instance.tree), /training program changed/);
+  control(ui.instance.tree, "Choose workout reminder time").props.onPress();
+  assert.equal(ui.calls.pickers.length, 0);
+  ui.save();
+  await ui.instance.settle();
+  assert.equal(ui.calls.saves.length, 1);
+  assert.equal(ui.calls.saves[0][2].enabled, false);
+  assert.equal(ui.calls.saves[0][2].time, "18:00");
+  assert.deepEqual(ui.calls.saves[0][2].days, [1, 3, 5]);
+  assert.equal(ui.calls.saves[0][2].habits.hydration.enabled, true);
+  assert.equal(ui.calls.saves[0][2].habits.meals.enabled, true);
+  assert.equal(ui.calls.programs.length, 0);
+  assert.equal(ui.calls.closes, 1);
+});
+
+for (const readiness of ["refreshing", "failed"]) {
+  test(`a workout save stops if the program becomes ${readiness} while notification permission is pending`, async () => {
+    const permission = deferred();
+    const ui = fixture({ program: enrollment(), permission: permission.promise });
+    ui.chooseTime("Choose workout reminder time", 19, 0);
+    ui.save();
+    await tick();
+    assert.equal(ui.calls.permissions, 1);
+    ui.program.loading = readiness === "refreshing";
+    ui.program.error = readiness === "failed" ? "Offline" : "";
+    ui.instance.render();
+    permission.resolve(true);
+    await ui.instance.settle();
+    assert.equal(ui.calls.registrations.length, 0);
+    assert.equal(ui.calls.programs.length, 0);
+    assert.equal(ui.calls.saves.length, 0);
+    assert.equal(ui.calls.closes, 0);
+    ui.program.loading = false;
+    ui.program.error = "";
+    ui.instance.render();
+    ui.save();
+    await ui.instance.settle();
+    assert.equal(ui.calls.programs.length, 1);
+    assert.equal(ui.calls.programs[0][1].hour, 19);
+    assert.equal(ui.calls.closes, 1);
+  });
+}
 
 for (const change of ["membership", "active program"]) {
   test(`Pending saves stop after ${change} changes`, async () => {

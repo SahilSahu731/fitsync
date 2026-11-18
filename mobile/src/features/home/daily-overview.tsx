@@ -207,7 +207,7 @@ export function DailyOverview({
             className="h-11 w-11 items-center justify-center rounded-full bg-white/5"
           >
             <MaterialCommunityIcons
-              name={onNutrition ? "arrow-top-right" : "plus"}
+              name={onNutrition ? "arrow-right" : "plus"}
               size={21}
               color="#FFFFFF"
             />

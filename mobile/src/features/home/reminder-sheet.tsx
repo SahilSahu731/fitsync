@@ -29,6 +29,7 @@ type Draft = {
   base: ReturnType<typeof defaultReminders>;
   revision: number;
   programId: string | null;
+  workoutEdited: boolean;
 };
 const ITEMS = [
   {
@@ -94,26 +95,28 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
     ownerId,
     isPro: billing.isPro,
     programId: activeEnrollment?.id ?? null,
+    workoutReady: !program.loading && !program.error,
   });
   useLayoutEffect(() => {
-    current.current = { ownerId, isPro: billing.isPro, programId: activeEnrollment?.id ?? null };
-    return () => {
-      current.current = { ownerId: "", isPro: false, programId: null };
+    current.current = {
+      ownerId,
+      isPro: billing.isPro,
+      programId: activeEnrollment?.id ?? null,
+      workoutReady: !program.loading && !program.error,
     };
-  }, [ownerId, billing.isPro, activeEnrollment?.id]);
+    return () => {
+      current.current = { ownerId: "", isPro: false, programId: null, workoutReady: false };
+    };
+  }, [ownerId, billing.isPro, activeEnrollment?.id, program.loading, program.error]);
   const source = homeReminderDraft(base, enrollment, settings?.workoutReminders ?? false);
   const values = draft?.values ?? source;
-  const loading = billing.loading || companion.loading || program.loading;
-  const sourceError = companion.error || program.error;
+  const loading = billing.loading || (!companion.stateLoaded && companion.loading);
+  const sourceError = companion.stateError;
   const programChanged = draft !== null && draft.programId !== (activeEnrollment?.id ?? null);
+  const workoutUnavailable = program.loading || Boolean(program.error) || programChanged;
   const disabled =
-    loading ||
-    working ||
-    companion.busy ||
-    !billing.isPro ||
-    !ownerId ||
-    Boolean(sourceError) ||
-    programChanged;
+    loading || !companion.stateLoaded || working || companion.busy || !billing.isPro || !ownerId;
+  const disabledFor = (kind: Kind) => disabled || (kind === "workout" && workoutUnavailable);
   const personal = homeReminderPreferences(draft?.base ?? base, values, Boolean(enrollment));
   const quietKinds = ITEMS.filter((item) => {
     if (!values[item.kind].enabled || (item.kind === "workout" && enrollment)) return false;
@@ -129,18 +132,19 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
     }
   });
 
-  function change(update: (value: HomeReminderDraft) => HomeReminderDraft) {
-    if (disabled || lock.current) return;
+  function change(kind: Kind, update: (value: HomeReminderDraft) => HomeReminderDraft) {
+    if (disabledFor(kind) || lock.current) return;
     setDraft((previous) => ({
       values: update(previous?.values ?? source),
       base: previous?.base ?? base,
       revision: previous?.revision ?? saved?.revision ?? 0,
-      programId: previous?.programId ?? activeEnrollment?.id ?? null,
+      programId: previous ? previous.programId : (activeEnrollment?.id ?? null),
+      workoutEdited: previous?.workoutEdited === true || kind === "workout",
     }));
     setError("");
   }
   function chooseTime(kind: Kind) {
-    if (disabled || !values[kind].enabled) return;
+    if (disabledFor(kind) || !values[kind].enabled) return;
     if (Platform.OS === "android") {
       DateTimePickerAndroid.open({
         mode: "time",
@@ -148,7 +152,7 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
         onValueChange: (_, value) => {
           if (!current.current.isPro || current.current.ownerId !== ownerId || lock.current) return;
           const time = `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
-          change((previous) => ({ ...previous, [kind]: { ...previous[kind], time } }));
+          change(kind, (previous) => ({ ...previous, [kind]: { ...previous[kind], time } }));
         },
       });
     } else setPicker((currentKind) => (currentKind === kind ? null : kind));
@@ -159,8 +163,35 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
   async function save() {
     if (disabled || lock.current || !draft) return;
     const snapshot = draft;
-    const next = homeReminderPreferences(snapshot.base, snapshot.values, Boolean(enrollment));
-    if (!validHomeReminderDraft(snapshot.base, snapshot.values, Boolean(enrollment))) {
+    if (snapshot.workoutEdited && workoutUnavailable) {
+      setError("Refresh your workout reminder before saving its changes. Your edits are kept.");
+      return;
+    }
+    const mapped = homeReminderPreferences(snapshot.base, snapshot.values, Boolean(enrollment));
+    // Water/diet changes never rewrite workout settings using an unavailable
+    // or changed program snapshot.
+    const next = snapshot.workoutEdited
+      ? mapped
+      : {
+          ...mapped,
+          enabled: snapshot.base.enabled,
+          time: snapshot.base.time,
+          days: snapshot.base.days,
+        };
+    const checkedValues = snapshot.workoutEdited
+      ? snapshot.values
+      : {
+          ...snapshot.values,
+          workout: { enabled: snapshot.base.enabled, time: snapshot.base.time },
+          days: snapshot.base.days,
+        };
+    if (
+      !validHomeReminderDraft(
+        snapshot.base,
+        checkedValues,
+        snapshot.workoutEdited && Boolean(enrollment),
+      )
+    ) {
       setError("Choose valid times and at least one workout day.");
       return;
     }
@@ -169,7 +200,8 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
     const valid = () =>
       current.current.ownerId === account &&
       current.current.isPro &&
-      current.current.programId === enrollmentId;
+      (!snapshot.workoutEdited ||
+        (current.current.workoutReady && current.current.programId === enrollmentId));
     const personalChanged = changed(snapshot.base, next);
     const activatingPersonal =
       (next.enabled &&
@@ -181,6 +213,7 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
           next.habits?.[kind]?.enabled && changed(next.habits[kind], snapshot.base.habits?.[kind]),
       );
     const workoutChanged =
+      snapshot.workoutEdited &&
       !!enrollment &&
       changed(
         snapshot.values.workout,
@@ -304,13 +337,34 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
       {!!sourceError && (
         <View className="mb-4 rounded-2xl bg-white/5 p-4">
           <Txt className="text-xs leading-5 text-muted">
-            Your saved reminders couldn’t refresh. Your settings are kept.
+            {companion.stateLoaded
+              ? "Showing your last loaded reminder settings."
+              : "Your reminder settings haven’t loaded yet."}{" "}
+            {sourceError}
           </Txt>
           <Pressable
             accessibilityRole="button"
             accessibilityLabel="Retry reminders"
             disabled={working || loading}
-            onPress={() => void Promise.allSettled([companion.refresh(), program.refresh()])}
+            onPress={() => void companion.refresh()}
+            className="min-h-11 justify-center"
+          >
+            <Txt weight="medium" className="text-xs">
+              Try again
+            </Txt>
+          </Pressable>
+        </View>
+      )}
+      {!!program.error && (
+        <View className="mb-4 rounded-2xl bg-white/5 p-4">
+          <Txt className="text-xs leading-5 text-muted">
+            Workout reminders couldn’t refresh. You can still change water and diet reminders.
+          </Txt>
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Retry workout reminders"
+            disabled={working || program.loading}
+            onPress={() => void program.refresh()}
             className="min-h-11 justify-center"
           >
             <Txt weight="medium" className="text-xs">
@@ -321,12 +375,14 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
       )}
       {programChanged && (
         <Txt accessibilityRole="alert" className="mb-4 text-xs leading-5 text-muted">
-          Your training program changed. Close and reopen reminders before saving.
+          Your training program changed. Reopen this sheet to edit workout reminders. Water and diet
+          are still available.
         </Txt>
       )}
       <View className="gap-3">
         {ITEMS.map((item) => {
           const setting = values[item.kind];
+          const itemDisabled = disabledFor(item.kind);
           const timezone =
             item.kind === "workout" && enrollment ? enrollment.timezone : personal.timezone;
           return (
@@ -351,9 +407,9 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
                 <Switch
                   accessibilityLabel={`${item.title} reminders`}
                   value={setting.enabled}
-                  disabled={disabled}
+                  disabled={itemDisabled}
                   onValueChange={(enabled) =>
-                    change((previous) => ({
+                    change(item.kind, (previous) => ({
                       ...previous,
                       [item.kind]: { ...previous[item.kind], enabled },
                     }))
@@ -365,8 +421,8 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
               <Pressable
                 accessibilityRole="button"
                 accessibilityLabel={`Choose ${item.title.toLowerCase()} reminder time`}
-                accessibilityState={{ disabled: disabled || !setting.enabled }}
-                disabled={disabled || !setting.enabled}
+                accessibilityState={{ disabled: itemDisabled || !setting.enabled }}
+                disabled={itemDisabled || !setting.enabled}
                 onPress={() => chooseTime(item.kind)}
                 className="mt-3 min-h-12 flex-row items-center gap-2 rounded-full bg-white/5 px-4"
                 style={{ opacity: setting.enabled ? 1 : 0.4 }}
@@ -385,7 +441,7 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
                   value={timeDate(setting.time)}
                   onValueChange={(_, value) => {
                     const time = `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
-                    change((previous) => ({
+                    change(item.kind, (previous) => ({
                       ...previous,
                       [item.kind]: { ...previous[item.kind], time },
                     }));
@@ -397,7 +453,7 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
                   <Pressable
                     accessibilityRole="button"
                     accessibilityLabel="Change workout reminder days"
-                    disabled={disabled}
+                    disabled={itemDisabled}
                     onPress={() => setShowDays((value) => !value)}
                     className="min-h-11 flex-row items-center gap-2"
                   >
@@ -424,10 +480,10 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
                             key={day}
                             accessibilityRole="checkbox"
                             accessibilityLabel={day}
-                            accessibilityState={{ checked: selected, disabled }}
-                            disabled={disabled}
+                            accessibilityState={{ checked: selected, disabled: itemDisabled }}
+                            disabled={itemDisabled}
                             onPress={() =>
-                              change((previous) => ({
+                              change("workout", (previous) => ({
                                 ...previous,
                                 days: selected
                                   ? previous.days.filter((value) => value !== number)

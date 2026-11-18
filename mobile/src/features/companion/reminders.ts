@@ -83,6 +83,13 @@ async function clear() {
 export function clearCompanionReminders() {
   return enqueue(clear);
 }
+/** Keep this account's last schedule while its saved preferences are loading. */
+export function retainCompanionRemindersForOwner(ownerId: string) {
+  return enqueue(async () => {
+    const previous = await read();
+    if (!ownerId || previous?.ownerId !== ownerId) await clear();
+  });
+}
 export async function requestCompanionReminderPermission() {
   if (Platform.OS === "web") return false;
   await configure();
@@ -94,14 +101,29 @@ export function reconcileCompanionReminders(input: {
   prefs: ReminderPreferences;
   sessions: ReminderSession[];
   completedDates: string[];
+  /** A missing training resource must not replace an existing workout schedule. */
+  preserveTraining?: boolean;
   now?: number;
 }) {
   return enqueue(async () => {
     if (Platform.OS === "web")
       return { permission: "unsupported" as const, scheduled: 0, suppressedByQuietHours: 0 };
     const previous = await read();
+    const now = input.now ?? Date.now();
     const valid = validReminderPreferences(input.prefs);
-    const enabled = anyReminderEnabled(input.prefs);
+    const preferences = input.preserveTraining ? { ...input.prefs, enabled: false } : input.prefs;
+    const today = valid ? reminderDate(now, input.prefs.timezone) : "";
+    const preservedTraining =
+      input.preserveTraining && previous?.ownerId === input.ownerId
+        ? previous.items.filter(
+            (item) =>
+              (item.kind ?? "training") === "training" &&
+              (item.at > now || item.date === today) &&
+              !input.completedDates.includes(item.date) &&
+              !input.sessions.some((session) => session.id === item.sessionId && session.completed),
+          )
+        : [];
+    const enabled = anyReminderEnabled(preferences) || preservedTraining.length > 0;
     if (previous?.ownerId !== input.ownerId || !input.ownerId || !enabled || !valid) await clear();
     if (!input.ownerId || !enabled || !valid)
       return { permission: "undetermined" as const, scheduled: 0, suppressedByQuietHours: 0 };
@@ -116,10 +138,12 @@ export function reconcileCompanionReminders(input: {
         suppressedByQuietHours: 0,
       };
     }
-    const { planned, suppressedByQuietHours } = planCompanionReminders(input);
+    const { planned, suppressedByQuietHours } = planCompanionReminders({
+      ...input,
+      prefs: preferences,
+    });
     const old = previous?.ownerId === input.ownerId ? previous.items : [];
-    const items: Stored["items"] = [];
-    const now = input.now ?? Date.now();
+    const items: Stored["items"] = [...preservedTraining];
     for (const item of planned) {
       // Keep legacy training IDs stable; habits have separate per-day identities.
       const id = `${PREFIX}${input.ownerId}-${item.kind === "training" ? "" : `${item.kind}-`}${item.date}`;
@@ -137,6 +161,7 @@ export function reconcileCompanionReminders(input: {
     // when opening the app triggers a reconciliation before the action handler.
     for (const item of old) {
       const kind = item.kind ?? "training";
+      if (input.preserveTraining && kind === "training") continue;
       if (!reminderKindEnabled(input.prefs, kind)) continue;
       const keepDelivered = item.date === reminderDate(now, input.prefs.timezone) && item.at <= now;
       if (!(item.snoozed && item.at > now) && !keepDelivered) continue;

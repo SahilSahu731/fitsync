@@ -104,7 +104,7 @@ export function HomeEssentials({ onNavigate }: { onNavigate: (route: Href) => vo
               >
                 <View className="mb-4 flex-row items-center justify-between">
                   <MaterialCommunityIcons name={item.icon} size={23} color="#FFFFFF" />
-                  <MaterialCommunityIcons name="arrow-top-right" size={15} color="#777777" />
+                  <MaterialCommunityIcons name="arrow-right" size={15} color="#777777" />
                 </View>
                 <Txt weight="medium" className="text-xs">
                   {item.title}

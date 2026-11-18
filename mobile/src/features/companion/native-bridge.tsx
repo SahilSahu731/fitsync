@@ -16,6 +16,7 @@ import { useCompanion } from "./companion-context";
 import { defaultReminders, type CompanionRecord } from "./api";
 import {
   clearCompanionReminders,
+  retainCompanionRemindersForOwner,
   handleCompanionReminderResponse,
   reconcileCompanionReminders,
 } from "./reminders";
@@ -44,7 +45,8 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
     processed = useRef(new Set<string>());
   const [journal, setJournal] = useState<Journal>(emptyJournal),
     [plan, setPlan] = useState<CoachingPlan | null>(null);
-  const [loaded, setLoaded] = useState(false),
+  const [planLoaded, setPlanLoaded] = useState(false),
+    [journalLoaded, setJournalLoaded] = useState(false),
     [tick, setTick] = useState(0);
   const [fetchedAt, setFetchedAt] = useState<string | null>(null);
   const [clock, setClock] = useState(Date.now);
@@ -65,9 +67,10 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
   const pauseKey = `fitsync.companion.paused-rest.v1.${ownerId}`;
   useEffect(() => {
     alive.current = true;
-    // Remove the previous account before any new asynchronous snapshot arrives.
+    // Remove another account's notifications without deleting this account's
+    // persisted schedule before its preferences have loaded.
     void Promise.allSettled([
-      clearCompanionReminders(),
+      retainCompanionRemindersForOwner(ownerId),
       clearCompanionWidget(),
       clearCompanionWorkoutControls(),
     ]);
@@ -80,34 +83,22 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
     });
     return () => {
       alive.current = false;
-      void Promise.allSettled([
-        clearCompanionReminders(),
-        clearCompanionWidget(),
-        clearCompanionWorkoutControls(),
-      ]);
+      // Remounts must retain the persisted schedule. The next account's mount
+      // clears it when ownership changes, including sign-out.
+      void Promise.allSettled([clearCompanionWidget(), clearCompanionWorkoutControls()]);
     };
   }, [ownerId]);
   useEffect(() => {
     if (!ownerId) return;
     let active = true,
       sequence = 0;
+    let newerJournalPublished = false;
     const valid = () => active && alive.current;
     const refresh = async () => {
       const request = ++sequence;
-      try {
-        const [state, saved] = await Promise.all([
-          coachingForOwner(ownerId).get(),
-          syncWorkouts(ownerId, valid),
-        ]);
-        if (valid() && sequence === request) {
-          setPlan(state.plan);
-          setJournal(saved);
-          setLoaded(true);
-          setFetchedAt(new Date().toISOString());
-          setTick((value) => value + 1);
-        }
-      } catch (error) {
-        if (valid())
+      const latest = () => valid() && sequence === request;
+      const failed = (error: unknown) => {
+        if (latest())
           setCompanionNativeStatus({
             ownerId,
             permission: "undetermined",
@@ -115,16 +106,50 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
             suppressedByQuietHours: 0,
             error: `Companion sync paused: ${error instanceof Error ? error.message : "reconnect to refresh your plan and reminders."}`,
           });
-      }
+      };
+      // Daily habits do not depend on a coaching plan or a workout-history request.
+      await Promise.allSettled([
+        (async () => {
+          try {
+            const state = await coachingForOwner(ownerId).get();
+            if (!latest()) return;
+            setPlan(state.plan);
+            setPlanLoaded(true);
+            setTick((value) => value + 1);
+          } catch (error) {
+            failed(error);
+          }
+        })(),
+        (async () => {
+          try {
+            const saved = await syncWorkouts(ownerId, valid);
+            if (!latest()) return;
+            newerJournalPublished = true;
+            setJournal(saved);
+            setJournalLoaded(true);
+            setFetchedAt(new Date().toISOString());
+            setTick((value) => value + 1);
+          } catch (error) {
+            failed(error);
+          }
+        })(),
+      ]);
     };
     void readJournal(ownerId)
       .then((saved) => {
-        if (valid()) setJournal(saved);
+        if (valid() && !newerJournalPublished) {
+          setJournal(saved);
+          setJournalLoaded(true);
+        }
       })
       .catch(() => {});
     void refresh();
     const journalSubscription = subscribeJournal((account, saved) => {
-      if (account === ownerId && valid()) setJournal(saved);
+      if (account === ownerId && valid()) {
+        newerJournalPublished = true;
+        setJournal(saved);
+        setJournalLoaded(true);
+      }
     });
     const coachingSubscription = subscribeCoachingChange(() => {
       void refresh();
@@ -224,6 +249,9 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
       ).values(),
     ];
   }, [journal.workouts, workout.completedWorkout]);
+  const followed = program.active?.enrollment.status === "active" ? program.active : null;
+  const programKnown = !program.loading && (!program.error || Boolean(program.active));
+  const trainingReady = journalLoaded && programKnown && (Boolean(followed) || planLoaded);
   const snapshotKey = JSON.stringify({
     prefs,
     plan,
@@ -231,20 +259,21 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
     complete: completed.map((item) => [item.id, item.finished_at]),
     active: workout.session?.id,
     tick,
-    loaded,
+    trainingReady,
+    journalLoaded,
     fetchedAt,
   });
   useEffect(() => {
     if (Platform.OS === "web" || !ownerId) return;
+    if (billing.loading) return;
     if (!billing.isPro) {
       void Promise.allSettled([clearCompanionReminders(), clearCompanionWidget()]);
       return;
     }
-    if (!loaded || companion.loading || program.loading) return;
+    if (!companion.stateLoaded) return;
     let valid = true;
     void (async () => {
       const completedIds = new Set(completed.map((item) => item.id));
-      const followed = program.active?.enrollment.status === "active" ? program.active : null;
       const sessions = followed
         ? followed.slots.map((slot) => ({
             id: slot.id,
@@ -270,12 +299,14 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
       const next = sessions
         .filter((day) => !day.completed && day.date >= today)
         .sort((a, b) => a.date.localeCompare(b.date))[0];
-      const personalPrefs = followed?.enrollment.reminder_enabled
-        ? { ...prefs, enabled: false }
-        : prefs;
+      const personalPrefs =
+        !trainingReady || followed?.enrollment.reminder_enabled
+          ? { ...prefs, enabled: false }
+          : prefs;
       const result = await reconcileCompanionReminders({
         ownerId,
         prefs: personalPrefs,
+        preserveTraining: !trainingReady,
         sessions,
         completedDates:
           followed || plan
@@ -283,16 +314,17 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
             : completed.map((item) => reminderDate(Date.parse(item.finished_at!), timezone)),
       });
       if (!valid || !alive.current) return;
-      await publishCompanionWidget({
-        ownerId,
-        nextSessionTitle: next?.title ?? null,
-        nextSessionDate: next?.date ?? null,
-        weeklyCompleted: weekly,
-        weeklyTarget: currentGoals(journal.events, profile?.trainingDays ?? 3).weeklyWorkouts,
-        activeSessionId: workout.session?.id ?? null,
-        updatedAt: fetchedAt ?? new Date().toISOString(),
-        timezone,
-      });
+      if (trainingReady)
+        await publishCompanionWidget({
+          ownerId,
+          nextSessionTitle: next?.title ?? null,
+          nextSessionDate: next?.date ?? null,
+          weeklyCompleted: weekly,
+          weeklyTarget: currentGoals(journal.events, profile?.trainingDays ?? 3).weeklyWorkouts,
+          activeSessionId: workout.session?.id ?? null,
+          updatedAt: fetchedAt ?? new Date().toISOString(),
+          timezone,
+        });
       if (valid && alive.current) setCompanionNativeStatus({ ownerId, ...result, error: null });
     })().catch((error) => {
       if (valid && alive.current)
@@ -315,7 +347,8 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
   }, [
     ownerId,
     billing.isPro,
-    companion.loading,
+    billing.loading,
+    companion.stateLoaded,
     program.loading,
     snapshotKey,
     timezone,
@@ -331,7 +364,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
         !current.current.isPro ||
         actionBusy.current ||
         workout.loading ||
-        companion.loading
+        !companion.stateLoaded
       )
         return;
       const request = response.notification.request;
@@ -410,6 +443,6 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
       mounted = false;
       subscription.remove();
     };
-  }, [ownerId, pauseKey, billing.isPro, workout.loading, companion.loading]);
+  }, [ownerId, pauseKey, billing.isPro, workout.loading, companion.stateLoaded]);
   return null;
 }

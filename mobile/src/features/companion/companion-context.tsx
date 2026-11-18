@@ -24,6 +24,8 @@ type CompanionContextValue = {
   state: CompanionState;
   replacements: ReplacementEvidence[] | null;
   loading: boolean;
+  stateLoaded: boolean;
+  stateError: string | null;
   busy: boolean;
   error: string | null;
   refresh: () => Promise<void>;
@@ -56,6 +58,8 @@ function AccountCompanion({ ownerId, children }: { ownerId: string; children: Re
   const [loading, setLoading] = useState(!!ownerId),
     [busy, setBusy] = useState(false),
     [error, setError] = useState<string | null>(null);
+  const [stateLoaded, setStateLoaded] = useState(false);
+  const [stateError, setStateError] = useState<string | null>(null);
   useLayoutEffect(() => {
     current.current = ownerId;
     return () => {
@@ -65,16 +69,32 @@ function AccountCompanion({ ownerId, children }: { ownerId: string; children: Re
   const refresh = useCallback(async () => {
     if (!ownerId) return;
     const revision = ++request.current;
+    // Exercise history is optional evidence. Its failure or latency must not
+    // discard successfully loaded reminder settings or block their saves.
+    void api
+      .exerciseUsage()
+      .then((usage) => {
+        if (current.current === ownerId && revision === request.current)
+          setReplacements(usage.replacements);
+      })
+      .catch(() => {
+        /* Retain previous evidence, or null when it has never loaded. */
+      });
     try {
-      const [result, usage] = await Promise.all([api.state(), api.exerciseUsage()]);
+      const result = await api.state();
       if (current.current === ownerId && revision === request.current) {
         setState(result);
-        setReplacements(usage.replacements);
+        setStateLoaded(true);
+        setStateError(null);
         setError(null);
       }
     } catch (failure) {
-      if (current.current === ownerId && revision === request.current)
-        setError(failure instanceof Error ? failure.message : "Could not sync your Pro companion.");
+      if (current.current === ownerId && revision === request.current) {
+        const message =
+          failure instanceof Error ? failure.message : "Could not sync your Pro companion.";
+        setStateError(message);
+        setError(message);
+      }
     } finally {
       if (current.current === ownerId && revision === request.current) setLoading(false);
     }
@@ -136,7 +156,19 @@ function AccountCompanion({ ownerId, children }: { ownerId: string; children: Re
   }
   return (
     <Context.Provider
-      value={{ state, replacements, loading, busy, error, refresh, api, run, save }}
+      value={{
+        state,
+        replacements,
+        loading,
+        stateLoaded,
+        stateError,
+        busy,
+        error,
+        refresh,
+        api,
+        run,
+        save,
+      }}
     >
       {children}
     </Context.Provider>

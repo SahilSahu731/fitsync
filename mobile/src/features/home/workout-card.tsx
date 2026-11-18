@@ -136,23 +136,22 @@ function AccountWorkoutCard({
   // A workout always takes priority over membership, programs and loading plan data.
   if (workout.session) {
     const session = workout.session;
-    const movements = [...session.workout_session_exercises].sort(
-      (a, b) => a.position - b.position,
-    );
+    const movements = session.workout_session_exercises;
     const sets = movements.flatMap((movement) => movement.workout_logged_sets);
     const completed = sets.filter((set) => Boolean(set.completed_at)).length;
     return (
       <WorkoutShell
         eyebrow="WORKOUT IN PROGRESS"
         title={session.name}
-        description="Your session is right where you left it."
+        description="You’ve made the start. Keep your momentum."
         icon="dumbbell"
         meta={[
-          `${movements.length} ${movements.length === 1 ? "exercise" : "exercises"}`,
-          `${completed} / ${sets.length} sets logged`,
+          ...(movements.length
+            ? [`${movements.length} ${movements.length === 1 ? "exercise" : "exercises"}`]
+            : []),
+          ...(sets.length ? [`${completed} of ${sets.length} sets logged`] : []),
         ]}
       >
-        <MovementPreview names={movements.map((movement) => movement.exercise_name)} />
         <HomeButton title="Resume workout" icon="play" onPress={() => router.push("/workout")} />
       </WorkoutShell>
     );
@@ -162,9 +161,9 @@ function AccountWorkoutCard({
   if (workout.pendingCompletion)
     return (
       <WorkoutShell
-        eyebrow="WORKOUT SAVED ON THIS DEVICE"
-        title="Finish syncing. Then go again."
-        description="Sync your completed workout before starting another session."
+        eyebrow="Workout Saved"
+        title="Your effort counts."
+        description="One last sync to save your session to your account."
         icon="cloud-upload-outline"
       >
         {error}
@@ -191,7 +190,7 @@ function AccountWorkoutCard({
   if (workout.loading || billing.loading || (billing.isPro && program.loading))
     return (
       <WorkoutShell
-        eyebrow="TODAY’S WORKOUT"
+        eyebrow="Today's Workout"
         title="Your next move."
         description="Opening your workout and training plan…"
         icon="dumbbell"
@@ -203,13 +202,18 @@ function AccountWorkoutCard({
   if (!billing.isPro)
     return (
       <WorkoutShell
-        eyebrow="YOUR NEXT WORKOUT"
-        title="A little stronger, today."
-        description="Pick a ready-made routine or start empty. Every rep is yours."
+        eyebrow="Today's Workout"
+        title={"Make today count."}
+        description="Start where you are. Build from here."
         icon="dumbbell"
+        hero
       >
-        <HomeButton title="Start a workout" icon="plus" onPress={quickStart} disabled={!canStart} />
-        <SecondaryLink title="My routines" onPress={() => router.push("/(tabs)/train")} />
+        <HomeButton
+          title="Start a workout"
+          icon="arrow-right"
+          onPress={quickStart}
+          disabled={!canStart}
+        />
       </WorkoutShell>
     );
 
@@ -223,7 +227,15 @@ function AccountWorkoutCard({
       <WorkoutShell
         eyebrow={focus.eyebrow}
         title={focus.title}
-        description={focus.description}
+        description={
+          focus.kind === "workout"
+            ? "Your plan is ready. Take it one set at a time."
+            : focus.kind === "inProgress"
+              ? "You’ve made the start. Keep your momentum."
+              : focus.kind === "done"
+                ? "You showed up. Take a moment to enjoy that."
+                : focus.description
+        }
         icon={
           focus.kind === "rest"
             ? "moon-waning-crescent"
@@ -231,29 +243,8 @@ function AccountWorkoutCard({
               ? "check"
               : "dumbbell"
         }
-        meta={[
-          detail.enrollment.program_name,
-          `Week ${detail.week} of ${detail.enrollment.duration_weeks}`,
-        ]}
+        meta={[detail.enrollment.program_name]}
       >
-        {detail.analytics.planned > 0 && (
-          <View className="mb-5 mt-4">
-            <View className="mb-2 flex-row justify-between gap-3">
-              <Txt className="flex-1 text-[10px] text-muted">Program sessions</Txt>
-              <Txt weight="medium" className="text-[10px]">
-                {detail.analytics.completed} / {detail.analytics.planned}
-              </Txt>
-            </View>
-            <View className="h-1 overflow-hidden rounded-full bg-white/10">
-              <View
-                className="h-full rounded-full bg-white"
-                style={{
-                  width: `${Math.max(0, Math.min(100, (detail.analytics.completed / detail.analytics.planned) * 100))}%`,
-                }}
-              />
-            </View>
-          </View>
-        )}
         {program.error ? (
           <>
             <ErrorMessage message="Your program couldn’t refresh. Reconnect to load the latest session." />
@@ -302,15 +293,14 @@ function AccountWorkoutCard({
       <WorkoutShell
         eyebrow={day.status === "active" ? "YOUR PLAN · IN PROGRESS" : "TODAY’S WORKOUT"}
         title={day.name}
-        description={plan?.name ?? "Your personal training plan"}
+        description={
+          day.status === "active"
+            ? "You’ve made the start. Keep your momentum."
+            : "Your plan is ready. Take it one set at a time."
+        }
         icon="dumbbell"
-        meta={[
-          `${day.prescription.minutes} min`,
-          `${day.prescription.exercises.length} exercises`,
-          `Week ${day.week} · Day ${day.day}`,
-        ]}
+        meta={[`${day.prescription.minutes} min`, `${day.prescription.exercises.length} exercises`]}
       >
-        <MovementPreview names={day.prescription.exercises.map((movement) => movement.name)} />
         {error}
         {planFailure ? (
           <>
@@ -349,23 +339,22 @@ function AccountWorkoutCard({
   return (
     <WorkoutShell
       eyebrow={plan ? "TODAY’S WORKOUT" : "YOUR NEXT WORKOUT"}
-      title={
-        completed ? "Today’s session, done." : plan ? "Room to recover." : "Make your next move."
-      }
+      title={completed ? "You showed up." : plan ? "Room to recover." : "Make today count."}
       description={
         planLoading
           ? "Checking today’s training plan…"
           : planFailure
             ? "Your plan couldn’t refresh. You can still choose a workout."
             : completed
-              ? `${completed.name} is logged. Keep your momentum at your pace.`
+              ? `${completed.name} is logged. Give yourself credit.`
               : plan
                 ? next
                   ? `Next up: ${next.name}, ${dateLabel(next.date)}.`
-                  : "No session is scheduled today. Review your plan or choose your own workout."
-                : "Choose a workout for today, or follow a program built around your goal."
+                  : "Recovery is part of getting stronger. Go at your own pace."
+                : "Start where you are. Build from here."
       }
       icon={completed ? "check" : plan ? "moon-waning-crescent" : "dumbbell"}
+      hero={!plan && !planLoading && !planFailure}
     >
       {error}
       <HomeButton
@@ -389,6 +378,7 @@ function WorkoutShell({
   description,
   icon,
   meta = [],
+  hero = false,
   children,
 }: {
   eyebrow: string;
@@ -396,61 +386,47 @@ function WorkoutShell({
   description: string;
   icon: IconName;
   meta?: string[];
+  hero?: boolean;
   children: React.ReactNode;
 }) {
   return (
-    <View className="rounded-[30px] border border-white/10 bg-panel p-5">
-      <View className="mb-3 flex-row items-center justify-between gap-4">
+    <View className="rounded-2xl bg-panel p-6">
+      <View className="mb-2 flex-row items-center gap-2.5">
+        <MaterialCommunityIcons name={icon} size={14} color={C.ink} />
         <Txt
           weight="medium"
-          className="min-w-0 flex-1 text-[9px] leading-5 tracking-[1.6px] text-muted"
+          className="min-w-0 flex-1 text-[9px] text-muted"
         >
           {eyebrow}
         </Txt>
-        <View className="h-11 w-11 items-center justify-center rounded-full bg-white/5">
-          <MaterialCommunityIcons name={icon} size={22} color={C.ink} />
-        </View>
       </View>
       <Txt
         accessibilityRole="header"
-        weight="medium"
-        className="text-[28px] leading-9 tracking-[-1px]"
+        weight="semibold"
+        className={
+          hero
+            ? "text-[30px] leading-[46px] tracking-[-1.5px]"
+            : "text-[29px] leading-[38px] tracking-[-0.9px]"
+        }
       >
         {title}
       </Txt>
-      <Txt className="mb-5 mt-2 text-xs leading-6 text-muted">{description}</Txt>
+      <Txt className="mt-1 text-xs leading-[22px] text-muted">{description}</Txt>
       {meta.length > 0 && (
-        <View className="mb-1 flex-row flex-wrap gap-x-3 gap-y-2">
+        <View className="mt-2 flex-row flex-wrap gap-x-2 gap-y-2">
           {meta.filter(Boolean).map((item, index) => (
-            <View key={`${index}:${item}`} className="flex-row items-center gap-2">
-              {index > 0 && <View className="h-0.5 w-0.5 rounded-full bg-white/40" />}
-              <Txt className="text-[10px] leading-5 text-muted">{item}</Txt>
+            <View
+              key={`${index}:${item}`}
+              className="max-w-full rounded-full bg-white/5 px-3 py-1"
+            >
+              <Txt weight="medium" className="text-[10px] leading-5">
+                {item}
+              </Txt>
             </View>
           ))}
         </View>
       )}
-      {children}
-    </View>
-  );
-}
-
-function MovementPreview({ names }: { names: string[] }) {
-  if (!names.length) return <View className="h-4" />;
-  return (
-    <View className="mb-5 mt-4 rounded-[18px] bg-white/[0.04] px-3.5 py-2.5">
-      {names.slice(0, 2).map((name, index) => (
-        <View key={`${index}:${name}`} className="flex-row items-center gap-2.5 py-1.5">
-          <Txt className="w-4 text-[10px] text-muted">{String(index + 1).padStart(2, "0")}</Txt>
-          <Txt numberOfLines={1} className="min-w-0 flex-1 text-[11px]">
-            {name}
-          </Txt>
-        </View>
-      ))}
-      {names.length > 2 && (
-        <Txt className="pb-1 pl-[26px] pt-1 text-[10px] text-muted">
-          +{names.length - 2} more exercises
-        </Txt>
-      )}
+      <View className="mt-6">{children}</View>
     </View>
   );
 }
@@ -475,16 +451,18 @@ function HomeButton({
       accessibilityState={{ disabled: disabled || loading, busy: loading }}
       disabled={disabled || loading}
       onPress={onPress}
-      className={`min-h-14 flex-row items-center justify-center gap-2 rounded-full bg-white px-4 py-3.5 ${disabled || loading ? "opacity-50" : ""}`}
+      className={`min-h-[58px] flex-row items-center justify-between gap-3 rounded-full bg-white py-2 pl-5 pr-2 ${disabled || loading ? "opacity-50" : ""}`}
     >
-      {loading ? (
-        <ActivityIndicator color={C.bg} />
-      ) : icon ? (
-        <MaterialCommunityIcons name={icon} size={21} color={C.bg} />
-      ) : null}
-      <Txt weight="semibold" className="flex-shrink text-xs text-black">
+      <Txt weight="semibold" className="min-w-0 flex-1 text-[13px] leading-5 text-black">
         {title}
       </Txt>
+      <View className="h-10 w-10 items-center justify-center rounded-full bg-black">
+        {loading ? (
+          <ActivityIndicator color={C.ink} />
+        ) : (
+          <MaterialCommunityIcons name={icon ?? "arrow-right"} size={21} color={C.ink} />
+        )}
+      </View>
     </Pressable>
   );
 }
@@ -505,7 +483,7 @@ function SecondaryLink({
       accessibilityState={{ disabled }}
       disabled={disabled}
       onPress={onPress}
-      className={`mt-1 min-h-11 flex-row items-center justify-center gap-2 px-3 ${disabled ? "opacity-40" : ""}`}
+      className={`mt-2 min-h-11 flex-row items-center justify-center gap-1.5 px-3 ${disabled ? "opacity-40" : ""}`}
     >
       <Txt weight="medium" className="flex-shrink text-[11px] text-muted">
         {title}

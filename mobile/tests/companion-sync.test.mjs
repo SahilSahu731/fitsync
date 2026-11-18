@@ -227,7 +227,62 @@ test("an unavailable exercise-usage endpoint does not discard saved companion pr
   assert.equal(context(instance).state.records[0]?.data.time, "18:00");
   assert.equal(context(instance).state.photos[0]?.id, "alice-photo");
   assert.equal(context(instance).loading, false);
+  assert.equal(context(instance).stateLoaded, true);
+  assert.equal(context(instance).stateError, null);
+  assert.equal(context(instance).error, null);
   assert.equal(context(instance).replacements, null);
+  instance.unmount();
+});
+
+test("a slow exercise-usage request does not delay opening saved preferences", async () => {
+  const usage = deferred();
+  const fixture = contextFixture({ usageGates: { alice: [usage] } });
+  const instance = fixture.mount("alice");
+  await instance.settle();
+  assert.equal(context(instance).stateLoaded, true);
+  assert.equal(context(instance).state.records[0]?.revision, 1);
+  assert.equal(context(instance).loading, false);
+  assert.equal(context(instance).replacements, null);
+  usage.resolve({ replacements: [] });
+  await instance.settle();
+  assert.equal(context(instance).replacements.length, 0);
+  instance.unmount();
+});
+
+test("failed initial preferences load does not mark defaults as saved, and a retry recovers", async () => {
+  const initial = deferred();
+  const fixture = contextFixture({ stateGates: { alice: [initial] } });
+  const instance = fixture.mount("alice");
+  await tick();
+  initial.reject(new Error("Saved preferences are offline"));
+  await instance.settle();
+  assert.equal(context(instance).stateLoaded, false);
+  assert.match(context(instance).stateError, /preferences are offline/);
+  assert.equal(context(instance).state.records.length, 0);
+  assert.equal(context(instance).loading, false);
+  await context(instance).refresh();
+  await instance.settle();
+  assert.equal(context(instance).stateLoaded, true);
+  assert.equal(context(instance).stateError, null);
+  assert.equal(context(instance).state.records[0].revision, 1);
+  instance.unmount();
+});
+
+test("failed background preferences refresh keeps the last loaded records and status", async () => {
+  const gates = { alice: [] };
+  const fixture = contextFixture({ stateGates: gates });
+  const instance = fixture.mount("alice");
+  await instance.settle();
+  const next = deferred();
+  gates.alice.push(next);
+  const refresh = context(instance).refresh();
+  next.reject(new Error("Saved preferences are offline"));
+  await refresh;
+  await instance.settle();
+  assert.equal(context(instance).stateLoaded, true);
+  assert.match(context(instance).stateError, /preferences are offline/);
+  assert.equal(context(instance).state.records[0].revision, 1);
+  assert.equal(context(instance).state.photos[0].id, "alice-photo");
   instance.unmount();
 });
 
@@ -416,8 +471,13 @@ function nativeBridgeFixture(gates = {}, options = {}) {
   const journals = { alice: empty(), bob: empty() };
   journals.alice.events = options.events ?? [];
   const companions = {
-    alice: { state: state("alice"), loading: false },
-    bob: { state: state("bob"), loading: false },
+    alice: {
+      state: state("alice"),
+      stateLoaded: options.stateLoaded ?? true,
+      stateError: options.stateError ?? null,
+      loading: false,
+    },
+    bob: { state: state("bob"), stateLoaded: true, stateError: null, loading: false },
   };
   const workout = {
     dataRevision: 0,
@@ -429,6 +489,7 @@ function nativeBridgeFixture(gates = {}, options = {}) {
     pendingSetIds: [],
     ...options.workout,
   };
+  const billing = { isPro: true, loading: options.billingLoading ?? false };
   const module = load("native-bridge.tsx", {
     react: runtime.react,
     "react/jsx-runtime": { jsx, jsxs: jsx },
@@ -456,28 +517,39 @@ function nativeBridgeFixture(gates = {}, options = {}) {
     "@/src/context/session": {
       useSession: () => ({ user: { id: owner }, profile: { trainingDays: 3 } }),
     },
-    "../billing/billing-context": { useBilling: () => ({ isPro: true }) },
+    "../billing/billing-context": { useBilling: () => billing },
     "../workouts/workout-context": { useWorkout: () => workout },
     "../workouts/session-progress": { restAfterWorkoutSet },
-    "../program-follow/program-context": { useProgram: () => ({ active: null, loading: false }) },
+    "../program-follow/program-context": {
+      useProgram: () => ({
+        active: null,
+        loading: options.programLoading ?? false,
+        error: options.programError ?? null,
+      }),
+    },
     "../coaching/api": {
       coachingForOwner: (id) => ({
         get: async () => {
           calls.push(["coaching", id]);
           if (gates[id]) return await gates[id].promise;
+          if (options.planError) throw options.planError;
           return { plan: options.plan ?? null };
         },
       }),
     },
     "../coaching/updates": { subscribeCoachingChange: () => () => {} },
     "../progress/journal": {
-      readJournal: async (id) => journals[id],
+      readJournal: async (id) => {
+        if (options.localJournalError) throw options.localJournalError;
+        return journals[id];
+      },
       subscribeJournal: (callback) => {
         journalListeners.add(callback);
         return () => journalListeners.delete(callback);
       },
       syncWorkouts: async (id, valid) => {
         calls.push(["history", id]);
+        if (options.journalError) throw options.journalError;
         if (valid()) journalListeners.forEach((callback) => callback(id, journals[id]));
         return journals[id];
       },
@@ -492,8 +564,9 @@ function nativeBridgeFixture(gates = {}, options = {}) {
     "./api": { defaultReminders: () => ({ ...prefs }) },
     "./reminders": {
       clearCompanionReminders: async () => calls.push(["clear-reminders"]),
+      retainCompanionRemindersForOwner: async (id) => calls.push(["retain-reminders", id]),
       reconcileCompanionReminders: async (input) => {
-        calls.push(["reminders", input.ownerId]);
+        calls.push(["reminders", input.ownerId, input]);
         return { permission: "granted", scheduled: 1, suppressedByQuietHours: 0 };
       },
       handleCompanionReminderResponse: async () => null,
@@ -524,6 +597,8 @@ function nativeBridgeFixture(gates = {}, options = {}) {
   });
   return {
     calls,
+    billing,
+    companions,
     workout,
     respond: (response) => responseListener?.(response),
     mount: (id) => {
@@ -533,6 +608,105 @@ function nativeBridgeFixture(gates = {}, options = {}) {
     },
   };
 }
+test("native reminder reconciliation waits for authoritative preferences before scheduling", async () => {
+  const fixture = nativeBridgeFixture({}, { stateLoaded: false, stateError: "Offline" });
+  const instance = fixture.mount("alice");
+  await instance.settle();
+  assert.equal(fixture.calls.filter((call) => call[0] === "reminders").length, 0);
+  assert.equal(fixture.calls.filter((call) => call[0] === "clear-reminders").length, 0);
+  assert.equal(fixture.calls.filter((call) => call[0] === "retain-reminders").length, 1);
+  fixture.companions.alice.stateLoaded = true;
+  fixture.companions.alice.stateError = null;
+  instance.render();
+  await instance.settle();
+  assert.equal(fixture.calls.filter((call) => call[0] === "reminders").length, 1);
+  instance.unmount();
+});
+
+test("checking membership does not clear or reschedule the saved reminder queue", async () => {
+  const fixture = nativeBridgeFixture({}, { billingLoading: true });
+  const instance = fixture.mount("alice");
+  await instance.settle();
+  assert.equal(fixture.calls.filter((call) => call[0] === "reminders").length, 0);
+  assert.equal(fixture.calls.filter((call) => call[0] === "clear-reminders").length, 0);
+  fixture.billing.loading = false;
+  instance.render();
+  await instance.settle();
+  assert.equal(fixture.calls.filter((call) => call[0] === "reminders").length, 1);
+  instance.unmount();
+});
+
+test("a pending training plan does not stop daily habits or replace existing workout reminders", async () => {
+  const plan = deferred();
+  const fixture = nativeBridgeFixture({ alice: plan });
+  const instance = fixture.mount("alice");
+  await instance.settle();
+  const call = fixture.calls.filter((item) => item[0] === "reminders").at(-1);
+  assert.ok(call);
+  assert.equal(call[2].preserveTraining, true);
+  assert.equal(call[2].prefs.enabled, false);
+  assert.equal(fixture.calls.filter((item) => item[0] === "widget").length, 0);
+  plan.resolve({ plan: null });
+  await instance.settle();
+  assert.equal(fixture.calls.filter((item) => item[0] === "widget").length, 1);
+  instance.unmount();
+});
+
+test("confirmed Pro expiry clears reminders even when saved preferences could not load", async () => {
+  const fixture = nativeBridgeFixture(
+    {},
+    {
+      billingLoading: true,
+      stateLoaded: false,
+      stateError: "Offline",
+    },
+  );
+  const instance = fixture.mount("alice");
+  await instance.settle();
+  assert.equal(fixture.calls.filter((call) => call[0] === "clear-reminders").length, 0);
+  fixture.billing.isPro = false;
+  fixture.billing.loading = false;
+  instance.render();
+  await instance.settle();
+  assert.equal(fixture.calls.filter((call) => call[0] === "clear-reminders").length, 1);
+  assert.equal(fixture.calls.filter((call) => call[0] === "reminders").length, 0);
+  assert.equal(fixture.companions.alice.stateLoaded, false);
+  instance.unmount();
+});
+
+for (const source of ["training plan", "workout history", "followed program"]) {
+  test(`an unavailable ${source} preserves workout reminders while daily habits can refresh`, async () => {
+    const fixture = nativeBridgeFixture(
+      {},
+      {
+        planError: source === "training plan" ? new Error("Offline") : undefined,
+        journalError: source === "workout history" ? new Error("Offline") : undefined,
+        localJournalError: source === "workout history" ? new Error("Offline") : undefined,
+        programError: source === "followed program" ? "Offline" : undefined,
+      },
+    );
+    const instance = fixture.mount("alice");
+    await instance.settle();
+    const call = fixture.calls.filter((item) => item[0] === "reminders").at(-1);
+    assert.ok(call);
+    assert.equal(call[2].preserveTraining, true);
+    assert.equal(call[2].prefs.enabled, false);
+    assert.equal(fixture.calls.filter((item) => item[0] === "widget").length, 0);
+    instance.unmount();
+  });
+}
+
+test("a temporary preferences refresh error keeps the last known schedule available to native reconciliation", async () => {
+  const fixture = nativeBridgeFixture({}, { stateLoaded: true, stateError: "Offline" });
+  const instance = fixture.mount("alice");
+  await instance.settle();
+  const call = fixture.calls.filter((item) => item[0] === "reminders").at(-1);
+  assert.ok(call);
+  assert.equal(call[2].prefs.time, "18:00");
+  assert.equal(call[2].prefs.enabled, true);
+  instance.unmount();
+});
+
 test("native bridge journal updates do not recursively refetch its own history or plan", async () => {
   const fixture = nativeBridgeFixture();
   const instance = fixture.mount("alice");
@@ -572,13 +746,15 @@ test("native bridge drops an old account plan response before publishing any wid
     fixture = nativeBridgeFixture({ alice: gate });
   const alice = fixture.mount("alice");
   alice.unmount();
+  const afterAccountSwitch = fixture.calls.length;
   const bob = fixture.mount("bob");
   await bob.settle();
   gate.resolve({ plan: null });
   await bob.settle();
   assert.equal(
-    fixture.calls.filter((call) => ["widget", "reminders"].includes(call[0]) && call[1] === "alice")
-      .length,
+    fixture.calls
+      .slice(afterAccountSwitch)
+      .filter((call) => ["widget", "reminders"].includes(call[0]) && call[1] === "alice").length,
     0,
   );
   assert.equal(fixture.calls.filter((call) => call[0] === "widget" && call[1] === "bob").length, 1);

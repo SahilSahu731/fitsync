@@ -138,12 +138,12 @@ export default function HomeScreen() {
           onProfile={() => router.push("/profile")}
         />
         <View className="mb-6">
-          <View className="mb-2 flex-row flex-wrap items-center gap-x-2 gap-y-1">
-            <Txt className="text-[10px] tracking-[1.3px] text-muted">
-              {dateLabel(today, { weekday: "long", month: "short", day: "numeric" }).toUpperCase()}
+          <View className=" flex-row flex-wrap items-center gap-x-2 gap-y-1">
+            <Txt className="text-[10px]  text-muted">
+              {dateLabel(today, { weekday: "short", month: "short", day: "numeric" })}
             </Txt>
             {billing.isPro && (
-              <View className="rounded-full bg-white/10 px-2 py-0.5">
+              <View className="rounded-full bg-yellow-400 px-2 py-0.5">
                 <Txt weight="medium" className="text-[9px] tracking-[0.5px]">
                   PRO
                 </Txt>
