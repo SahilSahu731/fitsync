@@ -67,7 +67,11 @@ await fs.writeFile(
   path.join(repo, "web/src/app/apple-icon.png"),
   await icon(180, { background: true, scale: 0.82 }),
 );
-const favicon = await icon(48, { background: true });
+// ICO's 32-bit PNG payload must be RGBA, even with an opaque background.
+const favicon = await sharp(await icon(48, { background: true }))
+  .ensureAlpha()
+  .png({ compressionLevel: 9, palette: false })
+  .toBuffer();
 const header = Buffer.alloc(22);
 header.writeUInt16LE(1, 2);
 header.writeUInt16LE(1, 4);
