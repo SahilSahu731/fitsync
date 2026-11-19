@@ -101,16 +101,16 @@ export function Login({ register = false }: { register?: boolean }) {
 
           <div className="flex flex-1 items-center py-7 sm:py-14 lg:py-10">
             <div className="mx-auto w-full max-w-100">
-              <p className="mb-6 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.17em] text-muted">
+              {/* <p className="mb-6 flex items-center gap-2.5 text-[11px] font-semibold tracking-[0.17em] text-muted">
                 <span className="size-1.5 rounded-full bg-brand" />
                 {register ? "YOUR FIRST STEP STARTS HERE" : "PICK UP WHERE YOU LEFT OFF"}
-              </p>
+              </p> */}
               <h1 className="text-[clamp(3.25rem,12vw,4rem)] leading-[1.02] font-semibold tracking-[-0.06em]">
                 {register ? "Make your" : "Welcome"}
                 <br />
                 <span className="text-white">{register ? "first move." : "back."}</span>
               </h1>
-              <p className="mt-5 max-w-85 text-base leading-7 text-muted sm:text-lg sm:leading-8">
+              <p className="mt-3 max-w-85 text-base leading-7 text-muted sm:text-lg sm:leading-8">
                 {register
                   ? "A little more movement. A lot more you. Create your free FitSync account."
                   : "Your training. Your progress. Your own pace. Let’s get back to your good thing."}
@@ -126,7 +126,7 @@ export function Login({ register = false }: { register?: boolean }) {
                 </h2>
                 {account ? (
                   <div className="rounded-2xl bg-panel p-5">
-                    <p className="mb-4 break-words text-sm text-muted">
+                    <p className="mb-4 wrap-break-word text-sm text-muted">
                       Signed in as <span className="font-medium text-ink">{account.user.name}</span>
                     </p>
                     <Link
@@ -153,7 +153,7 @@ export function Login({ register = false }: { register?: boolean }) {
                         {!ready && !error && (
                           <div
                             role="status"
-                            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-3 rounded-full bg-white/6 bg-panel px-4 text-sm text-muted"
+                            className="pointer-events-none absolute inset-0 flex items-center justify-center gap-3 rounded-full bg-white/6 px-4 text-sm text-muted"
                           >
                             <LoaderCircle
                               size={17}
@@ -204,12 +204,12 @@ export function Login({ register = false }: { register?: boolean }) {
                         </div>
                       </div>
                     )}
-                    {clientId && (
+                    {/* {clientId && (
                       <p className="mt-4 flex items-center justify-center gap-2 text-xs text-muted">
                         <KeyRound size={13} strokeWidth={1.6} />
                         No extra password to remember.
                       </p>
-                    )}
+                    )} */}
                   </>
                 )}
               </div>
@@ -266,24 +266,22 @@ export function Login({ register = false }: { register?: boolean }) {
           aria-label="A moment for your next session"
         >
           <Image
-            src="/art/auth-ready.webp"
+            src="/art/athlete-motion.webp"
             alt="An athlete tying her running shoes before training in a quiet, softly lit studio"
             fill
             preload
             sizes="(max-width: 1023px) 100vw, 52vw"
-            className="object-cover object-[50%_45%] grayscale"
+            className="object-cover object-[50%_4%] grayscale"
           />
           <div className="absolute inset-0 bg-linear-to-t from-black/90 via-black/5 to-black/35" />
           <div className="absolute inset-x-6 top-6 flex items-center justify-between gap-4 text-[9px] font-medium tracking-[0.17em] text-white/75 sm:inset-x-8 sm:top-8 xl:inset-x-11 xl:top-10">
-            <span className="flex items-center gap-2.5">
+            {/* <span className="flex items-center gap-2.5">
               <span className="size-1.5 rounded-full bg-brand" />
               THE MOMENT BEFORE YOUR NEXT.
-            </span>
+            </span> */}
           </div>
           <div className="absolute inset-x-6 bottom-7 sm:inset-x-8 sm:bottom-9 xl:inset-x-11 xl:bottom-11">
-            <p className="mb-4 text-[10px] font-medium tracking-[0.18em] text-brand">
-              A LITTLE SPACE FOR YOURSELF.
-            </p>
+            
             <h2 className="text-[34px] leading-[1.02] font-medium tracking-[-0.055em] sm:text-5xl lg:text-[clamp(2.7rem,4.6vw,4.8rem)]">
               {register ? "Every story starts" : "A little time."}
               <br />
