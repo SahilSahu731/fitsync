@@ -8,6 +8,7 @@ import { ZodError } from "zod";
 import multer from "multer";
 
 import { ApiError } from "../common/errors.js";
+import { reportError } from "../common/monitoring.js";
 
 export const notFound: RequestHandler = (_req, res) => {
   res.status(404).json({
@@ -42,13 +43,14 @@ export const errorHandler: ErrorRequestHandler = (
   }
 
   if (error instanceof ApiError) {
+    if (error.status >= 500) reportError(error, "http");
     res.status(error.status).json({
       message: error.message
     });
     return;
   }
 
-  console.error("[UNHANDLED ERROR]", error);
+  reportError(error, "http");
 
   res.status(500).json({
     message: "An unexpected error occurred."

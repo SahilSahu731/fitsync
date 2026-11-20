@@ -1,2 +1,10 @@
 import { ProfileForm } from "@/components/profile";
-export default function Page() { return <ProfileForm settings />; }
+import { DeleteAccountForm } from "@/components/delete-account-form";
+export default function Page() {
+  return (
+    <>
+      <ProfileForm settings />
+      <DeleteAccountForm />
+    </>
+  );
+}

@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useState } from "react";
-import { ArrowUpRight, Dumbbell, Pause, Play } from "lucide-react";
+import { ArrowRight, Dumbbell, Pause, Play } from "lucide-react";
 import { Tilt } from "@/components/motion";
 import { homeImages } from "./content";
 
@@ -49,7 +49,7 @@ export function HeroVisual() {
           <p className="text-[13px] font-medium tracking-tight">A plan that moves with you.</p>
           <p className="mt-1 text-[9px] tracking-[.07em] text-muted">GYM. HOME. YOUR OWN PACE.</p>
         </div>
-        <ArrowUpRight size={17} className="ml-2 hidden text-brand sm:block" aria-hidden="true" />
+        <ArrowRight size={17} className="ml-2 hidden text-brand sm:block" aria-hidden="true" />
       </div>
       <div className="relative z-10 -mt-5 flex items-center justify-between gap-4 border-t border-line/70 px-1 pt-4 sm:mx-6">
         <span className="text-[9px] tracking-[.15em] text-muted">

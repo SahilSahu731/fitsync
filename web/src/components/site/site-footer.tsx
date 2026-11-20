@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUp, ArrowUpRight } from "lucide-react";
+import { ArrowUp, ArrowRight } from "lucide-react";
 import { useSession } from "@/components/session";
 import { Brand } from "./brand";
 import { footerGroups, publishedLinks } from "./navigation";
@@ -29,6 +29,7 @@ export function SiteFooter() {
   const external = [
     { href: publishedLinks.privacy, label: "Privacy" },
     { href: publishedLinks.terms, label: "Terms" },
+    { href: "/delete-account", label: "Delete account" },
     { href: publishedLinks.instagram, label: "Instagram" },
     { href: publishedLinks.youtube, label: "YouTube" },
   ].filter((link) => link.href);
@@ -48,7 +49,7 @@ export function SiteFooter() {
               className="group mt-5 inline-flex min-h-11 items-center gap-3 text-sm text-white/75 transition-colors hover:text-white"
             >
               Make your first move
-              <ArrowUpRight size={17} />
+              <ArrowRight size={17} />
             </Link>
           </div>
           <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3">

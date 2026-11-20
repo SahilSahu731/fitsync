@@ -1,4 +1,5 @@
 import React, { useRef, useState } from "react";
+import { LegalLinks } from "@/src/components/legal-links";
 import { ActivityIndicator, Image, ScrollView, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -100,6 +101,7 @@ export default function SignInScreen() {
               One account. Your whole journey.
             </Txt>
           </View>
+          <LegalLinks />
         </ScrollView>
       </ScreenEntrance>
     </SafeAreaView>

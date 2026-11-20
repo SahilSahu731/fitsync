@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import { Reveal } from "@/components/motion";
 import { homeImages } from "./content";
 import { TrackArtwork } from "./artwork";
@@ -37,7 +37,7 @@ export function CTASection() {
               className="group mt-8 inline-flex min-h-14 items-center justify-center gap-6 rounded-full bg-background px-6 text-sm font-semibold text-brand transition-colors hover:bg-background/85"
             >
               Let’s make a move
-              <ArrowUpRight
+              <ArrowRight
                 size={20}
                 className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
               />

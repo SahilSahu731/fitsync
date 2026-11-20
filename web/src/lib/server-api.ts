@@ -1,5 +1,6 @@
-import { cookies } from "next/headers";
+import { cookies, headers as incomingHeaders } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
+import { proxyIdentity } from "./proxy-identity";
 
 const apiOrigin = process.env.API_BASE_URL || "http://localhost:4000";
 export const accessCookie = "fitsync_access";
@@ -16,7 +17,15 @@ export function validOrigin(request: NextRequest) {
 }
 
 export async function upstream(path: string, init?: RequestInit) {
-  return fetch(`${apiOrigin.replace(/\/$/, "")}/api${path}`, { ...init, cache: "no-store", signal: AbortSignal.timeout(60_000) });
+  if (process.env.NODE_ENV === "production" && !process.env.WEB_PROXY_SECRET) {
+    throw new Error("Production requires the shared web proxy secret.");
+  }
+  const headers = new Headers(init?.headers);
+  if (process.env.WEB_PROXY_SECRET) {
+    const identity = proxyIdentity(await incomingHeaders(), process.env.WEB_PROXY_SECRET);
+    for (const [key, value] of Object.entries(identity)) headers.set(key, value);
+  }
+  return fetch(`${apiOrigin.replace(/\/$/, "")}/api${path}`, { ...init, headers, cache: "no-store", signal: AbortSignal.timeout(60_000) });
 }
 
 export function setTokens(response: NextResponse, tokens: { accessToken: string; refreshToken: string }) {

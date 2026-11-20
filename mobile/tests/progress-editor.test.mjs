@@ -465,11 +465,11 @@ test("save controls stay outside the scrolling fields with bottom safe-area room
 
 test("an open keyboard compacts the sheet header while preserving the title and save action", () => {
   const closed = harness();
-  assert.match(text(closed.render()), /YOUR PROGRESS/);
+  assert.match(text(closed.render()), /Daily check-in/);
   assert.match(text(closed.render()), /Small check-ins/);
   const open = harness({ keyboardOpen: true });
   const content = text(open.render());
-  assert.doesNotMatch(content, /YOUR PROGRESS|Small check-ins/);
+  assert.doesNotMatch(content, /Small check-ins/);
   assert.match(content, /Daily check-in/);
   assert.ok(open.find("Save check-in"));
   assert.ok(open.find("Body weight in kg"));

@@ -1,6 +1,6 @@
 "use client";
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, Dumbbell, RotateCcw, Search } from "lucide-react";
+import { ArrowRight, CalendarDays, Dumbbell, RotateCcw, Search } from "lucide-react";
 import { Reveal } from "./motion";
 import { useEffect, useState } from "react";
 import { api, pretty } from "@/lib/api";
@@ -98,7 +98,7 @@ export function TrainingLibrary() {
             className="mt-7 inline-flex min-h-11 items-center gap-3 text-sm font-medium"
           >
             Find your next session
-            <ArrowUpRight size={17} />
+            <ArrowRight size={17} />
           </a>
         </Reveal>
         <Reveal delay={80}>
@@ -249,7 +249,7 @@ export function TrainingLibrary() {
               className="mt-7 inline-flex min-h-12 items-center gap-4 rounded-full bg-white px-6 text-sm font-medium text-black"
             >
               {admin ? "Manage the library" : "Explore exercises"}
-              <ArrowUpRight size={16} />
+              <ArrowRight size={16} />
             </Link>
           </div>
         ) : (
@@ -286,7 +286,7 @@ export function TrainingLibrary() {
                   className="mt-8 flex min-h-12 items-center justify-between rounded-full bg-white/7 px-5 text-xs font-medium transition-colors group-hover:bg-white group-hover:text-black"
                 >
                   {mode === "programs" ? "Explore the program" : "Preview the session"}
-                  <ArrowUpRight size={17} />
+                  <ArrowRight size={17} />
                 </Link>
               </article>
             ))}
@@ -306,7 +306,7 @@ export function TrainingLibrary() {
           className="inline-flex min-h-12 shrink-0 items-center gap-5 rounded-full bg-black px-6 text-sm font-medium text-white"
         >
           Meet the app
-          <ArrowUpRight size={16} />
+          <ArrowRight size={16} />
         </Link>
       </section>
     </>

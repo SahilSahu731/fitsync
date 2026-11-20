@@ -7,7 +7,7 @@ import {
   Activity,
   Apple,
   ArrowDown,
-  ArrowUpRight,
+  ArrowRight,
   BicepsFlexed,
   CalendarDays,
   Check,
@@ -339,7 +339,7 @@ export function DownloadDrawer({ open, onClose }: { open: boolean; onClose: () =
               className="mt-3 flex min-h-13 items-center justify-between rounded-full bg-white px-6 text-sm font-semibold text-black"
             >
               Get it on {store.label}
-              <ArrowUpRight size={18} />
+              <ArrowRight size={18} />
             </a>
           ))
         ) : (
@@ -354,7 +354,7 @@ export function DownloadDrawer({ open, onClose }: { open: boolean; onClose: () =
           className="mt-7 flex min-h-12 items-center justify-between text-sm font-medium"
         >
           Explore the app
-          <ArrowUpRight size={18} />
+          <ArrowRight size={18} />
         </Link>
         <Link
           href="/register"
@@ -398,7 +398,7 @@ export function HeroSection() {
           >
             <SquareActivity size={15} />
             Fitness, all in one place
-            <ArrowUpRight size={14} />
+            <ArrowRight size={14} />
           </Link>
           <h1
             id="hero-heading"
@@ -431,7 +431,7 @@ export function HeroSection() {
             >
               <BicepsFlexed size={21} />
               Join FitSync free
-              <ArrowUpRight
+              <ArrowRight
                 size={17}
                 className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
               />

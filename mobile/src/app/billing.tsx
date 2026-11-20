@@ -12,7 +12,7 @@ import { Redirect, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowLeft,
-  ArrowUpRight,
+  ArrowRight,
   Check,
   ChevronRight,
   Receipt,
@@ -253,7 +253,7 @@ export default function BillingScreen() {
                 <Txt className="mt-1 text-xs leading-5 text-muted">{detail}</Txt>
               </View>
               {external ? (
-                <ArrowUpRight color={C.muted} size={19} />
+                <ArrowRight color={C.muted} size={19} />
               ) : (
                 <ChevronRight color={C.muted} size={20} />
               )}

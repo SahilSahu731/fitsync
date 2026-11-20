@@ -2,6 +2,7 @@ import { useProgram } from "@/src/features/program-follow/program-context";
 import { ProgramSetup } from "@/src/features/program-follow/program-setup";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useState } from "react";
+import { LegalLinks } from "@/src/components/legal-links";
 import { ExperienceSettings } from "@/src/features/experience/settings-section";
 
 import { Pressable, ScrollView, Switch, View } from "react-native";
@@ -308,6 +309,7 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
+      <LegalLinks />
       <Txt className="mt-8 text-center text-muted">FitSync · Made for your next rep.</Txt>
     </ScrollView>
   );

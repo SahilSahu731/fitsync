@@ -2,7 +2,7 @@
 
 import { useId, useState } from "react";
 import Link from "next/link";
-import { ArrowUpRight, Check } from "lucide-react";
+import { ArrowRight, Check } from "lucide-react";
 import { TrainingSketch } from "@/components/training-sketch";
 import { movementStudies } from "./content";
 
@@ -55,7 +55,7 @@ export function MovementStudy() {
             className="group mt-5 inline-flex min-h-10 items-center gap-3 rounded-sm text-sm font-medium hover:text-brand"
           >
             {study.action}
-            <ArrowUpRight
+            <ArrowRight
               size={17}
               className="text-brand transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
             />

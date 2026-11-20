@@ -36,10 +36,10 @@ function websiteUrl(value: string | undefined) {
   }
 }
 
-// Optional published URLs. No fabricated store, social, or legal destinations.
+// Legal pages are always public and available on this website.
 export const publishedLinks = {
-  privacy: websiteUrl(process.env.NEXT_PUBLIC_PRIVACY_URL),
-  terms: websiteUrl(process.env.NEXT_PUBLIC_TERMS_URL),
+  privacy: "/privacy",
+  terms: "/terms",
   googlePlay: websiteUrl(process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL),
   appStore: websiteUrl(process.env.NEXT_PUBLIC_APP_STORE_URL),
   instagram: websiteUrl(process.env.NEXT_PUBLIC_INSTAGRAM_URL),

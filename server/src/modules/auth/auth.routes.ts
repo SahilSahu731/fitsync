@@ -2,6 +2,7 @@
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
+import { authRateLimitKey } from "../../common/client-ip.js";
 
 import { asyncHandler } from "../../common/async-handler.js";
 import { requireAuth, getAuth } from "../../middleware/auth.js";
@@ -14,6 +15,7 @@ const router = Router();
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000,
   limit: 30,
+  keyGenerator: authRateLimitKey,
   standardHeaders: "draft-8",
   legacyHeaders: false
 });

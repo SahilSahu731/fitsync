@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, Activity, Waypoints } from "lucide-react";
+import { ArrowRight, Activity, Waypoints } from "lucide-react";
 import { Reveal, Spotlight } from "@/components/motion";
 import { MovementStudy } from "./movement-study";
 import { DevicesIllustration, ProgressIllustration } from "./progress-illustration";
@@ -82,7 +82,7 @@ export function FeaturesSection() {
                   className="group mt-5 inline-flex min-h-10 items-center gap-3 rounded-sm text-sm font-medium hover:text-brand"
                 >
                   Get to know FitSync
-                  <ArrowUpRight
+                  <ArrowRight
                     size={17}
                     className="text-brand transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                   />

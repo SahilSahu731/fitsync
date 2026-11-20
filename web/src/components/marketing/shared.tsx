@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import { ArrowRight } from "lucide-react";
 import type { ReactNode } from "react";
 
 export const container = "mx-auto w-full max-w-7xl px-6 sm:px-10 lg:px-14";
@@ -24,7 +24,7 @@ export function TextLink({
       className={`group inline-flex min-h-11 items-center gap-3 text-sm font-medium ${className}`}
     >
       {children}
-      <ArrowUpRight
+      <ArrowRight
         size={17}
         className="transition-transform duration-300 group-hover:-translate-y-0.5 group-hover:translate-x-0.5 motion-reduce:transform-none"
       />

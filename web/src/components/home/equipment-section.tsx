@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ArrowUpRight, Move } from "lucide-react";
+import { ArrowRight, Move } from "lucide-react";
 import { DumbbellScene } from "@/components/dumbbell-scene";
 import { Reveal } from "@/components/motion";
 import { homeImages } from "./content";
@@ -43,7 +43,7 @@ export function EquipmentSection() {
               className="group mt-8 inline-flex min-h-12 items-center gap-4 border-b border-ink/30 text-sm font-medium transition-colors hover:border-brand hover:text-brand"
             >
               Find your next movement
-              <ArrowUpRight
+              <ArrowRight
                 size={18}
                 className="text-brand transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
               />

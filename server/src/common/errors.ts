@@ -1,3 +1,4 @@
+import { reportError } from "./monitoring.js";
 
 export class ApiError extends Error {
   constructor(
@@ -15,7 +16,7 @@ export function checkDbError(
 ) {
   if (!error) return;
 
-  console.error(`[DATABASE] ${action}:`, error.message);
+  reportError(new Error("Database operation failed"), "database");
 
   throw new ApiError(
     500,

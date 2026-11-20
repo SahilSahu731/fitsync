@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { ArrowUpRight, CalendarDays, Dumbbell, Waypoints } from "lucide-react";
+import { ArrowRight, CalendarDays, Dumbbell, Waypoints } from "lucide-react";
 import { Reveal, ScrollText } from "@/components/motion";
 import { storyContent } from "./content";
 
@@ -47,7 +47,7 @@ export function StorySection() {
                   className="group mt-6 inline-flex min-h-10 items-center gap-3 self-start rounded-sm text-sm font-medium hover:text-brand"
                 >
                   {step.action}
-                  <ArrowUpRight
+                  <ArrowRight
                     size={16}
                     className="text-brand transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                   />

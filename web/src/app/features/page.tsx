@@ -1,6 +1,6 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { ArrowDown, ArrowUpRight } from "lucide-react";
+import { ArrowDown, ArrowRight } from "lucide-react";
 import { PublicShell } from "@/components/shell";
 import { Reveal } from "@/components/motion";
 import { ProductDemo } from "@/components/marketing/product-demo";
@@ -40,7 +40,7 @@ export default function FeaturesPage() {
             <div className="mt-9 flex flex-wrap items-center gap-6">
               <Link href="/register" className={primaryButton}>
                 Get started free
-                <ArrowUpRight size={17} />
+                <ArrowRight size={17} />
               </Link>
               <a
                 href="#library"

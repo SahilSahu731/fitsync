@@ -5,6 +5,7 @@ import wellnessRoutes from "./modules/wellness/wellness.routes.js";
 import companionRoutes from "./modules/companion/companion.routes.js";
 import express from "express";
 import helmet from "helmet";
+import { health } from "./common/health.js";
 
 import authRoutes from "./modules/auth/auth.routes.js";
 import profileRoutes from "./modules/profile/profile.routes.js";
@@ -24,6 +25,9 @@ import {
 
 export const app = express();
 
+// Deployment must expose this process through one trusted ingress proxy.
+app.set("trust proxy", 1);
+
 app.disable("x-powered-by");
 
 app.use(helmet());
@@ -32,12 +36,7 @@ app.use(
   express.json({ limit: "64kb" })
 );
 
-app.get("/health", (_req, res) => {
-  res.json({
-    ok: true,
-    service: "fitsync-api"
-  });
-});
+app.get("/health", health);
 
 app.use("/api/auth", authRoutes);
 app.use("/api/me", profileRoutes);

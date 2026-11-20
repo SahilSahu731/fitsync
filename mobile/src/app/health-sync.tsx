@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { LegalLinks } from "@/src/components/legal-links";
 import { Alert, Platform, ScrollView, View } from "react-native";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -151,6 +152,7 @@ export default function HealthSyncScreen() {
           disabled={!health.ownerId || !health.availability?.available}
           onPress={() => void health.importNow(!health.settings.enabled)}
         />
+        <LegalLinks />
         <Pressable
           accessibilityRole="button"
           onPress={() => void manage()}

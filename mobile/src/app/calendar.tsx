@@ -4,7 +4,7 @@ import { Redirect, router } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ArrowLeft,
-  ArrowUpRight,
+  ArrowRight,
   CalendarPlus,
   Check,
   ChevronLeft,
@@ -286,7 +286,7 @@ export default function CalendarScreen() {
                 <Txt weight="semibold" className="text-sm">
                   {item.status === "completed" ? "View workout" : "Open plan"}
                 </Txt>
-                <ArrowUpRight size={16} color={C.ink} />
+                <ArrowRight size={16} color={C.ink} />
               </MotionPressable>
               {item.status !== "completed" && (
                 <MotionPressable
@@ -320,7 +320,7 @@ export default function CalendarScreen() {
               <Txt weight="semibold" className="text-ink">
                 Explore programs
               </Txt>
-              <ArrowUpRight color={C.ink} size={18} />
+              <ArrowRight color={C.ink} size={18} />
             </MotionPressable>
           </View>
         )}

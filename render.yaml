@@ -1,0 +1,127 @@
+# Import this Blueprint in Render. Supply API secrets once; the cron inherits them.
+# Automatic deploys are off until initial configuration and acceptance checks pass.
+services:
+  - type: web
+    name: fitsync-api
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: SUPABASE_URL
+        sync: false
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        sync: false
+      - key: GOOGLE_WEB_CLIENT_ID
+        sync: false
+      - key: JWT_SECRET
+        sync: false
+      - key: CLOUDINARY_CLOUD_NAME
+        sync: false
+      - key: CLOUDINARY_API_KEY
+        sync: false
+      - key: CLOUDINARY_API_SECRET
+        sync: false
+      - key: WEB_PROXY_SECRET
+        generateValue: true
+      - key: REVENUECAT_SECRET_API_KEY
+        sync: false
+      - key: REVENUECAT_ENTITLEMENT_ID
+        value: pro
+      - key: REVENUECAT_WEBHOOK_AUTHORIZATION
+        sync: false
+      - key: REVENUECAT_ALLOW_SANDBOX
+        value: false
+      - key: EXPO_ACCESS_TOKEN
+        sync: false
+      - key: SENTRY_DSN
+        sync: false
+      - key: SENTRY_RELEASE
+        value: initial
+
+  - type: web
+    name: fitsync-web
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./web/Dockerfile
+    dockerContext: ./web
+    healthCheckPath: /privacy
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 3000
+      - key: API_BASE_URL
+        sync: false
+      - key: WEB_ORIGIN
+        sync: false
+      - key: NEXT_PUBLIC_GOOGLE_CLIENT_ID
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: GOOGLE_WEB_CLIENT_ID }
+      - key: WEB_PROXY_SECRET
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: WEB_PROXY_SECRET }
+      - key: LEGAL_OPERATOR_NAME
+        value: FitSync
+      - key: SUPPORT_EMAIL
+        value: sahillsahudev@gmail.com
+
+  - type: cron
+    name: fitsync-program-reminders
+    runtime: docker
+    plan: starter
+    region: singapore
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    dockerCommand: npm run programs:reminders:prod
+    schedule: "*/5 * * * *"
+    autoDeployTrigger: off
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SUPABASE_URL
+        fromService: { type: web, name: fitsync-api, envVarKey: SUPABASE_URL }
+      - key: SUPABASE_SERVICE_ROLE_KEY
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: SUPABASE_SERVICE_ROLE_KEY }
+      - key: GOOGLE_WEB_CLIENT_ID
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: GOOGLE_WEB_CLIENT_ID }
+      - key: WEB_PROXY_SECRET
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: WEB_PROXY_SECRET }
+      - key: JWT_SECRET
+        fromService: { type: web, name: fitsync-api, envVarKey: JWT_SECRET }
+      - key: CLOUDINARY_CLOUD_NAME
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: CLOUDINARY_CLOUD_NAME }
+      - key: CLOUDINARY_API_KEY
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: CLOUDINARY_API_KEY }
+      - key: CLOUDINARY_API_SECRET
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: CLOUDINARY_API_SECRET }
+      - key: REVENUECAT_SECRET_API_KEY
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: REVENUECAT_SECRET_API_KEY }
+      - key: REVENUECAT_ENTITLEMENT_ID
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: REVENUECAT_ENTITLEMENT_ID }
+      - key: REVENUECAT_ALLOW_SANDBOX
+        value: false
+      - key: EXPO_ACCESS_TOKEN
+        fromService:
+          { type: web, name: fitsync-api, envVarKey: EXPO_ACCESS_TOKEN }
+      - key: SENTRY_DSN
+        fromService: { type: web, name: fitsync-api, envVarKey: SENTRY_DSN }
+      - key: SENTRY_RELEASE
+        fromService: { type: web, name: fitsync-api, envVarKey: SENTRY_RELEASE }

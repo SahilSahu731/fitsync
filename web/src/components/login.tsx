@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ArrowLeft,
-  ArrowUpRight,
+  ArrowRight,
   CircleAlert,
   Dumbbell,
   KeyRound,
@@ -134,7 +134,7 @@ export function Login({ register = false }: { register?: boolean }) {
                       className="group flex min-h-13 items-center justify-between gap-4 rounded-full bg-white px-5 py-3 text-sm font-semibold text-background transition-colors hover:bg-white/85"
                     >
                       Go to your workspace
-                      <ArrowUpRight
+                      <ArrowRight
                         size={20}
                         className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                       />
@@ -214,6 +214,9 @@ export function Login({ register = false }: { register?: boolean }) {
                 )}
               </div>
 
+              <p className="mt-6 text-sm leading-7 text-muted">
+                By continuing, you agree to the <Link href="/terms" className="underline">Terms of Service</Link> and can review our <Link href="/privacy" className="underline">Privacy Policy</Link>.
+              </p>
               <p className="mt-6 flex flex-wrap items-center gap-x-2 text-sm text-muted">
                 {register ? "Already have an account?" : "New to FitSync?"}
                 <Link
@@ -221,7 +224,7 @@ export function Login({ register = false }: { register?: boolean }) {
                   className="group inline-flex min-h-11 items-center gap-1.5 rounded-sm font-semibold text-ink underline decoration-line underline-offset-4 transition-colors hover:text-brand hover:decoration-brand"
                 >
                   {register ? "Log in" : "Create a free account"}
-                  <ArrowUpRight
+                  <ArrowRight
                     size={15}
                     className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
                   />

@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useEffect, useRef, useState } from "react";
-import { ArrowUpRight, LogOut, Menu, X } from "lucide-react";
+import { ArrowRight, LogOut, Menu, X } from "lucide-react";
 import { useSession } from "@/components/session";
 import { AccountAvatar, Brand, focusRing } from "./brand";
 import { mainLinks } from "./navigation";
@@ -111,7 +111,7 @@ export function SiteHeader() {
                     className="group inline-flex min-h-10 items-center gap-3 rounded-full bg-white px-4 text-xs font-semibold text-black transition-colors hover:bg-brand sm:px-5"
                   >
                     Start free
-                    <ArrowUpRight size={15} className="hidden sm:block" />
+                    <ArrowRight size={15} className="hidden sm:block" />
                   </Link>
                 </>
               )}
@@ -146,7 +146,7 @@ export function SiteHeader() {
                   <span className="block text-xl font-medium tracking-tight">{label}</span>
                   <span className="mt-2 block text-xs leading-6 text-white/55">{description}</span>
                 </span>
-                <ArrowUpRight size={18} className="text-white/50" />
+                <ArrowRight size={18} className="text-white/50" />
               </Link>
             ))}
             <div className="mt-5 flex gap-3 px-4 pb-2">

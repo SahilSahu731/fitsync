@@ -1,6 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Activity, ArrowUpRight, Check, Dumbbell, Leaf, Smartphone } from "lucide-react";
+import { Activity, ArrowRight, Check, Dumbbell, Leaf, Smartphone } from "lucide-react";
 import { Reveal, ScrollText } from "@/components/motion";
 import { container, eyebrow, headline, primaryButton, SectionIntro, TextLink } from "./shared";
 import { featureGroups, metricGroups } from "./feature-catalog";
@@ -218,7 +218,7 @@ export function MovementSection() {
                   strokeWidth={0.8}
                   className="text-white/55 transition-transform duration-500 group-hover:-rotate-6 motion-reduce:transform-none"
                 />
-                <ArrowUpRight
+                <ArrowRight
                   size={20}
                   className="text-white/30 transition-transform group-hover:-translate-y-1 group-hover:translate-x-1"
                 />
@@ -329,7 +329,7 @@ export function PlansSection() {
                 className={`group mt-10 flex min-h-12 items-center justify-between rounded-full px-6 text-sm font-medium transition-colors ${index ? "bg-black text-white hover:bg-black/80" : "bg-white/8 text-white hover:bg-white/15"}`}
               >
                 {index ? "Start free, explore Pro in the app" : "Get started free"}
-                <ArrowUpRight size={18} />
+                <ArrowRight size={18} />
               </Link>
               {index === 1 && (
                 <p className="mt-4 text-[11px] leading-6 text-black/60">
@@ -363,7 +363,7 @@ export function ClosingSection() {
           </p>
           <Link href="/register" className={`${primaryButton} mt-9`}>
             Find your starting point
-            <ArrowUpRight size={18} />
+            <ArrowRight size={18} />
           </Link>
         </Reveal>
       </div>

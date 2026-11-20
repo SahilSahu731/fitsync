@@ -1,7 +1,7 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowUpRight, CalendarDays, Check, Dumbbell, Moon } from "lucide-react";
+import { ArrowRight, CalendarDays, Check, Dumbbell, Moon } from "lucide-react";
 import Link from "next/link";
 
 const days = ["Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday", "Sunday"];
@@ -99,7 +99,7 @@ export function RoutineRhythm() {
         className="group mt-7 flex items-center justify-between border-t border-line pt-5 text-sm font-semibold"
       >
         Find a program that fits
-        <ArrowUpRight
+        <ArrowRight
           size={20}
           className="text-brand transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
         />
