@@ -19,13 +19,16 @@ export function Brand() {
   );
 }
 
-export function AccountAvatar({ name, className = "" }: { name?: string; className?: string }) {
+export function AccountAvatar({ name, avatarUrl, className = "" }: { name?: string; avatarUrl?: string | null; className?: string }) {
   return (
     <span
       aria-hidden="true"
       className={`flex size-9 shrink-0 items-center justify-center rounded-full bg-white/10 text-sm font-semibold text-white ${className}`}
     >
-      {(name?.trim().charAt(0) || "F").toUpperCase()}
+      { avatarUrl ? 
+        <Image src={avatarUrl} alt="" width={32} height={32} className="size-9 rounded-full" />
+      :
+      (name?.trim().charAt(0) || "F").toUpperCase()}
     </span>
   );
 }

@@ -74,7 +74,7 @@ export function SiteHeader() {
                   key={href}
                   href={href}
                   aria-current={path === href || path.startsWith(`${href}/`) ? "page" : undefined}
-                  className={`rounded-sm py-3 text-xs font-medium transition-colors ${focusRing} ${path.startsWith(href) ? "text-white" : "text-white/50 hover:text-white"}`}
+                  className={`rounded-sm py-3 text-sm  transition-colors ${focusRing} ${path.startsWith(href) ? "text-white" : "text-white/50 hover:text-white"}`}
                 >
                   {label}
                 </Link>
@@ -85,9 +85,9 @@ export function SiteHeader() {
                 <>
                   <Link
                     href={workspace}
-                    className="flex items-center gap-2 rounded-full text-xs font-medium"
+                    className="flex items-center border pr-4 hover:bg-[#303130] transition-all hover:border-none duration-500 py-1 border-white/20 gap-2 rounded-full font-medium"
                   >
-                    <AccountAvatar name={account.user.name} />
+                    <AccountAvatar name={account.user.name} avatarUrl={account.user.avatarUrl} />
                     <span className="hidden sm:block">My workspace</span>
                   </Link>
                   <button
@@ -102,13 +102,13 @@ export function SiteHeader() {
                 <>
                   <Link
                     href="/login"
-                    className="hidden min-h-11 items-center text-xs text-white/60 transition-colors hover:text-white sm:flex"
+                    className="hidden min-h-11 items-center text-sm font-medium text-white/60 transition-colors hover:text-white sm:flex"
                   >
                     Log in
                   </Link>
                   <Link
                     href="/register"
-                    className="group inline-flex min-h-10 items-center gap-3 rounded-full bg-white px-4 text-xs font-semibold text-black transition-colors hover:bg-brand sm:px-5"
+                    className="group inline-flex min-h-10 items-center gap-3 rounded-xl bg-white px-4 text-sm font-medium text-black transition-colors hover:bg-brand sm:px-5"
                   >
                     Start free
                     <ArrowRight size={15} className="hidden sm:block" />

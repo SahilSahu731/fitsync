@@ -55,13 +55,13 @@ export function SiteFooter() {
           <div className="grid grid-cols-2 gap-x-8 gap-y-10 sm:grid-cols-3">
             {groups.map((group) => (
               <nav key={group.title} aria-label={group.title}>
-                <h3 className="text-xs font-medium tracking-normal text-white/80">{group.title}</h3>
+                <h3 className="text-lg font-medium tracking-normal text-white/80">{group.title}</h3>
                 <ul className="mt-5 space-y-2">
                   {group.links.map((link) => (
                     <li key={link.href}>
                       <Link
                         href={link.href}
-                        className="inline-block min-h-9 py-1.5 text-xs leading-6 text-white/50 transition-colors hover:text-white"
+                        className="inline-block min-h-9 py-1.5 text-sm leading-6 text-white/50 transition-colors hover:text-white"
                       >
                         {link.label}
                       </Link>
@@ -72,7 +72,7 @@ export function SiteFooter() {
             ))}
           </div>
         </div>
-        <div className="mt-18 flex flex-wrap items-center justify-between gap-x-8 gap-y-5 text-[11px] text-white/50">
+        <div className="mt-18 flex flex-wrap items-center justify-between gap-x-8 gap-y-5 text-[14px] text-white/50">
           <p>© {new Date().getFullYear()} FitSync</p>
           <div className="flex flex-wrap items-center gap-6">
             {external.map((link) => (
@@ -91,7 +91,7 @@ export function SiteFooter() {
         </div>
         <p
           aria-hidden="true"
-          className="mt-10 -mb-[.18em] text-[clamp(5rem,20.5vw,19rem)] leading-[1.15] font-semibold tracking-[-.08em] text-white/6 select-none"
+          className="mt-10 mb-[-0.18em] text-[clamp(5rem,20.5vw,19rem)] leading-[1.15] font-semibold tracking-[-.08em] text-white/6 select-none"
         >
           FitSync.
         </p>
