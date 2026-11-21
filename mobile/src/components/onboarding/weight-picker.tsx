@@ -289,12 +289,7 @@ export function WeightPicker({ value, onChange, unit, min, max }: Props) {
               returnKeyType="done"
               selectTextOnFocus
               maxLength={6}
-              className="min-w-[116px] p-0 text-center font-poppins-semibold text-[60px] leading-[72px] text-white"
-              style={{
-                textShadowColor: C.brand,
-                textShadowRadius: 16,
-                textShadowOffset: { width: 0, height: 0 },
-              }}
+              className="min-w-[106px] p-0 text-center font-poppins-semibold text-[60px] leading-[72px] text-white"
             />
             <Txt weight="medium" className="pb-2.5 text-lg text-ink">
               {unit}
