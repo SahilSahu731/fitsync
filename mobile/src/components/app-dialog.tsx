@@ -78,7 +78,7 @@ export function AppDialogProvider({ children }: { children: React.ReactNode }) {
         <View className="flex-1 items-center justify-center bg-black/75 px-6 py-12">
           {dialog && (
             <View
-              className="max-h-full flex w-full max-w-[400px] overflow-hidden rounded-[28px] bg-panel"
+              className="max-h-full flex w-full max-w-[400px] overflow-hidden rounded-[24px] bg-panel"
               accessibilityViewIsModal
             >
               <ScrollView bounces={false} contentContainerClassName="p-[26px]">
@@ -94,20 +94,20 @@ export function AppDialogProvider({ children }: { children: React.ReactNode }) {
                               ? "alert-circle"
                               : "information"
                       }
-                      size={30}
+                      size={26}
                       color={color}
                     />
                   </View>
                   <View className="min-w-0 flex-1">
                     <Txt
-                      weight="semibold"
+                      weight="medium"
                       accessibilityRole="header"
                       className="text-[25px] leading-[31px] tracking-[-0.5px] text-ink"
                     >
                       {dialog.title}
                     </Txt>
                     {!!dialog.message && (
-                      <Txt className="mt-1 text-base leading-6 text-muted">{dialog.message}</Txt>
+                      <Txt className="mt-1 text-sm leading-6 text-muted">{dialog.message}</Txt>
                     )}
                   </View>
                 </View>
@@ -117,7 +117,7 @@ export function AppDialogProvider({ children }: { children: React.ReactNode }) {
                       key={index}
                       accessibilityRole="button"
                       onPress={() => choose(action)}
-                      className={`min-h-[52px] flex-1 items-center justify-center rounded-2xl px-2 py-1 active:opacity-75 ${
+                      className={`min-h-[40px] flex-1 items-center justify-center rounded-2xl px-2 py-1 active:opacity-75 ${
                         action.style === "cancel" ||
                         (dialog.actions.length > 1 && index === 0 && action.style !== "destructive")
                           ? "bg-elevated"
