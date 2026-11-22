@@ -4,6 +4,7 @@ import {
   Animated,
   Easing,
   Pressable,
+  type PressableStateCallbackType,
   type PressableProps,
   type StyleProp,
   type ViewStyle,
@@ -69,12 +70,13 @@ export function MotionPressable({
     }
     return () => scale.stopAnimation();
   }, [disabled, reduced, scale]);
+  const state: PressableStateCallbackType & { hovered: boolean } = { pressed, hovered };
   return (
     <AnimatedPressable
       {...props}
       disabled={disabled}
       style={[
-        typeof style === "function" ? style({ pressed, hovered }) : style,
+        typeof style === "function" ? style(state) : style,
         { transform: [{ scale }] },
       ]}
       onHoverIn={(event) => {
