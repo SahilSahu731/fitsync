@@ -43,9 +43,7 @@ export function computeStreak(
   return { count, doneToday: done.has(today), week };
 }
 
-const ORANGE = "#FB923C";
 const FLAME = "#f0c90a";
-const LIGHT = "#FFEDD5";
 const DEEP = "#8c2604";
 
 export function StreakCard({ streak, onPress }: { streak: StreakInfo; onPress: () => void }) {
