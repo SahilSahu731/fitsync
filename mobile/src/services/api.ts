@@ -89,9 +89,17 @@ async function fetchJson(url: string, init: RequestInit): Promise<JsonResponse> 
   try {
     const request = (async () => {
       const response = await fetch(url, { ...init, signal: controller.signal });
-      const result: unknown = await response.json().catch((error) => {
+      const result: unknown = response.status === 204 || response.status === 205 ? undefined : await response.json().catch((error) => {
         if (controller.signal.aborted) throw error;
-        return {};
+
+        if (response.ok) {
+          throw new HttpError(
+            502,
+            "The server returned an invalid response. Please try again.",
+          );
+        }
+
+        return null;
       });
       if (controller.signal.aborted) throw requestTimedOut();
       return { ok: response.ok, status: response.status, result };

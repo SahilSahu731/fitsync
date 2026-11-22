@@ -23,7 +23,6 @@ import { DailyOverview } from "@/src/features/home/daily-overview";
 import { WeekOverview } from "@/src/features/home/week-overview";
 import { homeSnapshot } from "@/src/features/home/model";
 
-import { PromoSlide } from "@/src/features/home/promo-slide";
 import { HomeHeroCarousel } from "@/src/features/home/hero-carousel";
 import { ProPromoCard } from "@/src/features/home/pro-promo-card";
 import { StreakCard, computeStreak } from "@/src/features/home/streak-card";

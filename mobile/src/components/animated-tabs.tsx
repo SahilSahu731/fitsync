@@ -1,8 +1,6 @@
 import React, { createContext, useContext, useEffect, useMemo } from "react";
 import { Text, View } from "react-native";
 import Animated, {
-  Extrapolation,
-  interpolate,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
@@ -13,7 +11,7 @@ import Animated, {
 import { MotionPressable } from "./motion";
 import { TabGlassSurface } from "./glass-tabs";
 import { TAB_SPRING, useTabBarMotion } from "./tab-bar-motion";
-import { TAB_ICON_SIZE, TAB_LABEL_GAP, TAB_PADDING, tabBarLayout } from "./tab-bar-model";
+import { TAB_ICON_SIZE, TAB_PADDING, tabBarLayout } from "./tab-bar-model";
 import { TabArtwork, type TabArtworkName } from "./tab-artwork";
 
 // Icon colours: white when idle (on the glass), black when selected (on the white pill).
@@ -120,15 +118,15 @@ export function AnimatedTabButton({
       { scale: (1 - compact.get() * 0.08) * (1 + (layout.get().activation[index] ?? 0) * 0.04) },
     ],
   }));
-  const labelMotion = useAnimatedStyle(() => {
-    const activation = Math.max(0, (layout.get().activation[index] ?? 0) * (1 - compact.get()));
-    return {
-      width: (layout.get().labelCapacities[index] ?? 0) * activation,
-      marginLeft: TAB_LABEL_GAP * activation,
-      opacity: focused ? interpolate(activation, [0, 0.25, 1], [0, 0, 1], Extrapolation.CLAMP) : 0,
-    };
-  });
-  const textWidth = useAnimatedStyle(() => ({ width: layout.get().labelCapacities[index] ?? 0 }));
+  // const labelMotion = useAnimatedStyle(() => {
+  //   const activation = Math.max(0, (layout.get().activation[index] ?? 0) * (1 - compact.get()));
+  //   return {
+  //     width: (layout.get().labelCapacities[index] ?? 0) * activation,
+  //     marginLeft: TAB_LABEL_GAP * activation,
+  //     opacity: focused ? interpolate(activation, [0, 0.25, 1], [0, 0, 1], Extrapolation.CLAMP) : 0,
+  //   };
+  // });
+  // const textWidth = useAnimatedStyle(() => ({ width: layout.get().labelCapacities[index] ?? 0 }));
   return (
     <Animated.View className="absolute" style={[{ top: TAB_PADDING }, position]}>
       <MotionPressable

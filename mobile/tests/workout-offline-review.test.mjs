@@ -152,6 +152,38 @@ function authFixture(fetcher, options = {}) {
 const response = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
 
+test("API handles invalid JSON and empty responses correctly", async () => {
+  // A successful response containing invalid JSON must fail.
+  const invalid = authFixture(async () =>
+    new Response("not valid JSON", { status: 200 }),
+  );
+
+  await assert.rejects(
+    invalid.api.apiRequest("/probe"),
+    (error) => error.status === 502,
+  );
+
+  // HTTP 204 is allowed to contain no response body.
+  const empty = authFixture(async () =>
+    new Response(null, { status: 204 }),
+  );
+
+  assert.equal(
+    await empty.api.apiRequest("/probe"),
+    undefined,
+  );
+
+  // Invalid JSON must not hide the original HTTP 400 status.
+  const failed = authFixture(async () =>
+    new Response("invalid JSON", { status: 400 }),
+  );
+
+  await assert.rejects(
+    failed.api.apiRequest("/probe"),
+    (error) => error.status === 400,
+  );
+});
+
 test("an old account refresh response cannot overwrite a newer login or retry the old operation", async () => {
   let finishRefresh;
   let originals = 0;

@@ -594,7 +594,7 @@ const EXERCISES = [
   { name: "Shoulder Press", sub: "SHOULDERS / PUSH", icon: "arm-flex" as const, level: 2 },
 ];
 const CHIPS = ["All", "Chest", "Back", "Legs"];
-const INDIGO = "#8C9BFF";
+// const INDIGO = "#8C9BFF";
 
 /** 3. Indigo night card, dot matrix, search + filters + exercise list. */
 function LibraryCard({ height }: CardProps) {
