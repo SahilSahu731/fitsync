@@ -23,6 +23,11 @@ import { DailyOverview } from "@/src/features/home/daily-overview";
 import { WeekOverview } from "@/src/features/home/week-overview";
 import { homeSnapshot } from "@/src/features/home/model";
 
+import { PromoSlide } from "@/src/features/home/promo-slide";
+import { HomeHeroCarousel } from "@/src/features/home/hero-carousel";
+import { ProPromoCard } from "@/src/features/home/pro-promo-card";
+import { StreakCard, computeStreak } from "@/src/features/home/streak-card";
+
 export default function HomeScreen() {
   const router = useRouter();
   const { user, settings } = useSession();
@@ -64,6 +69,10 @@ export default function HomeScreen() {
   const snapshot = useMemo(
     () => homeSnapshot(progress.journal.workouts, progress.journal.events, today),
     [progress.journal.workouts, progress.journal.events, today],
+  );
+  const streak = useMemo(
+    () => computeStreak(progress.journal.workouts, today),
+    [progress.journal.workouts, today],
   );
   const unit = settings?.weightUnit ?? "kg";
   const canLog = Boolean(ownerId) && !progress.loading && !progress.storageError;
@@ -137,7 +146,7 @@ export default function HomeScreen() {
           onReminders={() => setRemindersOwner(ownerId)}
           onProfile={() => router.push("/profile")}
         />
-        <View className="mb-6">
+        <View className="mb-5">
           <View className=" flex-row flex-wrap items-center gap-x-2 gap-y-1">
             <Txt className="text-[10px]  text-muted">
               {dateLabel(today, { weekday: "short", month: "short", day: "numeric" })}
@@ -157,17 +166,27 @@ export default function HomeScreen() {
           >
             {greeting}, {firstName}.
           </Txt>
-          <Txt className="mt-1 text-xs leading-5 text-muted">
-            A little movement. A little care. Your day, in sync.
-          </Txt>
         </View>
         <WorkoutSyncNotice />
-        <HomeWorkoutCard
-          key={`home-workout:${ownerId}`}
-          today={today}
-          onStart={openTraining}
-          refreshRef={todayCard}
-        />
+        <View className="-mx-5">
+          <HomeHeroCarousel
+            initialIndex={1}
+            slides={[
+              <StreakCard key="streak" streak={streak} onPress={() => router.push("/calendar")} />,
+              <HomeWorkoutCard
+                key={`home-workout:${ownerId}`}
+                today={today}
+                onStart={openTraining}
+                refreshRef={todayCard}
+              />,
+              <ProPromoCard
+                key="pro"
+                isPro={billing.isPro}
+                onPress={() => router.push("/(tabs)/pro")}
+              />,
+            ]}
+          />
+        </View>
         <View className="mb-7 mt-6">
           <SectionHeading
             title="Quick log"

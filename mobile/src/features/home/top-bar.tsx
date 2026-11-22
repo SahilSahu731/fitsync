@@ -1,9 +1,24 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { Image, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable } from "@/src/components/motion";
 import { Txt } from "@/src/components/ui";
 import type { AuthUser } from "@/src/context/session";
+
+import Svg, { Rect, Defs, Stop, LinearGradient } from "react-native-svg";
+
+import Animated, {
+  useSharedValue,
+  useAnimatedProps,
+  withTiming,
+  withRepeat,
+  withSequence,
+  withDelay,
+  cancelAnimation,
+  Easing,
+} from "react-native-reanimated";
+
+const AnimatedRect = Animated.createAnimatedComponent(Rect);
 
 export function HomeTopBar({
   user,
@@ -27,8 +42,31 @@ export function HomeTopBar({
       .map((part) => part[0])
       .join("")
       .toUpperCase() || "FS";
+
+  const shine = useSharedValue(-30);
+
+  useEffect(() => {
+    shine.value = withRepeat(
+      withSequence(
+        withTiming(76, {
+          duration: 850,
+          easing: Easing.inOut(Easing.ease),
+        }),
+        withDelay(2400, withTiming(-30, { duration: 0 })),
+      ),
+      -1,
+      false,
+    );
+
+    return () => cancelAnimation(shine);
+  }, [shine]);
+
+  const shineProps = useAnimatedProps(() => ({
+    x: shine.value,
+  }));
+
   return (
-    <View className="mb-7 flex-row items-center justify-between gap-3">
+    <View className="mb-5 flex-row items-center justify-between gap-3">
       <View className="min-w-0 flex-1">
         <Txt weight="semibold" className="text-xl tracking-[-0.8px]">
           FITSYNC
@@ -40,13 +78,45 @@ export function HomeTopBar({
           accessibilityRole="button"
           accessibilityLabel={isPro ? "Open Pro studio" : "Explore Pro"}
           onPress={onPro}
-          className="h-11 w-11 items-center justify-center rounded-full bg-yellow-500"
+          className="relative h-11 w-11 items-center justify-center overflow-hidden rounded-full border border-yellow-300/30 bg-yellow-500/15"
         >
-          <MaterialCommunityIcons
-            name={isPro ? "star-four-points-outline" : "crown-outline"}
-            size={23}
-            color="#000"
+          {/* Glass surface */}
+          <View pointerEvents="none" className="absolute inset-0 rounded-full bg-white/5" />
+
+          {/* Top glass reflection */}
+          <View
+            pointerEvents="none"
+            className="absolute left-2 right-2 top-0 h-px bg-yellow-100/40"
           />
+
+          {/* Crown */}
+          <MaterialCommunityIcons
+            name={isPro ? "crown" : "crown-outline"}
+            size={23}
+            color="#FFDB78"
+          />
+
+          {/* Animated shine */}
+          <View pointerEvents="none" className="absolute inset-0">
+            <Svg width="100%" height="100%" viewBox="0 0 44 44">
+              <Defs>
+                <LinearGradient id="shine" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <Stop offset="0%" stopColor="#FFFFFF" stopOpacity={0} />
+                  <Stop offset="50%" stopColor="#FFF2C4" stopOpacity={0.65} />
+                  <Stop offset="100%" stopColor="#FFFFFF" stopOpacity={0} />
+                </LinearGradient>
+              </Defs>
+
+              <AnimatedRect
+                animatedProps={shineProps}
+                y={-5}
+                width={18}
+                height={60}
+                transform="skewX(-22)"
+                fill="url(#shine)"
+              />
+            </Svg>
+          </View>
         </Pressable>
         <Pressable
           accessibilityRole="button"

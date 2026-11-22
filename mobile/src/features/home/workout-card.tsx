@@ -1,10 +1,6 @@
 import React, { useImperativeHandle, useLayoutEffect, useRef, useState, type Ref } from "react";
-import { ActivityIndicator, View } from "react-native";
 import { router } from "expo-router";
-import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Txt } from "@/src/components/ui";
-import { MotionPressable as Pressable } from "@/src/components/motion";
-import { C } from "@/src/constants/theme";
 import { useSession } from "@/src/context/session";
 import { useBilling } from "../billing/billing-context";
 import { useCoaching } from "../coaching/use-coaching";
@@ -14,8 +10,8 @@ import { focusAction, programFocus } from "../program-follow/program-view";
 import { WorkoutAction } from "../program-follow/workout-action";
 import { dateLabel, localDate } from "../progress/model";
 import { useWorkout } from "../workouts/workout-context";
+import { WorkoutShell, HomeButton, SecondaryLink } from "./workout-card-ui";
 
-type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 export type HomeWorkoutCardHandle = { refresh: () => Promise<void> };
 type Props = {
   onStart: () => void;
@@ -372,130 +368,14 @@ function AccountWorkoutCard({
   );
 }
 
-function WorkoutShell({
-  eyebrow,
-  title,
-  description,
-  icon,
-  meta = [],
-  hero = false,
-  children,
-}: {
-  eyebrow: string;
-  title: string;
-  description: string;
-  icon: IconName;
-  meta?: string[];
-  hero?: boolean;
-  children: React.ReactNode;
-}) {
-  return (
-    <View className="rounded-2xl bg-panel p-6">
-      <View className="mb-2 flex-row items-center gap-2.5">
-        <MaterialCommunityIcons name={icon} size={14} color={C.ink} />
-        <Txt
-          weight="medium"
-          className="min-w-0 flex-1 text-[9px] text-muted"
-        >
-          {eyebrow}
-        </Txt>
-      </View>
-      <Txt
-        accessibilityRole="header"
-        weight="semibold"
-        className={
-          hero
-            ? "text-[30px] leading-[46px] tracking-[-1.5px]"
-            : "text-[29px] leading-[38px] tracking-[-0.9px]"
-        }
-      >
-        {title}
-      </Txt>
-      <Txt className="mt-1 text-xs leading-[22px] text-muted">{description}</Txt>
-      {meta.length > 0 && (
-        <View className="mt-2 flex-row flex-wrap gap-x-2 gap-y-2">
-          {meta.filter(Boolean).map((item, index) => (
-            <View
-              key={`${index}:${item}`}
-              className="max-w-full rounded-full bg-white/5 px-3 py-1"
-            >
-              <Txt weight="medium" className="text-[10px] leading-5">
-                {item}
-              </Txt>
-            </View>
-          ))}
-        </View>
-      )}
-      <View className="mt-6">{children}</View>
-    </View>
-  );
-}
-
-function HomeButton({
-  title,
-  icon,
-  onPress,
-  disabled = false,
-  loading = false,
-}: {
-  title: string;
-  icon?: IconName;
-  onPress: () => void;
-  disabled?: boolean;
-  loading?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      accessibilityState={{ disabled: disabled || loading, busy: loading }}
-      disabled={disabled || loading}
-      onPress={onPress}
-      className={`min-h-[58px] flex-row items-center justify-between gap-3 rounded-full bg-white py-2 pl-5 pr-2 ${disabled || loading ? "opacity-50" : ""}`}
-    >
-      <Txt weight="semibold" className="min-w-0 flex-1 text-[13px] leading-5 text-black">
-        {title}
-      </Txt>
-      <View className="h-10 w-10 items-center justify-center rounded-full bg-black">
-        {loading ? (
-          <ActivityIndicator color={C.ink} />
-        ) : (
-          <MaterialCommunityIcons name={icon ?? "arrow-right"} size={21} color={C.ink} />
-        )}
-      </View>
-    </Pressable>
-  );
-}
-
-function SecondaryLink({
-  title,
-  onPress,
-  disabled = false,
-}: {
-  title: string;
-  onPress: () => void;
-  disabled?: boolean;
-}) {
-  return (
-    <Pressable
-      accessibilityRole="button"
-      accessibilityLabel={title}
-      accessibilityState={{ disabled }}
-      disabled={disabled}
-      onPress={onPress}
-      className={`mt-2 min-h-11 flex-row items-center justify-center gap-1.5 px-3 ${disabled ? "opacity-40" : ""}`}
-    >
-      <Txt weight="medium" className="flex-shrink text-[11px] text-muted">
-        {title}
-      </Txt>
-      <MaterialCommunityIcons name="arrow-right" size={15} color={C.muted} />
-    </Pressable>
-  );
-}
-
 function ErrorMessage({ message }: { message: string }) {
   return (
-    <Txt accessibilityRole="alert" className="mb-4 text-xs leading-5 text-muted">
+    <Txt
+      accessibilityRole="alert"
+      numberOfLines={2}
+      className="text-[11px] leading-4 text-muted"
+      style={{ flexBasis: "100%" }}
+    >
       {message}
     </Txt>
   );
