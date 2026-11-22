@@ -75,10 +75,7 @@ export function MotionPressable({
     <AnimatedPressable
       {...props}
       disabled={disabled}
-      style={[
-        typeof style === "function" ? style(state) : style,
-        { transform: [{ scale }] },
-      ]}
+      style={[typeof style === "function" ? style(state) : style, { transform: [{ scale }] }]}
       onHoverIn={(event) => {
         setHovered(true);
         if (!reduced && !disabled)

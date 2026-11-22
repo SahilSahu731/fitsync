@@ -17,7 +17,8 @@ function load(file, dependencies = {}) {
   vm.runInNewContext(js, {
     exports,
     require: (name) => {
-      if (name === "./custom-discovery") return load("../src/features/exercises/custom-discovery.ts");
+      if (name === "./custom-discovery")
+        return load("../src/features/exercises/custom-discovery.ts");
       if (!(name in dependencies)) throw Error(`Unexpected dependency ${name}`);
       return dependencies[name];
     },

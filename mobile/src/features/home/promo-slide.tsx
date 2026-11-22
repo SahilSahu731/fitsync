@@ -15,14 +15,32 @@ type Props = {
   accent?: string;
 };
 
-export function PromoSlide({ icon, eyebrow, title, body, cta, onPress, accent = "#FACC15" }: Props) {
+export function PromoSlide({
+  icon,
+  eyebrow,
+  title,
+  body,
+  cta,
+  onPress,
+  accent = "#FACC15",
+}: Props) {
   const float = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     const loop = Animated.loop(
       Animated.sequence([
-        Animated.timing(float, { toValue: 1, duration: 2200, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
-        Animated.timing(float, { toValue: 0, duration: 2200, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+        Animated.timing(float, {
+          toValue: 1,
+          duration: 2200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
+        Animated.timing(float, {
+          toValue: 0,
+          duration: 2200,
+          easing: Easing.inOut(Easing.quad),
+          useNativeDriver: true,
+        }),
       ]),
     );
     loop.start();
@@ -42,7 +60,13 @@ export function PromoSlide({ icon, eyebrow, title, body, cta, onPress, accent = 
       {/* big floating icon in the corner */}
       <Animated.View
         pointerEvents="none"
-        style={{ position: "absolute", right: -14, top: 6, opacity: 0.18, transform: [{ translateY }, { rotate }] }}
+        style={{
+          position: "absolute",
+          right: -14,
+          top: 6,
+          opacity: 0.18,
+          transform: [{ translateY }, { rotate }],
+        }}
       >
         <MaterialCommunityIcons name={icon} size={150} color={accent} />
       </Animated.View>
@@ -52,7 +76,10 @@ export function PromoSlide({ icon, eyebrow, title, body, cta, onPress, accent = 
           {eyebrow}
         </Txt>
       </View>
-      <Txt weight="medium" className="mt-4 max-w-[75%] text-[22px] leading-[28px] tracking-[-0.5px]">
+      <Txt
+        weight="medium"
+        className="mt-4 max-w-[75%] text-[22px] leading-[28px] tracking-[-0.5px]"
+      >
         {title}
       </Txt>
       <Txt className="mt-2 max-w-[75%] text-xs leading-5 text-muted">{body}</Txt>

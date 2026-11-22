@@ -19,7 +19,15 @@ type ShellProps = {
   children?: React.ReactNode;
 };
 
-export function WorkoutShell({ eyebrow, title, description, icon, meta, hero, children }: ShellProps) {
+export function WorkoutShell({
+  eyebrow,
+  title,
+  description,
+  icon,
+  meta,
+  hero,
+  children,
+}: ShellProps) {
   const live = /progress/i.test(eyebrow);
   const accent = live ? GREEN : INDIGO;
   const [pulse] = useState(() => new Animated.Value(0));
@@ -28,12 +36,27 @@ export function WorkoutShell({ eyebrow, title, description, icon, meta, hero, ch
   useEffect(() => {
     const a = Animated.loop(
       Animated.sequence([
-        Animated.timing(pulse, { toValue: 1, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-        Animated.timing(pulse, { toValue: 0, duration: 1600, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+        Animated.timing(pulse, {
+          toValue: 1,
+          duration: 1600,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.timing(pulse, {
+          toValue: 0,
+          duration: 1600,
+          easing: Easing.inOut(Easing.sin),
+          useNativeDriver: true,
+        }),
       ]),
     );
     const b = Animated.loop(
-      Animated.timing(ripple, { toValue: 1, duration: 1800, easing: Easing.out(Easing.quad), useNativeDriver: true }),
+      Animated.timing(ripple, {
+        toValue: 1,
+        duration: 1800,
+        easing: Easing.out(Easing.quad),
+        useNativeDriver: true,
+      }),
     );
     a.start();
     if (live) b.start();
@@ -67,20 +90,56 @@ export function WorkoutShell({ eyebrow, title, description, icon, meta, hero, ch
     >
       <Animated.View
         pointerEvents="none"
-        style={{ position: "absolute", right: -60, top: -70, width: 200, height: 200, borderRadius: 100, backgroundColor: accent, opacity: glow }}
+        style={{
+          position: "absolute",
+          right: -60,
+          top: -70,
+          width: 200,
+          height: 200,
+          borderRadius: 100,
+          backgroundColor: accent,
+          opacity: glow,
+        }}
       />
       <View
         pointerEvents="none"
-        style={{ position: "absolute", left: -80, bottom: -100, width: 190, height: 190, borderRadius: 95, backgroundColor: live ? "#16A34A" : "#6366F1", opacity: 0.1 }}
+        style={{
+          position: "absolute",
+          left: -80,
+          bottom: -100,
+          width: 190,
+          height: 190,
+          borderRadius: 95,
+          backgroundColor: live ? "#16A34A" : "#6366F1",
+          opacity: 0.1,
+        }}
       />
       <View
         pointerEvents="none"
-        style={{ position: "absolute", right: -10, top: -10, width: 116, height: 116, borderRadius: 58, borderWidth: 1, borderColor: `${accent}2E` }}
+        style={{
+          position: "absolute",
+          right: -10,
+          top: -10,
+          width: 116,
+          height: 116,
+          borderRadius: 58,
+          borderWidth: 1,
+          borderColor: `${accent}2E`,
+        }}
       />
       {hero && (
         <View
           pointerEvents="none"
-          style={{ position: "absolute", right: 16, top: 16, width: 70, height: 70, borderRadius: 35, borderWidth: 1, borderColor: `${accent}20` }}
+          style={{
+            position: "absolute",
+            right: 16,
+            top: 16,
+            width: 70,
+            height: 70,
+            borderRadius: 35,
+            borderWidth: 1,
+            borderColor: `${accent}20`,
+          }}
         />
       )}
 
@@ -90,8 +149,23 @@ export function WorkoutShell({ eyebrow, title, description, icon, meta, hero, ch
           className="flex-row items-center gap-1.5 rounded-full px-2 py-0.5"
           style={{ backgroundColor: `${accent}22`, borderWidth: 1, borderColor: `${accent}44` }}
         >
-          {live && <Animated.View style={{ height: 6, width: 6, borderRadius: 3, backgroundColor: accent, opacity: dot }} />}
-          <Txt weight="medium" className="text-[9px] tracking-[0.6px]" style={{ color: accent }} numberOfLines={1}>
+          {live && (
+            <Animated.View
+              style={{
+                height: 6,
+                width: 6,
+                borderRadius: 3,
+                backgroundColor: accent,
+                opacity: dot,
+              }}
+            />
+          )}
+          <Txt
+            weight="medium"
+            className="text-[9px] tracking-[0.6px]"
+            style={{ color: accent }}
+            numberOfLines={1}
+          >
             {eyebrow.toUpperCase()}
           </Txt>
         </View>
@@ -107,7 +181,11 @@ export function WorkoutShell({ eyebrow, title, description, icon, meta, hero, ch
         <View className="min-w-0 flex-1">
           <Txt
             weight="medium"
-            className={hero ? "text-[22px] leading-[26px] tracking-[-0.6px]" : "text-[19px] leading-[23px] tracking-[-0.5px]"}
+            className={
+              hero
+                ? "text-[22px] leading-[26px] tracking-[-0.6px]"
+                : "text-[19px] leading-[23px] tracking-[-0.5px]"
+            }
             numberOfLines={1}
           >
             {title}
@@ -153,7 +231,16 @@ export function WorkoutShell({ eyebrow, title, description, icon, meta, hero, ch
       </View>
 
       {/* actions */}
-      <View style={{ marginTop: "auto", paddingTop: 10, flexDirection: "row", flexWrap: "wrap", alignItems: "center", gap: 8 }}>
+      <View
+        style={{
+          marginTop: "auto",
+          paddingTop: 10,
+          flexDirection: "row",
+          flexWrap: "wrap",
+          alignItems: "center",
+          gap: 8,
+        }}
+      >
         {children}
       </View>
     </View>

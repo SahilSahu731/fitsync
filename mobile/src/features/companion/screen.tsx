@@ -29,12 +29,7 @@ import { GlassCard, ProAction, ProButton, ProPill, ProScene, ProSection, PRO } f
 import { FoodDiaryPanel } from "../nutrition/food-diary";
 import { MonthlyReportPanel } from "./monthly-report";
 import { useKeyboardForm } from "../progress/keyboard-visibility";
-import {
-  type CompanionRecord,
-  type Experiment,
-  type Milestone,
-  type Readiness,
-} from "./api";
+import { type CompanionRecord, type Experiment, type Milestone, type Readiness } from "./api";
 import { useCompanion } from "./companion-context";
 import { effectiveReadiness, milestoneProgress } from "./model";
 import { TodayForYouCard } from "./today-card";

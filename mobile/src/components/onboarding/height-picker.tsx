@@ -102,13 +102,7 @@ const TickChunk = memo(function TickChunk({ start, end }: { start: number; end: 
  * Big man standing on the floor. His head always reaches the glowing line,
  * and both move together as the ruler changes (UI thread only).
  */
-const Man = memo(function Man({
-  scrollY,
-  live,
-}: {
-  scrollY: SharedValue<number>;
-  live: number;
-}) {
+const Man = memo(function Man({ scrollY, live }: { scrollY: SharedValue<number>; live: number }) {
   const scale = useDerivedScale(scrollY);
 
   const figureStyle = useAnimatedStyle(() => ({

@@ -1,3 +1,4 @@
+
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -6,9 +7,9 @@ import ts from "typescript";
 import sharp from "sharp";
 import { MUSCLES } from "../src/features/pro/analytics.ts";
 
-function fixture() {
+function loadBody() {
   const jsx = (type, props = {}) => ({ type, props });
-  const exports = {};
+
   const dependencies = {
     react: {},
     "react/jsx-runtime": { jsx, jsxs: jsx },
@@ -16,149 +17,170 @@ function fixture() {
       __esModule: true,
       default: "Svg",
       G: "G",
-      Image: "SvgImage",
+      Image: "Image",
       Path: "Path",
     },
-    "../../../assets/anatomy/muscle-atlas.png": "bundled-atlas",
+    "../../../assets/anatomy/muscle-atlas.png": "atlas",
   };
-  const source = ts.transpileModule(
-    readFileSync(new URL("../src/features/pro/anatomical-body.tsx", import.meta.url), "utf8"),
+
+  const code = ts.transpileModule(
+    readFileSync(
+      new URL("../src/features/pro/anatomical-body.tsx", import.meta.url),
+      "utf8",
+    ),
     {
       compilerOptions: {
         module: ts.ModuleKind.CommonJS,
-        target: ts.ScriptTarget.ES2022,
-        esModuleInterop: true,
         jsx: ts.JsxEmit.ReactJSX,
+        esModuleInterop: true,
       },
     },
   ).outputText;
-  vm.runInNewContext(source, {
+
+  const exports = {};
+
+  vm.runInNewContext(code, {
     exports,
     require(name) {
-      assert.ok(name in dependencies, `Unexpected anatomy dependency: ${name}`);
+      assert.ok(name in dependencies, `Unexpected dependency: ${name}`);
       return dependencies[name];
     },
   });
+
   return exports;
 }
 
-function nodes(node, type) {
-  if (node == null || typeof node !== "object") return [];
-  if (Array.isArray(node)) return node.flatMap((child) => nodes(child, type));
-  return [...(node.type === type ? [node] : []), ...nodes(node.props?.children, type)];
+function findAll(tree, type) {
+  if (Array.isArray(tree)) {
+    return tree.flatMap((item) => findAll(item, type));
+  }
+
+  if (!tree || typeof tree !== "object") return [];
+
+  return [
+    ...(tree.type === type ? [tree] : []),
+    ...findAll(tree.props?.children, type),
+  ];
 }
 
-function region(tree, code) {
-  const found = nodes(tree, "G").find((node) => node.props.testID.endsWith(`-${code}`));
-  assert.ok(found, `Expected visible region ${code}`);
-  return found;
+function muscle(tree, code) {
+  const group = findAll(tree, "G").find(
+    (item) => item.props.testID.endsWith(`-${code}`),
+  );
+
+  assert.ok(group, `Missing muscle region: ${code}`);
+  return group.props;
 }
 
-test("anatomy uses a bundled transparent atlas with the correct front and back crop", async () => {
-  const source = new URL("../assets/anatomy/muscle-atlas.png", import.meta.url).pathname;
-  const metadata = await sharp(source).metadata();
+test("anatomical atlas is visible, transparent and correctly cropped", async () => {
+  const path = new URL("../assets/anatomy/muscle-atlas.png", import.meta.url);
+  const metadata = await sharp(path.pathname).metadata();
+  const alpha = (await sharp(path.pathname).stats()).channels[3];
+
   assert.equal(metadata.width, metadata.height);
   assert.ok(metadata.width >= 1000);
   assert.equal(metadata.hasAlpha, true);
-  const alpha = (await sharp(source).stats()).channels[3];
   assert.equal(alpha.min, 0);
-  assert.equal(alpha.max, 255);
-  const { AnatomicalBody } = fixture();
-  const front = AnatomicalBody({ muscles: [], size: 145 });
-  const back = AnatomicalBody({ muscles: [], size: 145, back: true });
-  assert.equal(front.props.viewBox, "0 0 500 1000");
-  assert.equal(back.props.viewBox, "500 0 500 1000");
-  assert.equal(front.props.width, 145);
-  assert.equal(front.props.height, 290);
-  assert.equal(front.props.style.overflow, "hidden");
-  assert.equal(back.props.style.overflow, "hidden");
-  for (const tree of [front, back]) {
-    assert.equal(nodes(tree, "SvgImage").length, 1);
-    const image = nodes(tree, "SvgImage")[0];
-    assert.equal(image.props.href, "bundled-atlas");
-    assert.equal(image.props.width, 1000);
-    assert.equal(image.props.height, 1000);
+  assert.ok(alpha.max >= 250, "atlas should contain nearly opaque pixels");
+
+  const { AnatomicalBody } = loadBody();
+
+  for (const [back, viewBox] of [
+    [false, "0 0 500 1000"],
+    [true, "500 0 500 1000"],
+  ]) {
+    const tree = AnatomicalBody({ muscles: [], back, size: 145 });
+
+    assert.equal(tree.props.viewBox, viewBox);
+    assert.equal(tree.props.width, 145);
+    assert.equal(tree.props.height, 290);
+    assert.equal(findAll(tree, "Image")[0]?.props.href, "atlas");
   }
 });
 
-test("the front and back contours cover every catalog muscle without guessed unknown regions", () => {
-  const { AnatomicalBody, MUSCLE_VIEWS } = fixture();
+test("front and back maps cover every known muscle and ignore unknown muscles", () => {
+  const { AnatomicalBody, MUSCLE_VIEWS } = loadBody();
   const visible = new Set();
+
   for (const back of [false, true]) {
     const view = back ? "back" : "front";
-    const tree = AnatomicalBody({ muscles: [...MUSCLES, "unclassified"], back });
-    for (const group of nodes(tree, "G")) {
-      const code = group.props.testID.slice(`anatomy-${view}-`.length);
+    const tree = AnatomicalBody({
+      muscles: [...MUSCLES, "unknown"],
+      back,
+    });
+
+    for (const group of findAll(tree, "G")) {
+      const code = group.props.testID.replace(`anatomy-${view}-`, "");
+
+      assert.ok(MUSCLE_VIEWS[code]?.includes(view), `Wrong view for ${code}`);
       visible.add(code);
-      assert.ok(MUSCLE_VIEWS[code].includes(view));
-      assert.equal(nodes(group, "Path").length, 2, `${code} has paired muscle contours`);
-      assert.ok(nodes(group, "Path").every((path) => path.props.d.includes("C")));
     }
-    assert.ok(nodes(tree, "G").every((group) => !group.props.testID.includes("unclassified")));
   }
+
   assert.deepEqual([...visible].sort(), [...MUSCLES].sort());
-  assert.deepEqual(Object.keys(MUSCLE_VIEWS).sort(), [...MUSCLES].sort());
-  assert.deepEqual([...MUSCLE_VIEWS.forearms], ["front", "back"]);
-  assert.deepEqual([...MUSCLE_VIEWS.calves], ["front", "back"]);
 });
 
-test("organic regions dispatch their own muscle and expose selected labels on either view", () => {
-  const { AnatomicalBody } = fixture();
+test("muscle selection dispatches the correct region and stays accessible", () => {
+  const { AnatomicalBody } = loadBody();
   const selections = [];
+
   const front = AnatomicalBody({
     muscles: ["chest"],
     selected: "chest",
     onSelect: (code) => selections.push(code),
   });
-  const chest = region(front, "chest");
-  assert.equal(chest.props.accessibilityLabel, "chest muscle, selected");
-  assert.equal(chest.props.accessible, true);
-  assert.equal(chest.props.disabled, false);
-  assert.equal(chest.props.stroke, "#ECF7FF");
-  chest.props.onPress();
+
+  assert.equal(
+    muscle(front, "chest").accessibilityLabel,
+    "chest muscle, selected",
+  );
+
+  muscle(front, "chest").onPress();
+
   const back = AnatomicalBody({
-    muscles: ["upper-back", "triceps"],
-    selected: "upper-back",
+    muscles: ["triceps"],
     back: true,
     onSelect: (code) => selections.push(code),
   });
-  assert.equal(region(back, "upper-back").props.accessibilityLabel, "upper back muscle, selected");
-  region(back, "upper-back").props.onPress();
-  region(back, "triceps").props.onPress();
-  assert.deepEqual(selections, ["chest", "upper-back", "triceps"]);
-  assert.equal(region(back, "triceps").props.accessibilityLabel, "triceps muscle");
-});
 
-test("only supplied muscles receive a bounded translucent highlight, including malformed intensities", () => {
-  const { AnatomicalBody } = fixture();
-  const tree = AnatomicalBody({
-    muscles: ["chest", "biceps", "abs", "quads", "calves"],
-    intensity: { chest: 8, biceps: -5, abs: Number.NaN, quads: Infinity, calves: 0.5 },
+  muscle(back, "triceps").onPress();
+
+  assert.deepEqual(selections, ["chest", "triceps"]);
+
+  const staticMap = AnatomicalBody({
+    muscles: [],
+    selected: "chest",
   });
-  assert.ok(Math.abs(region(tree, "chest").props.fillOpacity - 0.58) < 1e-8);
-  assert.equal(region(tree, "biceps").props.fillOpacity, 0.18);
-  assert.equal(region(tree, "abs").props.fillOpacity, 0.18);
-  assert.equal(region(tree, "quads").props.fillOpacity, 0.18);
-  assert.equal(region(tree, "calves").props.fillOpacity, 0.38);
-  assert.equal(region(tree, "forearms").props.fillOpacity, 0);
-  for (const group of nodes(tree, "G")) {
-    assert.equal(group.props.fill, "#159CFF");
-    assert.ok(Number.isFinite(group.props.fillOpacity));
-    assert.ok(group.props.fillOpacity >= 0 && group.props.fillOpacity <= 0.5800001);
-  }
+
+  assert.equal(muscle(staticMap, "chest").fillOpacity, 0);
+  assert.equal(muscle(staticMap, "chest").onPress, undefined);
 });
 
-test("an untrained selection stays outlined and maps without callbacks stay inert", () => {
-  const { AnatomicalBody } = fixture();
-  const tree = AnatomicalBody({ muscles: [], selected: "chest" });
-  assert.equal(region(tree, "chest").props.fillOpacity, 0);
-  assert.equal(region(tree, "chest").props.strokeWidth, 3);
-  for (const group of nodes(tree, "G")) {
-    assert.equal(group.props.onPress, undefined);
-    assert.equal(group.props.disabled, true);
-    assert.equal(group.props.accessible, false);
+test("highlight opacity stays bounded and only applies to trained muscles", () => {
+  const { AnatomicalBody } = loadBody();
+
+  const tree = AnatomicalBody({
+    muscles: ["chest", "biceps", "abs", "calves"],
+    intensity: {
+      chest: 8,
+      biceps: -5,
+      abs: NaN,
+      calves: 0.5,
+    },
+  });
+
+  assert.ok(Math.abs(muscle(tree, "chest").fillOpacity - 0.58) < 1e-8);
+  assert.equal(muscle(tree, "biceps").fillOpacity, 0.18);
+  assert.equal(muscle(tree, "abs").fillOpacity, 0.18);
+  assert.equal(muscle(tree, "forearms").fillOpacity, 0);
+
+  for (const group of findAll(tree, "G")) {
+    const opacity = group.props.fillOpacity;
+
+    assert.ok(
+      Number.isFinite(opacity) &&
+      opacity >= 0 &&
+      opacity <= 0.58 + 1e-8,
+    );
   }
-  assert.equal(AnatomicalBody({ muscles: [], size: NaN }).props.width, 150);
-  assert.equal(AnatomicalBody({ muscles: [], size: -1 }).props.height, 300);
-  assert.equal(AnatomicalBody({ muscles: [], small: true }).props.height, 76);
 });

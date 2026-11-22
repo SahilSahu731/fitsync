@@ -619,7 +619,9 @@ function LibraryCard({ height }: CardProps) {
             className={`${compact ? "text-[34px] leading-[33px]" : "text-[38px] leading-[37px]"} tracking-[-2.4px] text-white`}
           >
             THE RIGHT{"\n"}
-            <Txt weight="bold" className="text-brand">MOVE.</Txt>
+            <Txt weight="bold" className="text-brand">
+              MOVE.
+            </Txt>
           </Txt>
           <View className="items-center rounded-xl bg-black px-3 py-1">
             <Txt weight="semibold" className="text-[20px] text-white">
@@ -631,9 +633,7 @@ function LibraryCard({ height }: CardProps) {
 
         <View className="mt-3 flex-row items-center gap-3 rounded-xl bg-black/80 px-3 py-2">
           <MaterialCommunityIcons name="magnify" size={19} color="white" />
-          <Txt className="flex-1 text-[10px] text-[#8e8f93]">
-            Search exercises, muscle...
-          </Txt>
+          <Txt className="flex-1 text-[10px] text-[#8e8f93]">Search exercises, muscle...</Txt>
           <MaterialCommunityIcons name="tune-variant" size={17} color={"white"} />
         </View>
 

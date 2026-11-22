@@ -63,7 +63,9 @@ export function StreakCard({ streak, onPress }: { streak: StreakInfo; onPress: (
 
     const intro = Animated.stagger(
       60,
-      pills.map((v) => Animated.spring(v, { toValue: 1, friction: 6, tension: 140, useNativeDriver: true })),
+      pills.map((v) =>
+        Animated.spring(v, { toValue: 1, friction: 6, tension: 140, useNativeDriver: true }),
+      ),
     );
     intro.start();
 
@@ -72,8 +74,18 @@ export function StreakCard({ streak, onPress }: { streak: StreakInfo; onPress: (
       const breathe = (v: Animated.Value, ms: number) =>
         Animated.loop(
           Animated.sequence([
-            Animated.timing(v, { toValue: 1, duration: ms, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(v, { toValue: 0, duration: ms, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(v, {
+              toValue: 1,
+              duration: ms,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(v, {
+              toValue: 0,
+              duration: ms,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
           ]),
         );
       if (alive) loops.push(breathe(flame, 900));
@@ -83,7 +95,12 @@ export function StreakCard({ streak, onPress }: { streak: StreakInfo; onPress: (
         Animated.loop(
           Animated.sequence([
             Animated.delay(1200),
-            Animated.timing(sweep, { toValue: 1, duration: 1300, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+            Animated.timing(sweep, {
+              toValue: 1,
+              duration: 1300,
+              easing: Easing.inOut(Easing.quad),
+              useNativeDriver: true,
+            }),
             Animated.delay(2800),
             Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
           ]),
@@ -154,7 +171,10 @@ export function StreakCard({ streak, onPress }: { streak: StreakInfo; onPress: (
           </Animated.View>
           <View className="flex-1">
             <View className="flex-row items-baseline gap-1.5">
-              <Txt weight="medium" className="text-[36px] leading-[42px] tracking-[-1.5px] text-white">
+              <Txt
+                weight="medium"
+                className="text-[36px] leading-[42px] tracking-[-1.5px] text-white"
+              >
                 {count}
               </Txt>
               <Txt className="text-[14px] leading-[18px] text-white/80">day streak</Txt>
@@ -214,7 +234,9 @@ export function StreakCard({ streak, onPress }: { streak: StreakInfo; onPress: (
           <View className="mt-2 flex-row">
             {week.map((d) => (
               <View key={`l-${d.date}`} className="flex-1 items-center">
-                <Txt className={`text-[10px] ${d.isToday ? "text-white" : "text-white/70"}`}>{d.label}</Txt>
+                <Txt className={`text-[10px] ${d.isToday ? "text-white" : "text-white/70"}`}>
+                  {d.label}
+                </Txt>
               </View>
             ))}
           </View>

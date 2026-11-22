@@ -85,8 +85,12 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
   const [notice, setNotice] = useState<{ error: boolean; text: string } | null>(null);
   const locked = useRef(false);
   const website = legalUrl(process.env.EXPO_PUBLIC_WEB_URL);
-  const terms = legalUrl(process.env.EXPO_PUBLIC_TERMS_URL) ?? (website ? new URL("/terms", website).toString() : null);
-  const privacy = legalUrl(process.env.EXPO_PUBLIC_PRIVACY_URL) ?? (website ? new URL("/privacy", website).toString() : null);
+  const terms =
+    legalUrl(process.env.EXPO_PUBLIC_TERMS_URL) ??
+    (website ? new URL("/terms", website).toString() : null);
+  const privacy =
+    legalUrl(process.env.EXPO_PUBLIC_PRIVACY_URL) ??
+    (website ? new URL("/privacy", website).toString() : null);
   const testStoreCheckout = __DEV__ && revenueCatKey()?.startsWith("test_") === true;
   const legalReady = Boolean(terms && privacy) || testStoreCheckout;
   const plans = presentPlans(billing.offers, Platform.OS);

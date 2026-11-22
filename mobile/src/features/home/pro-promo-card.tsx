@@ -8,10 +8,18 @@ type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 
 // Edit this list to match what Pro really includes.
 const PERKS: { icon: IconName; title: string; body: string }[] = [
-  { icon: "clipboard-list-outline", title: "Structured programs", body: "Follow plans built for your goal." },
+  {
+    icon: "clipboard-list-outline",
+    title: "Structured programs",
+    body: "Follow plans built for your goal.",
+  },
   { icon: "chart-line", title: "Deeper insights", body: "Trends and progress beyond the basics." },
   { icon: "human", title: "Every body part tracked", body: "Measure and track each muscle group." },
-  { icon: "food-apple", title: "Nutrition & macros", body: "Calories and macros next to training." },
+  {
+    icon: "food-apple",
+    title: "Nutrition & macros",
+    body: "Calories and macros next to training.",
+  },
 ];
 
 // A tiny illustration for each perk, drawn with plain views
@@ -124,15 +132,30 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
         Animated.loop(
           Animated.sequence([
             Animated.delay(1400),
-            Animated.timing(sweep, { toValue: 1, duration: 1500, easing: Easing.inOut(Easing.quad), useNativeDriver: true }),
+            Animated.timing(sweep, {
+              toValue: 1,
+              duration: 1500,
+              easing: Easing.inOut(Easing.quad),
+              useNativeDriver: true,
+            }),
             Animated.delay(3000),
             Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
           ]),
         ),
         Animated.loop(
           Animated.sequence([
-            Animated.timing(pulse, { toValue: 1, duration: 2400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
-            Animated.timing(pulse, { toValue: 0, duration: 2400, easing: Easing.inOut(Easing.sin), useNativeDriver: true }),
+            Animated.timing(pulse, {
+              toValue: 1,
+              duration: 2400,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(pulse, {
+              toValue: 0,
+              duration: 2400,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
           ]),
         ),
       );
@@ -147,14 +170,22 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
 
   useEffect(() => {
     const timer = setInterval(() => {
-      Animated.timing(swap, { toValue: 1, duration: 200, easing: Easing.in(Easing.quad), useNativeDriver: true }).start(
-        ({ finished }) => {
-          if (!finished) return;
-          setIndex((i) => (i + 1) % PERKS.length);
-          swap.setValue(-1);
-          Animated.timing(swap, { toValue: 0, duration: 340, easing: Easing.out(Easing.cubic), useNativeDriver: true }).start();
-        },
-      );
+      Animated.timing(swap, {
+        toValue: 1,
+        duration: 200,
+        easing: Easing.in(Easing.quad),
+        useNativeDriver: true,
+      }).start(({ finished }) => {
+        if (!finished) return;
+        setIndex((i) => (i + 1) % PERKS.length);
+        swap.setValue(-1);
+        Animated.timing(swap, {
+          toValue: 0,
+          duration: 340,
+          easing: Easing.out(Easing.cubic),
+          useNativeDriver: true,
+        }).start();
+      });
     }, CYCLE_MS);
     return () => {
       clearInterval(timer);
@@ -168,7 +199,10 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
   const textOpacity = swap.interpolate({ inputRange: [-1, 0, 1], outputRange: [0, 1, 0] });
   const textY = swap.interpolate({ inputRange: [-1, 0, 1], outputRange: [10, 0, -10] });
   const iconScale = swap.interpolate({ inputRange: [-1, 0, 1], outputRange: [0.6, 1, 0.6] });
-  const iconSpin = swap.interpolate({ inputRange: [-1, 0, 1], outputRange: ["-30deg", "0deg", "30deg"] });
+  const iconSpin = swap.interpolate({
+    inputRange: [-1, 0, 1],
+    outputRange: ["-30deg", "0deg", "30deg"],
+  });
 
   const perk = PERKS[index];
   const label = isPro ? "Explore Pro" : "Unlock Pro";
@@ -219,15 +253,25 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
         </View>
 
         {/* Pattern 3: one long hairline cutting across the lower-left corner */}
-        <View pointerEvents="none" className="absolute -bottom-[10px] -left-[60px] h-px w-[240px] -rotate-[28deg] bg-black/15" />
-        <View pointerEvents="none" className="absolute -bottom-[2px] -left-[60px] h-px w-[200px] -rotate-[28deg] bg-black/10" />
+        <View
+          pointerEvents="none"
+          className="absolute -bottom-[10px] -left-[60px] h-px w-[240px] -rotate-[28deg] bg-black/15"
+        />
+        <View
+          pointerEvents="none"
+          className="absolute -bottom-[2px] -left-[60px] h-px w-[200px] -rotate-[28deg] bg-black/10"
+        />
 
         {/* Left-side artwork: oversized outline icons bleeding off the edge */}
         <View pointerEvents="none" className="absolute -left-[22px] top-[34px] -rotate-[22deg]">
           <MaterialCommunityIcons name="dumbbell" size={118} color="rgba(0,0,0,0.09)" />
         </View>
         <View pointerEvents="none" className="absolute left-[92px] top-[2px] rotate-[14deg]">
-          <MaterialCommunityIcons name="lightning-bolt-outline" size={44} color="rgba(0,0,0,0.08)" />
+          <MaterialCommunityIcons
+            name="lightning-bolt-outline"
+            size={44}
+            color="rgba(0,0,0,0.08)"
+          />
         </View>
         <View pointerEvents="none" className="absolute -bottom-3 left-[120px] -rotate-[10deg]">
           <MaterialCommunityIcons name="run-fast" size={58} color="rgba(0,0,0,0.08)" />
@@ -249,7 +293,11 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
         {/* Plan label */}
         <View className="flex-row items-center gap-1.5 self-start overflow-hidden rounded-full bg-[#FACC15] px-3 py-1.5">
           <View pointerEvents="none" className="absolute inset-x-0 top-0 h-1/2 bg-white/35" />
-          <MaterialCommunityIcons name={isPro ? "check-decagram" : "crown"} size={12} color="#000000" />
+          <MaterialCommunityIcons
+            name={isPro ? "check-decagram" : "crown"}
+            size={12}
+            color="#000000"
+          />
           <Txt weight="medium" className="text-[11px] leading-[13px] tracking-[0.2px] text-black">
             {isPro ? "FitSync Pro · Active" : "FitSync Pro"}
           </Txt>
@@ -258,19 +306,34 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
         {/* Glass panel with the rotating perk */}
         <View className="mt-3 flex-row items-center gap-3 rounded-[22px] border border-white bg-white/60 p-2.5 shadow-lg shadow-black/10">
           <View className="h-[50px] w-[50px] items-center justify-center rounded-full bg-black">
-            <Animated.View style={{ opacity: textOpacity, transform: [{ scale: iconScale }, { rotate: iconSpin }] }}>
+            <Animated.View
+              style={{
+                opacity: textOpacity,
+                transform: [{ scale: iconScale }, { rotate: iconSpin }],
+              }}
+            >
               <MaterialCommunityIcons name={perk.icon} size={25} color="#FFFFFF" />
             </Animated.View>
           </View>
-          <Animated.View className="flex-1" style={{ opacity: textOpacity, transform: [{ translateY: textY }] }}>
-            <Txt weight="medium" className="text-[18px] leading-[22px] tracking-[-0.4px] text-black" numberOfLines={1}>
+          <Animated.View
+            className="flex-1"
+            style={{ opacity: textOpacity, transform: [{ translateY: textY }] }}
+          >
+            <Txt
+              weight="medium"
+              className="text-[18px] leading-[22px] tracking-[-0.4px] text-black"
+              numberOfLines={1}
+            >
               {perk.title}
             </Txt>
             <Txt className="mt-0.5 text-[12px] leading-4 text-black/55" numberOfLines={1}>
               {perk.body}
             </Txt>
           </Animated.View>
-          <Animated.View className="pr-1.5" style={{ opacity: textOpacity, transform: [{ translateY: textY }] }}>
+          <Animated.View
+            className="pr-1.5"
+            style={{ opacity: textOpacity, transform: [{ translateY: textY }] }}
+          >
             <PerkArt index={index} />
           </Animated.View>
         </View>
@@ -287,7 +350,11 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
                     on ? "w-[34px] bg-black" : "w-[28px] border border-black/10 bg-white/70"
                   }`}
                 >
-                  <MaterialCommunityIcons name={p.icon} size={14} color={on ? "#FFFFFF" : "rgba(0,0,0,0.5)"} />
+                  <MaterialCommunityIcons
+                    name={p.icon}
+                    size={14}
+                    color={on ? "#FFFFFF" : "rgba(0,0,0,0.5)"}
+                  />
                 </View>
               );
             })}

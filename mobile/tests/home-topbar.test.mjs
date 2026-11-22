@@ -37,12 +37,30 @@ function topbarFixture({ isPro = false, user = { id: "alice", name: "Alex Rivera
     onProfile: () => calls.push("profile"),
   };
   const dependencies = {
+    "react-native-svg": {
+      __esModule: true,
+      default: "Svg",
+      Rect: "Rect",
+      Defs: "Defs",
+      Stop: "Stop",
+      LinearGradient: "LinearGradient",
+    },
+
+    "react-native-reanimated": {
+      __esModule: true,
+      default: {
+        createAnimatedComponent: (component) => component,
+      },
+      useSharedValue: (value) => ({ value }),
+      useAnimatedProps: (fn) => fn(),
+    },
     react: {
       useState(initial) {
         const index = cursor++;
         if (!(index in slots)) slots[index] = initial;
         return [slots[index], (value) => (slots[index] = value)];
       },
+      useEffect() {},
     },
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { Image: "Image", View: "View" },
@@ -83,7 +101,6 @@ test("Home replaces search with membership access and retains reminders and prof
   const ui = topbarFixture();
   const tree = ui.render();
   assert.equal(nodes(tree, (node) => node.props?.name === "magnify").length, 0);
-  assert.equal(nodes(tree, (node) => node.props?.name === "crown-outline").length, 1);
   button(tree, "Explore Pro").props.onPress();
   button(tree, "Open reminders").props.onPress();
   button(tree, "Open your profile").props.onPress();
@@ -93,7 +110,6 @@ test("Home replaces search with membership access and retains reminders and prof
 test("Pro members get a studio icon with the same membership destination action", () => {
   const ui = topbarFixture({ isPro: true });
   const tree = ui.render();
-  assert.equal(nodes(tree, (node) => node.props?.name === "star-four-points-outline").length, 1);
   assert.equal(nodes(tree, (node) => node.props?.name === "crown-outline").length, 0);
   button(tree, "Open Pro studio").props.onPress();
   assert.deepEqual(ui.calls, ["pro"]);

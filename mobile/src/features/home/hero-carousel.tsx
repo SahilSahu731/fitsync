@@ -109,8 +109,18 @@ class DeckController {
     if (this.touched) return;
     const c = Math.round(this.current);
     Animated.sequence([
-      Animated.timing(this.pos, { toValue: c + 0.2, duration: 360, easing: Easing.out(Easing.cubic), useNativeDriver: true }),
-      Animated.timing(this.pos, { toValue: c - 0.2, duration: 520, easing: Easing.inOut(Easing.cubic), useNativeDriver: true }),
+      Animated.timing(this.pos, {
+        toValue: c + 0.2,
+        duration: 360,
+        easing: Easing.out(Easing.cubic),
+        useNativeDriver: true,
+      }),
+      Animated.timing(this.pos, {
+        toValue: c - 0.2,
+        duration: 520,
+        easing: Easing.inOut(Easing.cubic),
+        useNativeDriver: true,
+      }),
       Animated.spring(this.pos, { toValue: c, friction: 6, tension: 90, useNativeDriver: true }),
     ]).start();
   }
@@ -119,7 +129,12 @@ class DeckController {
   start() {
     this.touched = false;
     this.intro.setValue(0);
-    Animated.spring(this.intro, { toValue: 1, friction: 7, tension: 45, useNativeDriver: true }).start();
+    Animated.spring(this.intro, {
+      toValue: 1,
+      friction: 7,
+      tension: 45,
+      useNativeDriver: true,
+    }).start();
     if (this.n < 2) return () => {};
     const first = setTimeout(() => this.nudge(), 1500);
     const loop = setInterval(() => this.nudge(), 7000);
