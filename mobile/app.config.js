@@ -24,6 +24,12 @@ module.exports = ({ config }) => {
   }
   return {
     ...config,
+
+    android: {
+      ...config.android,
+      googleServicesFile: process.env.GOOGLE_SERVICES_JSON ?? "./google-services.json",
+    },
+
     plugins: [
       ...(config.plugins ?? []).map((plugin) => {
         if (!Array.isArray(plugin) || plugin[0] !== "expo-build-properties") return plugin;
