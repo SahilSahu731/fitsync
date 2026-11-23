@@ -25,10 +25,10 @@ class FitSyncCompanionModule : Module() {
     }
 
     AsyncFunction("clear") {
-      val context = appContext.reactContext ?: return@AsyncFunction
-      FitSyncWidgetProvider.writeSnapshot(context, null)
-      FitSyncWidgetProvider.refresh(context)
-    }
+  val context = appContext.reactContext ?: return@AsyncFunction null
+  FitSyncWidgetProvider.writeSnapshot(context, null)
+  FitSyncWidgetProvider.refresh(context)
+}
 
     AsyncFunction("requestPin") {
       val context = appContext.reactContext ?: return@AsyncFunction false
