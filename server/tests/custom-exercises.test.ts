@@ -53,7 +53,12 @@ test("custom exercise schema permits private content without publishing/media co
   );
 });
 function queries(t: test.TestContext, results: any[]) {
-  const calls: { table: string; filters: Record<string, unknown>; projection?: string; update?: unknown }[] = [];
+  const calls: {
+    table: string;
+    filters: Record<string, unknown>;
+    projection?: string;
+    update?: unknown;
+  }[] = [];
   t.mock.method(db, "from", (table: string) => {
     const call = { table, filters: {} } as (typeof calls)[number];
     calls.push(call);
@@ -123,17 +128,34 @@ test("catalog, picker and detail apply the same public-or-owner visibility rule"
   assert.ok(calls.every((c) => c.filters.status === "published"));
 });
 test("picker identifies owned exercises without exposing owner identifiers", async (t) => {
-  const calls = queries(t, [{
-    data: [
-      { id: "public", name: "Cable press", owner_user_id: null, tracking_type: "reps_weight", media: [] },
-      { id: "private", name: "My cable press", owner_user_id: "owner", tracking_type: "reps_weight", media: [] },
-    ],
-    error: null,
-  }]);
+  const calls = queries(t, [
+    {
+      data: [
+        {
+          id: "public",
+          name: "Cable press",
+          owner_user_id: null,
+          tracking_type: "reps_weight",
+          media: [],
+        },
+        {
+          id: "private",
+          name: "My cable press",
+          owner_user_id: "owner",
+          tracking_type: "reps_weight",
+          media: [],
+        },
+      ],
+      error: null,
+    },
+  ]);
   const data = await listExercisePicker(1, "", "owner");
   assert.ok(calls[0].projection?.split(",").includes("owner_user_id"));
   assert.equal(calls[0].filters.or, "owner_user_id.is.null,owner_user_id.eq.owner");
-  assert.deepEqual(data.items.map((exercise) => exercise.isCustom), [false, true]);
+  assert.deepEqual(
+    data.items.map((exercise) => exercise.isCustom),
+    [false, true],
+  );
   assert.ok(data.items.every((exercise) => !Object.hasOwn(exercise, "owner_user_id")));
   assert.ok(data.items.every((exercise) => !Object.hasOwn(exercise, "ownerId")));
 });

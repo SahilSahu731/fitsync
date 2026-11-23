@@ -1,19 +1,15 @@
-
 import { z } from "zod";
 
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
 
-import {
-  deleteStoredExerciseMedia,
-  type StoredExerciseMedia
-} from "./exercise.media.js";
+import { deleteStoredExerciseMedia, type StoredExerciseMedia } from "./exercise.media.js";
 
 import {
   exerciseInputSchema,
   type ExerciseInput,
   type ExerciseListInput,
-  type MediaMetadata
+  type MediaMetadata,
 } from "./exercise.schema.js";
 
 import { exerciseVisibility } from "./exercise.visibility.js";
@@ -21,32 +17,19 @@ import { exerciseVisibility } from "./exercise.visibility.js";
 const IMAGE_BUCKET = "exercise-images";
 
 export async function getTaxonomies() {
-  const [
-    categories,
-    activityTypes,
-    bodyRegions,
-    muscleGroups,
-    equipmentTypes
-  ] = await Promise.all([
-    db.from("exercise_categories")
-      .select("code,label")
-      .order("sort_order"),
+  const [categories, activityTypes, bodyRegions, muscleGroups, equipmentTypes] = await Promise.all([
+    db.from("exercise_categories").select("code,label").order("sort_order"),
 
-    db.from("exercise_activity_types")
+    db
+      .from("exercise_activity_types")
       .select("code,label,category:exercise_categories(code)")
       .order("sort_order"),
 
-    db.from("exercise_body_regions")
-      .select("code,label")
-      .order("sort_order"),
+    db.from("exercise_body_regions").select("code,label").order("sort_order"),
 
-    db.from("exercise_muscle_groups")
-      .select("code,label")
-      .order("sort_order"),
+    db.from("exercise_muscle_groups").select("code,label").order("sort_order"),
 
-    db.from("exercise_equipment_types")
-      .select("code,label")
-      .order("sort_order")
+    db.from("exercise_equipment_types").select("code,label").order("sort_order"),
   ]);
 
   for (const [name, result] of Object.entries({
@@ -54,7 +37,7 @@ export async function getTaxonomies() {
     activityTypes,
     bodyRegions,
     muscleGroups,
-    equipmentTypes
+    equipmentTypes,
   })) {
     checkDbError(result.error, `load ${name}`);
   }
@@ -62,17 +45,15 @@ export async function getTaxonomies() {
   return {
     categories: categories.data ?? [],
 
-    activityTypes: (activityTypes.data ?? []).map(item => ({
+    activityTypes: (activityTypes.data ?? []).map((item) => ({
       code: item.code,
       label: item.label,
-      category: (
-        item.category as unknown as { code: string }
-      ).code
+      category: (item.category as unknown as { code: string }).code,
     })),
 
     bodyRegions: bodyRegions.data ?? [],
     muscleGroups: muscleGroups.data ?? [],
-    equipmentTypes: equipmentTypes.data ?? []
+    equipmentTypes: equipmentTypes.data ?? [],
   };
 }
 
@@ -91,7 +72,7 @@ type CatalogMedia = {
 export function present(row: Record<string, any>) {
   const media: CatalogMedia[] = row.media ?? [];
 
-  const formattedMedia = media.map(item => ({
+  const formattedMedia = media.map((item) => ({
     id: item.id,
     kind: item.kind,
     provider: item.provider,
@@ -100,11 +81,10 @@ export function present(row: Record<string, any>) {
     credit: item.credit,
     license: item.license,
 
-    url: item.provider === "cloudinary"
-      ? item.url
-      : db.storage
-          .from(IMAGE_BUCKET)
-          .getPublicUrl(item.path).data.publicUrl
+    url:
+      item.provider === "cloudinary"
+        ? item.url
+        : db.storage.from(IMAGE_BUCKET).getPublicUrl(item.path).data.publicUrl,
   }));
 
   return {
@@ -138,18 +118,15 @@ export function present(row: Record<string, any>) {
     status: row.status,
     media: formattedMedia,
     createdAt: row.created_at,
-    updatedAt: row.updated_at
+    updatedAt: row.updated_at,
   };
 }
 
-export async function listExercises(
-  input: ExerciseListInput,
-  admin: boolean,
-  ownerId?: string
-) {
+export async function listExercises(input: ExerciseListInput, admin: boolean, ownerId?: string) {
   let query = db
     .from("exercise_catalog")
-    .select("*", { count: "exact" }).or(exerciseVisibility(ownerId));
+    .select("*", { count: "exact" })
+    .or(exerciseVisibility(ownerId));
 
   if (!(admin && input.includeDrafts === "true")) {
     query = query.eq("status", "published");
@@ -177,8 +154,7 @@ export async function listExercises(
 
   if (input.muscle) {
     query = query.or(
-      `primary_muscles.cs.{${input.muscle}},` +
-      `secondary_muscles.cs.{${input.muscle}}`
+      `primary_muscles.cs.{${input.muscle}},` + `secondary_muscles.cs.{${input.muscle}}`,
     );
   }
 
@@ -195,10 +171,7 @@ export async function listExercises(
   const from = (input.page - 1) * input.pageSize;
   const to = from + input.pageSize - 1;
 
-  const { data, error, count } = await query
-    .order("name")
-    .order("id")
-    .range(from, to);
+  const { data, error, count } = await query.order("name").order("id").range(from, to);
 
   checkDbError(error, "list exercises");
 
@@ -206,7 +179,7 @@ export async function listExercises(
     items: (data ?? []).map(present),
     total: count ?? 0,
     page: input.page,
-    pageSize: input.pageSize
+    pageSize: input.pageSize,
   };
 }
 
@@ -214,46 +187,61 @@ export async function listExercises(
 // Avoid loading instructions and other detail-only fields for every keystroke.
 export async function listExercisePicker(page: number, search = "", ownerId?: string) {
   const pageSize = 15;
-  let query = db.from("exercise_catalog")
-    .select("id,name,owner_user_id,tracking_type,region_label,equipment,primary_muscles,secondary_muscles,media")
-    .eq("status", "published").or(exerciseVisibility(ownerId));
-  const tokens = search.toLowerCase().replace(/[^a-z0-9-]+/g, " ").trim().split(/\s+/).filter(Boolean);
+  let query = db
+    .from("exercise_catalog")
+    .select(
+      "id,name,owner_user_id,tracking_type,region_label,equipment,primary_muscles,secondary_muscles,media",
+    )
+    .eq("status", "published")
+    .or(exerciseVisibility(ownerId));
+  const tokens = search
+    .toLowerCase()
+    .replace(/[^a-z0-9-]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
   for (const token of tokens) {
-    query = query.or(`name.ilike.%${token}%,primary_muscles.cs.{${token}},secondary_muscles.cs.{${token}},equipment.cs.{${token}}`);
+    query = query.or(
+      `name.ilike.%${token}%,primary_muscles.cs.{${token}},secondary_muscles.cs.{${token}},equipment.cs.{${token}}`,
+    );
   }
-  const { data, error } = await query.order("name").order("id")
+  const { data, error } = await query
+    .order("name")
+    .order("id")
     .range((page - 1) * pageSize, page * pageSize - 1);
   checkDbError(error, "load exercise picker");
   return {
-    items: (data ?? []).map(row => {
+    items: (data ?? []).map((row) => {
       const media = (row.media ?? []) as CatalogMedia[];
-      const image = media.find(item => item.kind === "image");
+      const image = media.find((item) => item.kind === "image");
       return {
-        id: row.id, name: row.name, isCustom: Boolean(row.owner_user_id), trackingType: row.tracking_type,
-        regionLabel: row.region_label, equipment: row.equipment ?? [],
-        primaryMuscles: row.primary_muscles ?? [], secondaryMuscles: row.secondary_muscles ?? [],
-        imageUrl: image ? (image.provider === "supabase"
-          ? db.storage.from(IMAGE_BUCKET).getPublicUrl(image.path).data.publicUrl
-          : image.url) : null
+        id: row.id,
+        name: row.name,
+        isCustom: Boolean(row.owner_user_id),
+        trackingType: row.tracking_type,
+        regionLabel: row.region_label,
+        equipment: row.equipment ?? [],
+        primaryMuscles: row.primary_muscles ?? [],
+        secondaryMuscles: row.secondary_muscles ?? [],
+        imageUrl: image
+          ? image.provider === "supabase"
+            ? db.storage.from(IMAGE_BUCKET).getPublicUrl(image.path).data.publicUrl
+            : image.url
+          : null,
       };
     }),
-    hasMore: data?.length === pageSize
+    hasMore: data?.length === pageSize,
   };
 }
 
-export async function getExercise(
-  idOrSlug: string,
-  admin = false,
-  ownerId?: string
-) {
-  const field = z.uuid().safeParse(idOrSlug).success
-    ? "id"
-    : "slug";
+export async function getExercise(idOrSlug: string, admin = false, ownerId?: string) {
+  const field = z.uuid().safeParse(idOrSlug).success ? "id" : "slug";
 
   let query = db
     .from("exercise_catalog")
     .select("*")
-    .eq(field, idOrSlug).or(exerciseVisibility(ownerId));
+    .eq(field, idOrSlug)
+    .or(exerciseVisibility(ownerId));
 
   if (!admin) {
     query = query.eq("status", "published");
@@ -270,42 +258,25 @@ export async function getExercise(
   return present(data);
 }
 
-export async function validateTaxonomies(
-  input: ExerciseInput
-) {
+export async function validateTaxonomies(input: ExerciseInput) {
   const tax = await getTaxonomies();
 
-  function ensure(
-    code: string,
-    options: { code: string }[],
-    field: string
-  ) {
-    if (!options.some(item => item.code === code)) {
-      throw new ApiError(
-        400,
-        `Invalid ${field}: ${code}`
-      );
+  function ensure(code: string, options: { code: string }[], field: string) {
+    if (!options.some((item) => item.code === code)) {
+      throw new ApiError(400, `Invalid ${field}: ${code}`);
     }
   }
 
   ensure(input.category, tax.categories, "category");
   ensure(input.bodyRegion, tax.bodyRegions, "body region");
 
-  const activity = tax.activityTypes.find(
-    item => item.code === input.activityType
-  );
+  const activity = tax.activityTypes.find((item) => item.code === input.activityType);
 
   if (!activity || activity.category !== input.category) {
-    throw new ApiError(
-      400,
-      "Activity type does not belong to the selected category."
-    );
+    throw new ApiError(400, "Activity type does not belong to the selected category.");
   }
 
-  for (const muscle of [
-    ...input.primaryMuscles,
-    ...input.secondaryMuscles
-  ]) {
+  for (const muscle of [...input.primaryMuscles, ...input.secondaryMuscles]) {
     ensure(muscle, tax.muscleGroups, "muscle");
   }
 
@@ -314,28 +285,18 @@ export async function validateTaxonomies(
   }
 }
 
-export async function saveExercise(
-  actor: string,
-  input: ExerciseInput,
-  id: string | null = null
-) {
+export async function saveExercise(actor: string, input: ExerciseInput, id: string | null = null) {
   await validateTaxonomies(input);
 
-  const { data, error } = await db.rpc(
-    "save_fitsync_exercise",
-    {
-      p_id: id,
-      p_actor: actor,
-      p_data: input
-    }
-  );
+  const { data, error } = await db.rpc("save_fitsync_exercise", {
+    p_id: id,
+    p_actor: actor,
+    p_data: input,
+  });
 
   if (error) {
     if (error.code === "23505") {
-      throw new ApiError(
-        409,
-        "An exercise with this slug already exists."
-      );
+      throw new ApiError(409, "An exercise with this slug already exists.");
     }
 
     if (error.code === "P0002") {
@@ -356,11 +317,7 @@ export async function saveExercise(
   return getExercise(data as string, true);
 }
 
-export async function patchExercise(
-  actor: string,
-  id: string,
-  partial: Partial<ExerciseInput>
-) {
+export async function patchExercise(actor: string, id: string, partial: Partial<ExerciseInput>) {
   const original = await getExercise(id, true);
 
   const input = exerciseInputSchema.parse({
@@ -388,7 +345,7 @@ export async function patchExercise(
 
     status: original.status,
 
-    ...partial
+    ...partial,
   });
 
   return saveExercise(actor, input, id);
@@ -397,23 +354,21 @@ export async function patchExercise(
 export async function addExerciseMedia(
   exerciseId: string,
   asset: StoredExerciseMedia,
-  meta: MediaMetadata
+  meta: MediaMetadata,
 ) {
-  const { error } = await db
-    .from("exercise_media")
-    .insert({
-      exercise_id: exerciseId,
+  const { error } = await db.from("exercise_media").insert({
+    exercise_id: exerciseId,
 
-      kind: asset.kind,
-      provider: asset.provider,
-      storage_path: asset.path,
-      delivery_url: asset.url,
+    kind: asset.kind,
+    provider: asset.provider,
+    storage_path: asset.path,
+    delivery_url: asset.url,
 
-      alt_text: meta.altText,
-      source_url: meta.sourceUrl,
-      credit: meta.credit,
-      license: meta.license
-    });
+    alt_text: meta.altText,
+    source_url: meta.sourceUrl,
+    credit: meta.credit,
+    license: meta.license,
+  });
 
   if (error) {
     try {
@@ -425,7 +380,7 @@ export async function addExerciseMedia(
     if (error.code === "23514" && error.message.includes("correct_media_provider")) {
       throw new ApiError(
         503,
-        "The database does not allow Cloudinary images yet. Apply server/sql/005_cloudinary_exercise_images.sql in Supabase, then retry this upload."
+        "The database does not allow Cloudinary images yet. Apply server/sql/005_cloudinary_exercise_images.sql in Supabase, then retry this upload.",
       );
     }
 
@@ -435,10 +390,7 @@ export async function addExerciseMedia(
   return getExercise(exerciseId, true);
 }
 
-export async function removeExerciseMedia(
-  exerciseId: string,
-  mediaId: string
-) {
+export async function removeExerciseMedia(exerciseId: string, mediaId: string) {
   const { data, error } = await db
     .from("exercise_media")
     .select("provider,storage_path,kind")
@@ -454,14 +406,8 @@ export async function removeExerciseMedia(
 
   const exercise = await getExercise(exerciseId, true);
 
-  if (
-    exercise.status === "published" &&
-    exercise.media.length <= 1
-  ) {
-    throw new ApiError(
-      409,
-      "Unpublish this exercise before deleting its last demonstration."
-    );
+  if (exercise.status === "published" && exercise.media.length <= 1) {
+    throw new ApiError(409, "Unpublish this exercise before deleting its last demonstration.");
   }
 
   // Delete the provider asset first, so a failed cleanup can be retried.
@@ -469,7 +415,7 @@ export async function removeExerciseMedia(
     await deleteStoredExerciseMedia({
       provider: data.provider as "supabase" | "cloudinary",
       path: data.storage_path,
-      kind: data.kind as "image" | "video"
+      kind: data.kind as "image" | "video",
     });
   } catch {
     throw new ApiError(502, "Could not remove the media file. Please retry.");
@@ -489,12 +435,19 @@ export async function removeExerciseMedia(
 // Delete only after the admin explicitly chooses permanent deletion.
 export async function deleteExercise(id: string) {
   await getExercise(id, true);
-  const media = await db.from("exercise_media").select("provider,storage_path,kind").eq("exercise_id", id);
+  const media = await db
+    .from("exercise_media")
+    .select("provider,storage_path,kind")
+    .eq("exercise_id", id);
   checkDbError(media.error, "load exercise media");
   // Keep failed assets and their database references retryable.
   for (const asset of media.data ?? []) {
     try {
-      await deleteStoredExerciseMedia({ provider: asset.provider, path: asset.storage_path, kind: asset.kind });
+      await deleteStoredExerciseMedia({
+        provider: asset.provider,
+        path: asset.storage_path,
+        kind: asset.kind,
+      });
     } catch {
       throw new ApiError(502, "Could not remove a media file. Please retry deletion.");
     }

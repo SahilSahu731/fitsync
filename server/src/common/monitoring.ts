@@ -4,8 +4,8 @@ import { readdirSync } from "node:fs";
 // Messages can contain fake stack lines. Only deployed code filenames may be sent.
 const codeFiles = new Set(
   readdirSync(new URL("../", import.meta.url), { recursive: true, withFileTypes: true })
-    .filter(entry => entry.isFile() && /\.[cm]?[jt]s$/.test(entry.name))
-    .flatMap(entry => [entry.name, entry.name.replace(/\.ts$/, ".js")]),
+    .filter((entry) => entry.isFile() && /\.[cm]?[jt]s$/.test(entry.name))
+    .flatMap((entry) => [entry.name, entry.name.replace(/\.ts$/, ".js")]),
 );
 
 type Failure = "http" | "database" | "reminders" | "uncaughtException" | "unhandledRejection";

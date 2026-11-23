@@ -1,4 +1,3 @@
-
 import assert from "node:assert/strict";
 import test from "node:test";
 
@@ -6,7 +5,7 @@ import {
   exerciseInputSchema,
   exercisePatchSchema,
   exerciseListSchema,
-  mediaMetadataSchema
+  mediaMetadataSchema,
 } from "../src/modules/exercises/exercise.schema.js";
 
 const validExercise = {
@@ -26,17 +25,14 @@ const validExercise = {
   secondaryMuscles: ["triceps"],
   equipment: ["dumbbell", "bench"],
 
-  instructions: [
-    "Sit on an incline bench.",
-    "Press the dumbbells upward under control."
-  ],
+  instructions: ["Sit on an incline bench.", "Press the dumbbells upward under control."],
 
   tips: [],
   mistakes: [],
   safetyNotes: [],
   breathingTip: "",
 
-  status: "draft"
+  status: "draft",
 };
 
 test("accepts a valid exercise", () => {
@@ -48,7 +44,7 @@ test("accepts a valid exercise", () => {
 test("rejects a missing exercise name", () => {
   const result = exerciseInputSchema.safeParse({
     ...validExercise,
-    name: ""
+    name: "",
   });
 
   assert.equal(result.success, false);
@@ -57,7 +53,7 @@ test("rejects a missing exercise name", () => {
 test("rejects an unsafe slug", () => {
   const result = exerciseInputSchema.safeParse({
     ...validExercise,
-    slug: "Incline Dumbbell Press!"
+    slug: "Incline Dumbbell Press!",
   });
 
   assert.equal(result.success, false);
@@ -66,7 +62,7 @@ test("rejects an unsafe slug", () => {
 test("rejects overlapping primary and secondary muscles", () => {
   const result = exerciseInputSchema.safeParse({
     ...validExercise,
-    secondaryMuscles: ["chest"]
+    secondaryMuscles: ["chest"],
   });
 
   assert.equal(result.success, false);
@@ -75,7 +71,7 @@ test("rejects overlapping primary and secondary muscles", () => {
 test("rejects duplicate equipment", () => {
   const result = exerciseInputSchema.safeParse({
     ...validExercise,
-    equipment: ["dumbbell", "dumbbell"]
+    equipment: ["dumbbell", "dumbbell"],
   });
 
   assert.equal(result.success, false);
@@ -83,7 +79,7 @@ test("rejects duplicate equipment", () => {
 
 test("supports partial exercise updates", () => {
   const result = exercisePatchSchema.safeParse({
-    name: "Updated Exercise Name"
+    name: "Updated Exercise Name",
   });
 
   assert.equal(result.success, true);
@@ -92,7 +88,7 @@ test("supports partial exercise updates", () => {
 test("limits pagination size", () => {
   const result = exerciseListSchema.safeParse({
     page: "1",
-    pageSize: "1000"
+    pageSize: "1000",
   });
 
   assert.equal(result.success, false);
@@ -100,7 +96,7 @@ test("limits pagination size", () => {
 
 test("requires usage rights on media uploads", () => {
   const result = mediaMetadataSchema.safeParse({
-    license: ""
+    license: "",
   });
 
   assert.equal(result.success, false);

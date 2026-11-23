@@ -1,4 +1,3 @@
-
 import multer from "multer";
 import sharp from "sharp";
 
@@ -22,42 +21,31 @@ export const exerciseUpload = multer({
 
   limits: {
     fileSize: MAX_UPLOAD_SIZE,
-    files: 1
+    files: 1,
   },
 
   fileFilter: (_req, file, callback) => {
-    const allowed = [
-      "image/jpeg",
-      "image/png",
-      "image/webp",
-      "image/gif",
-      "video/mp4"
-    ];
+    const allowed = ["image/jpeg", "image/png", "image/webp", "image/gif", "video/mp4"];
 
     if (!allowed.includes(file.mimetype)) {
-      callback(
-        new ApiError(
-          400,
-          "Upload a JPEG, PNG, WebP, GIF image or an MP4 video."
-        )
-      );
+      callback(new ApiError(400, "Upload a JPEG, PNG, WebP, GIF image or an MP4 video."));
       return;
     }
 
     callback(null, true);
-  }
+  },
 }).single("media");
 
 async function uploadImage(
   exerciseId: string,
-  file: Express.Multer.File
+  file: Express.Multer.File,
 ): Promise<StoredExerciseMedia> {
   let buffer: Buffer;
 
   try {
     const image = sharp(file.buffer, {
       limitInputPixels: 25_000_000,
-      animated: true
+      animated: true,
     });
 
     const info = await image.metadata();
@@ -72,7 +60,7 @@ async function uploadImage(
         width: 1000,
         height: 1000,
         fit: "inside",
-        withoutEnlargement: true
+        withoutEnlargement: true,
       })
       .webp({ quality: 80 })
       .toBuffer();
@@ -90,7 +78,7 @@ async function uploadImage(
 async function uploadToCloudinary(
   exerciseId: string,
   buffer: Buffer,
-  kind: "image" | "video"
+  kind: "image" | "video",
 ): Promise<StoredExerciseMedia> {
   const result = await new Promise<{ public_id: string; secure_url: string }>((resolve, reject) => {
     const stream = cloudinary.uploader.upload_stream(
@@ -101,7 +89,7 @@ async function uploadToCloudinary(
           return;
         }
         resolve(uploaded);
-      }
+      },
     );
     stream.end(buffer);
   }).catch(() => {
@@ -112,13 +100,10 @@ async function uploadToCloudinary(
 
 async function uploadVideo(
   exerciseId: string,
-  file: Express.Multer.File
+  file: Express.Multer.File,
 ): Promise<StoredExerciseMedia> {
   // Basic MP4 signature check.
-  if (
-    file.buffer.length < 12 ||
-    file.buffer.toString("ascii", 4, 8) !== "ftyp"
-  ) {
+  if (file.buffer.length < 12 || file.buffer.toString("ascii", 4, 8) !== "ftyp") {
     throw new ApiError(400, "Invalid MP4 video.");
   }
 
@@ -127,7 +112,7 @@ async function uploadVideo(
 
 export async function uploadExerciseAsset(
   exerciseId: string,
-  file: Express.Multer.File
+  file: Express.Multer.File,
 ): Promise<StoredExerciseMedia> {
   if (file.mimetype === "video/mp4") {
     return uploadVideo(exerciseId, file);
@@ -137,19 +122,13 @@ export async function uploadExerciseAsset(
 }
 
 export async function deleteStoredExerciseMedia(
-  media: Pick<
-    StoredExerciseMedia,
-    "provider" | "path" | "kind"
-  >
+  media: Pick<StoredExerciseMedia, "provider" | "path" | "kind">,
 ) {
   if (media.provider === "cloudinary") {
-    const result = await cloudinary.uploader.destroy(
-      media.path,
-      {
-        resource_type: media.kind,
-        invalidate: true
-      }
-    );
+    const result = await cloudinary.uploader.destroy(media.path, {
+      resource_type: media.kind,
+      invalidate: true,
+    });
 
     if (!["ok", "not found"].includes(result.result)) {
       throw new Error("Cloudinary deletion failed.");
@@ -158,9 +137,7 @@ export async function deleteStoredExerciseMedia(
     return;
   }
 
-  const { error } = await db.storage
-    .from(IMAGE_BUCKET)
-    .remove([media.path]);
+  const { error } = await db.storage.from(IMAGE_BUCKET).remove([media.path]);
 
   if (error) {
     throw error;

@@ -7,9 +7,12 @@
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/images/icon.png",
-    "platforms": ["android"],
+    "platforms": [
+      "android"
+    ],
     "android": {
       "package": "com.sahil.fitsync",
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-foreground.png",
         "backgroundColor": "#101011",
@@ -18,7 +21,13 @@
       "permissions": [
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_SLEEP",
-        "android.permission.health.READ_WEIGHT"
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.health.READ_STEPS",
+        "android.permission.health.READ_SLEEP",
+        "android.permission.health.READ_WEIGHT",
+        "android.permission.MODIFY_AUDIO_SETTINGS",
+        "android.permission.READ_CALENDAR",
+        "android.permission.WRITE_CALENDAR"
       ]
     },
     "plugins": [
@@ -28,8 +37,10 @@
         {
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#C5F460",
-          "defaultChannel": "workout-rest-v2",
-          "sounds": ["./assets/sound/rest_complete.wav"]
+          "defaultChannel": "general-v1",
+          "sounds": [
+            "./assets/sound/rest_complete.wav"
+          ]
         }
       ],
       [
@@ -111,6 +122,13 @@
     "owner": "sahillsahudevs-team",
     "web": {
       "favicon": "./assets/images/favicon.png"
-    }
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "updates": {
+      "url": "https://u.expo.dev/d9829030-6ee5-45ac-8cbb-55fe6602c5dc"
+    },
+    "ios": {}
   }
 }

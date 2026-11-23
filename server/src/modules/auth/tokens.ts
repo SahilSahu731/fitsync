@@ -1,4 +1,3 @@
-
 import { createHash, randomBytes, randomUUID } from "node:crypto";
 import jwt from "jsonwebtoken";
 
@@ -15,43 +14,35 @@ function createRefresh() {
 }
 
 function expirationDate() {
-  return new Date(
-    Date.now() + 30 * 24 * 60 * 60 * 1000
-  ).toISOString();
+  return new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString();
 }
 
 function createAccessToken(userId: string, sessionId: string) {
-  return jwt.sign(
-    { sid: sessionId },
-    env.JWT_SECRET,
-    {
-      algorithm: "HS256",
-      subject: userId,
-      audience: "fitsync-mobile",
-      issuer: "fitsync-api",
-      expiresIn: "15m"
-    }
-  );
+  return jwt.sign({ sid: sessionId }, env.JWT_SECRET, {
+    algorithm: "HS256",
+    subject: userId,
+    audience: "fitsync-mobile",
+    issuer: "fitsync-api",
+    expiresIn: "15m",
+  });
 }
 
 export async function createSession(userId: string) {
   const sessionId = randomUUID();
   const refreshToken = `${sessionId}.${createRefresh()}`;
 
-  const { error } = await db
-    .from("auth_sessions")
-    .insert({
-      id: sessionId,
-      user_id: userId,
-      refresh_hash: hash(refreshToken),
-      expires_at: expirationDate()
-    });
+  const { error } = await db.from("auth_sessions").insert({
+    id: sessionId,
+    user_id: userId,
+    refresh_hash: hash(refreshToken),
+    expires_at: expirationDate(),
+  });
 
   checkDbError(error, "create auth session");
 
   return {
     accessToken: createAccessToken(userId, sessionId),
-    refreshToken
+    refreshToken,
   };
 }
 
@@ -76,7 +67,7 @@ export async function rotateRefreshToken(refreshToken: string) {
     .update({
       refresh_hash: hash(nextToken),
       expires_at: expirationDate(),
-      updated_at: now
+      updated_at: now,
     })
     .eq("id", sessionId)
     .eq("refresh_hash", hash(refreshToken))
@@ -88,26 +79,20 @@ export async function rotateRefreshToken(refreshToken: string) {
   checkDbError(error, "rotate auth token");
 
   if (!data) {
-    throw new ApiError(
-      401,
-      "Session expired or refresh token already used."
-    );
+    throw new ApiError(401, "Session expired or refresh token already used.");
   }
 
   return {
     accessToken: createAccessToken(data.user_id, sessionId),
-    refreshToken: nextToken
+    refreshToken: nextToken,
   };
 }
 
-export async function revokeSession(
-  userId: string,
-  sessionId: string
-) {
+export async function revokeSession(userId: string, sessionId: string) {
   const { error } = await db
     .from("auth_sessions")
     .update({
-      revoked_at: new Date().toISOString()
+      revoked_at: new Date().toISOString(),
     })
     .eq("user_id", userId)
     .eq("id", sessionId);

@@ -389,7 +389,7 @@ function libraryFixture({ isPro = true, session = null, rows = [{ ...exercise }]
       return slots[index].value;
     },
     useCallback(callback, dependencies) {
-      return React.useMemo(() => callback, dependencies);
+      return React.useMemo(() => callback, [callback]);
     },
     useEffect(callback, dependencies) {
       const index = cursor++;

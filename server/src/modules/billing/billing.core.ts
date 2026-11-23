@@ -1,5 +1,12 @@
 import { ApiError } from "../../common/errors.js";
-import { affectedUserIds, atCurrentTime, freeEntitlement, normalizeSubscriber, validWebhookAuthorization, webhookSchema } from "./billing.policy.js";
+import {
+  affectedUserIds,
+  atCurrentTime,
+  freeEntitlement,
+  normalizeSubscriber,
+  validWebhookAuthorization,
+  webhookSchema,
+} from "./billing.policy.js";
 import type { BillingConfig, BillingRepository, BillingStatus } from "./billing.types.js";
 
 export function createBillingService(options: {
@@ -14,7 +21,12 @@ export function createBillingService(options: {
 
   async function reconcile(userId: string) {
     const canonical = await options.fetchSubscriber(userId);
-    const snapshot = normalizeSubscriber(canonical, config.entitlementId, config.allowSandbox, now());
+    const snapshot = normalizeSubscriber(
+      canonical,
+      config.entitlementId,
+      config.allowSandbox,
+      now(),
+    );
     // An atomic DB comparison prevents a delayed earlier canonical response from
     // overwriting a later response, across workers and webhook/request races.
     const stored = await repository.storeSnapshot(userId, snapshot);
@@ -27,8 +39,10 @@ export function createBillingService(options: {
   }
 
   async function processWebhook(authorization: string | undefined, body: unknown) {
-    if (!configured || !config.webhookAuthorization) throw new ApiError(503, "Billing webhooks are not configured.");
-    if (!validWebhookAuthorization(authorization, config.webhookAuthorization)) throw new ApiError(401, "Invalid webhook authorization.");
+    if (!configured || !config.webhookAuthorization)
+      throw new ApiError(503, "Billing webhooks are not configured.");
+    if (!validWebhookAuthorization(authorization, config.webhookAuthorization))
+      throw new ApiError(401, "Invalid webhook authorization.");
     const payload = webhookSchema.parse(body);
     const { id, type } = payload.event;
     if (await repository.webhookProcessed(id)) return { received: true, duplicate: true };
@@ -45,5 +59,10 @@ export function createBillingService(options: {
     return { received: true, duplicate: false };
   }
 
-  return { configured, getStatus, getEntitlement: async (userId: string) => (await getStatus(userId)).entitlement, processWebhook };
+  return {
+    configured,
+    getStatus,
+    getEntitlement: async (userId: string) => (await getStatus(userId)).entitlement,
+    processWebhook,
+  };
 }

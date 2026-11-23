@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 
 import { ApiError } from "../../common/errors.js";
@@ -9,7 +8,7 @@ import {
   onboardingSchema,
   editFitnessSchema,
   editUserSchema,
-  settingsSchema
+  settingsSchema,
 } from "./profile.schema.js";
 
 import {
@@ -18,46 +17,60 @@ import {
   saveOnboarding,
   updateFitnessProfile,
   resetOnboarding,
-  updateUserSettings
+  updateUserSettings,
 } from "./profile.service.js";
 
-import {
-  uploadAvatar,
-  deleteAvatar,
-  uploadAvatarMiddleware
-} from "./avatar.service.js";
+import { uploadAvatar, deleteAvatar, uploadAvatarMiddleware } from "./avatar.service.js";
 
 const router = Router();
 
 router.use(requireAuth);
 
-router.get("/", asyncHandler(async (req, res) => {
-  res.json(await getFullUser(getAuth(req).userId));
-}));
+router.get(
+  "/",
+  asyncHandler(async (req, res) => {
+    res.json(await getFullUser(getAuth(req).userId));
+  }),
+);
 
-router.patch("/", asyncHandler(async (req, res) => {
-  const input = editUserSchema.parse(req.body);
-  res.json(await updateAccount(getAuth(req).userId, input));
-}));
+router.patch(
+  "/",
+  asyncHandler(async (req, res) => {
+    const input = editUserSchema.parse(req.body);
+    res.json(await updateAccount(getAuth(req).userId, input));
+  }),
+);
 
-router.put("/profile", asyncHandler(async (req, res) => {
-  const input = onboardingSchema.parse(req.body);
-  res.json(await saveOnboarding(getAuth(req).userId, input));
-}));
+router.put(
+  "/profile",
+  asyncHandler(async (req, res) => {
+    const input = onboardingSchema.parse(req.body);
+    res.json(await saveOnboarding(getAuth(req).userId, input));
+  }),
+);
 
-router.patch("/profile", asyncHandler(async (req, res) => {
-  const input = editFitnessSchema.parse(req.body);
-  res.json(await updateFitnessProfile(getAuth(req).userId, input));
-}));
+router.patch(
+  "/profile",
+  asyncHandler(async (req, res) => {
+    const input = editFitnessSchema.parse(req.body);
+    res.json(await updateFitnessProfile(getAuth(req).userId, input));
+  }),
+);
 
-router.delete("/profile", asyncHandler(async (req, res) => {
-  res.json(await resetOnboarding(getAuth(req).userId));
-}));
+router.delete(
+  "/profile",
+  asyncHandler(async (req, res) => {
+    res.json(await resetOnboarding(getAuth(req).userId));
+  }),
+);
 
-router.patch("/settings", asyncHandler(async (req, res) => {
-  const input = settingsSchema.parse(req.body);
-  res.json(await updateUserSettings(getAuth(req).userId, input));
-}));
+router.patch(
+  "/settings",
+  asyncHandler(async (req, res) => {
+    const input = settingsSchema.parse(req.body);
+    res.json(await updateUserSettings(getAuth(req).userId, input));
+  }),
+);
 
 router.post(
   "/avatar",
@@ -68,11 +81,14 @@ router.post(
     }
 
     res.json(await uploadAvatar(getAuth(req).userId, req.file));
-  })
+  }),
 );
 
-router.delete("/avatar", asyncHandler(async (req, res) => {
-  res.json(await deleteAvatar(getAuth(req).userId));
-}));
+router.delete(
+  "/avatar",
+  asyncHandler(async (req, res) => {
+    res.json(await deleteAvatar(getAuth(req).userId));
+  }),
+);
 
 export default router;

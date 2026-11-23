@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 import { rateLimit } from "express-rate-limit";
 import { z } from "zod";
@@ -17,31 +16,47 @@ const limiter = rateLimit({
   limit: 30,
   keyGenerator: authRateLimitKey,
   standardHeaders: "draft-8",
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
-router.post("/google", limiter, asyncHandler(async (req, res) => {
-  const { idToken } = z.object({
-    idToken: z.string().min(50)
-  }).parse(req.body);
+router.post(
+  "/google",
+  limiter,
+  asyncHandler(async (req, res) => {
+    const { idToken } = z
+      .object({
+        idToken: z.string().min(50),
+      })
+      .parse(req.body);
 
-  res.json(await loginWithGoogle(idToken));
-}));
+    res.json(await loginWithGoogle(idToken));
+  }),
+);
 
-router.post("/refresh", limiter, asyncHandler(async (req, res) => {
-  const { refreshToken } = z.object({
-    refreshToken: z.string().min(50)
-  }).parse(req.body);
+router.post(
+  "/refresh",
+  limiter,
+  asyncHandler(async (req, res) => {
+    const { refreshToken } = z
+      .object({
+        refreshToken: z.string().min(50),
+      })
+      .parse(req.body);
 
-  res.json(await rotateRefreshToken(refreshToken));
-}));
+    res.json(await rotateRefreshToken(refreshToken));
+  }),
+);
 
-router.post("/logout", requireAuth, asyncHandler(async (req, res) => {
-  const { userId, sessionId } = getAuth(req);
+router.post(
+  "/logout",
+  requireAuth,
+  asyncHandler(async (req, res) => {
+    const { userId, sessionId } = getAuth(req);
 
-  await revokeSession(userId, sessionId);
+    await revokeSession(userId, sessionId);
 
-  res.json({ message: "Signed out successfully." });
-}));
+    res.json({ message: "Signed out successfully." });
+  }),
+);
 
 export default router;

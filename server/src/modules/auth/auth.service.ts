@@ -1,4 +1,3 @@
-
 import { OAuth2Client } from "google-auth-library";
 
 import { env } from "../../config/env.js";
@@ -16,7 +15,7 @@ export async function loginWithGoogle(idToken: string) {
   try {
     const ticket = await googleClient.verifyIdToken({
       idToken,
-      audience: env.GOOGLE_WEB_CLIENT_ID
+      audience: env.GOOGLE_WEB_CLIENT_ID,
     });
 
     payload = ticket.getPayload();
@@ -38,11 +37,7 @@ export async function loginWithGoogle(idToken: string) {
     throw new ApiError(401, "Google authentication failed.");
   }
 
-  if (
-    !payload?.sub ||
-    !payload.email ||
-    payload.email_verified !== true
-  ) {
+  if (!payload?.sub || !payload.email || payload.email_verified !== true) {
     throw new ApiError(401, "Invalid Google account.");
   }
 
@@ -51,11 +46,7 @@ export async function loginWithGoogle(idToken: string) {
   const name = (payload.name || "Athlete").slice(0, 100);
   const photo = payload.picture || null;
 
-  const lookup = await db
-    .from("app_users")
-    .select("id")
-    .eq("google_sub", googleSub)
-    .maybeSingle();
+  const lookup = await db.from("app_users").select("id").eq("google_sub", googleSub).maybeSingle();
 
   checkDbError(lookup.error, "find Google user");
 
@@ -68,7 +59,7 @@ export async function loginWithGoogle(idToken: string) {
         google_sub: googleSub,
         email,
         display_name: name,
-        google_photo_url: photo
+        google_photo_url: photo,
       })
       .select("id")
       .maybeSingle();
@@ -77,11 +68,7 @@ export async function loginWithGoogle(idToken: string) {
       userId = inserted.data.id;
     } else if (inserted.error?.code === "23505") {
       // Concurrent first-time sign-in.
-      const retry = await db
-        .from("app_users")
-        .select("id")
-        .eq("google_sub", googleSub)
-        .single();
+      const retry = await db.from("app_users").select("id").eq("google_sub", googleSub).single();
 
       checkDbError(retry.error, "find concurrent user");
       userId = retry.data?.id;
@@ -95,22 +82,20 @@ export async function loginWithGoogle(idToken: string) {
       .update({
         email,
         google_photo_url: photo,
-        updated_at: new Date().toISOString()
+        updated_at: new Date().toISOString(),
       })
       .eq("id", userId);
 
     checkDbError(updated.error, "update Google identity");
   }
 
-  const settings = await db
-    .from("user_settings")
-    .upsert(
-      { user_id: userId },
-      {
-        onConflict: "user_id",
-        ignoreDuplicates: true
-      }
-    );
+  const settings = await db.from("user_settings").upsert(
+    { user_id: userId },
+    {
+      onConflict: "user_id",
+      ignoreDuplicates: true,
+    },
+  );
 
   checkDbError(settings.error, "initialize user settings");
 

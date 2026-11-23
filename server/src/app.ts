@@ -18,10 +18,7 @@ import catalogRoutes from "./modules/training-catalog/catalog.routes.js";
 import exploreAdminRoutes from "./modules/explore/explore.admin.routes.js";
 import exploreRoutes from "./modules/explore/explore.routes.js";
 
-import {
-  notFound,
-  errorHandler
-} from "./middleware/error-handler.js";
+import { notFound, errorHandler } from "./middleware/error-handler.js";
 
 export const app = express();
 
@@ -32,9 +29,7 @@ app.disable("x-powered-by");
 
 app.use(helmet());
 
-app.use(
-  express.json({ limit: "64kb" })
-);
+app.use(express.json({ limit: "64kb" }));
 
 app.get("/health", health);
 

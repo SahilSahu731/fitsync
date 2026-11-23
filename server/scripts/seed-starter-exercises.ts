@@ -1,10 +1,7 @@
-
 import "dotenv/config";
 
 import { db } from "../src/config/supabase.js";
-import {
-  exerciseInputSchema
-} from "../src/modules/exercises/exercise.schema.js";
+import { exerciseInputSchema } from "../src/modules/exercises/exercise.schema.js";
 
 const base = {
   description: "",
@@ -21,7 +18,7 @@ const base = {
   safetyNotes: [],
   breathingTip: "",
 
-  status: "draft"
+  status: "draft",
 };
 
 const exercises = [
@@ -42,25 +39,22 @@ const exercises = [
       "Lie on a flat bench with your feet supported on the floor.",
       "Position the dumbbells near your chest with your wrists straight.",
       "Press the dumbbells upward in a controlled movement.",
-      "Lower them slowly to a comfortable starting position."
+      "Lower them slowly to a comfortable starting position.",
     ],
 
     tips: [
       "Keep your shoulders supported against the bench.",
-      "Control both the lifting and lowering phases."
+      "Control both the lifting and lowering phases.",
     ],
 
-    mistakes: [
-      "Using momentum to move the weights.",
-      "Allowing your wrists to bend excessively."
-    ],
+    mistakes: ["Using momentum to move the weights.", "Allowing your wrists to bend excessively."],
 
     safetyNotes: [
       "Choose weights you can comfortably control.",
-      "Use a spotter when attempting challenging loads."
+      "Use a spotter when attempting challenging loads.",
     ],
 
-    breathingTip: "Exhale as you press, inhale while lowering."
+    breathingTip: "Exhale as you press, inhale while lowering.",
   },
   {
     slug: "incline-dumbbell-press",
@@ -80,13 +74,13 @@ const exercises = [
       "Sit back with your feet firmly supported.",
       "Start with the dumbbells near the upper chest.",
       "Press upward without losing control of your shoulders.",
-      "Lower slowly and repeat."
+      "Lower slowly and repeat.",
     ],
 
     tips: [
       "Avoid setting the bench unnecessarily steep.",
-      "Maintain a stable position during every repetition."
-    ]
+      "Maintain a stable position during every repetition.",
+    ],
   },
   {
     slug: "goblet-squat",
@@ -106,13 +100,13 @@ const exercises = [
       "Hold one dumbbell vertically against your chest.",
       "Bend your hips and knees into a comfortable squat.",
       "Keep your feet planted and your movement controlled.",
-      "Stand upright to finish the repetition."
+      "Stand upright to finish the repetition.",
     ],
 
     tips: [
       "Allow your knees to follow your toes.",
-      "Use a range of motion that feels comfortable."
-    ]
+      "Use a range of motion that feels comfortable.",
+    ],
   },
   {
     slug: "lat-pulldown",
@@ -131,18 +125,12 @@ const exercises = [
       "Adjust the seat and thigh pad for a stable position.",
       "Hold the bar comfortably with both hands.",
       "Pull the bar toward the upper chest.",
-      "Return slowly to the starting position."
+      "Return slowly to the starting position.",
     ],
 
-    tips: [
-      "Keep your torso mostly stable.",
-      "Think about moving your elbows downward."
-    ],
+    tips: ["Keep your torso mostly stable.", "Think about moving your elbows downward."],
 
-    mistakes: [
-      "Swinging backward to lift more weight.",
-      "Pulling the bar behind your neck."
-    ]
+    mistakes: ["Swinging backward to lift more weight.", "Pulling the bar behind your neck."],
   },
   {
     slug: "push-up",
@@ -163,12 +151,10 @@ const exercises = [
       "Extend your legs behind you.",
       "Maintain a stable line through your torso.",
       "Lower your body under control.",
-      "Push back to the starting position."
+      "Push back to the starting position.",
     ],
 
-    tips: [
-      "Try an elevated-hand variation if regular push-ups are difficult."
-    ]
+    tips: ["Try an elevated-hand variation if regular push-ups are difficult."],
   },
   {
     slug: "pull-up",
@@ -189,16 +175,12 @@ const exercises = [
       "Grip a secure pull-up bar.",
       "Begin from a controlled hanging position.",
       "Pull yourself upward toward the bar.",
-      "Lower your body slowly without dropping."
+      "Lower your body slowly without dropping.",
     ],
 
-    tips: [
-      "Use assisted variations when building strength."
-    ],
+    tips: ["Use assisted variations when building strength."],
 
-    safetyNotes: [
-      "Make sure the pull-up bar is securely installed."
-    ]
+    safetyNotes: ["Make sure the pull-up bar is securely installed."],
   },
   {
     slug: "forearm-plank",
@@ -218,12 +200,10 @@ const exercises = [
       "Place your forearms on the floor.",
       "Extend your legs into a plank position.",
       "Brace your abdomen and maintain a stable torso.",
-      "Continue breathing while holding the position."
+      "Continue breathing while holding the position.",
     ],
 
-    tips: [
-      "End the set when you can no longer maintain good technique."
-    ]
+    tips: ["End the set when you can no longer maintain good technique."],
   },
   {
     slug: "outdoor-running",
@@ -243,13 +223,13 @@ const exercises = [
       "Start with several minutes of comfortable walking.",
       "Begin running at a manageable pace.",
       "Maintain a sustainable effort.",
-      "Slow down gradually before finishing."
+      "Slow down gradually before finishing.",
     ],
 
     safetyNotes: [
       "Pay attention to traffic, terrain and weather.",
-      "Increase training volume gradually."
-    ]
+      "Increase training volume gradually.",
+    ],
   },
   {
     slug: "stationary-cycling",
@@ -269,8 +249,8 @@ const exercises = [
       "Adjust the bike to a comfortable riding position.",
       "Begin pedaling at a light resistance.",
       "Increase resistance or cadence gradually.",
-      "Return to an easy effort before finishing."
-    ]
+      "Return to an easy effort before finishing.",
+    ],
   },
   {
     slug: "standing-calf-stretch",
@@ -291,12 +271,10 @@ const exercises = [
       "Step one foot backward.",
       "Keep the rear heel gently grounded.",
       "Lean forward until you feel a mild stretch.",
-      "Repeat on the other side."
+      "Repeat on the other side.",
     ],
 
-    safetyNotes: [
-      "Do not force a painful stretch."
-    ]
+    safetyNotes: ["Do not force a painful stretch."],
   },
   {
     slug: "downward-facing-dog",
@@ -317,8 +295,8 @@ const exercises = [
       "Press through your hands and lift your hips upward.",
       "Move toward an inverted V shape.",
       "Keep your knees slightly bent if needed.",
-      "Breathe steadily while holding the pose."
-    ]
+      "Breathe steadily while holding the pose.",
+    ],
   },
   {
     slug: "box-breathing",
@@ -339,23 +317,21 @@ const exercises = [
       "Breathe in gently for a count of four.",
       "Pause briefly if comfortable.",
       "Exhale gently for a count of four.",
-      "Pause again if comfortable and repeat."
+      "Pause again if comfortable and repeat.",
     ],
 
     safetyNotes: [
       "Avoid forcing your breathing or breath holds.",
-      "Return to normal breathing if you feel dizzy."
-    ]
-  }
+      "Return to normal breathing if you feel dizzy.",
+    ],
+  },
 ];
 
 async function main() {
   const adminId = process.env.SEED_ADMIN_USER_ID;
 
   if (!adminId) {
-    throw new Error(
-      "Set SEED_ADMIN_USER_ID in server/.env first."
-    );
+    throw new Error("Set SEED_ADMIN_USER_ID in server/.env first.");
   }
 
   const { data: admin, error } = await db
@@ -371,17 +347,14 @@ async function main() {
   for (const item of exercises) {
     const input = exerciseInputSchema.parse({
       ...base,
-      ...item
+      ...item,
     });
 
-    const { error: saveError } = await db.rpc(
-      "save_fitsync_exercise",
-      {
-        p_id: null,
-        p_actor: adminId,
-        p_data: input
-      }
-    );
+    const { error: saveError } = await db.rpc("save_fitsync_exercise", {
+      p_id: null,
+      p_actor: adminId,
+      p_data: input,
+    });
 
     if (saveError?.code === "23505") {
       console.log("Already exists:", item.name);
@@ -398,7 +371,7 @@ async function main() {
   console.log("Starter exercises imported.");
 }
 
-main().catch(error => {
+main().catch((error) => {
   console.error(error);
   process.exitCode = 1;
 });

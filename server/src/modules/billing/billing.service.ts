@@ -8,10 +8,10 @@ export const billingService = createBillingService({
     secretApiKey: env.REVENUECAT_SECRET_API_KEY,
     entitlementId: env.REVENUECAT_ENTITLEMENT_ID,
     webhookAuthorization: env.REVENUECAT_WEBHOOK_AUTHORIZATION,
-    allowSandbox: env.REVENUECAT_ALLOW_SANDBOX
+    allowSandbox: env.REVENUECAT_ALLOW_SANDBOX,
   },
   repository: billingRepository,
-  fetchSubscriber: userId => fetchRevenueCatSubscriber(userId, env.REVENUECAT_SECRET_API_KEY!)
+  fetchSubscriber: (userId) => fetchRevenueCatSubscriber(userId, env.REVENUECAT_SECRET_API_KEY!),
 });
 
 export const getEntitlement = billingService.getEntitlement;

@@ -1,4 +1,3 @@
-
 import { randomUUID } from "node:crypto";
 import multer from "multer";
 import sharp from "sharp";
@@ -14,7 +13,7 @@ export const uploadAvatarMiddleware = multer({
   storage: multer.memoryStorage(),
   limits: {
     fileSize: 3 * 1024 * 1024,
-    files: 1
+    files: 1,
   },
   fileFilter: (_req, file, callback) => {
     if (!["image/jpeg", "image/png", "image/webp"].includes(file.mimetype)) {
@@ -23,18 +22,15 @@ export const uploadAvatarMiddleware = multer({
     }
 
     callback(null, true);
-  }
+  },
 }).single("avatar");
 
-export async function uploadAvatar(
-  userId: string,
-  file: Express.Multer.File
-) {
+export async function uploadAvatar(userId: string, file: Express.Multer.File) {
   let optimized: Buffer;
 
   try {
     const image = sharp(file.buffer, {
-      limitInputPixels: 25_000_000
+      limitInputPixels: 25_000_000,
     });
 
     const metadata = await image.metadata();
@@ -47,7 +43,7 @@ export async function uploadAvatar(
       .rotate()
       .resize(512, 512, {
         fit: "cover",
-        position: "centre"
+        position: "centre",
       })
       .webp({ quality: 80 })
       .toBuffer();
@@ -55,24 +51,18 @@ export async function uploadAvatar(
     throw new ApiError(400, "Invalid image file.");
   }
 
-  const existing = await db
-    .from("app_users")
-    .select("avatar_path")
-    .eq("id", userId)
-    .single();
+  const existing = await db.from("app_users").select("avatar_path").eq("id", userId).single();
 
   checkDbError(existing.error, "find old avatar");
 
   const oldPath = existing.data?.avatar_path;
   const newPath = `${userId}/${randomUUID()}.webp`;
 
-  const uploaded = await db.storage
-    .from(BUCKET)
-    .upload(newPath, optimized, {
-      contentType: "image/webp",
-      cacheControl: "3600",
-      upsert: false
-    });
+  const uploaded = await db.storage.from(BUCKET).upload(newPath, optimized, {
+    contentType: "image/webp",
+    cacheControl: "3600",
+    upsert: false,
+  });
 
   if (uploaded.error) {
     throw new ApiError(502, "Could not upload image.");
@@ -82,7 +72,7 @@ export async function uploadAvatar(
     .from("app_users")
     .update({
       avatar_path: newPath,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
 
@@ -92,9 +82,7 @@ export async function uploadAvatar(
   }
 
   if (oldPath) {
-    const removed = await db.storage
-      .from(BUCKET)
-      .remove([oldPath]);
+    const removed = await db.storage.from(BUCKET).remove([oldPath]);
 
     if (removed.error) {
       console.error("Avatar cleanup failed:", removed.error.message);
@@ -105,20 +93,14 @@ export async function uploadAvatar(
 }
 
 export async function deleteAvatar(userId: string) {
-  const result = await db
-    .from("app_users")
-    .select("avatar_path")
-    .eq("id", userId)
-    .single();
+  const result = await db.from("app_users").select("avatar_path").eq("id", userId).single();
 
   checkDbError(result.error, "find avatar");
 
   const path = result.data?.avatar_path;
 
   if (path) {
-    const { error } = await db.storage
-      .from(BUCKET)
-      .remove([path]);
+    const { error } = await db.storage.from(BUCKET).remove([path]);
 
     if (error) {
       throw new ApiError(502, "Could not remove image.");
@@ -129,7 +111,7 @@ export async function deleteAvatar(userId: string) {
     .from("app_users")
     .update({
       avatar_path: null,
-      updated_at: new Date().toISOString()
+      updated_at: new Date().toISOString(),
     })
     .eq("id", userId);
 

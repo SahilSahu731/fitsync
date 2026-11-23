@@ -206,6 +206,24 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
     const result = await googleBackendLogin(idToken);
 
+    const user = result.user;
+    const settings = result.settings;
+
+    if (
+      !user ||
+      typeof user !== "object" ||
+      !("id" in user) ||
+      typeof user.id !== "string" ||
+      !user.id.trim() ||
+      !settings ||
+      typeof settings !== "object" ||
+      !("weightUnit" in settings) ||
+      (settings.weightUnit !== "kg" && settings.weightUnit !== "lb") ||
+      result.profile === undefined
+    ) {
+      throw new Error("The server returned incomplete account information. Please try again.");
+    }
+
     await storeSessionTokens({
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,

@@ -9,7 +9,7 @@ const DEVICE_KEY = "fitsync.program-push-token.v1";
 let operations: Promise<void> = Promise.resolve();
 function enqueue(operation: () => Promise<void>) {
   const result = operations.then(operation);
-  operations = result.catch(() => {});
+  operations = result.catch(() => { });
   return result;
 }
 export function registerProgramNotifications(requestPermission = false) {
@@ -18,12 +18,21 @@ export function registerProgramNotifications(requestPermission = false) {
 async function register(requestPermission: boolean) {
   if (Platform.OS === "web") throw new Error("Daily reminders are available in the mobile app.");
   await configureWorkoutNotifications();
-  if (Platform.OS === "android")
-    await Notifications.setNotificationChannelAsync("program-reminders-v1", {
-      name: "Daily program reminders",
+  if (Platform.OS === "android") {
+    // General push notifications: achievements, motivation, etc.
+    await Notifications.setNotificationChannelAsync("general-v1", {
+      name: "General notifications",
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: "rest_complete.wav",
+      sound: "default",
     });
+
+    // Existing scheduled workout reminders.
+    await Notifications.setNotificationChannelAsync("program-reminders-v2", {
+      name: "Workout reminders",
+      importance: Notifications.AndroidImportance.DEFAULT,
+      sound: "default",
+    });
+  }
   let permission = await Notifications.getPermissionsAsync();
   if (!permission.granted && requestPermission)
     permission = await Notifications.requestPermissionsAsync();

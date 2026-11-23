@@ -1,4 +1,3 @@
-
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
 
@@ -12,7 +11,7 @@ async function clearOwnedStorage(userId: string, bucketName: string, optional = 
   while (true) {
     const { data, error } = await bucket.list(userId, {
       limit: 100,
-      offset
+      offset,
     });
 
     if (error) {
@@ -22,8 +21,8 @@ async function clearOwnedStorage(userId: string, bucketName: string, optional = 
     }
 
     const files = (data || [])
-      .filter(item => item.name && item.id)
-      .map(item => `${userId}/${item.name}`);
+      .filter((item) => item.name && item.id)
+      .map((item) => `${userId}/${item.name}`);
 
     paths.push(...files);
 
@@ -38,7 +37,10 @@ async function clearOwnedStorage(userId: string, bucketName: string, optional = 
     const { error } = await bucket.remove(batch);
 
     if (error) {
-      throw new ApiError(502, "Could not delete your private image files. Please retry account deletion.");
+      throw new ApiError(
+        502,
+        "Could not delete your private image files. Please retry account deletion.",
+      );
     }
   }
 }

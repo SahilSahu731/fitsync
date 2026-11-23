@@ -1,4 +1,3 @@
-
 import { app } from "./app.js";
 import { env } from "./config/env.js";
 import { reportError, flushMonitoring } from "./common/monitoring.js";
@@ -20,5 +19,11 @@ function shutdown(code: number) {
 }
 process.on("SIGTERM", () => shutdown(0));
 process.on("SIGINT", () => shutdown(0));
-process.on("uncaughtException", error => { reportError(error, "uncaughtException"); shutdown(1); });
-process.on("unhandledRejection", error => { reportError(error, "unhandledRejection"); shutdown(1); });
+process.on("uncaughtException", (error) => {
+  reportError(error, "uncaughtException");
+  shutdown(1);
+});
+process.on("unhandledRejection", (error) => {
+  reportError(error, "unhandledRejection");
+  shutdown(1);
+});

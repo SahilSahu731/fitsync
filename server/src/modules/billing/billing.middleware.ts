@@ -5,6 +5,6 @@ import { createProGuard } from "./billing.guard.js";
 // Mount after requireAuth; the account always comes from the verified session.
 export const requirePro = createProGuard({
   configured: billingService.configured,
-  userId: req => getAuth(req).userId,
-  getEntitlement: userId => billingService.getEntitlement(userId)
+  userId: (req) => getAuth(req).userId,
+  getEntitlement: (userId) => billingService.getEntitlement(userId),
 });

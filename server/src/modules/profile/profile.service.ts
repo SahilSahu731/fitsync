@@ -1,4 +1,3 @@
-
 import type { z } from "zod";
 
 import { db } from "../../config/supabase.js";
@@ -8,7 +7,7 @@ import {
   onboardingSchema,
   editFitnessSchema,
   editUserSchema,
-  settingsSchema
+  settingsSchema,
 } from "./profile.schema.js";
 
 type OnboardingInput = z.infer<typeof onboardingSchema>;
@@ -17,23 +16,13 @@ type EditUserInput = z.infer<typeof editUserSchema>;
 type SettingsInput = z.infer<typeof settingsSchema>;
 
 export async function getFullUser(userId: string) {
-  const [accountResult, fitnessResult, settingsResult] =
-    await Promise.all([
-      db.from("app_users")
-        .select("*")
-        .eq("id", userId)
-        .maybeSingle(),
+  const [accountResult, fitnessResult, settingsResult] = await Promise.all([
+    db.from("app_users").select("*").eq("id", userId).maybeSingle(),
 
-      db.from("fitness_profiles")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle(),
+    db.from("fitness_profiles").select("*").eq("user_id", userId).maybeSingle(),
 
-      db.from("user_settings")
-        .select("*")
-        .eq("user_id", userId)
-        .maybeSingle()
-    ]);
+    db.from("user_settings").select("*").eq("user_id", userId).maybeSingle(),
+  ]);
 
   checkDbError(accountResult.error, "load account");
   checkDbError(fitnessResult.error, "load fitness profile");
@@ -67,7 +56,7 @@ export async function getFullUser(userId: string) {
       bio: account.bio,
       avatarUrl,
       hasCustomAvatar: Boolean(account.avatar_path),
-      createdAt: account.created_at
+      createdAt: account.created_at,
     },
 
     profile: fitness
@@ -83,24 +72,21 @@ export async function getFullUser(userId: string) {
           trainingDays: fitness.training_days,
           minutesPerWorkout: fitness.minutes_per_workout,
           equipment: fitness.equipment,
-          completedAt: fitness.completed_at
+          completedAt: fitness.completed_at,
         }
       : null,
 
     settings: {
       weightUnit: settings?.weight_unit || "kg",
       restSeconds: settings?.rest_seconds || 90,
-      workoutReminders: settings?.workout_reminders ?? false
-    }
+      workoutReminders: settings?.workout_reminders ?? false,
+    },
   };
 }
 
-export async function updateAccount(
-  userId: string,
-  input: EditUserInput
-) {
+export async function updateAccount(userId: string, input: EditUserInput) {
   const updates: Record<string, unknown> = {
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 
   if (input.name !== undefined) {
@@ -111,23 +97,16 @@ export async function updateAccount(
     updates.bio = input.bio;
   }
 
-  const { error } = await db
-    .from("app_users")
-    .update(updates)
-    .eq("id", userId);
+  const { error } = await db.from("app_users").update(updates).eq("id", userId);
 
   checkDbError(error, "update account");
 
   return getFullUser(userId);
 }
 
-export async function saveOnboarding(
-  userId: string,
-  input: OnboardingInput
-) {
-  const { error } = await db
-    .from("fitness_profiles")
-    .upsert({
+export async function saveOnboarding(userId: string, input: OnboardingInput) {
+  const { error } = await db.from("fitness_profiles").upsert(
+    {
       user_id: userId,
       goal: input.goal,
       experience: input.experience,
@@ -140,20 +119,19 @@ export async function saveOnboarding(
       training_days: input.trainingDays,
       minutes_per_workout: input.minutesPerWorkout,
       equipment: input.equipment,
-      updated_at: new Date().toISOString()
-    }, {
-      onConflict: "user_id"
-    });
+      updated_at: new Date().toISOString(),
+    },
+    {
+      onConflict: "user_id",
+    },
+  );
 
   checkDbError(error, "save onboarding");
 
   return getFullUser(userId);
 }
 
-export async function updateFitnessProfile(
-  userId: string,
-  input: EditFitnessInput
-) {
+export async function updateFitnessProfile(userId: string, input: EditFitnessInput) {
   const fields: Record<string, string> = {
     goal: "goal",
     experience: "experience",
@@ -163,11 +141,11 @@ export async function updateFitnessProfile(
     bodyType: "body_type",
     trainingDays: "training_days",
     minutesPerWorkout: "minutes_per_workout",
-    equipment: "equipment"
+    equipment: "equipment",
   };
 
   const updates: Record<string, unknown> = {
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 
   for (const [field, value] of Object.entries(input)) {
@@ -191,22 +169,16 @@ export async function updateFitnessProfile(
 }
 
 export async function resetOnboarding(userId: string) {
-  const { error } = await db
-    .from("fitness_profiles")
-    .delete()
-    .eq("user_id", userId);
+  const { error } = await db.from("fitness_profiles").delete().eq("user_id", userId);
 
   checkDbError(error, "reset onboarding");
 
   return getFullUser(userId);
 }
 
-export async function updateUserSettings(
-  userId: string,
-  input: SettingsInput
-) {
+export async function updateUserSettings(userId: string, input: SettingsInput) {
   const updates: Record<string, unknown> = {
-    updated_at: new Date().toISOString()
+    updated_at: new Date().toISOString(),
   };
 
   if (input.weightUnit !== undefined) {
@@ -221,10 +193,7 @@ export async function updateUserSettings(
     updates.workout_reminders = input.workoutReminders;
   }
 
-  const { error } = await db
-    .from("user_settings")
-    .update(updates)
-    .eq("user_id", userId);
+  const { error } = await db.from("user_settings").update(updates).eq("user_id", userId);
 
   checkDbError(error, "update settings");
 

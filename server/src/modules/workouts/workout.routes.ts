@@ -6,14 +6,14 @@ import { requireAuth, getAuth } from "../../middleware/auth.js";
 import { requirePro } from "../billing/billing.middleware.js";
 
 import {
-    createTemplateSchema,
-    editTemplateSchema,
-    updateSetSchema,
-    addSessionExerciseSchema,
-    addSessionExercisesSchema,
-    addSessionSetSchema,
-    finishWorkoutSchema,
-    updateSessionExerciseSchema
+  createTemplateSchema,
+  editTemplateSchema,
+  updateSetSchema,
+  addSessionExerciseSchema,
+  addSessionExercisesSchema,
+  addSessionSetSchema,
+  finishWorkoutSchema,
+  updateSessionExerciseSchema,
 } from "./workout.schema.js";
 
 import * as service from "./workout.service.js";
@@ -23,184 +23,262 @@ router.use(requireAuth);
 
 const idSchema = z.uuid();
 
-router.get("/templates", asyncHandler(async (req, res) => {
+router.get(
+  "/templates",
+  asyncHandler(async (req, res) => {
     res.json(await service.listTemplates(getAuth(req).userId));
-}));
+  }),
+);
 
-router.post("/templates", asyncHandler(async (req, res) => {
+router.post(
+  "/templates",
+  asyncHandler(async (req, res) => {
     const input = createTemplateSchema.parse(req.body);
 
-    res.status(201).json(
-        await service.createTemplate(getAuth(req).userId, input)
-    );
-}));
+    res.status(201).json(await service.createTemplate(getAuth(req).userId, input));
+  }),
+);
 
-router.get("/templates/:id", asyncHandler(async (req, res) => {
-    res.json(
-        await service.getTemplate(
-            getAuth(req).userId,
-            idSchema.parse(req.params.id)
-        )
-    );
-}));
+router.get(
+  "/templates/:id",
+  asyncHandler(async (req, res) => {
+    res.json(await service.getTemplate(getAuth(req).userId, idSchema.parse(req.params.id)));
+  }),
+);
 
-router.patch("/templates/:id", asyncHandler(async (req, res) => {
+router.patch(
+  "/templates/:id",
+  asyncHandler(async (req, res) => {
     const { name } = z.object({ name: z.string().trim().min(1).max(100) }).parse(req.body);
-    res.json(await service.renameTemplate(getAuth(req).userId, idSchema.parse(req.params.id), name));
-}));
-router.put("/templates/:id", asyncHandler(async (req, res) => {
-    res.json(await service.editTemplate(getAuth(req).userId, idSchema.parse(req.params.id), editTemplateSchema.parse(req.body)));
-}));
-
-router.delete("/templates/:id", asyncHandler(async (req, res) => {
-    await service.deleteTemplate(
-        getAuth(req).userId,
-        idSchema.parse(req.params.id)
+    res.json(
+      await service.renameTemplate(getAuth(req).userId, idSchema.parse(req.params.id), name),
     );
+  }),
+);
+router.put(
+  "/templates/:id",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await service.editTemplate(
+        getAuth(req).userId,
+        idSchema.parse(req.params.id),
+        editTemplateSchema.parse(req.body),
+      ),
+    );
+  }),
+);
+
+router.delete(
+  "/templates/:id",
+  asyncHandler(async (req, res) => {
+    await service.deleteTemplate(getAuth(req).userId, idSchema.parse(req.params.id));
 
     res.status(204).send();
-}));
+  }),
+);
 
-router.get("/active", asyncHandler(async (req, res) => {
+router.get(
+  "/active",
+  asyncHandler(async (req, res) => {
     res.json(await service.getActiveSession(getAuth(req).userId));
-}));
+  }),
+);
 
-router.get("/history", asyncHandler(async (req, res) => {
+router.get(
+  "/history",
+  asyncHandler(async (req, res) => {
     res.json(await service.listHistory(getAuth(req).userId));
-}));
+  }),
+);
 
-router.post("/start", (req, res, next) => {
+router.post(
+  "/start",
+  (req, res, next) => {
     // Selecting a scheduled program slot is paid; ordinary workouts stay free.
     if (req.body?.programSlotId) return requirePro(req, res, next);
     next();
-}, asyncHandler(async (req, res) => {
-    const input = z.object({
+  },
+  asyncHandler(async (req, res) => {
+    const input = z
+      .object({
         templateId: z.uuid().optional(),
-        programSlotId: z.uuid().optional()
-    }).parse(req.body);
+        programSlotId: z.uuid().optional(),
+      })
+      .parse(req.body);
 
-    res.status(201).json(
-        await service.startWorkout(
-            getAuth(req).userId,
-            input.templateId,
-            input.programSlotId
-        )
-    );
-}));
-
-router.patch("/sessions/:id", asyncHandler(async (req, res) => {
-    const { notes } = z.object({ notes: z.string().max(2000) }).parse(req.body);
-    res.json(await service.updateSessionNotes(getAuth(req).userId, idSchema.parse(req.params.id), notes));
-}));
-
-router.get("/sessions/:id", asyncHandler(async (req, res) => {
-    res.json(
-        await service.getSession(
-            getAuth(req).userId,
-            idSchema.parse(req.params.id)
-        )
-    );
-}));
-
-router.patch("/sessions/:id/exercises/order", asyncHandler(async (req, res) => {
-    const { exerciseIds } = z.object({ exerciseIds: z.array(z.uuid()).max(500) }).parse(req.body);
-    res.json(await service.reorderSessionExercises(getAuth(req).userId, idSchema.parse(req.params.id), exerciseIds));
-}));
-
-router.delete("/sessions/:id/exercises/:exerciseItemId", asyncHandler(async (req, res) => {
-    res.json(await service.removeSessionExercise(getAuth(req).userId, idSchema.parse(req.params.id), idSchema.parse(req.params.exerciseItemId)));
-}));
-
-router.patch("/sessions/:id/exercises/:exerciseItemId", asyncHandler(async (req, res) => {
-    const input = updateSessionExerciseSchema.parse(req.body);
-    res.json(await service.updateSessionExercise(getAuth(req).userId, idSchema.parse(req.params.id),
-        idSchema.parse(req.params.exerciseItemId), input));
-}));
-
-router.post("/sessions/:id/exercises/batch", asyncHandler(async (req, res) => {
-    const input = addSessionExercisesSchema.parse(req.body);
-    res.status(201).json(await service.addSessionExercises(
-        getAuth(req).userId, idSchema.parse(req.params.id), input.exerciseIds, input.restSeconds
-    ));
-}));
-
-router.post("/sessions/:id/exercises", asyncHandler(async (req, res) => {
-    const input = addSessionExerciseSchema.parse(req.body);
-
-    res.status(201).json(
-        await service.addSessionExercise(
-            getAuth(req).userId,
-            idSchema.parse(req.params.id),
-            input.exerciseId,
-            input.restSeconds
-        )
-    );
-}));
-
-router.post(
-    "/sessions/:id/exercises/:exerciseItemId/sets",
-    asyncHandler(async (req, res) => {
-        const input = addSessionSetSchema.parse(req.body);
-
-        res.status(201).json(
-            await service.addSet(
-                getAuth(req).userId,
-                idSchema.parse(req.params.id),
-                idSchema.parse(req.params.exerciseItemId),
-                input,
-                req.query.compact === "true"
-            )
-        );
-    })
+    res
+      .status(201)
+      .json(await service.startWorkout(getAuth(req).userId, input.templateId, input.programSlotId));
+  }),
 );
-
-router.delete("/sessions/:id/sets/:setId", asyncHandler(async (req, res) => {
-    res.json(await service.removeSet(
-        getAuth(req).userId,
-        idSchema.parse(req.params.id),
-        idSchema.parse(req.params.setId)
-    ));
-}));
 
 router.patch(
-    "/sessions/:id/sets/:setId",
-    asyncHandler(async (req, res) => {
-        const input = updateSetSchema.parse(req.body);
-
-        res.json(
-            await service.updateSet(
-                getAuth(req).userId,
-                idSchema.parse(req.params.id),
-                idSchema.parse(req.params.setId),
-                input,
-                req.query.compact === "true"
-            )
-        );
-    })
+  "/sessions/:id",
+  asyncHandler(async (req, res) => {
+    const { notes } = z.object({ notes: z.string().max(2000) }).parse(req.body);
+    res.json(
+      await service.updateSessionNotes(getAuth(req).userId, idSchema.parse(req.params.id), notes),
+    );
+  }),
 );
 
-router.post("/sessions/:id/finish", asyncHandler(async (req, res) => {
+router.get(
+  "/sessions/:id",
+  asyncHandler(async (req, res) => {
+    res.json(await service.getSession(getAuth(req).userId, idSchema.parse(req.params.id)));
+  }),
+);
+
+router.patch(
+  "/sessions/:id/exercises/order",
+  asyncHandler(async (req, res) => {
+    const { exerciseIds } = z.object({ exerciseIds: z.array(z.uuid()).max(500) }).parse(req.body);
+    res.json(
+      await service.reorderSessionExercises(
+        getAuth(req).userId,
+        idSchema.parse(req.params.id),
+        exerciseIds,
+      ),
+    );
+  }),
+);
+
+router.delete(
+  "/sessions/:id/exercises/:exerciseItemId",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await service.removeSessionExercise(
+        getAuth(req).userId,
+        idSchema.parse(req.params.id),
+        idSchema.parse(req.params.exerciseItemId),
+      ),
+    );
+  }),
+);
+
+router.patch(
+  "/sessions/:id/exercises/:exerciseItemId",
+  asyncHandler(async (req, res) => {
+    const input = updateSessionExerciseSchema.parse(req.body);
+    res.json(
+      await service.updateSessionExercise(
+        getAuth(req).userId,
+        idSchema.parse(req.params.id),
+        idSchema.parse(req.params.exerciseItemId),
+        input,
+      ),
+    );
+  }),
+);
+
+router.post(
+  "/sessions/:id/exercises/batch",
+  asyncHandler(async (req, res) => {
+    const input = addSessionExercisesSchema.parse(req.body);
+    res
+      .status(201)
+      .json(
+        await service.addSessionExercises(
+          getAuth(req).userId,
+          idSchema.parse(req.params.id),
+          input.exerciseIds,
+          input.restSeconds,
+        ),
+      );
+  }),
+);
+
+router.post(
+  "/sessions/:id/exercises",
+  asyncHandler(async (req, res) => {
+    const input = addSessionExerciseSchema.parse(req.body);
+
+    res
+      .status(201)
+      .json(
+        await service.addSessionExercise(
+          getAuth(req).userId,
+          idSchema.parse(req.params.id),
+          input.exerciseId,
+          input.restSeconds,
+        ),
+      );
+  }),
+);
+
+router.post(
+  "/sessions/:id/exercises/:exerciseItemId/sets",
+  asyncHandler(async (req, res) => {
+    const input = addSessionSetSchema.parse(req.body);
+
+    res
+      .status(201)
+      .json(
+        await service.addSet(
+          getAuth(req).userId,
+          idSchema.parse(req.params.id),
+          idSchema.parse(req.params.exerciseItemId),
+          input,
+          req.query.compact === "true",
+        ),
+      );
+  }),
+);
+
+router.delete(
+  "/sessions/:id/sets/:setId",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await service.removeSet(
+        getAuth(req).userId,
+        idSchema.parse(req.params.id),
+        idSchema.parse(req.params.setId),
+      ),
+    );
+  }),
+);
+
+router.patch(
+  "/sessions/:id/sets/:setId",
+  asyncHandler(async (req, res) => {
+    const input = updateSetSchema.parse(req.body);
+
+    res.json(
+      await service.updateSet(
+        getAuth(req).userId,
+        idSchema.parse(req.params.id),
+        idSchema.parse(req.params.setId),
+        input,
+        req.query.compact === "true",
+      ),
+    );
+  }),
+);
+
+router.post(
+  "/sessions/:id/finish",
+  asyncHandler(async (req, res) => {
     const input = finishWorkoutSchema.parse(req.body);
 
     res.json(
-        await service.finishWorkout(
-            getAuth(req).userId,
-            idSchema.parse(req.params.id),
-            "completed",
-            input.notes,
-            input.elapsedSeconds
-        )
+      await service.finishWorkout(
+        getAuth(req).userId,
+        idSchema.parse(req.params.id),
+        "completed",
+        input.notes,
+        input.elapsedSeconds,
+      ),
     );
-}));
+  }),
+);
 
-router.post("/sessions/:id/discard", asyncHandler(async (req, res) => {
+router.post(
+  "/sessions/:id/discard",
+  asyncHandler(async (req, res) => {
     res.json(
-        await service.finishWorkout(
-            getAuth(req).userId,
-            idSchema.parse(req.params.id),
-            "discarded"
-        )
+      await service.finishWorkout(getAuth(req).userId, idSchema.parse(req.params.id), "discarded"),
     );
-}));
+  }),
+);
 
 export default router;

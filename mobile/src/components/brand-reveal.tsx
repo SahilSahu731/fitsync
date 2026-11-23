@@ -8,9 +8,30 @@ import {
   View,
   useAnimatedValue,
 } from "react-native";
+import Svg, { Circle, Defs, RadialGradient, Stop } from "react-native-svg";
 import { Txt } from "@/src/components/ui";
-import { useReducedAppMotion } from "./motion";
+import { useExperience } from "@/src/features/experience/experience-context";
 import { C } from "@/src/constants/theme";
+
+/* ---------- layout (tweak here) ---------- */
+// START must equal `imageWidth` in app.json (expo-splash-screen plugin) so the
+// native splash -> this overlay hand-off has no size jump.
+const START = 240; // big centered logo
+const END = 56; // logo size inside the final lockup
+const GAP = 12; // logo <-> wordmark
+const TEXT_SIZE = 42;
+const TEXT_NUDGE_Y = 2; // optical vertical alignment of caps with the logo
+const GLOW = 340;
+
+/* ---------- motion (tweak here) ---------- */
+const K = END / START;
+const MOVE = Easing.bezier(0.65, 0, 0.15, 1); // soft start AND long soft landing
+const SETTLE = Easing.bezier(0.16, 1, 0.3, 1); // expo-out for the letters
+const MOVE_MS = 900;
+const STAGGER_MS = 45;
+const HOLD_MS = 650;
+
+const WORD = ["F", "I", "T", "S", "Y", "N", "C"];
 
 export function BrandReveal({
   onReady,
@@ -19,16 +40,23 @@ export function BrandReveal({
   onReady: () => Promise<void>;
   onDone: () => void;
 }) {
-  const reduced = useReducedAppMotion();
+  // Not useReducedAppMotion(): it starts `true` until an async check resolves.
+  const { preferences } = useExperience();
+  const prefersReduced = preferences.reduceMotion;
+
   const [laidOut, setLaidOut] = useState(false);
   const [imageReady, setImageReady] = useState(false);
-  const opacity = useAnimatedValue(1);
-  const scale = useAnimatedValue(1);
-  const pulse = useAnimatedValue(0);
-  const caption = useAnimatedValue(0);
+  const [textW, setTextW] = useState(0);
+
+  const overlay = useAnimatedValue(1);
+  const exit = useAnimatedValue(0);
+  const glow = useAnimatedValue(0);
+  const pulse = useAnimatedValue(0); // tiny "anticipation" swell before the move
+  const lockup = useAnimatedValue(0); // 0 big centered logo -> 1 final lockup
+  const [letters] = useState(() => WORD.map(() => new Animated.Value(0)));
 
   useEffect(() => {
-    if (!laidOut || !imageReady) return;
+    if (!laidOut || !imageReady || textW === 0) return;
 
     let cancelled = false;
     let animation: Animated.CompositeAnimation | undefined;
@@ -37,52 +65,48 @@ export function BrandReveal({
       const reduceMotion = await AccessibilityInfo.isReduceMotionEnabled().catch(() => false);
       if (cancelled) return;
 
-      // Keep the native splash until this matching image has painted.
+      // Native splash stays until this identical logo has painted.
       await onReady();
       if (cancelled) return;
-      if (reduceMotion || reduced) {
+
+      if (reduceMotion || prefersReduced) {
         onDone();
         return;
       }
 
+      const t = (
+        v: Animated.Value,
+        to: number,
+        duration: number,
+        easing: (n: number) => number,
+        delay = 0,
+      ) => Animated.timing(v, { toValue: to, duration, easing, delay, useNativeDriver: true });
+
       animation = Animated.sequence([
-        Animated.delay(200),
+        Animated.delay(100),
+        // 1) anticipation: glow blooms, logo swells a touch
         Animated.parallel([
-          Animated.sequence([
-            Animated.timing(scale, {
-              toValue: 1.08,
-              duration: 280,
-              easing: Easing.out(Easing.cubic),
-              useNativeDriver: true,
-            }),
-            Animated.spring(scale, {
-              toValue: 1,
-              damping: 16,
-              stiffness: 180,
-              mass: 0.6,
-              useNativeDriver: true,
-            }),
-          ]),
-          Animated.timing(pulse, {
-            toValue: 1,
-            duration: 850,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
-          Animated.timing(caption, {
-            toValue: 1,
-            duration: 450,
-            delay: 100,
-            easing: Easing.out(Easing.cubic),
-            useNativeDriver: true,
-          }),
+          t(glow, 1, 600, Easing.out(Easing.cubic)),
+          t(pulse, 1, 340, Easing.inOut(Easing.sin)),
         ]),
-        Animated.delay(160),
-        Animated.timing(opacity, {
-          toValue: 0,
-          duration: 260,
-          useNativeDriver: true,
-        }),
+        // 2) one continuous gesture: logo settles left, letters follow in from the right
+        Animated.parallel([
+          t(lockup, 1, MOVE_MS, MOVE),
+          t(pulse, 0, MOVE_MS, MOVE),
+          Animated.sequence([
+            Animated.delay(240),
+            Animated.stagger(
+              STAGGER_MS,
+              letters.map((v) => t(v, 1, 760, SETTLE)),
+            ),
+          ]),
+        ]),
+        Animated.delay(HOLD_MS),
+        // 3) exit: gentle push-through and dissolve into the app
+        Animated.parallel([
+          t(overlay, 0, 380, Easing.inOut(Easing.quad)),
+          t(exit, 1, 380, Easing.inOut(Easing.quad)),
+        ]),
       ]);
       animation.start(({ finished }) => {
         if (finished && !cancelled) onDone();
@@ -94,59 +118,103 @@ export function BrandReveal({
       cancelled = true;
       animation?.stop();
     };
-  }, [laidOut, imageReady, onReady, onDone, opacity, scale, pulse, caption, reduced]);
+  }, [laidOut, imageReady, textW, onReady, onDone, prefersReduced, overlay, exit, glow, pulse, lockup, letters]);
+
+  const iconX = -(GAP + textW) / 2; // logo center, final
+  const textX = (END + GAP) / 2; // wordmark center, final
+
+  const logoX = lockup.interpolate({ inputRange: [0, 1], outputRange: [0, iconX] });
+  const logoScale = Animated.multiply(
+    lockup.interpolate({ inputRange: [0, 1], outputRange: [1, K] }),
+    pulse.interpolate({ inputRange: [0, 1], outputRange: [1, 1.045] }),
+  );
+  const glowOpacity = Animated.multiply(
+    glow,
+    lockup.interpolate({ inputRange: [0, 1], outputRange: [1, 0] }),
+  );
+  const glowScale = lockup.interpolate({ inputRange: [0, 1], outputRange: [1, K * 1.25] });
+  const groupScale = exit.interpolate({ inputRange: [0, 1], outputRange: [1, 1.04] });
 
   return (
     <Animated.View
       onLayout={() => setLaidOut(true)}
       accessibilityViewIsModal
       accessible
-      accessibilityLabel="FitSync. Built for the next rep."
-      style={[styles.overlay, { opacity }]}
+      accessibilityLabel="FitSync"
+      style={[styles.overlay, { opacity: overlay }]}
     >
-      <View style={styles.mark}>
+      <Animated.View style={[styles.group, { transform: [{ scale: groupScale }] }]}>
+        {/* soft lime halo behind the logo */}
         <Animated.View
-          style={[
-            styles.ring,
-            {
-              opacity: pulse.interpolate({ inputRange: [0, 0.2, 1], outputRange: [0, 0.4, 0] }),
-              transform: [
-                { scale: pulse.interpolate({ inputRange: [0, 1], outputRange: [0.7, 1.5] }) },
-              ],
-            },
-          ]}
-        />
-        <Animated.View style={{ transform: [{ scale }] }}>
+          pointerEvents="none"
+          renderToHardwareTextureAndroid
+          style={{
+            position: "absolute",
+            opacity: glowOpacity,
+            transform: [{ translateX: logoX }, { scale: glowScale }],
+          }}
+        >
+          <Svg width={GLOW} height={GLOW}>
+            <Defs>
+              <RadialGradient id="halo" cx="50%" cy="50%" r="50%">
+                <Stop offset="0" stopColor={C.brand} stopOpacity="0.09" />
+                <Stop offset="1" stopColor={C.brand} stopOpacity="0" />
+              </RadialGradient>
+            </Defs>
+            <Circle cx={GLOW / 2} cy={GLOW / 2} r={GLOW / 2} fill="url(#halo)" />
+          </Svg>
+        </Animated.View>
+
+        {/* logo: big in the center -> settles on the left */}
+        <Animated.View
+          renderToHardwareTextureAndroid
+          style={{
+            position: "absolute",
+            transform: [{ translateX: logoX }, { scale: logoScale }],
+          }}
+        >
           <Image
             source={require("../../assets/images/splash-icon.png")}
             onLoadEnd={() => setImageReady(true)}
             fadeDuration={0}
-            style={styles.image}
+            style={{ width: START, height: START }}
             resizeMode="contain"
           />
         </Animated.View>
-        <Animated.View
-          style={[
-            styles.caption,
-            {
-              opacity: caption,
-              transform: [
-                { translateY: caption.interpolate({ inputRange: [0, 1], outputRange: [12, 0] }) },
-              ],
-            },
-          ]}
+
+        {/* wordmark: letters glide in from the right, one after another */}
+        <View
+          onLayout={(e) => {
+            const w = Math.ceil(e.nativeEvent.layout.width);
+            setTextW((prev) => prev || w);
+          }}
+          style={{
+            position: "absolute",
+            flexDirection: "row",
+            marginTop: TEXT_NUDGE_Y,
+            transform: [{ translateX: textX }],
+          }}
         >
-          <Txt weight="semibold" style={styles.wordmark}>
-            FIT
-            <Txt weight="semibold" style={styles.accent}>
-              SYNC
-            </Txt>
-          </Txt>
-          <Txt weight="medium" style={styles.tagline}>
-            BUILT FOR THE NEXT REP.
-          </Txt>
-        </Animated.View>
-      </View>
+          {WORD.map((ch, i) => (
+            <Animated.View
+              key={i}
+              renderToHardwareTextureAndroid
+              style={{
+                opacity: letters[i].interpolate({ inputRange: [0, 0.35, 1], outputRange: [0, 1, 1] }),
+                transform: [
+                  { translateX: letters[i].interpolate({ inputRange: [0, 1], outputRange: [44, 0] }) },
+                  { translateY: letters[i].interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) },
+                  { scale: letters[i].interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) },
+                ],
+              }}
+            >
+              <Txt weight="semibold" style={[styles.letter, { color: i < 3 ? C.ink : C.brand }]}>
+                {ch}
+              </Txt>
+            </Animated.View>
+          ))}
+        </View>
+      </Animated.View>
     </Animated.View>
   );
 }
@@ -156,21 +224,16 @@ const styles = StyleSheet.create({
     ...StyleSheet.absoluteFill,
     zIndex: 50,
     backgroundColor: C.bg,
+  },
+  group: {
+    ...StyleSheet.absoluteFill,
     alignItems: "center",
     justifyContent: "center",
   },
-  mark: { width: 200, height: 200, alignItems: "center", justifyContent: "center" },
-  image: { width: 200, height: 200 },
-  ring: {
-    position: "absolute",
-    width: 184,
-    height: 184,
-    borderRadius: 92,
-    borderWidth: 1,
-    borderColor: C.brand,
+  letter: {
+    fontSize: TEXT_SIZE,
+    lineHeight: TEXT_SIZE * 1.25,
+    letterSpacing: -1.2,
+    includeFontPadding: false,
   },
-  caption: { position: "absolute", top: 204, width: 300, alignItems: "center" },
-  wordmark: { fontSize: 36, letterSpacing: -1.2, color: C.ink },
-  accent: { color: C.brand },
-  tagline: { marginTop: 10, fontSize: 10, letterSpacing: 2.4, color: C.muted },
 });

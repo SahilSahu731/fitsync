@@ -1,9 +1,4 @@
-
-import type {
-  NextFunction,
-  Request,
-  Response
-} from "express";
+import type { NextFunction, Request, Response } from "express";
 
 import jwt from "jsonwebtoken";
 
@@ -20,11 +15,7 @@ type AuthRequest = Request & {
   auth?: AuthContext;
 };
 
-export async function requireAuth(
-  req: Request,
-  _res: Response,
-  next: NextFunction
-) {
+export async function requireAuth(req: Request, _res: Response, next: NextFunction) {
   try {
     const header = req.headers.authorization || "";
 
@@ -32,21 +23,13 @@ export async function requireAuth(
       throw new ApiError(401, "Authentication required.");
     }
 
-    const payload = jwt.verify(
-      header.substring(7),
-      env.JWT_SECRET,
-      {
-        algorithms: ["HS256"],
-        issuer: "fitsync-api",
-        audience: "fitsync-mobile"
-      }
-    );
+    const payload = jwt.verify(header.substring(7), env.JWT_SECRET, {
+      algorithms: ["HS256"],
+      issuer: "fitsync-api",
+      audience: "fitsync-mobile",
+    });
 
-    if (
-      typeof payload === "string" ||
-      !payload.sub ||
-      typeof payload.sid !== "string"
-    ) {
+    if (typeof payload === "string" || !payload.sub || typeof payload.sid !== "string") {
       throw new ApiError(401, "Invalid access token.");
     }
 
@@ -71,7 +54,7 @@ export async function requireAuth(
 
     (req as AuthRequest).auth = {
       userId: payload.sub,
-      sessionId: payload.sid
+      sessionId: payload.sid,
     };
 
     next();

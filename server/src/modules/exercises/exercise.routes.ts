@@ -1,4 +1,3 @@
-
 import { Router } from "express";
 import { z } from "zod";
 import { rateLimit } from "express-rate-limit";
@@ -6,15 +5,9 @@ import { rateLimit } from "express-rate-limit";
 import { asyncHandler } from "../../common/async-handler.js";
 import { ApiError } from "../../common/errors.js";
 
-import {
-  requireAuth,
-  getAuth
-} from "../../middleware/auth.js";
+import { requireAuth, getAuth } from "../../middleware/auth.js";
 
-import {
-  requireAdmin,
-  isUserAdmin
-} from "../../middleware/admin.js";
+import { requireAdmin, isUserAdmin } from "../../middleware/admin.js";
 
 import {
   getTaxonomies,
@@ -25,24 +18,27 @@ import {
   patchExercise,
   addExerciseMedia,
   removeExerciseMedia,
-  deleteExercise
+  deleteExercise,
 } from "./exercise.service.js";
 
 import {
   exerciseInputSchema,
   exercisePatchSchema,
   exerciseListSchema,
-  mediaMetadataSchema
+  mediaMetadataSchema,
 } from "./exercise.schema.js";
 
-import {
-  exerciseUpload,
-  uploadExerciseAsset
-} from "./exercise.media.js";
+import { exerciseUpload, uploadExerciseAsset } from "./exercise.media.js";
 
 import { requirePro } from "../billing/billing.middleware.js";
 import { customExerciseInputSchema } from "./custom.schema.js";
-import { customList, customSave, customArchive, customRestore, muscleIndex } from "./custom.service.js";
+import {
+  customList,
+  customSave,
+  customArchive,
+  customRestore,
+  muscleIndex,
+} from "./custom.service.js";
 
 const router = Router();
 const uuid = z.uuid();
@@ -56,9 +52,9 @@ router.get(
     const admin = await isUserAdmin(getAuth(req).userId);
 
     res.json({
-      canManageExercises: admin
+      canManageExercises: admin,
     });
-  })
+  }),
 );
 
 // All exercise types come from PostgreSQL.
@@ -66,7 +62,7 @@ router.get(
   "/taxonomies",
   asyncHandler(async (_req, res) => {
     res.json(await getTaxonomies());
-  })
+  }),
 );
 
 // Published catalog, or drafts when requested by admin.
@@ -75,34 +71,74 @@ router.get(
   asyncHandler(async (req, res) => {
     const filters = exerciseListSchema.parse(req.query);
 
-    const admin = filters.includeDrafts === "true"
-      ? await isUserAdmin(getAuth(req).userId)
-      : false;
+    const admin = filters.includeDrafts === "true" ? await isUserAdmin(getAuth(req).userId) : false;
 
     res.json(await listExercises(filters, admin, getAuth(req).userId));
-  })
+  }),
 );
 
-router.get("/picker", asyncHandler(async (req, res) => {
-  const page = z.coerce.number().int().min(1).max(1000).default(1).parse(req.query.page);
-  const q = z.string().trim().max(120).default("").parse(req.query.q);
-  res.json(await listExercisePicker(page, q, getAuth(req).userId));
-}));
+router.get(
+  "/picker",
+  asyncHandler(async (req, res) => {
+    const page = z.coerce.number().int().min(1).max(1000).default(1).parse(req.query.page);
+    const q = z.string().trim().max(120).default("").parse(req.query.q);
+    res.json(await listExercisePicker(page, q, getAuth(req).userId));
+  }),
+);
 
-router.get("/muscle-index", asyncHandler(async (req, res) => {
-  res.json(await muscleIndex(getAuth(req).userId, z.coerce.number().int().min(1).max(10000).default(1).parse(req.query.page)));
-}));
-router.get("/custom", asyncHandler(async (req, res) => { res.json(await customList(getAuth(req).userId)); }));
-router.post("/custom", requirePro, asyncHandler(async (req, res) => {
-  res.status(201).json(await customSave(getAuth(req).userId, customExerciseInputSchema.parse(req.body)));
-}));
-router.patch("/custom/:id", requirePro, asyncHandler(async (req, res) => {
-  res.json(await customSave(getAuth(req).userId, customExerciseInputSchema.parse(req.body), uuid.parse(req.params.id)));
-}));
-router.post("/custom/:id/restore", asyncHandler(async (req, res) => { await customRestore(getAuth(req).userId, uuid.parse(req.params.id)); res.status(204).end(); }));
-router.delete("/custom/:id", asyncHandler(async (req, res) => {
-  await customArchive(getAuth(req).userId, uuid.parse(req.params.id)); res.status(204).end();
-}));
+router.get(
+  "/muscle-index",
+  asyncHandler(async (req, res) => {
+    res.json(
+      await muscleIndex(
+        getAuth(req).userId,
+        z.coerce.number().int().min(1).max(10000).default(1).parse(req.query.page),
+      ),
+    );
+  }),
+);
+router.get(
+  "/custom",
+  asyncHandler(async (req, res) => {
+    res.json(await customList(getAuth(req).userId));
+  }),
+);
+router.post(
+  "/custom",
+  requirePro,
+  asyncHandler(async (req, res) => {
+    res
+      .status(201)
+      .json(await customSave(getAuth(req).userId, customExerciseInputSchema.parse(req.body)));
+  }),
+);
+router.patch(
+  "/custom/:id",
+  requirePro,
+  asyncHandler(async (req, res) => {
+    res.json(
+      await customSave(
+        getAuth(req).userId,
+        customExerciseInputSchema.parse(req.body),
+        uuid.parse(req.params.id),
+      ),
+    );
+  }),
+);
+router.post(
+  "/custom/:id/restore",
+  asyncHandler(async (req, res) => {
+    await customRestore(getAuth(req).userId, uuid.parse(req.params.id));
+    res.status(204).end();
+  }),
+);
+router.delete(
+  "/custom/:id",
+  asyncHandler(async (req, res) => {
+    await customArchive(getAuth(req).userId, uuid.parse(req.params.id));
+    res.status(204).end();
+  }),
+);
 
 // Full exercise details.
 router.get(
@@ -110,10 +146,8 @@ router.get(
   asyncHandler(async (req, res) => {
     const admin = await isUserAdmin(getAuth(req).userId);
 
-    res.json(
-      await getExercise(req.params.id as string, admin, getAuth(req).userId)
-    );
-  })
+    res.json(await getExercise(req.params.id as string, admin, getAuth(req).userId));
+  }),
 );
 
 // Create exercise. Admin only.
@@ -123,13 +157,10 @@ router.post(
   asyncHandler(async (req, res) => {
     const input = exerciseInputSchema.parse(req.body);
 
-    const exercise = await saveExercise(
-      getAuth(req).userId,
-      input
-    );
+    const exercise = await saveExercise(getAuth(req).userId, input);
 
     res.status(201).json(exercise);
-  })
+  }),
 );
 
 // Edit, publish, archive or unpublish exercise.
@@ -140,21 +171,15 @@ router.patch(
     const id = uuid.parse(req.params.id);
     const input = exercisePatchSchema.parse(req.body);
 
-    res.json(
-      await patchExercise(
-        getAuth(req).userId,
-        id,
-        input
-      )
-    );
-  })
+    res.json(await patchExercise(getAuth(req).userId, id, input));
+  }),
 );
 
 const uploadLimiter = rateLimit({
   windowMs: 60_000,
   limit: 10,
   standardHeaders: "draft-8",
-  legacyHeaders: false
+  legacyHeaders: false,
 });
 
 // Admin media upload.
@@ -169,27 +194,17 @@ router.post(
     await getExercise(id, true);
 
     if (!req.file) {
-      throw new ApiError(
-        400,
-        "Choose an image or video."
-      );
+      throw new ApiError(400, "Choose an image or video.");
     }
 
     const meta = mediaMetadataSchema.parse(req.body);
 
-    const asset = await uploadExerciseAsset(
-      id,
-      req.file
-    );
+    const asset = await uploadExerciseAsset(id, req.file);
 
-    const exercise = await addExerciseMedia(
-      id,
-      asset,
-      meta
-    );
+    const exercise = await addExerciseMedia(id, asset, meta);
 
     res.status(201).json(exercise);
-  })
+  }),
 );
 
 // Remove media from both database and provider.
@@ -202,15 +217,17 @@ router.delete(
 
     await getExercise(id, true);
 
-    res.json(
-      await removeExerciseMedia(id, mediaId)
-    );
-  })
+    res.json(await removeExerciseMedia(id, mediaId));
+  }),
 );
 
-router.delete("/:id", requireAdmin, asyncHandler(async (req, res) => {
-  await deleteExercise(uuid.parse(req.params.id));
-  res.status(204).end();
-}));
+router.delete(
+  "/:id",
+  requireAdmin,
+  asyncHandler(async (req, res) => {
+    await deleteExercise(uuid.parse(req.params.id));
+    res.status(204).end();
+  }),
+);
 
 export default router;
