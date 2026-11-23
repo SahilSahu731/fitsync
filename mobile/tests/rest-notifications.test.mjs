@@ -50,7 +50,8 @@ test("channel and scheduled sound match the bundled WAV and plugin config", asyn
   const config = JSON.parse(fs.readFileSync(path.join(root, "app.json"), "utf8")).expo.plugins.find(
     (p) => Array.isArray(p) && p[0] === "expo-notifications",
   )[1];
-  assert.equal(channelId, config.defaultChannel);
+  assert.equal(channelId, "workout-rest-v2");
+  assert.equal(config.defaultChannel, "general-v1");
   assert.equal(scheduled.trigger.channelId, channelId);
   assert.equal(channel.sound, scheduled.content.sound);
   const asset = config.sounds.find((p) => path.basename(p) === channel.sound);

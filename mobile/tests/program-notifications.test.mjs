@@ -72,12 +72,16 @@ test("background refresh never prompts; an explicit opt-in requests permission b
     optedIn.calls.findIndex((call) => call[0] === "permission") <
       optedIn.calls.findIndex((call) => call[0] === "register"),
   );
-  const channel = optedIn.calls.find((call) => call[0] === "channel");
-  assert.equal(channel[1], "program-reminders-v1");
-  const config = JSON.parse(fs.readFileSync(new URL("../app.json", import.meta.url), "utf8")).expo;
-  const sounds = config.plugins.find((p) => Array.isArray(p) && p[0] === "expo-notifications")[1]
-    .sounds;
-  assert.ok(sounds.some((sound) => sound.endsWith(channel[2].sound)));
+  const channels = optedIn.calls.filter((call) => call[0] === "channel");
+
+  const general = channels.find((call) => call[1] === "general-v1");
+  const program = channels.find((call) => call[1] === "program-reminders-v2");
+
+  assert.ok(general, "General notification channel must exist");
+  assert.ok(program, "Program reminder channel must exist");
+
+  assert.equal(general[2].sound, "default");
+  assert.equal(program[2].sound, "default");
 });
 test("denied permission unregisters a previously stored device and provides a useful error", async () => {
   const state = setup({ granted: false, previous: "ExpoPushToken[old]" });

@@ -181,20 +181,36 @@ function setup(
   });
   return { updates, queries, pushes };
 }
-test("worker records Expo acceptance and uses bundled sound plus the program deep link", async (t) => {
+test("worker records Expo acceptance and uses the program channel and deep link", async (t) => {
   const state = setup(t);
   const result = await runProgramReminders();
+
   assert.equal(result.attempted, 1);
   assert.equal(state.pushes.length, 1);
+
   const push = state.pushes[0][0];
-  assert.equal(push.sound, "rest_complete.wav");
-  assert.equal(push.channelId, "program-reminders-v1");
-  assert.deepEqual(push.data, { type: "program-reminder", enrollmentId: "enrollment" });
+
+  // Program reminders use their dedicated Android notification channel.
+  assert.equal(push.channelId, "program-reminders-v2");
+
+  // The channel uses the system default sound, not the workout rest WAV.
+  assert.equal(push.sound, undefined);
+
+  // The notification retains its program deep-link payload.
+  assert.deepEqual(push.data, {
+    type: "program-reminder",
+    enrollmentId: "enrollment",
+  });
+
+  // Expo accepted the notification, but delivery is not yet confirmed.
   assert.ok(
     state.updates.some(
-      (update) => update.filters.id === "job" && update.values.status === "accepted",
+      (update) =>
+        update.filters.id === "job" &&
+        update.values.status === "accepted",
     ),
   );
+
   assert.ok(!state.updates.some((update) => update.values.status === "sent"));
 });
 test("worker rechecks consent, sign-out, program status, device, and completed workouts before sending", async (t) => {

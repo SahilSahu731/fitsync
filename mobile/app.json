@@ -14,7 +14,7 @@
       "package": "com.sahil.fitsync",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-foreground.png",
+        "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
         "backgroundColor": "#101011",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },

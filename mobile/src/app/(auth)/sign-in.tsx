@@ -23,6 +23,7 @@ import Svg, {
   Path,
   Rect,
   Stop,
+  RadialGradient,
 } from "react-native-svg";
 import Animated, {
   Easing,
@@ -424,11 +425,188 @@ function TrainingCard({ active, height }: CardProps) {
 }
 
 /** 2. Dark green card, graph-paper grid, animated trend + analytics button. */
+/*
+ * PROGRESS CARD (v2): animated bar graph + trend line, "NEW PR" chip, floating background art.
+ *
+ * HOW TO USE
+ * 1. In your react-native-svg import list, add `RadialGradient`:
+ *      import Svg, { Circle, Defs, LinearGradient as SvgLinearGradient, Path, RadialGradient, Rect, Stop } from "react-native-svg";
+ * 2. Delete the old `function ProgressCard ...` and paste this whole block in its place.
+ *    (It reuses things you already have: useReveal, Txt, MiniMetric, Cta, LIME, AnimatedCircle,
+ *     LinearGradient, MaterialCommunityIcons, and the reanimated imports.)
+ */
+
+/* ---------- sample data (bars + trend share one scale) ---------- */
+const VOLUME_BARS = [34, 48, 42, 60, 54, 72, 66, 88];
+const VOLUME_TREND = [38, 42, 47, 53, 58, 65, 74, 90];
+const PLOT_SCALE = 0.76; // leaves headroom above the tallest bar for the "NEW PR" chip
+const BAR_GAP = 6;
+
+/** Smooth curve through points (Catmull-Rom converted to cubic beziers). */
+function smoothPath(points: { x: number; y: number }[]): string {
+  if (points.length < 2) return "";
+  const f = (n: number) => Math.round(n * 10) / 10;
+  let d = `M${f(points[0].x)} ${f(points[0].y)}`;
+  for (let i = 0; i < points.length - 1; i++) {
+    const p0 = points[i - 1] ?? points[i];
+    const p1 = points[i];
+    const p2 = points[i + 1];
+    const p3 = points[i + 2] ?? p2;
+    const c1x = p1.x + (p2.x - p0.x) / 6;
+    const c1y = p1.y + (p2.y - p0.y) / 6;
+    const c2x = p2.x - (p3.x - p1.x) / 6;
+    const c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ` C${f(c1x)} ${f(c1y)} ${f(c2x)} ${f(c2y)} ${f(p2.x)} ${f(p2.y)}`;
+  }
+  return d;
+}
+
+/** 4-point sparkle. */
+function Sparkle({ size = 14, color = LIME, opacity = 0.6 }: { size?: number; color?: string; opacity?: number }) {
+  return (
+    <Svg width={size} height={size} viewBox="0 0 24 24">
+      <Path
+        d="M12 0C13 7 17 11 24 12C17 13 13 17 12 24C11 17 7 13 0 12C7 11 11 7 12 0Z"
+        fill={color}
+        opacity={opacity}
+      />
+    </Svg>
+  );
+}
+
+/** Gently floats its children (only while the card is active). Purely decorative. */
+function Drift({
+  active,
+  className,
+  delay = 0,
+  duration = 3400,
+  dx = 0,
+  dy = 7,
+  rotate = 0,
+  opacity = 1,
+  children,
+}: {
+  active: boolean;
+  /** absolute-position classes, e.g. "left-[22px] top-[40%]" */
+  className: string;
+  delay?: number;
+  duration?: number;
+  dx?: number;
+  dy?: number;
+  rotate?: number;
+  opacity?: number;
+  children: React.ReactNode;
+}) {
+  const phase = useSharedValue(0);
+
+  useEffect(() => {
+    cancelAnimation(phase);
+    if (active) {
+      phase.value = withDelay(
+        delay,
+        withRepeat(withTiming(1, { duration, easing: Easing.inOut(Easing.sin) }), -1, true),
+      );
+    } else {
+      phase.value = withTiming(0, { duration: 280 });
+    }
+    return () => cancelAnimation(phase);
+  }, [active, delay, duration, phase]);
+
+  const style = useAnimatedStyle(() => ({
+    opacity,
+    transform: [
+      { translateX: interpolate(phase.value, [0, 1], [-dx, dx]) },
+      { translateY: interpolate(phase.value, [0, 1], [dy, -dy]) },
+      { rotate: `${interpolate(phase.value, [0, 1], [-rotate, rotate])}deg` },
+    ],
+  }));
+
+  return (
+    <Animated.View pointerEvents="none" className={`absolute ${className}`} style={style}>
+      {children}
+    </Animated.View>
+  );
+}
+
+/** One bar that grows up from the baseline, staggered left to right. */
+function VolumeBar({
+  reveal,
+  index,
+  value,
+  chartH,
+  highlight,
+}: {
+  reveal: SharedValue<number>;
+  index: number;
+  value: number;
+  chartH: number;
+  highlight: boolean;
+}) {
+  const target = (value / 100) * chartH * PLOT_SCALE;
+  const style = useAnimatedStyle(() => ({
+    height: interpolate(
+      reveal.value,
+      [0.25 + index * 0.045, 0.6 + index * 0.045],
+      [3, target],
+      Extrapolation.CLAMP,
+    ),
+  }));
+  return (
+    <Animated.View className="flex-1 overflow-hidden rounded-t-[7px] rounded-b-[3px]" style={style}>
+      <LinearGradient
+        colors={highlight ? ["#EFFFC2", LIME] : ["rgba(197,244,96,0.55)", "rgba(197,244,96,0.08)"]}
+        className="absolute inset-0"
+      />
+    </Animated.View>
+  );
+}
+
 function ProgressCard({ active, height }: CardProps) {
   const compact = height < 370;
-  const reveal = useReveal(active, 1300);
-  const lineProps = useAnimatedProps(() => ({
-    strokeDashoffset: 480 * (1 - reveal.value),
+  const chartH = compact ? 92 : 104;
+  const reveal = useReveal(active, 1500);
+  const [plotW, setPlotW] = useState(0);
+
+  // Chart geometry: line points sit exactly on the bar centres.
+  const points = useMemo(() => {
+    if (!plotW) return [];
+    const n = VOLUME_TREND.length;
+    const bw = (plotW - BAR_GAP * (n - 1)) / n;
+    return VOLUME_TREND.map((v, i) => ({
+      x: i * (bw + BAR_GAP) + bw / 2,
+      y: chartH - (v / 100) * chartH * PLOT_SCALE,
+    }));
+  }, [plotW, chartH]);
+
+  const linePath = useMemo(() => smoothPath(points), [points]);
+  const lineLen = useMemo(
+    () =>
+      Math.ceil(
+        points.reduce(
+          (sum, p, i) => (i ? sum + Math.hypot(p.x - points[i - 1].x, p.y - points[i - 1].y) : 0),
+          0,
+        ) * 1.15,
+      ),
+    [points],
+  );
+  const last = points[points.length - 1];
+
+  const lenSv = useSharedValue(1);
+  useEffect(() => {
+    lenSv.value = lineLen || 1;
+  }, [lineLen, lenSv]);
+
+  // The line draws after the bars have started growing.
+  const lineProps = useAnimatedProps(() => {
+    const p = Math.min(1, Math.max(0, (reveal.value - 0.25) / 0.75));
+    return { strokeDashoffset: lenSv.value * (1 - p) };
+  });
+  const dotProps = useAnimatedProps(() => ({
+    opacity: interpolate(reveal.value, [0.8, 1], [0, 1], Extrapolation.CLAMP),
+  }));
+  const chipStyle = useAnimatedStyle(() => ({
+    opacity: interpolate(reveal.value, [0.85, 1], [0, 1], Extrapolation.CLAMP),
+    transform: [{ translateY: interpolate(reveal.value, [0.85, 1], [6, 0], Extrapolation.CLAMP) }],
   }));
 
   return (
@@ -439,6 +617,49 @@ function ProgressCard({ active, height }: CardProps) {
         end={{ x: 0.3, y: 1 }}
         className="absolute inset-0"
       />
+
+      {/* Backdrop: lime glow, orbit rings, ghost trophy (static, behind everything) */}
+      <Svg
+        pointerEvents="none"
+        width="100%"
+        height="100%"
+        viewBox="0 0 342 380"
+        preserveAspectRatio="xMidYMid slice"
+        style={{ position: "absolute", top: 0, left: 0 }}
+      >
+        <Defs>
+          <RadialGradient  id="pgGlow" cx="50%" cy="50%" r="50%">
+            <Stop offset="0" stopColor={LIME} stopOpacity="0.2" />
+            <Stop offset="1" stopColor={LIME} stopOpacity="0" />
+          </RadialGradient>
+        </Defs>
+        <Circle cx="300" cy="46" r="170" fill="url(#pgGlow)" />
+        <Circle cx="318" cy="96" r="84" fill="none" stroke={LIME} strokeOpacity="0.1" strokeDasharray="2 7" />
+        <Circle cx="318" cy="96" r="136" fill="none" stroke={LIME} strokeOpacity="0.06" strokeDasharray="2 9" />
+      </Svg>
+      <View pointerEvents="none" className="absolute -right-[26px] top-[36%]">
+        <MaterialCommunityIcons name="trophy-outline" size={150} color="rgba(197,244,96,0.05)" />
+      </View>
+
+      {/* Floating decorations (drift gently while this card is active) */}
+      <Drift active={active} className="left-[46%] top-[62px]" dy={5} rotate={12} duration={3000}>
+        <Sparkle size={14} opacity={0.7} />
+      </Drift>
+      <Drift active={active} className="left-[18px] top-[41%]" dy={8} duration={3800} opacity={0.8}>
+        <View className="h-9 w-9 items-center justify-center rounded-full border border-brand/25 bg-brand/10">
+          <MaterialCommunityIcons name="arrow-top-right" size={17} color={LIME} />
+        </View>
+      </Drift>
+      <Drift active={active} className="left-[34%] top-[43%]" dy={6} dx={3} delay={500} duration={3300}>
+        <Sparkle size={9} opacity={0.5} />
+      </Drift>
+      <Drift active={active} className="left-[22%] top-[34%]" dy={5} rotate={10} delay={900} duration={4200} opacity={0.55}>
+        <MaterialCommunityIcons name="plus" size={14} color="#DFF7A8" />
+      </Drift>
+      <Drift active={active} className="right-[96px] top-[31%]" dy={6} rotate={-10} delay={300} duration={3600} opacity={0.5}>
+        <MaterialCommunityIcons name="lightning-bolt" size={15} color={LIME} />
+      </Drift>
+
       <View className="flex-1 px-5 pb-4 pt-4">
         {/* Range tabs */}
         <View className="flex-row items-center justify-between">
@@ -459,7 +680,7 @@ function ProgressCard({ active, height }: CardProps) {
           </View>
           <View className="flex-row items-center gap-1">
             <MaterialCommunityIcons name="chart-timeline-variant" size={15} color={LIME} />
-            <Txt className="text-[9px] text-[#dbdfd9]">Analytics</Txt>
+            <Txt className="text-[9px] text-[#dbdfd9]">Progress</Txt>
           </View>
         </View>
 
@@ -478,104 +699,113 @@ function ProgressCard({ active, height }: CardProps) {
               weight="semibold"
               className={`${compact ? "text-[22px]" : "text-[26px]"} text-brand`}
             >
-              +18.6%
+              +12%
             </Txt>
-            <Txt className="text-[9px] tracking-[1.1px] text-[#ecf0ea]">Volume</Txt>
+            <Txt className="text-[9px] tracking-[1.1px] text-[#ecf0ea]">30-day volume</Txt>
           </View>
         </View>
 
         <View className="mt-auto">
-          <Svg
-            width="100%"
-            height={compact ? 98 : 120}
-            viewBox="0 0 300 150"
-            preserveAspectRatio="none"
+          {/* Chart: bars + smooth trend line share one coordinate system */}
+          <View
+            style={{ height: chartH }}
+            onLayout={(e) => setPlotW(Math.round(e.nativeEvent.layout.width))}
           >
-            <Defs>
-              <SvgLinearGradient id="area" x1="0" y1="0" x2="0" y2="1">
-                <Stop offset="0" stopColor={LIME} stopOpacity="0.32" />
-                <Stop offset="0.55" stopColor={LIME} stopOpacity="0.10" />
-                <Stop offset="1" stopColor={LIME} stopOpacity="0" />
-              </SvgLinearGradient>
-            </Defs>
+            {/* bars */}
+            <View className="absolute inset-0 flex-row items-end" style={{ gap: BAR_GAP }}>
+              {VOLUME_BARS.map((value, i) => (
+                <VolumeBar
+                  key={i}
+                  reveal={reveal}
+                  index={i}
+                  value={value}
+                  chartH={chartH}
+                  highlight={i === VOLUME_BARS.length - 1}
+                />
+              ))}
+            </View>
 
-            {/* Subtle horizontal grid */}
-            {[30, 75, 120].map((y) => (
-              <Path
-                key={y}
-                d={`M0 ${y}H300`}
-                stroke="#B8CEB9"
-                strokeOpacity="0.15"
-                strokeWidth={0.8}
-                strokeDasharray="3 7"
-              />
-            ))}
+            {/* grid + trend line + endpoint */}
+            {plotW > 0 && last && (
+              <Svg
+                pointerEvents="none"
+                width={plotW}
+                height={chartH}
+                style={{ position: "absolute", top: 0, left: 0 }}
+              >
+                {[0.25, 0.5, 0.75].map((f) => (
+                  <Path
+                    key={f}
+                    d={`M0 ${chartH * f}H${plotW}`}
+                    stroke="#B8CEB9"
+                    strokeOpacity="0.14"
+                    strokeWidth={0.8}
+                    strokeDasharray="3 7"
+                  />
+                ))}
+                <Path
+                  d={`M0 ${chartH - 0.5}H${plotW}`}
+                  stroke="#B8CEB9"
+                  strokeOpacity="0.22"
+                  strokeWidth={1}
+                />
+                {/* soft glow under the line */}
+                <AnimatedPath
+                  d={linePath}
+                  fill="none"
+                  stroke={LIME}
+                  strokeWidth={8}
+                  strokeOpacity={0.12}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeDasharray={`${lineLen}`}
+                  animatedProps={lineProps}
+                />
+                <AnimatedPath
+                  d={linePath}
+                  fill="none"
+                  stroke={LIME}
+                  strokeWidth={2.5}
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeDasharray={`${lineLen}`}
+                  animatedProps={lineProps}
+                />
+                <AnimatedCircle cx={last.x} cy={last.y} r={9} fill={LIME} fillOpacity={0.16} animatedProps={dotProps} />
+                <AnimatedCircle cx={last.x} cy={last.y} r={4} fill={LIME} animatedProps={dotProps} />
+                <AnimatedCircle cx={last.x} cy={last.y} r={1.6} fill="#FFFFFF" animatedProps={dotProps} />
+              </Svg>
+            )}
 
-            {/* Gradient area */}
-            <Path
-              d="M8 128
-       C28 126 35 112 55 115
-       S82 122 99 99
-       S131 109 151 84
-       S181 90 203 65
-       S235 77 255 41
-       S278 49 292 23
-       L292 150 L8 150 Z"
-              fill="url(#area)"
-            />
+            {/* "NEW PR" chip above the latest bar */}
+            {plotW > 0 && last && (
+              <Animated.View
+                pointerEvents="none"
+                className="absolute right-0 flex-row items-center gap-1 rounded-full border border-brand/40 bg-black px-2 py-1"
+                style={[{ top: Math.max(0, last.y - 31) }, chipStyle]}
+              >
+                <MaterialCommunityIcons name="trophy-outline" size={11} color={LIME} />
+                <Txt weight="semibold" className="text-[9px] tracking-[0.8px] text-white">
+                  NEW PR
+                </Txt>
+              </Animated.View>
+            )}
+          </View>
 
-            {/* Soft line glow */}
-            <AnimatedPath
-              d="M8 128
-       C28 126 35 112 55 115
-       S82 122 99 99
-       S131 109 151 84
-       S181 90 203 65
-       S235 77 255 41
-       S278 49 292 23"
-              fill="none"
-              stroke={LIME}
-              strokeWidth={8}
-              strokeOpacity={0.12}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeDasharray="480"
-              animatedProps={lineProps}
-            />
-
-            {/* Main animated line */}
-            <AnimatedPath
-              d="M8 128
-       C28 126 35 112 55 115
-       S82 122 99 99
-       S131 109 151 84
-       S181 90 203 65
-       S235 77 255 41
-       S278 49 292 23"
-              fill="none"
-              stroke={LIME}
-              strokeWidth={3}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeDasharray="480"
-              animatedProps={lineProps}
-            />
-
-            {/* Endpoint */}
-            <Circle cx="292" cy="23" r="8" fill={LIME} opacity={0.12} />
-            <Circle cx="292" cy="23" r="4" fill={LIME} />
-            <Circle cx="292" cy="23" r="1.5" fill="#FFFFFF" />
-          </Svg>
+          <View className="mt-1.5 flex-row justify-between">
+            <Txt className="text-[8px] tracking-[1px] text-[#7E8F7F]">8 WEEKS AGO</Txt>
+            <Txt className="text-[8px] tracking-[1px] text-[#C5D2C5]">THIS WEEK</Txt>
+          </View>
 
           {!compact && (
             <View className="mt-2 flex-row gap-2">
-              <MiniMetric label="PERSONAL BESTS" value="12" />
+              <MiniMetric label="PERSONAL BESTS" value="7" />
               <MiniMetric label="WORKOUTS LOGGED" value="48" />
             </View>
           )}
           <View className="mt-2">
             <Cta
-              label="View Analytics"
+              label="See your progress"
               tone=" bg-white "
               textClass="text-black"
               arrowClass="bg-black"
@@ -587,7 +817,6 @@ function ProgressCard({ active, height }: CardProps) {
     </View>
   );
 }
-
 const EXERCISES = [
   { name: "Barbell Squat", sub: "LEGS / COMPOUND", icon: "weight-lifter" as const, level: 3 },
   { name: "Bench Press", sub: "CHEST / COMPOUND", icon: "dumbbell" as const, level: 2 },
