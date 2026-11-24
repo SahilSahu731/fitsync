@@ -90,6 +90,40 @@ test("loading preferences retains the current account's schedule and clears anot
   await state.api.retainCompanionRemindersForOwner("bob");
   assert.deepEqual([...state.scheduled.keys()], ["workout-rest"]);
 });
+test("Pro expiry removes scheduled and delivered habits while preserving free training and rest alerts", async () => {
+  const state = fixture();
+  await state.api.reconcileCompanionReminders({
+    ...state.input,
+    prefs: { ...preferences, habits: hydration },
+  });
+  const freeIds = training(state).map((item) => item.identifier);
+  const habit = [...state.scheduled.values()].find(
+    (item) => item.content.data.kind === "hydration",
+  );
+  state.scheduled.delete(habit.identifier);
+  state.presented.set(habit.identifier, { request: habit });
+  state.scheduled.set("workout-rest", { identifier: "workout-rest", content: { data: {} } });
+  await state.api.clearPremiumCompanionReminders("alice");
+  assert.deepEqual([...state.scheduled.keys()], [...freeIds, "workout-rest"]);
+  assert.equal(state.presented.size, 0);
+  assert.ok(
+    JSON.parse([...state.storage.values()][0]).items.every((item) => item.kind === "training"),
+  );
+});
+test("premium cleanup finds orphaned alerts and ignores other accounts", async () => {
+  const state = fixture();
+  await state.api.reconcileCompanionReminders({
+    ...state.input,
+    prefs: { ...preferences, habits: hydration },
+  });
+  const ids = [...state.scheduled.keys()];
+  await state.api.clearPremiumCompanionReminders("bob");
+  assert.deepEqual([...state.scheduled.keys()], ids);
+  state.storage.clear();
+  await state.api.clearPremiumCompanionReminders("alice");
+  assert.ok(state.scheduled.size > 0);
+  assert.ok([...state.scheduled.values()].every((item) => item.content.data.kind === "training"));
+});
 
 test("daily habits update while a missing training resource preserves its previous schedule", async () => {
   const state = fixture();

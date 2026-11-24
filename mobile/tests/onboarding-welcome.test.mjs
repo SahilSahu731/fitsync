@@ -350,7 +350,7 @@ test("backgrounding restarts the seven-second delay after returning", async () =
   assert.equal(ui.render().type, "WelcomePopup");
 });
 
-test("completion celebrates first and only arms the welcome after Enter FitSync now", async () => {
+test("completion celebrates first and only arms the welcome after entering FitSync", async () => {
   const builder = new Proxy({}, { get: () => () => builder });
   const calls = [];
   const refs = [];
@@ -370,8 +370,7 @@ test("completion celebrates first and only arms the welcome after Enter FitSync 
     "react-native-reanimated": {
       __esModule: true,
       default: { View: "AnimatedView" },
-      FadeInDown: builder,
-      ZoomIn: builder,
+      FadeIn: builder,
       ReduceMotion: { System: "system" },
     },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
@@ -379,6 +378,7 @@ test("completion celebrates first and only arms the welcome after Enter FitSync 
     "@/src/components/ui": { PrimaryButton: "PrimaryButton", Txt: "Text" },
     "@/src/context/session": { useSession: () => ({ user: { id: "alice" } }) },
     "./completion-illustration": { CompletionIllustration: "CompletionIllustration" },
+    "./slide-to-enter": { SlideToEnter: "SlideToEnter" },
     "./welcome-state": {
       armOnboardingWelcome: async (id) => {
         calls.push(["arm", id]);
@@ -405,10 +405,10 @@ test("completion celebrates first and only arms the welcome after Enter FitSync 
     tree.some((node) => node.type === "WelcomePopup"),
     false,
   );
-  const button = tree.find((node) => node.props.title === "Enter FitSync now");
+  const button = tree.find((node) => node.type === "SlideToEnter");
   assert.ok(button);
-  button.props.onPress();
-  button.props.onPress();
+  button.props.onComplete();
+  button.props.onComplete();
   await tick();
   assert.deepEqual(calls, [["arm", "alice"], ["home"]]);
 });

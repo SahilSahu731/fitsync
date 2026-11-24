@@ -447,21 +447,17 @@ test("restoring an empty store account reports the result and Not now returns ho
   );
 });
 
-test("the paywall leads with an outcome, three concise benefits and transparent yearly terms", () => {
+test("the paywall shows honest benefits, free core access and transparent yearly terms", () => {
   const f = fixture();
   const tree = f.render();
   const copy = text(tree);
   assert.match(copy, /Know exactly what to lift next session/);
-  assert.match(copy, /logging stays free forever/);
+  assert.match(copy, /logging stays free forever/i);
   assert.match(copy, /200.*month equivalent/);
   assert.match(copy, /INR 2400.*Billed yearly/);
-  const everything = copy.indexOf("Everything included in Pro");
-  for (const benefit of [
-    "Go in with your next working-set targets",
-    "Move a missed session with one confirmation",
-    "Know what your week’s training tells you",
-  ])
-    assert.ok(copy.indexOf(benefit) < everything);
+  assert.match(copy, /rule-based training plan/);
+  assert.match(copy, /Previous-session hints.*Rest timer & personal records.*Workout reminders/);
+  assert.doesNotMatch(copy, /personal trainer|human coach/i);
   assert.ok(find(tree, "Pressable").some((node) => text(node) === "Restore"));
   assert.ok(
     find(tree, "Pressable").some((node) => node.props.accessibilityLabel === "Close Pro page"),

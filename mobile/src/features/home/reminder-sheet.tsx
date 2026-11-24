@@ -68,7 +68,6 @@ const changed = (a: unknown, b: unknown) => JSON.stringify(a) !== JSON.stringify
 
 /* ----------------------------- presentation only ----------------------------- */
 
-const GOLD = "#E9D5A1";
 const rgba = (hex: string, alpha: number) => {
   const n = parseInt(hex.slice(1), 16);
   return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;

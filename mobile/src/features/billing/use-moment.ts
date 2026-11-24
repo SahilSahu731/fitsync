@@ -1,21 +1,34 @@
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
+import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { trackEvent } from "@/src/services/telemetry";
-import { canShowMoment, parseMomentHistory, type UpgradeMoment } from "./moments";
+import { firstEligibleMoment, parseMomentHistory, type UpgradeMoment } from "./moments";
 
 let queue = Promise.resolve();
-let shownThisSession = false;
+const shownThisSession = new Set<string>();
+const reservations = new Map<string, symbol>();
 export function useUpgradeMoment(
   ownerId: string,
-  candidate: UpgradeMoment | null,
+  candidate: UpgradeMoment | null | readonly (UpgradeMoment | null)[],
   enabled: boolean,
 ) {
+  const candidates = (Array.isArray(candidate) ? candidate : [candidate]).filter(
+    (value): value is UpgradeMoment => !!value,
+  );
   const [focused, setFocused] = useState(false);
+  const [foreground, setForeground] = useState(AppState.currentState === "active");
   const [snapshot, setSnapshot] = useState<{ ownerId: string; moment: UpgradeMoment } | null>(null);
-  const current = useRef(candidate);
-  const eligible = enabled && focused;
+  const current = useRef(candidates);
+  const eligible = enabled && focused && foreground;
   const eligibility = useRef({ ownerId, enabled: eligible });
+  useEffect(() => {
+    const listener = AppState.addEventListener("change", (state) => {
+      if (state !== "active") eligibility.current.enabled = false;
+      setForeground(state === "active");
+    });
+    return () => listener.remove();
+  }, []);
   useFocusEffect(
     useCallback(() => {
       setFocused(true);
@@ -26,50 +39,63 @@ export function useUpgradeMoment(
     }, []),
   );
   useLayoutEffect(() => {
-    current.current = candidate;
+    current.current = candidates;
     eligibility.current = { ownerId, enabled: eligible };
     return () => {
       eligibility.current.enabled = false;
     };
-  }, [candidate, ownerId, eligible]);
-  const candidateKey = candidate?.key;
+  });
+  const candidateKey = JSON.stringify(candidates.map((moment) => moment.key));
   const recorded = useRef("");
   useEffect(() => {
     let active = true;
-    if (!ownerId || !eligible || !candidateKey || shownThisSession) return;
+    let reservation: symbol | null = null;
+    if (!ownerId || !eligible || candidateKey === "[]" || shownThisSession.has(ownerId)) return;
     const eventKey = candidateKey;
     const operation = queue.then(async () => {
-      if (!active || shownThisSession) return;
+      if (!active || shownThisSession.has(ownerId) || reservations.has(ownerId)) return;
       const history = parseMomentHistory(
         await AsyncStorage.getItem(`fitsync.upgrade-moments.v1.${ownerId}`),
       );
       const now = Date.now();
       if (
         !active ||
-        shownThisSession ||
+        shownThisSession.has(ownerId) ||
+        reservations.has(ownerId) ||
         !eligibility.current.enabled ||
         eligibility.current.ownerId !== ownerId ||
-        current.current?.key !== eventKey ||
-        !canShowMoment(history, eventKey, now)
+        JSON.stringify(current.current.map((moment) => moment.key)) !== eventKey
       )
         return;
-      trackEvent("upgrade_moment_eligible", { source: current.current?.source ?? "home" });
-      shownThisSession = true;
-      setSnapshot({ ownerId, moment: current.current });
+      const moment = firstEligibleMoment(history, current.current, now);
+      if (!moment) return;
+      trackEvent("upgrade_moment_eligible", { source: moment.source });
+      reservation = Symbol();
+      reservations.set(ownerId, reservation);
+      setSnapshot({ ownerId, moment });
     });
     queue = operation.catch(() => {});
     return () => {
       active = false;
+      if (reservation && reservations.get(ownerId) === reservation) reservations.delete(ownerId);
     };
   }, [ownerId, candidateKey, eligible]);
   const moment =
-    eligible && snapshot?.ownerId === ownerId && snapshot.moment.key === candidate?.key
-      ? candidate
+    eligible && snapshot?.ownerId === ownerId
+      ? (candidates.find((value) => value.key === snapshot.moment.key) ?? null)
       : null;
   // Persist an impression after React has committed the visible card.
   useEffect(() => {
-    if (!moment || recorded.current === moment.key) return;
-    recorded.current = moment.key;
+    if (
+      !moment ||
+      !eligibility.current.enabled ||
+      eligibility.current.ownerId !== ownerId ||
+      recorded.current === `${ownerId}:${moment.key}`
+    )
+      return;
+    shownThisSession.add(ownerId);
+    reservations.delete(ownerId);
+    recorded.current = `${ownerId}:${moment.key}`;
     trackEvent("upgrade_moment_viewed", { source: moment.source });
     const key = `fitsync.upgrade-moments.v1.${ownerId}`;
     const operation = queue.then(async () => {

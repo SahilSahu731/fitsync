@@ -9,13 +9,13 @@ export function StepOrbit({ ratio, children }: { ratio: number; children: React.
   const circumference = 2 * Math.PI * 52;
   return (
     <React.Fragment>
-      <Svg width="100%" height={138} viewBox="0 0 160 138" accessible={false}>
-        <Circle cx="80" cy="69" r="62" stroke="#FFB184" strokeOpacity="0.08" fill="none" />
+      <Svg width="100%" height={148} viewBox="0 0 160 138" accessible={false}>
+        <Circle cx="80" cy="69" r="62" stroke="white" strokeOpacity="0.08" fill="none" />
         <Circle
           cx="80"
           cy="69"
           r="52"
-          stroke="#FFB184"
+          // stroke="#FFB184"
           strokeOpacity="0.15"
           strokeWidth="9"
           fill="#160F0C"
@@ -23,7 +23,7 @@ export function StepOrbit({ ratio, children }: { ratio: number; children: React.
         <Circle
           cx="80"
           cy="69"
-          r="52"
+          r="58"
           stroke="#FFB184"
           strokeWidth="9"
           fill="none"
@@ -114,9 +114,9 @@ export function WorkoutHeatmap({
         return (
           <View key={day.date} className="min-w-0 flex-1 items-center gap-1.5">
             <View
-              className="h-[13px] w-full rounded-[4px] border"
+              className="h-[14px] w-full rounded-[4px] border"
               style={{
-                backgroundColor: count > 1 ? "#C1A9FF" : count === 1 ? "#8D72C6" : "#C1A9FF0C",
+                backgroundColor: count > 1 ? "#dbcffa" : count === 1 ? "#f6f5f7" : "#C1A9FF",
                 borderColor: !loading && day.date === today ? "#D6C8FF" : "#C1A9FF14",
                 opacity: isFuture ? 0.35 : 1,
               }}

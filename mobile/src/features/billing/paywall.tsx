@@ -499,7 +499,7 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
         contentContainerStyle={{ paddingBottom: inlineDock ? 0 : dockHeight + 24 }}
       >
         <View className="w-full max-w-[640px] self-center px-5">
-          <View className="pb-5 pt-3">
+          <View className="pb-1 pt-3">
             <Txt
               accessibilityRole="header"
               weight="semibold"
@@ -511,10 +511,10 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
                   ? "Missed a session? Pro moves your plan for you."
                   : "Know exactly what to lift next session."}
             </Txt>
-            <Txt className="mt-3 px-3 text-center text-[12px] leading-6 text-muted">
+            {/* <Txt className="mt-3 px-3 text-center text-[12px] leading-6 text-muted">
               Targets from your recorded working sets. Rule-based plans you review and control.
-            </Txt>
-            <View className="mt-4 gap-3">
+            </Txt> */}
+            {/* <View className="mt-4 gap-3">
               {[
                 ["trending-up", "Go in with your next working-set targets."],
                 ["calendar-sync-outline", "Move a missed session with one confirmation."],
@@ -529,13 +529,13 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
                   <Txt className="flex-1 text-sm leading-5">{text}</Txt>
                 </View>
               ))}
-            </View>
-            <Txt className="mt-4 text-center text-xs text-brand">
+            </View> */}
+            {/* <Txt className="mt-4 text-center text-xs text-brand">
               Workout logging stays free forever.
-            </Txt>
+            </Txt> */}
           </View>
           {billing.isPro && (
-            <View className="mb-3 mt-3 rounded-[24px] border border-brand/20 bg-brand/5 p-5">
+            <View className="mb-3 mt-3 rounded-[24px] border border-brand/20 bg-brand/5 p-4">
               <View className="flex-row items-center gap-2">
                 <MaterialCommunityIcons name="check-decagram" size={23} color={C.brand} />
                 <Txt weight="medium" className="text-base">
@@ -566,7 +566,7 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
           )}
           {inlineDock && dock}
           <View style={{ marginTop: Math.max(32, height - dockHeight - 440) }}>
-            <Txt weight="semibold" className="mt-6 text-xl">
+            <Txt weight="semibold" className="mt-3 text-xl">
               Everything included in Pro
             </Txt>
             {PRO_BENEFITS.map((benefit) => (

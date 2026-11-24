@@ -229,12 +229,13 @@ and plan, and avoid changing free access based on a handful of visits.
 
 ## Isolated SQL verification for developers
 
-Do not load server `.env` or export live database connection variables. The SQL
-test helper rejects production mode and database/Supabase/PostgreSQL connection
+Do not load server `.env` or export live database connection variables or credentials.
+The SQL test helper rejects production mode and database/Supabase/PostgreSQL connection
 variables, and every test creates PGlite without a URL or persistent data directory.
+PGlite is a development-only dependency. All seven integration files now run in CI.
 
 ```sh
-npm install --prefix /tmp/fitsync-sql-tests @electric-sql/pglite --ignore-scripts --no-audit --no-fund
 cd server
-FITSYNC_PGLITE_MODULE=/tmp/fitsync-sql-tests/node_modules/@electric-sql/pglite/dist/index.js node tests/operational-safety.sql.integration.mjs
+npm ci
+npm run test:sql
 ```

@@ -42,7 +42,9 @@ revocation RPC. Production fails closed if the shared limiter cannot be reached.
 `021` is separate from the combined Pro bundle (`012`–`020`). Run
 `verify-migrations.sql` afterward; it now checks `021` too. No Redis service is needed.
 
-SQL integration scripts use PGlite in memory and reject `NODE_ENV=production`,
-`DATABASE_URL`, `DIRECT_URL`, `SUPABASE_URL`, `PGHOST` and `PGSERVICE` in their environment.
+Run `npm run test:sql` from `server/` after `npm ci`; CI runs it too. SQL integration
+scripts use PGlite in memory and reject `NODE_ENV=production` and live connection
+URLs, Supabase service credentials and PostgreSQL connection variables. The complete
+denylist is in `tests/sql/isolated-database.mjs`.
 Do not source your server `.env` before running them. See `docs/observability-setup.md`
 for the complete release and verification steps.

@@ -15,6 +15,7 @@ import { addDays, currentGoals, emptyJournal, type Journal } from "../progress/m
 import { useCompanion } from "./companion-context";
 import { defaultReminders, type CompanionRecord } from "./api";
 import {
+  clearPremiumCompanionReminders,
   retainCompanionRemindersForOwner,
   handleCompanionReminderResponse,
   reconcileCompanionReminders,
@@ -267,7 +268,10 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
     if (Platform.OS === "web" || !ownerId) return;
     if (billing.loading) return;
     if (!billing.isPro) void clearCompanionWidget().catch(() => {});
-    if (!companion.stateLoaded) return;
+    if (!companion.stateLoaded) {
+      if (!billing.isPro) void clearPremiumCompanionReminders(ownerId).catch(() => {});
+      return;
+    }
     let valid = true;
     void (async () => {
       const completedIds = new Set(completed.map((item) => item.id));

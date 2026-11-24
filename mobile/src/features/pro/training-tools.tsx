@@ -98,7 +98,7 @@ export function TrainingTools({
         <ProAction
           icon="heart-pulse"
           title="Health connections"
-          subtitle="Manage opt-in Health Connect or HealthKit imports"
+          subtitle="Manage opt-in Health Connect imports"
           onPress={() => router.push("/health-sync")}
         />
       </View>

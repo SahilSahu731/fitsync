@@ -1,7 +1,7 @@
 import { workoutControlsSnapshot } from "../src/features/companion/native-model.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
-import { inputWeightKg, toKg, fromKg, weightText } from "../src/lib/weight.ts";
+import { inputWeightKg, toKg, fromKg, weightText, weightIncrementKg } from "../src/lib/weight.ts";
 import {
   workoutRecords,
   recordValue,
@@ -33,6 +33,8 @@ test("lb entry and display preserve canonical kg without relabelling the stored 
   assert.equal(weightText(100, "kg"), "100");
   assert.equal(inputWeightKg("220.46", 100, "lb"), 100);
   assert.equal(inputWeightKg("225", 100, "lb"), toKg(225, "lb"));
+  assert.equal(weightIncrementKg("kg"), 2.5);
+  assert.equal(fromKg(weightIncrementKg("lb"), "lb"), 5);
 });
 test("personal bests need prior comparable completed normal sets and a strict increase", () => {
   const current = workout("new", "2026-11-23", [exercise(65)]);

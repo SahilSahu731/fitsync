@@ -564,6 +564,7 @@ function nativeBridgeFixture(gates = {}, options = {}) {
     "./api": { defaultReminders: () => ({ ...prefs }) },
     "./reminders": {
       clearCompanionReminders: async () => calls.push(["clear-reminders"]),
+      clearPremiumCompanionReminders: async (id) => calls.push(["clear-premium-reminders", id]),
       retainCompanionRemindersForOwner: async (id) => calls.push(["retain-reminders", id]),
       reconcileCompanionReminders: async (input) => {
         calls.push(["reminders", input.ownerId, input]);
@@ -652,7 +653,7 @@ test("a pending training plan does not stop daily habits or replace existing wor
   instance.unmount();
 });
 
-test("confirmed Pro expiry clears reminders even when saved preferences could not load", async () => {
+test("confirmed Pro expiry clears premium reminders when preferences cannot load, preserving free training", async () => {
   const fixture = nativeBridgeFixture(
     {},
     {
@@ -668,7 +669,8 @@ test("confirmed Pro expiry clears reminders even when saved preferences could no
   fixture.billing.loading = false;
   instance.render();
   await instance.settle();
-  assert.equal(fixture.calls.filter((call) => call[0] === "clear-reminders").length, 1);
+  assert.equal(fixture.calls.filter((call) => call[0] === "clear-premium-reminders").length, 1);
+  assert.equal(fixture.calls.filter((call) => call[0] === "clear-reminders").length, 0);
   assert.equal(fixture.calls.filter((call) => call[0] === "reminders").length, 0);
   assert.equal(fixture.companions.alice.stateLoaded, false);
   instance.unmount();

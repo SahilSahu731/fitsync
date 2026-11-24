@@ -15,6 +15,7 @@ import { NumberEntry, WorkoutDrawer } from "./workout-controls";
 import { validSupersetGroup } from "../routine-draft";
 
 import { useSession } from "@/src/context/session";
+import { weightIncrementKg } from "@/src/lib/weight";
 
 export const SessionExerciseCard = React.memo(function SessionExerciseCard({
   exercise,
@@ -60,9 +61,15 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
   const targets = useMemo(
     () =>
       history
-        ? suggestWorkingSetTargets(history, exercise.exercise_id, exercise.tracking_type, today)
+        ? suggestWorkingSetTargets(
+            history,
+            exercise.exercise_id,
+            exercise.tracking_type,
+            today,
+            weightIncrementKg(unit),
+          )
         : null,
-    [history, exercise.exercise_id, exercise.tracking_type, today],
+    [history, exercise.exercise_id, exercise.tracking_type, today, unit],
   );
   const sets = [...exercise.workout_logged_sets].sort((a, b) => a.position - b.position);
   const logged = sets.filter((set) => !!set.completed_at).length;

@@ -8,6 +8,7 @@ import {
 import { workoutRecords } from "../workouts/achievements";
 import type { WorkoutSession } from "../workouts/api";
 import type { CoachingDay, CoachingPlan } from "../coaching/api";
+import { weightIncrementKg } from "../../lib/weight";
 
 export type MomentSource = "personal_best" | "workout_three" | "weekly_review" | "missed_session";
 export type TargetPreview = { exerciseId: string; name: string; target: WorkingSetSuggestion };
@@ -44,7 +45,7 @@ export function nextTargets(workouts: ProgressWorkout[], today: string, unit: "k
       exercise.exercise_id,
       exercise.tracking_type,
       addDays(today, 1),
-      unit === "lb" ? 5 * 0.45359237 : 2.5,
+      weightIncrementKg(unit),
     );
     const target = suggestion.targets.find(
       (t) =>
@@ -210,4 +211,30 @@ export function canShowMoment(history: MomentHistory, key: string, now: number) 
     !history.shown.some((at) => now - at < 48 * 3600_000) &&
     history.shown.filter((at) => now - at < 7 * 86400_000).length < 2
   );
+}
+export function firstEligibleMoment(
+  history: MomentHistory,
+  candidates: readonly UpgradeMoment[],
+  now: number,
+) {
+  return candidates.find((moment) => canShowMoment(history, moment.key, now)) ?? null;
+}
+
+// A completion synced after midnight still deserves its moment. Never replay old history.
+export function recentWorkoutMoments(
+  history: ProgressWorkout[],
+  today: string,
+  unit: "kg" | "lb",
+  now = Date.now(),
+) {
+  return completedInsightWorkouts(history, today)
+    .filter((workout) => {
+      const finished = Date.parse(workout.finished_at!);
+      return finished <= now && now - finished <= 72 * 3600_000;
+    })
+    .reverse()
+    .flatMap((workout) => {
+      const moment = workoutMoment(workout, history, today, unit);
+      return moment ? [moment] : [];
+    });
 }

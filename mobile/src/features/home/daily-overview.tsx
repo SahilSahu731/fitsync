@@ -58,7 +58,7 @@ export function DailyOverview({
     onPress: () => open(kind),
   });
   const arrow = (color: string) => (
-    <MaterialCommunityIcons name="arrow-top-right" size={16} color={color} />
+    <MaterialCommunityIcons name="arrow-right" size={16} color={color} />
   );
   return (
     <View className="gap-3">
@@ -72,50 +72,48 @@ export function DailyOverview({
         <View className="min-w-0 flex-1 gap-3">
           <Pressable
             {...cardProps("steps")}
-            className="min-h-[235px] overflow-hidden rounded-[28px] border border-[#FFB184]/10 bg-[#251B16] p-4"
+            className="min-h-[215px] overflow-hidden rounded-[28px] border border-[#FFB184]/10 bg-[#c64809] p-4"
           >
             <View className="flex-row items-center justify-between">
-              <Txt weight="medium" className="text-xs text-[#FFD1B4]">
-                Steps
-              </Txt>
-              {arrow("#B88D73")}
+              <Txt className="text-sm text-white">Steps</Txt>
+              {arrow("white")}
             </View>
             <View className="relative my-2 items-center justify-center">
               <StepOrbit ratio={loading ? 0 : ratio(steps, goals.steps)}>
                 <View className="absolute inset-0 items-center justify-center px-2">
-                  <MaterialCommunityIcons name="shoe-print" size={16} color="#FFB184" />
+                  <MaterialCommunityIcons name="shoe-print" size={18} color="#FFB184" />
                   <Txt
                     weight="semibold"
                     numberOfLines={1}
                     adjustsFontSizeToFit
-                    className="mt-1 text-[26px] leading-8 tracking-[-1px] text-[#FFE3D1]"
+                    className="mt-1 text-[24px] leading-8 tracking-[-1px] text-[#FFE3D1]"
                   >
                     {display(steps, 0)}
                   </Txt>
-                  <Txt className="text-[9px] text-[#BA9983]">TODAY’S STEPS</Txt>
+                  <Txt className="text-[9px] text-[#BA9983]">Today</Txt>
                 </View>
               </StepOrbit>
             </View>
-            <Txt className="mt-auto text-center text-[10px] text-[#BA9983]">
+            {/* <Txt className="mt-auto text-center text-[10px] text-[#BA9983]">
               {caption(steps, goals.steps, "steps")}
-            </Txt>
+            </Txt> */}
           </Pressable>
           <Pressable
             {...cardProps("workouts")}
             accessibilityHint="A calendar heatmap shows workout days this week."
-            className="min-h-[162px] rounded-[28px] border border-[#C1A9FF]/10 bg-[#211C2D] p-4"
+            className="min-h-[162px] rounded-[28px] border border-[#C1A9FF]/10 bg-[#4911cd] p-4"
           >
             <View className="flex-row items-center justify-between">
-              <Txt weight="medium" className="text-xs text-[#D6C8FF]">
+              <Txt weight="medium" className="text-sm text-white">
                 Workouts
               </Txt>
-              <MaterialCommunityIcons name="dumbbell" size={18} color="#B39BE8" />
+              <MaterialCommunityIcons name="dumbbell" size={18} color="white" />
             </View>
             <View className="mt-3 flex-row items-baseline gap-1.5">
               <Txt weight="semibold" className="text-[28px] leading-8 tracking-[-1px]">
                 {display(snapshot.weeklyCount, 0)}
               </Txt>
-              <Txt className="text-[10px] text-[#A99BBF]">this week</Txt>
+              <Txt className="text-[10px] text-white">this week</Txt>
             </View>
             <Txt className="mb-3 mt-1 text-[9px] text-[#A99BBF]">
               {loading
@@ -132,46 +130,46 @@ export function DailyOverview({
         <View className="min-w-0 flex-1 gap-3">
           <Pressable
             {...cardProps("weight")}
-            className="min-h-[162px] rounded-[28px] border border-[#B6D5E5]/10 bg-[#1B2429] p-4"
+            className="min-h-[152px] rounded-[28px] border border-[#B6D5E5]/10 bg-[#f6da06] p-4"
           >
             <View className="flex-row items-center justify-between">
-              <Txt weight="medium" className="text-xs text-[#C6DFEB]">
+              <Txt weight="medium" className="text-sm text-black">
                 Body weight
               </Txt>
-              {arrow("#8AA3AF")}
+              {arrow("black")}
             </View>
             <View className="mt-3 flex-row items-baseline gap-1.5">
               <Txt
                 weight="semibold"
                 numberOfLines={1}
                 adjustsFontSizeToFit
-                className="text-[27px] leading-8 tracking-[-1px]"
+                className="text-[32px] text-black leading-8 tracking-[-1px]"
               >
                 {display(weight == null ? null : weightValue(weight, unit))}
               </Txt>
-              <Txt className="text-[10px] text-[#95ACB8]">{unit}</Txt>
+              <Txt className="text-[10px] text-[#191c1d]">{unit}</Txt>
             </View>
             <MiniHistory
-              color="#B6D5E5"
+              color="#000"
               points={loading ? [] : healthHistory(snapshot, "weight", today, 7, unit)}
             />
-            <Txt numberOfLines={1} className="mt-auto text-[9px] text-[#95ACB8]">
+            <Txt numberOfLines={1} className="mt-auto text-[9px] text-[#0b0c0c]">
               {!loading && snapshot.weight
                 ? snapshot.weight.date === today
-                  ? "Today’s check-in"
+                  ? "Today's check-in"
                   : `Last · ${dateLabel(snapshot.weight.date)}`
                 : "No weigh-in yet"}
             </Txt>
           </Pressable>
           <Pressable
             {...cardProps("water")}
-            className="min-h-[235px] overflow-hidden rounded-[28px] border border-[#80CBFF]/15 bg-[#102C40] p-4"
+            className="min-h-[225px] overflow-hidden rounded-[28px] border border-[#80CBFF]/15 bg-[#022b48] p-4"
           >
             <View className="flex-row items-center justify-between">
-              <Txt weight="medium" className="text-xs text-[#BCDEFF]">
+              <Txt weight="medium" className="text-sm text-white">
                 Water
               </Txt>
-              {arrow("#79B2D8")}
+              {arrow("white")}
             </View>
             <View className="my-1">
               <WaterGlass

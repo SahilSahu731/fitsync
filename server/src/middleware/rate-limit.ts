@@ -22,8 +22,16 @@ export class DatabaseRateLimitStore implements Store {
         p_window_ms: this.windowMs,
       })
       .abortSignal(AbortSignal.timeout(3_000));
-    if (error || !data?.[0]) throw new Error("Rate limit store unavailable");
-    return { totalHits: Number(data[0].total_hits), resetTime: new Date(data[0].reset_time) };
+    const totalHits = Number(data?.[0]?.total_hits);
+    const resetTime = new Date(data?.[0]?.reset_time);
+    if (
+      error ||
+      !Number.isSafeInteger(totalHits) ||
+      totalHits < 1 ||
+      !Number.isFinite(resetTime.getTime())
+    )
+      throw new Error("Rate limit store unavailable");
+    return { totalHits, resetTime };
   }
   async decrement(_key: string) {
     /* All requests count, including failures. */

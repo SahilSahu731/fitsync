@@ -18,10 +18,10 @@ const { requestLog } = await import("../src/middleware/request-log.js");
 const { EventEmitter } = await import("node:events");
 
 test("SQL test setup rejects production and every supported connection variable before loading a driver", async () => {
-  const { isolatedDatabase } = await import("./sql/isolated-database.mjs");
+  const { isolatedDatabase, CONNECTION_VARIABLES } = await import("./sql/isolated-database.mjs");
   for (const environment of [
     { NODE_ENV: "production" },
-    ...["DATABASE_URL", "DIRECT_URL", "SUPABASE_URL", "PGHOST", "PGSERVICE"].map((key) => ({
+    ...CONNECTION_VARIABLES.map((key: string) => ({
       [key]: "production-connection",
     })),
   ]) {
@@ -102,4 +102,19 @@ test("request logs correlate IDs without raw URLs, health values or credentials"
   assert.equal(row.requestId, res.locals.requestId);
   assert.equal(row.route, "/shared/:token");
   assert.doesNotMatch(logs[0], /private-token|weight|\?/);
+});
+test("shared rate limits fail closed on unavailable or malformed counter responses", async (t) => {
+  let response: any;
+  t.mock.method(db, "rpc", () => ({ abortSignal: async () => response }) as any);
+  const store = new DatabaseRateLimitStore("workouts");
+  for (const invalid of [
+    { data: null, error: { message: "private database detail" } },
+    { data: [], error: null },
+    { data: [{ total_hits: "invalid", reset_time: new Date().toISOString() }], error: null },
+    { data: [{ total_hits: 0, reset_time: new Date().toISOString() }], error: null },
+    { data: [{ total_hits: 1, reset_time: "invalid" }], error: null },
+  ]) {
+    response = invalid;
+    await assert.rejects(store.increment("192.0.2.1"), /^Error: Rate limit store unavailable$/);
+  }
 });

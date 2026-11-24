@@ -542,7 +542,13 @@ test("a draft created without a program retains that captured identity after lat
   ui.toggle("Diet reminders", true);
   assert.equal(control(ui.instance.tree, "Workout reminders", "switch").props.disabled, true);
   assert.match(text(ui.instance.tree), /training program changed/);
-  control(ui.instance.tree, "Choose workout reminder time").props.onPress();
+  assert.equal(
+    nodes(
+      ui.instance.tree,
+      (node) => node.props?.accessibilityLabel === "Choose workout reminder time",
+    ).length,
+    0,
+  );
   assert.equal(ui.calls.pickers.length, 0);
   ui.save();
   await ui.instance.settle();

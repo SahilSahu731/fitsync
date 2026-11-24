@@ -38,6 +38,7 @@ require a development or release build; Expo Go does not validate those integrat
 ```sh
 npm --prefix server run build
 npm --prefix server test
+npm --prefix server run test:sql
 npm --prefix server run db:generate -- --check
 npm --prefix web test
 npm --prefix web run lint
@@ -48,9 +49,9 @@ npm --prefix mobile test
 ```
 
 [GitHub Actions](.github/workflows/ci.yml) runs these checks and builds both Docker
-images on pushes and pull requests, without production credentials. Database
-integration tests require a separate disposable database; see feature guides in
-`docs/`. Do not point test bootstraps at production.
+images on pushes and pull requests, without production credentials. SQL integration
+tests run in fresh in-memory PostgreSQL databases and reject live connection settings.
+Do not source server `.env` files or point manual SQL bootstraps at production.
 
 ## Deployment
 

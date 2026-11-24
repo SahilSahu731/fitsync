@@ -3,9 +3,14 @@ import { useSession } from "@/src/context/session";
 import { useBilling } from "./billing-context";
 import { useCoaching } from "../coaching/use-coaching";
 import { localDate, type ProgressWorkout } from "../progress/model";
-import { completedInsightWorkouts } from "../pro/companion-insights";
 import { MomentCard } from "./moment-card";
-import { missedMoment, progressWorkout, weeklyMoment, workoutMoment } from "./moments";
+import {
+  missedMoment,
+  progressWorkout,
+  recentWorkoutMoments,
+  weeklyMoment,
+  workoutMoment,
+} from "./moments";
 import { useUpgradeMoment } from "./use-moment";
 import type { WorkoutSession } from "../workouts/api";
 
@@ -51,17 +56,15 @@ export function HomeUpgradeMoments({
     !coaching.loading && (!coaching.error || billing.isPro)
       ? missedMoment(coaching.data?.plan ?? null)
       : null;
-  const latest = completedInsightWorkouts(history, today).at(-1);
-  // A missed completion screen can be picked up on the same day, never weeks later.
-  const achievement =
-    latest && localDate(new Date(latest.finished_at!)) === today
-      ? workoutMoment(latest, history, today, unit)
-      : null;
+  const achievements = useMemo(
+    () => recentWorkoutMoments(history, today, unit),
+    [history, today, unit],
+  );
   const weekly = weeklyMoment(history, user?.createdAt ?? "", today, unit);
-  const candidate = achievement ?? weekly ?? recovery;
+  const candidates = [...achievements, weekly, recovery];
   const { moment, dismiss } = useUpgradeMoment(
     user?.id ?? "",
-    candidate,
+    candidates,
     ready && !billing.loading && !billing.isPro,
   );
   const memberRecovery = billing.isPro && recovery?.key !== dismissedRecovery ? recovery : null;

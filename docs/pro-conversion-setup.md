@@ -102,10 +102,15 @@ until the OS delivers it; opening FitSync reconciles the current store state.
   get fabricated reviews. Each later completed week has its own preview.
 - **Free access:** previous-session hints, logging and saved routines remain free.
   Existing custom-exercise and meal-plan gates continue to work.
-- **Prompt frequency:** proactive cards are limited to one per app process, at least
+- **Prompt frequency:** proactive cards are limited to one per account per app process, at least
   48 hours apart, at most two in a rolling seven days, and once per event/review ID on
   that installation. Pro members do not see these upgrade prompts. Manually opening
   Pro or a gated feature is always available.
+- **Delayed completion:** unseen workout milestones remain eligible for 72 hours after
+  completion, including a sync after midnight. Already-seen milestones cannot hide an
+  eligible weekly review or recovery card. The same global cooldowns still apply.
+- **Preferred units:** the live logger and target previews share a 2.5 kg / 5 lb load
+  increment, while all stored weights remain in kg.
 
 ## 5. Measure the contextual funnel
 

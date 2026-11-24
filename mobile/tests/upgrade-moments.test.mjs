@@ -10,6 +10,8 @@ import {
   nextTargets,
   canShowMoment,
   parseMomentHistory,
+  firstEligibleMoment,
+  recentWorkoutMoments,
 } from "../src/features/billing/moments.ts";
 import { trialReminderDate } from "../src/features/billing/trial-model.ts";
 import { makeOffers } from "../src/features/billing/offers.ts";
@@ -182,6 +184,31 @@ test("proactive previews respect seen IDs, exactly 48 hours and a rolling two-pe
     seen: ["a"],
     shown: [5],
   });
+});
+test("an already seen achievement cannot hide an eligible weekly review or recovery", () => {
+  const achievement = workoutMoment(third, [first, second], today, "kg");
+  const weekly = weeklyMoment([first, second], "2026-11-16T00:00:00Z", today, "kg");
+  const now = Date.now();
+  const history = { seen: [achievement.key], shown: [now - 4 * 86400_000] };
+  assert.equal(firstEligibleMoment(history, [achievement, weekly], now), weekly);
+  assert.equal(firstEligibleMoment({ ...history, shown: [now] }, [achievement, weekly], now), null);
+});
+test("completion moments survive midnight and delayed sync for at most 72 hours", () => {
+  const history = [first, second, third];
+  const finished = Date.parse(third.finished_at);
+  assert.equal(
+    recentWorkoutMoments(history, "2026-11-24", "kg", finished + 86400_000)[0].key,
+    `workout_three:${third.id}`,
+  );
+  assert.equal(
+    recentWorkoutMoments(history, "2026-11-26", "kg", finished + 72 * 3600_000).length,
+    1,
+  );
+  assert.deepEqual(
+    recentWorkoutMoments(history, "2026-11-26", "kg", finished + 72 * 3600_000 + 1),
+    [],
+  );
+  assert.deepEqual(recentWorkoutMoments(history, today, "kg", finished - 1), []);
 });
 const phase = (amount, iso, count = 1) => ({
   price: { amountMicros: amount * 1e6, formatted: `₹${amount}`, currencyCode: "INR" },
@@ -384,7 +411,8 @@ function momentHookFixture() {
     layout = [],
     effects = [],
     storage = new Map(),
-    events = [];
+    events = [],
+    appListeners = new Set();
   let cursor = 0,
     dirty = false,
     focused = true,
@@ -435,12 +463,21 @@ function momentHookFixture() {
   };
   const deps = {
     react,
+    "react-native": {
+      AppState: {
+        currentState: "active",
+        addEventListener: (_name, callback) => {
+          appListeners.add(callback);
+          return { remove: () => appListeners.delete(callback) };
+        },
+      },
+    },
     "expo-router": {
       useFocusEffect: (fn) => react.useEffect(() => (focused ? fn() : undefined), [focused, fn]),
     },
     "@react-native-async-storage/async-storage": storageApi,
     "@/src/services/telemetry": { trackEvent: (...event) => events.push(event) },
-    "./moments": { canShowMoment, parseMomentHistory },
+    "./moments": { firstEligibleMoment, parseMomentHistory },
   };
   const exports = {};
   const code = ts.transpileModule(
@@ -470,6 +507,10 @@ function momentHookFixture() {
     storageApi,
     focus(value) {
       focused = value;
+      render();
+    },
+    foreground(value) {
+      appListeners.forEach((callback) => callback(value ? "active" : "background"));
       render();
     },
     async flush() {
@@ -527,4 +568,31 @@ test("an account or entitlement change during storage lookup cannot expose the q
     if (change === "account") assert.equal(shown.moment.source, "workout_three");
     else assert.equal(shown.moment, null);
   }
+});
+test("the hook selects an unseen fallback and scopes session limits to the signed-in owner", async () => {
+  const f = momentHookFixture();
+  const achievement = candidate();
+  const weekly = weeklyMoment([first, second], "2026-11-16T00:00:00Z", today, "kg");
+  f.storage.set(
+    "fitsync.upgrade-moments.v1.alice",
+    JSON.stringify({ seen: [achievement.key], shown: [] }),
+  );
+  f.render(["alice", [achievement, weekly], true]);
+  assert.equal((await f.flush()).moment.source, "weekly_review");
+  f.render(["bob", [achievement, weekly], true]);
+  assert.equal((await f.flush()).moment.source, "workout_three");
+  assert.equal(JSON.parse(f.storage.get("fitsync.upgrade-moments.v1.bob")).shown.length, 1);
+});
+test("backgrounding before a card commits does not consume its session opportunity", async () => {
+  const f = momentHookFixture();
+  f.render(["alice", candidate(), true]);
+  f.render();
+  // Let lookup reserve a card without committing the queued React render.
+  await new Promise(setImmediate);
+  f.foreground(false);
+  assert.equal((await f.flush()).moment, null);
+  assert.equal(f.storage.size, 0);
+  f.foreground(true);
+  assert.equal((await f.flush()).moment.source, "workout_three");
+  assert.equal(f.events.filter(([name]) => name === "upgrade_moment_viewed").length, 1);
 });

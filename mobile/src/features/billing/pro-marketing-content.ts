@@ -48,6 +48,8 @@ export const PRO_COMPARISON: { feature: string; free: string | boolean; pro: str
   [
     { feature: "Workout logging", free: "Unlimited", pro: "Unlimited" },
     { feature: "Previous-session hints", free: true, pro: true },
+    { feature: "Rest timer & personal records", free: true, pro: true },
+    { feature: "Workout reminders", free: true, pro: true },
     { feature: "Saved routines", free: true, pro: true },
     { feature: "Create custom exercises", free: false, pro: true },
     { feature: "Daily health tracking", free: true, pro: true },
@@ -59,14 +61,14 @@ export const PRO_COMPARISON: { feature: string; free: string | boolean; pro: str
     { feature: "Weekly training reviews", free: false, pro: true },
     { feature: "Warm-up & plate tools", free: false, pro: true },
     { feature: "Weekly meal planning", free: false, pro: true },
-    { feature: "Custom workout reminders", free: false, pro: true },
+    { feature: "Meal, hydration & wind-down reminders", free: false, pro: true },
   ];
 
 export const PRO_FAQS = [
   {
     question: "What does FitSync Pro include?",
     answer:
-      "Pro brings together your choice of training program, personal plans, all-time graph history, advanced muscle insights, custom exercises, progression and weekly reviews, warm-up and plate tools, meal planning, and customizable training, meal, hydration and wind-down reminders. Your workouts, routines and daily tracking remain available on Free, with the latest 90 days of standard graphs.",
+      "Pro brings together your choice of training program, personal plans, all-time graph history, advanced muscle insights, custom exercises, progression and weekly reviews, warm-up and plate tools, meal planning, and customizable meal, hydration and wind-down reminders. Logging, previous-session hints, rest timers, personal records, workout reminders, routines and daily tracking remain available on Free, with the latest 90 days of standard graphs.",
   },
   {
     question: "How are training recommendations made?",

@@ -127,3 +127,19 @@ test("authenticated BFF requests have independent per-user auth limits", async (
   assert.equal((await login(headers)).status, 429);
   assert.equal((await login({ ...headers, "X-FitSync-Client-IP": "192.0.2.11" })).status, 400);
 });
+
+test("draining fails readiness and rejects new API work with a retryable response", async () => {
+  const { beginDraining } = await import("../src/common/lifecycle.js");
+  beginDraining();
+  const readiness = await fetch(`${base}/health`);
+  assert.equal(readiness.status, 503);
+  assert.deepEqual(await readiness.json(), {
+    ok: false,
+    service: "fitsync-api",
+    status: "draining",
+  });
+  const response = await fetch(`${base}/api/workouts/history`);
+  assert.equal(response.status, 503);
+  assert.equal(response.headers.get("retry-after"), "5");
+  assert.match(response.headers.get("x-request-id")!, /^[a-f0-9-]{36}$/);
+});

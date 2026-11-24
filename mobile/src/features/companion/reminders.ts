@@ -83,6 +83,34 @@ async function clear() {
 export function clearCompanionReminders() {
   return enqueue(clear);
 }
+/** Expiry removes Pro habit alerts even when preferences cannot load; training stays free. */
+export function clearPremiumCompanionReminders(ownerId: string) {
+  return enqueue(async () => {
+    if (Platform.OS === "web" || !ownerId) return;
+    const previous = await read();
+    // A delayed cleanup from a signed-out account cannot touch its replacement.
+    if (previous && previous.ownerId !== ownerId) return;
+    const premium = (kind: unknown) => HABIT_REMINDERS.some((habit) => habit.kind === kind);
+    const scheduled = await Notifications.getAllScheduledNotificationsAsync();
+    const presented = await Notifications.getPresentedNotificationsAsync();
+    const ids = new Set(
+      (previous?.items ?? []).filter((item) => premium(item.kind)).map((item) => item.id),
+    );
+    for (const request of [...scheduled, ...presented.map((item) => item.request)]) {
+      const data = request.content.data;
+      if (data?.ownerId === ownerId && premium(data.kind)) ids.add(request.identifier);
+    }
+    for (const id of ids) if (id.startsWith(PREFIX)) await cancel(id);
+    if (previous)
+      await AsyncStorage.setItem(
+        KEY,
+        JSON.stringify({
+          ...previous,
+          items: previous.items.filter((item) => !premium(item.kind)),
+        }),
+      );
+  });
+}
 /** Keep this account's last schedule while its saved preferences are loading. */
 export function retainCompanionRemindersForOwner(ownerId: string) {
   return enqueue(async () => {
