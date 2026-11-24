@@ -1,6 +1,21 @@
-import React, { useCallback, useEffect, useMemo, useState } from "react";
+import { useSession } from "@/src/context/session";
+import { fromKg, weightText } from "@/src/lib/weight";
+import { useProgress } from "@/src/features/progress/use-progress";
+import { useBilling } from "@/src/features/billing/billing-context";
+import { WorkoutUpgradeMoment } from "@/src/features/billing/experience-moments";
+import {
+  workoutRecords,
+  recordValue,
+  workoutShareText,
+} from "@/src/features/workouts/achievements";
+import {
+  recordCompletedWorkout,
+  recordCompletedWorkoutAndMaybeRequestReview,
+} from "@/src/features/experience/review-prompt";
+import { trackEvent } from "@/src/services/telemetry";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
-import { ActivityIndicator, Pressable, ScrollView, View } from "react-native";
+import { ActivityIndicator, Pressable, ScrollView, Share, View } from "react-native";
 
 import { useLocalSearchParams, useRouter } from "expo-router";
 
@@ -29,9 +44,9 @@ function formatDuration(seconds: number | null | undefined) {
   return `${minutes}m`;
 }
 
-function formatVolume(kg: number) {
-  const rounded = Math.round(kg);
-  return rounded >= 10000 ? `${(rounded / 1000).toFixed(1)}t` : `${rounded.toLocaleString()} kg`;
+function formatVolume(kg: number, unit: "kg" | "lb") {
+  const rounded = Math.round(fromKg(kg, unit));
+  return `${rounded.toLocaleString()} ${unit}`;
 }
 
 function StatTile({
@@ -65,7 +80,13 @@ function StatTile({
 
 export default function WorkoutHistoryDetail() {
   const router = useRouter();
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, celebrate } = useLocalSearchParams<{ id: string; celebrate?: string }>();
+  const { settings } = useSession();
+  const unit = settings?.weightUnit ?? "kg";
+  const progress = useProgress();
+  const { isPro } = useBilling();
+  const [shareError, setShareError] = useState("");
+  const seen = useRef(false);
 
   const { completedWorkout, pendingCompletion, dataRevision } = useWorkout();
   const [attempt, setAttempt] = useState(0);
@@ -75,6 +96,41 @@ export default function WorkoutHistoryDetail() {
   const localSession = completedWorkout?.id === id ? completedWorkout : null;
   const displayedSession = localSession ?? (session?.id === id ? session : null);
   const hasLocalSession = !!localSession;
+  const records = useMemo(
+    () =>
+      displayedSession && !progress.loading && !progress.workoutError
+        ? workoutRecords(displayedSession, progress.journal.workouts)
+        : [],
+    [displayedSession, progress.loading, progress.workoutError, progress.journal.workouts],
+  );
+  useEffect(() => {
+    if (celebrate === "1" && displayedSession && !seen.current) {
+      seen.current = true;
+      trackEvent("workout_summary_viewed");
+    }
+  }, [celebrate, displayedSession]);
+  useEffect(() => {
+    if (celebrate === "1" && displayedSession && !pendingCompletion)
+      void recordCompletedWorkout(displayedSession.id);
+  }, [celebrate, displayedSession, pendingCompletion]);
+  const done = () => {
+    router.replace("/(tabs)/train");
+    if (celebrate === "1" && displayedSession && !pendingCompletion)
+      void recordCompletedWorkoutAndMaybeRequestReview(displayedSession.id);
+  };
+  const share = async () => {
+    if (!displayedSession) return;
+    setShareError("");
+    try {
+      trackEvent("workout_share_opened");
+      const result = await Share.share({
+        message: workoutShareText(displayedSession, records.length),
+      });
+      if (result.action === Share.sharedAction) trackEvent("workout_share_completed");
+    } catch {
+      setShareError("Could not open sharing. Please try again.");
+    }
+  };
   const retry = useCallback(() => setAttempt((value) => value + 1), []);
   useEffect(() => {
     if (!id) return;
@@ -232,11 +288,11 @@ export default function WorkoutHistoryDetail() {
 
       <Pressable
         accessibilityRole="button"
-        onPress={() => router.replace("/(tabs)/train")}
+        onPress={done}
         className="mt-4 min-h-12 items-center justify-center rounded-full bg-ink"
       >
         <Txt weight="semibold" className="text-sm text-bg">
-          Back to Train
+          {celebrate === "1" ? "Done · Back to Train" : "Back to Train"}
         </Txt>
       </Pressable>
       {/* Stats */}
@@ -257,10 +313,101 @@ export default function WorkoutHistoryDetail() {
           icon="weight-kilogram"
           color={GREEN}
           label="WORKING VOLUME"
-          value={formatVolume(stats.volume)}
+          value={formatVolume(stats.volume, unit)}
         />
       </View>
 
+      {celebrate === "1" && (
+        <View className="mb-5 rounded-3xl border border-brand/25 bg-brand/5 p-5">
+          <MaterialCommunityIcons
+            name={records.length ? "trophy-outline" : "check-decagram-outline"}
+            size={34}
+            color={C.brand}
+          />
+          <Txt accessibilityRole="header" weight="semibold" className="mt-3 text-2xl">
+            {records.length
+              ? `${records.length} personal best${records.length === 1 ? "" : "s"}!`
+              : "You showed up. It counts."}
+          </Txt>
+          <Txt className="mt-2 text-sm leading-6 text-muted">
+            {pendingCompletion
+              ? "Saved on this device. Your workout will sync when you’re back online."
+              : "Workout saved. Give yourself credit for the work you put in."}
+          </Txt>
+          {records.map((record, i) => (
+            <View key={i} className="mt-4">
+              <Txt weight="semibold">
+                {record.exercise} · {recordValue(record, unit)}
+              </Txt>
+              <Txt className="mt-1 text-xs text-muted">{record.label}</Txt>
+            </View>
+          ))}
+          {!!records.length && (
+            <Txt className="mt-3 text-xs leading-5 text-muted">
+              Compared with your available saved history. Normal working sets only.
+            </Txt>
+          )}
+          <Txt className="mt-4 text-xs text-muted">
+            Share duration, set count and personal-best count. Your notes and measurements stay
+            private.
+          </Txt>
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => void share()}
+            className="mt-3 min-h-12 flex-row items-center justify-center gap-2 rounded-2xl bg-brand"
+          >
+            <MaterialCommunityIcons name="share-variant-outline" size={20} color={C.bg} />
+            <Txt weight="semibold" className="text-bg">
+              Share workout
+            </Txt>
+          </Pressable>
+          {!!shareError && (
+            <Txt accessibilityLiveRegion="polite" className="mt-2 text-xs text-muted">
+              {shareError}
+            </Txt>
+          )}
+        </View>
+      )}
+      {celebrate === "1" && !isPro && (
+        <WorkoutUpgradeMoment
+          workout={workout}
+          history={progress.journal.workouts}
+          ready={
+            !pendingCompletion &&
+            !progress.loading &&
+            !progress.refreshing &&
+            !progress.workoutError &&
+            !progress.storageError
+          }
+        />
+      )}
+      {celebrate === "1" && isPro && (
+        <View className="mb-5 rounded-2xl bg-panel p-5">
+          <Txt weight="semibold">Make your next session easier</Txt>
+          <Txt className="mt-2 text-sm leading-6 text-muted">
+            {isPro
+              ? "Review your next working-set targets, then build your warm-up and plate setup with Pro tools."
+              : "Your previous sets and logging stay free. Pro adds a structured plan, deeper muscle insights and warm-up tools from day one."}
+          </Txt>
+          <Pressable
+            accessibilityRole="button"
+            className="mt-3 min-h-12 justify-center"
+            onPress={() => {
+              trackEvent("pro_preview_opened", {
+                source: "workout_summary",
+                membership: isPro ? "pro" : "free",
+              });
+              router.push(
+                isPro ? "/pro" : { pathname: "/pro", params: { source: "workout_summary" } },
+              );
+            }}
+          >
+            <Txt weight="semibold" className="text-brand">
+              {isPro ? "Open Pro workspace" : "See what Pro adds"} →
+            </Txt>
+          </Pressable>
+        </View>
+      )}
       {!!workout.notes && (
         <View className="mb-5 rounded-2xl bg-panel p-4">
           <Txt weight="semibold">Workout notes</Txt>
@@ -302,7 +449,7 @@ export default function WorkoutHistoryDetail() {
                   </Txt>
                   <Txt className="mt-0.5 text-xs text-muted">
                     {sets.length} {sets.length === 1 ? "set" : "sets"}
-                    {volume > 0 ? ` · ${formatVolume(volume)}` : ""}
+                    {volume > 0 ? ` · ${formatVolume(volume, unit)}` : ""}
                   </Txt>
                 </View>
               </View>
@@ -363,8 +510,8 @@ export default function WorkoutHistoryDetail() {
                             : exercise.tracking_type === "distance_duration"
                               ? `${set.distance_meters ?? "—"} m · ${set.duration_seconds ?? "—"} sec`
                               : exercise.tracking_type === "reps"
-                                ? `${set.reps ?? "—"} reps${set.weight_kg ? ` · +${set.weight_kg} kg` : ""}`
-                                : `${set.weight_kg ?? "—"} kg × ${set.reps ?? "—"}`}
+                                ? `${set.reps ?? "—"} reps${set.weight_kg ? ` · +${weightText(set.weight_kg, unit)} ${unit}` : ""}`
+                                : `${set.weight_kg == null ? "—" : weightText(set.weight_kg, unit)} ${unit} × ${set.reps ?? "—"}`}
                         </Txt>
                         {(set.rpe !== null || set.rir !== null) && (
                           <Txt className="mt-1 text-xs text-muted">

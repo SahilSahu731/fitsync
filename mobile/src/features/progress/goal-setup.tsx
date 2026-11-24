@@ -1,3 +1,4 @@
+import { HealthDisclaimer } from "@/src/components/health-disclaimer";
 import React, { useState } from "react";
 import { ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView, View } from "react-native";
 import { useRouter } from "expo-router";
@@ -151,6 +152,7 @@ export function GoalSetup() {
           keyboardDismissMode="on-drag"
           contentContainerClassName="w-full max-w-2xl self-center px-6 pb-8"
         >
+          <HealthDisclaimer />
           {!values ? (
             <View className="gap-4 py-12">
               {progress.storageError || progress.syncError ? (

@@ -3,18 +3,16 @@
     "name": "FitSync",
     "slug": "fitsync",
     "scheme": "fitsync",
-    "version": "1.0.0",
+    "version": "1.1.0",
     "orientation": "portrait",
     "userInterfaceStyle": "dark",
     "icon": "./assets/images/icon.png",
-    "platforms": [
-      "android"
-    ],
+    "platforms": ["android"],
     "android": {
       "package": "com.sahil.fitsync",
       "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon-foreground.png",
+        "foregroundImage": "./assets/images/adaptive-foreground.png",
         "backgroundColor": "#101011",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
@@ -22,13 +20,11 @@
         "android.permission.health.READ_STEPS",
         "android.permission.health.READ_SLEEP",
         "android.permission.health.READ_WEIGHT",
-        "android.permission.health.READ_STEPS",
-        "android.permission.health.READ_SLEEP",
-        "android.permission.health.READ_WEIGHT",
         "android.permission.MODIFY_AUDIO_SETTINGS",
         "android.permission.READ_CALENDAR",
         "android.permission.WRITE_CALENDAR"
-      ]
+      ],
+      "playStoreUrl": "https://play.google.com/store/apps/details?id=com.sahil.fitsync"
     },
     "plugins": [
       "expo-router",
@@ -38,9 +34,7 @@
           "icon": "./assets/images/android-icon-monochrome.png",
           "color": "#C5F460",
           "defaultChannel": "general-v1",
-          "sounds": [
-            "./assets/sound/rest_complete.wav"
-          ]
+          "sounds": ["./assets/sound/rest_complete.wav"]
         }
       ],
       [
@@ -51,12 +45,7 @@
           "imageWidth": 180
         }
       ],
-      [
-        "@react-native-google-signin/google-signin",
-        {
-          "iosUrlScheme": "com.googleusercontent.apps.androidonly"
-        }
-      ],
+      "@react-native-google-signin/google-signin",
       [
         "expo-image-picker",
         {
@@ -92,14 +81,6 @@
       ],
       "react-native-health-connect",
       [
-        "@kingstinct/react-native-healthkit",
-        {
-          "NSHealthShareUsageDescription": "FitSync reads steps, sleep and weight to fill your progress journal when you choose to import.",
-          "NSHealthUpdateUsageDescription": "FitSync does not write to Apple Health.",
-          "background": false
-        }
-      ],
-      [
         "expo-calendar",
         {
           "calendarPermission": "Allow FitSync to add training sessions you choose to your calendar.",
@@ -128,7 +109,6 @@
     },
     "updates": {
       "url": "https://u.expo.dev/d9829030-6ee5-45ac-8cbb-55fe6602c5dc"
-    },
-    "ios": {}
+    }
   }
 }

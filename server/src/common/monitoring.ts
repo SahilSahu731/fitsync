@@ -16,9 +16,10 @@ let windowCount = 0;
 // Send the documented Sentry envelope protocol directly. Deliberately omit SDK
 // auto-instrumentation, request data, breadcrumbs, error messages and local variables:
 // any of those can contain credentials or health records.
-export function reportError(error: unknown, category: Failure) {
+export function reportError(error: unknown, category: Failure, requestId?: string) {
   const eventId = randomUUID().replaceAll("-", "");
-  console.error(JSON.stringify({ level: "error", eventId, category }));
+  const correlation = requestId && /^[a-f0-9-]{36}$/i.test(requestId) ? { requestId } : {};
+  console.error(JSON.stringify({ level: "error", eventId, category, ...correlation }));
   const sentryDsn = process.env.SENTRY_DSN;
   if (!sentryDsn) return eventId;
   if (Date.now() - windowStart >= 60_000) {
@@ -74,7 +75,7 @@ export function reportError(error: unknown, category: Failure) {
     ...(/^[\w.@+-]{1,200}$/.test(process.env.SENTRY_RELEASE ?? "")
       ? { release: process.env.SENTRY_RELEASE }
       : {}),
-    tags: { service: "fitsync-api", category },
+    tags: { service: "fitsync-api", category, ...correlation },
     exception: {
       values: [
         {

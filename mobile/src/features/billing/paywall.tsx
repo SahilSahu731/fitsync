@@ -1,4 +1,5 @@
-import React, { useRef, useState } from "react";
+import { trackEvent, recordError } from "@/src/services/telemetry";
+import React, { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Linking,
@@ -8,7 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { router } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
@@ -21,6 +22,8 @@ import { legalUrl } from "./model";
 import { presentPlans, selectedPlan } from "./plan-presentation";
 import { ProFeatureArt } from "./pro-feature-art";
 import { PRO_BENEFITS, PRO_COMPARISON, PRO_FAQS } from "./pro-marketing-content";
+import { requestTrialReminderPermission } from "./trial-reminders";
+import { PaywallEvidence } from "./personal-preview";
 
 type Work = "purchase" | "restore" | "refresh" | "manage";
 
@@ -76,10 +79,31 @@ export function ProScreen({ embedded = false }: { embedded?: boolean } = {}) {
 
 function ProMarketingPage({ embedded }: { embedded: boolean }) {
   const billing = useBilling();
+  const { source: requestedSource } = useLocalSearchParams<{ source?: string }>();
+  const source = [
+    "workout_summary",
+    "home",
+    "progress",
+    "custom_exercise",
+    "training_plan",
+    "pro_tab",
+    "personal_best",
+    "workout_three",
+    "weekly_review",
+    "missed_session",
+    "meal_plan",
+  ].includes(requestedSource ?? "")
+    ? requestedSource!
+    : "pro_tab";
+  useEffect(() => {
+    trackEvent("paywall_viewed", { source });
+  }, [source]);
   const insets = useSafeAreaInsets();
   const { width, height, fontScale } = useWindowDimensions();
   const [selection, setSelection] = useState<string | null>(null);
   const [expanded, setExpanded] = useState<number | null>(null);
+  const [reminder, setReminder] = useState(false);
+  const [reminderBusy, setReminderBusy] = useState(false);
   const [dockHeight, setDockHeight] = useState(310);
   const [working, setWorking] = useState<Work | null>(null);
   const [notice, setNotice] = useState<{ error: boolean; text: string } | null>(null);
@@ -95,7 +119,8 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
   const legalReady = Boolean(terms && privacy) || testStoreCheckout;
   const plans = presentPlans(billing.offers, Platform.OS);
   const chosen = selectedPlan(plans, selection);
-  const busy = working !== null || billing.busy;
+  const busy = working !== null || billing.busy || reminderBusy;
+  const trial = chosen?.offer.trialDays === 7 && !chosen.oneTime;
   const inlineDock = height < 660 || fontScale > 1.25;
   const contentWidth = Math.min(width, 640) - 40;
   const cardWidth = Math.max(
@@ -116,6 +141,7 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
   const unavailable = !billing.loading && (plansUnavailable || checkoutSetupMissing);
   const close = () => {
     if (busy) return;
+    trackEvent("paywall_closed", { source });
     if (!embedded && router.canGoBack()) router.back();
     else router.replace("/(tabs)");
   };
@@ -127,6 +153,8 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
     try {
       await action();
     } catch (error) {
+      trackEvent("paywall_action_failed", { source, action: kind });
+      recordError(error, "paywall_action");
       setNotice({
         error: true,
         text:
@@ -142,7 +170,9 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
   const refresh = () => void run("refresh", billing.refresh);
   const restore = () =>
     void run("restore", async () => {
+      trackEvent("restore_started", { source });
       const result = await billing.restore();
+      trackEvent("restore_result", { source, result });
       setNotice({
         error: false,
         text:
@@ -156,7 +186,13 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
   const buy = () => {
     if (!canPurchase || !chosen) return;
     void run("purchase", async () => {
-      const result = await billing.purchase(chosen.offer.id);
+      const plan = chosen.title.toLowerCase().replace(/[^a-z_]/g, "_");
+      trackEvent("purchase_started", { source, plan });
+      const result = await billing.purchase(
+        chosen.offer.id,
+        trial ? { trialReminder: reminder } : undefined,
+      );
+      trackEvent("purchase_result", { source, plan, result });
       if (result !== "cancelled")
         setNotice({
           error: false,
@@ -187,7 +223,9 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
                     : chosen
                       ? chosen.oneTime
                         ? "Get lifetime Pro"
-                        : `Continue with ${chosen.title.toLowerCase()}`
+                        : trial
+                          ? "Start my 7-day free trial"
+                          : `Continue with ${chosen.title.toLowerCase()}`
                       : "Choose a plan";
   const primaryAction = billing.isPro
     ? () => router.replace("/(tabs)/pro")
@@ -237,7 +275,13 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
                     accessibilityLabel={`${plan.title}, ${plan.offer.price}, ${plan.cadence}${plan.savings ? `, save ${plan.savings} percent versus monthly` : ""}`}
                     accessibilityState={{ checked: active, disabled: busy || billing.loading }}
                     disabled={busy || billing.loading}
-                    onPress={() => setSelection(plan.offer.id)}
+                    onPress={() => {
+                      setSelection(plan.offer.id);
+                      trackEvent("paywall_plan_selected", {
+                        source,
+                        plan: plan.title.toLowerCase().replace(/[^a-z_]/g, "_"),
+                      });
+                    }}
                     className={`overflow-hidden rounded-[20px] border-2 ${active ? "border-brand bg-[#171C12]" : "border-[#202020] bg-[#191919]"}`}
                     style={{ width: cardWidth }}
                   >
@@ -272,6 +316,11 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
                       <Txt className="mt-1 text-center text-[10px] leading-4 text-muted">
                         {plan.cadence}
                       </Txt>
+                      {plan.monthlyEquivalent && (
+                        <Txt className="mt-1 text-center text-xs leading-4 text-brand">
+                          {plan.monthlyEquivalent} / month equivalent
+                        </Txt>
+                      )}
                     </View>
                   </Pressable>
                 );
@@ -309,6 +358,62 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
           <Txt className="mb-3 text-center text-[10px] leading-4 text-muted">
             {chosen.offer.intro} Then {chosen.offer.price} / {chosen.offer.period}.
           </Txt>
+        )}
+        {trial && !billing.isPro && !billing.pendingActivation && (
+          <View className="mb-3 rounded-2xl bg-white/5 p-3">
+            <Txt className="text-xs leading-5">
+              Today: full Pro access · Day 5:{" "}
+              {reminder ? "device reminder enabled" : "optional device reminder"} · Day 7:{" "}
+              {chosen.offer.price} / {chosen.offer.period}, then auto-renews.
+            </Txt>
+            <Pressable
+              accessibilityRole="checkbox"
+              accessibilityState={{ checked: reminder, disabled: busy }}
+              disabled={busy}
+              className="min-h-11 flex-row items-center gap-2"
+              onPress={() => {
+                if (locked.current || billing.busy) return;
+                if (reminder) {
+                  setReminder(false);
+                  return;
+                }
+                locked.current = true;
+                setReminderBusy(true);
+                void requestTrialReminderPermission()
+                  .then((allowed) => {
+                    setReminder(allowed);
+                    if (!allowed)
+                      setNotice({
+                        error: false,
+                        text: "Notifications are off. Set a reminder yourself before the trial ends; you can still start the trial.",
+                      });
+                  })
+                  .catch(() =>
+                    setNotice({
+                      error: false,
+                      text: "Could not enable the device reminder. Set a reminder yourself before the trial ends.",
+                    }),
+                  )
+                  .finally(() => {
+                    locked.current = false;
+                    setReminderBusy(false);
+                  });
+              }}
+            >
+              <MaterialCommunityIcons
+                name={reminder ? "checkbox-marked" : "checkbox-blank-outline"}
+                color={C.brand}
+                size={21}
+              />
+              <Txt className="flex-1 text-xs text-brand">
+                {reminderBusy ? "Checking notifications…" : "Remind me two days before billing"}
+              </Txt>
+            </Pressable>
+            <Txt className="text-[10px] leading-4 text-muted">
+              Cancel in Google Play before Day 7 to avoid billing. Device reminders depend on
+              notification settings.
+            </Txt>
+          </View>
         )}
         {notice && (
           <View accessibilityLiveRegion="polite" className="mb-3 rounded-xl bg-white/5 p-3">
@@ -354,7 +459,7 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
             ? "Your training. A level deeper."
             : chosen?.oneTime
               ? "Pay once. No automatic renewal."
-              : "Cancel renewal anytime through your store."}
+              : "Cancel renewal anytime through Google Play. Logging stays free forever."}
         </Txt>
       </View>
     </View>
@@ -363,7 +468,7 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
   return (
     <ScreenEntrance className="flex-1 bg-bg">
       <View className="w-full max-w-[640px] self-center flex-row items-center justify-between px-4 py-2">
-        <View className="h-11 w-11" />
+        <TextAction label="Restore" disabled={busy} onPress={restore} />
         <View className="flex-row items-center gap-2">
           <Txt weight="semibold" className="text-[22px] tracking-[-0.5px]">
             FITSYNC
@@ -400,10 +505,33 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
               weight="semibold"
               className="text-center text-[28px] leading-[38px] tracking-[-0.9px]"
             >
-              Get more out of{"\n"}every workout.
+              {source === "weekly_review"
+                ? "Turn this week’s work into next week’s plan."
+                : source === "missed_session"
+                  ? "Missed a session? Pro moves your plan for you."
+                  : "Know exactly what to lift next session."}
             </Txt>
             <Txt className="mt-3 px-3 text-center text-[12px] leading-6 text-muted">
-              Your effort deserves the full picture.
+              Targets from your recorded working sets. Rule-based plans you review and control.
+            </Txt>
+            <View className="mt-4 gap-3">
+              {[
+                ["trending-up", "Go in with your next working-set targets."],
+                ["calendar-sync-outline", "Move a missed session with one confirmation."],
+                ["chart-timeline-variant", "Know what your week’s training tells you."],
+              ].map(([icon, text]) => (
+                <View key={text} className="flex-row items-center gap-3">
+                  <MaterialCommunityIcons
+                    name={icon as React.ComponentProps<typeof MaterialCommunityIcons>["name"]}
+                    color={C.brand}
+                    size={20}
+                  />
+                  <Txt className="flex-1 text-sm leading-5">{text}</Txt>
+                </View>
+              ))}
+            </View>
+            <Txt className="mt-4 text-center text-xs text-brand">
+              Workout logging stays free forever.
             </Txt>
           </View>
           {billing.isPro && (
@@ -426,6 +554,7 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
               />
             </View>
           )}
+          {!billing.isPro && <PaywallEvidence source={source} />}
           {billing.loading && (
             <View
               accessibilityLiveRegion="polite"
@@ -435,24 +564,30 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
               <Txt className="text-[11px] text-muted">Checking your membership…</Txt>
             </View>
           )}
-          {PRO_BENEFITS.map((benefit) => (
-            <View
-              key={benefit.title}
-              className="min-h-[154px] flex-row items-center gap-5 border-b border-white/10 py-7"
-            >
-              <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
-                <ProFeatureArt kind={benefit.art} width={width < 360 ? 88 : 110} />
+          {inlineDock && dock}
+          <View style={{ marginTop: Math.max(32, height - dockHeight - 440) }}>
+            <Txt weight="semibold" className="mt-6 text-xl">
+              Everything included in Pro
+            </Txt>
+            {PRO_BENEFITS.map((benefit) => (
+              <View
+                key={benefit.title}
+                className="min-h-[154px] flex-row items-center gap-5 border-b border-white/10 py-7"
+              >
+                <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
+                  <ProFeatureArt kind={benefit.art} width={width < 360 ? 88 : 110} />
+                </View>
+                <View className="min-w-0 flex-1">
+                  <Txt weight="medium" className="text-[16px] leading-6 tracking-[-0.3px]">
+                    {benefit.title}
+                  </Txt>
+                  <Txt className="mt-1.5 text-[13px] leading-[22px] text-muted">
+                    {benefit.description}
+                  </Txt>
+                </View>
               </View>
-              <View className="min-w-0 flex-1">
-                <Txt weight="medium" className="text-[16px] leading-6 tracking-[-0.3px]">
-                  {benefit.title}
-                </Txt>
-                <Txt className="mt-1.5 text-[13px] leading-[22px] text-muted">
-                  {benefit.description}
-                </Txt>
-              </View>
-            </View>
-          ))}
+            ))}
+          </View>
 
           <View className="py-10">
             <Txt weight="medium" className="text-center text-[22px] leading-8 tracking-[-0.5px]">
@@ -589,7 +724,6 @@ function ProMarketingPage({ embedded }: { embedded: boolean }) {
             </View>
           </View>
         </View>
-        {inlineDock && dock}
       </ScrollView>
       {!inlineDock && dock}
     </ScreenEntrance>

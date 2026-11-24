@@ -23,6 +23,7 @@ import {
 import { revenueCatKey, storeSession } from "./native";
 
 import { makeOffers, type BillingOffer } from "./offers";
+import { setTrialReminderOwner, syncTrialReminder } from "./trial-reminders";
 export type { BillingOffer } from "./offers";
 type BillingContextValue = {
   isPro: boolean;
@@ -36,7 +37,10 @@ type BillingContextValue = {
   storeError: string | null;
   pendingActivation: boolean;
   refresh: () => Promise<void>;
-  purchase: (id: string) => Promise<"active" | "pending" | "cancelled">;
+  purchase: (
+    id: string,
+    options?: { trialReminder: boolean },
+  ) => Promise<"active" | "pending" | "cancelled">;
   restore: () => Promise<"active" | "none" | "pending">;
   manage: () => Promise<void>;
 };
@@ -63,8 +67,10 @@ function BillingAccountProvider({
   const identity = useRef(userId);
   useLayoutEffect(() => {
     identity.current = userId;
+    void setTrialReminderOwner(userId).catch(() => undefined);
     return () => {
       identity.current = null;
+      void setTrialReminderOwner(null).catch(() => undefined);
     };
   }, [userId]);
   const [snapshot, setSnapshot] = useState<{ userId: string; status: BillingStatus } | null>(null);
@@ -116,6 +122,13 @@ function BillingAccountProvider({
         ? null
         : "Plans are not available from the store right now. You can still restore an existing purchase.",
     );
+    // Reconcile cancellation/expiry without ever asking for notification permission here.
+    void storeSession
+      .withUser(id, (sdk) => sdk.getCustomerInfo())
+      .then((info) => {
+        if (alive(id)) return syncTrialReminder(id, info);
+      })
+      .catch(() => undefined);
   }, []);
 
   const refresh = useCallback(async () => {
@@ -165,8 +178,15 @@ function BillingAccountProvider({
 
   useEffect(() => {
     const subscription = AppState.addEventListener("change", (state) => {
-      if (state === "active" && userId && !locked.current)
+      if (state === "active" && userId && !locked.current) {
         void getStatus(userId, true).catch(() => undefined);
+        void storeSession
+          .withUser(userId, (sdk) => sdk.getCustomerInfo())
+          .then((info) => {
+            if (alive(userId)) return syncTrialReminder(userId, info);
+          })
+          .catch(() => undefined);
+      }
     });
     return () => subscription.remove();
   }, [getStatus, userId]);
@@ -195,7 +215,7 @@ function BillingAccountProvider({
   );
 
   const purchase = useCallback(
-    async (id: string) => {
+    async (id: string, options?: { trialReminder: boolean }) => {
       if (!userId || !alive(userId)) throw new Error("Sign in to subscribe.");
       if (locked.current) throw new Error("A store request is already in progress.");
       const offer = offers.find((item) => item.id === id);
@@ -203,8 +223,15 @@ function BillingAccountProvider({
       locked.current = true;
       setBusy(true);
       try {
-        await storeSession.withUser(userId, (sdk) => sdk.purchasePackage(offer.package));
+        const result = await storeSession.withUser(userId, (sdk) =>
+          sdk.purchasePackage(offer.package),
+        );
         if (!alive(userId)) return "pending" as const;
+        if (result?.customerInfo)
+          await syncTrialReminder(userId, result.customerInfo, {
+            productId: offer.package.product.identifier,
+            enabled: offer.trialDays === 7 && options?.trialReminder === true,
+          }).catch(() => undefined);
         // Never report a completed store purchase as failed because our server
         // is briefly offline or the receipt has not propagated yet.
         return await verifyPurchase(userId);
@@ -227,6 +254,7 @@ function BillingAccountProvider({
     try {
       const info = await storeSession.withUser(userId, (sdk) => sdk.restorePurchases());
       if (!alive(userId)) return "pending" as const;
+      await syncTrialReminder(userId, info).catch(() => undefined);
       const result = await verifyPurchase(userId);
       if (result === "active") return result;
       // An empty restore is different from an unverified active receipt.

@@ -9,6 +9,7 @@ function setup({
   afterPrompt = granted,
   previous = null,
   token = "ExpoPushToken[new]",
+  onToken,
 } = {}) {
   const calls = [];
   const storage = new Map();
@@ -31,6 +32,7 @@ function setup({
       },
       getExpoPushTokenAsync: async (options) => {
         calls.push(["token", options]);
+        onToken?.();
         return { data: token };
       },
     },
@@ -80,8 +82,8 @@ test("background refresh never prompts; an explicit opt-in requests permission b
   assert.ok(general, "General notification channel must exist");
   assert.ok(program, "Program reminder channel must exist");
 
-  assert.equal(general[2].sound, "default");
-  assert.equal(program[2].sound, "default");
+  assert.equal(Object.hasOwn(general[2], "sound"), false);
+  assert.equal(Object.hasOwn(program[2], "sound"), false);
 });
 test("denied permission unregisters a previously stored device and provides a useful error", async () => {
   const state = setup({ granted: false, previous: "ExpoPushToken[old]" });
@@ -116,4 +118,17 @@ test("notification links accept only program UUID payloads", () => {
     { type: "program-reminder", enrollmentId: "../settings" },
   ])
     assert.equal(api.notificationProgramId(data), null);
+});
+
+test("native token events raised while registering reuse the current registration", async () => {
+  let state;
+  state = setup({
+    onToken: () => {
+      void state.api.registerProgramNotifications();
+    },
+  });
+  await state.api.registerProgramNotifications();
+  await new Promise((resolve) => setImmediate(resolve));
+  assert.equal(state.calls.filter((call) => call[0] === "token").length, 1);
+  assert.equal(state.calls.filter((call) => call[0] === "register").length, 1);
 });

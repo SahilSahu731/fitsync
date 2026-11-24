@@ -15,16 +15,20 @@ import { WorkoutSyncNotice } from "@/src/features/workouts/components/workout-sy
 import { StartWorkoutDialog } from "@/src/features/workouts/components/start-workout-dialog";
 import { HomeWorkoutCard, type HomeWorkoutCardHandle } from "@/src/features/home/workout-card";
 import { HomeTopBar } from "@/src/features/home/top-bar";
+import { HomeOnboardingWelcome } from "@/src/components/onboarding/home-welcome";
 import { HomeReminderSheet } from "@/src/features/home/reminder-sheet";
-import { HomeQuickLog, HomeEssentials } from "@/src/features/home/quick-access";
+import { HomeEssentials } from "@/src/features/home/quick-access";
 import { useBilling } from "@/src/features/billing/billing-context";
 import { useProgram } from "@/src/features/program-follow/program-context";
 import { DailyOverview } from "@/src/features/home/daily-overview";
+import { HealthDetailSheet } from "@/src/features/home/health-detail-sheet";
+import type { HealthKind } from "@/src/features/home/health-model";
 import { WeekOverview } from "@/src/features/home/week-overview";
 import { homeSnapshot } from "@/src/features/home/model";
 
 import { HomeHeroCarousel } from "@/src/features/home/hero-carousel";
 import { ProPromoCard } from "@/src/features/home/pro-promo-card";
+import { HomeUpgradeMoments } from "@/src/features/billing/experience-moments";
 import { StreakCard, computeStreak } from "@/src/features/home/streak-card";
 
 export default function HomeScreen() {
@@ -35,6 +39,9 @@ export default function HomeScreen() {
   const program = useProgram();
   const progress = useProgress();
   const ownerId = user?.id ?? "";
+  const [detail, setDetail] = useState<{ ownerId: string; kind: HealthKind; date?: string } | null>(
+    null,
+  );
   const [remindersOwner, setRemindersOwner] = useState<string | null>(null);
   const [clock, setClock] = useState(() => new Date());
   const [startOwner, setStartOwner] = useState<string | null>(null);
@@ -79,8 +86,8 @@ export default function HomeScreen() {
   const unavailable = progress.loading || Boolean(progress.storageError);
   const waterBusy = Boolean(ownerId) && waterOwners.includes(ownerId);
   const trainingBlocked = workout.busy || workout.loading || workout.pendingCompletion;
-  const openLog = (metric: Metric, picker = false) => {
-    if (canLog) setEditor({ ownerId, metric, date: today, picker });
+  const openLog = (metric: Metric, picker = false, date = today) => {
+    if (canLog) setEditor({ ownerId, metric, date, picker });
   };
   async function refresh() {
     setRefreshing(true);
@@ -117,10 +124,6 @@ export default function HomeScreen() {
     if (!ownerId) return;
     if (workout.session) router.push("/workout");
     else if (!trainingBlocked) setStartOwner(ownerId);
-  }
-  function openFood() {
-    if (billing.isPro) router.push({ pathname: "/nutrition", params: { date: today } });
-    else openLog("caloriesIn");
   }
 
   return (
@@ -181,26 +184,29 @@ export default function HomeScreen() {
               <ProPromoCard
                 key="pro"
                 isPro={billing.isPro}
-                onPress={() => router.push("/(tabs)/pro")}
+                onPress={() => router.push({ pathname: "/(tabs)/pro", params: { source: "home" } })}
               />,
             ]}
           />
         </View>
-        <View className="mb-7 mt-6">
-          <SectionHeading
-            title="Quick log"
-            action="Progress"
-            onAction={() => router.push("/(tabs)/progress")}
-          />
-          <HomeQuickLog
-            disabled={!canLog}
-            onWater={() => openLog("water")}
-            onSteps={() => openLog("steps")}
-            onFood={openFood}
-            onMore={() => openLog("weight", true)}
-          />
-        </View>
-
+        <HomeUpgradeMoments
+          key={`moments:${ownerId}`}
+          history={progress.journal.workouts}
+          today={today}
+          ready={
+            !billing.loading &&
+            !progress.loading &&
+            !progress.refreshing &&
+            !progress.workoutError &&
+            !progress.storageError &&
+            !workout.session &&
+            !workout.pendingCompletion &&
+            !editor &&
+            !startOwner &&
+            !remindersOwner &&
+            !detail
+          }
+        />
         {!!syncIssue && (
           <Pressable
             accessibilityRole="button"
@@ -219,9 +225,9 @@ export default function HomeScreen() {
             <MaterialCommunityIcons name="refresh" size={19} color="#FFFFFF" />
           </Pressable>
         )}
-        <ScreenEntrance delay={100}>
+        <ScreenEntrance delay={100} className="mt-6">
           <SectionHeading
-            title="Today at a glance"
+            title="Your daily rhythm"
             action="All progress"
             onAction={() => router.push("/(tabs)/progress")}
           />
@@ -232,10 +238,11 @@ export default function HomeScreen() {
             unit={unit}
             loading={unavailable}
             disabled={!canLog}
-            waterBusy={waterBusy}
-            onLog={openLog}
-            onWater={() => void addWater()}
-            onNutrition={() => router.push({ pathname: "/nutrition", params: { date: today } })}
+            onOpen={(kind) => {
+              if (!canLog) return;
+              setNotice(null);
+              setDetail({ ownerId, kind });
+            }}
           />
           {notice?.ownerId === ownerId && (
             <View
@@ -360,6 +367,60 @@ export default function HomeScreen() {
           <HomeEssentials onNavigate={(route) => router.push(route)} />
         </ScreenEntrance>
       </TabScrollView>
+      <HomeOnboardingWelcome
+        key={`onboarding-welcome:${ownerId}`}
+        ownerId={ownerId}
+        blocked={
+          workout.loading ||
+          progress.loading ||
+          Boolean(
+            workout.session ||
+            workout.pendingCompletion ||
+            editor?.ownerId === ownerId ||
+            startOwner === ownerId ||
+            remindersOwner === ownerId,
+          )
+        }
+      />
+      {detail?.ownerId === ownerId &&
+        editor?.ownerId !== ownerId &&
+        startOwner !== ownerId &&
+        remindersOwner !== ownerId && (
+          <HealthDetailSheet
+            key={`health-detail:${ownerId}:${detail.kind}`}
+            kind={detail.kind}
+            initialDate={detail.date}
+            snapshot={snapshot}
+            today={today}
+            goals={progress.goals}
+            unit={unit}
+            isPro={billing.isPro}
+            waterBusy={waterBusy}
+            activeWorkout={Boolean(workout.session)}
+            workoutBlocked={Boolean(trainingBlocked)}
+            message={notice?.ownerId === ownerId ? notice.text : undefined}
+            onClose={() => setDetail(null)}
+            onLog={(metric, date) => {
+              setDetail((current) =>
+                current?.ownerId === ownerId ? { ...current, date } : current,
+              );
+              openLog(metric, false, date);
+            }}
+            onWater={() => void addWater()}
+            onFood={(date) => {
+              setDetail(null);
+              router.push({ pathname: "/nutrition", params: { date } });
+            }}
+            onWorkout={() => {
+              setDetail(null);
+              openTraining();
+            }}
+            onGoals={() => {
+              setDetail(null);
+              router.push("/goals");
+            }}
+          />
+        )}
       {remindersOwner === ownerId && Boolean(ownerId) && (
         <HomeReminderSheet
           key={`home-reminders:${ownerId}`}

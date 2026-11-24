@@ -1,3 +1,4 @@
+import * as weightUnits from "../src/lib/weight.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -24,6 +25,11 @@ function load(file, dependencies = {}, globals = {}) {
     console,
     ...globals,
     require: (name) => {
+      if (name === "@/src/lib/weight") return weightUnits;
+      if (name === "@/src/services/telemetry" || name === "./telemetry")
+        return { trackEvent() {}, recordError() {} };
+      if (name === "@/src/components/health-disclaimer") return { HealthDisclaimer: () => null };
+
       if (!(name in dependencies)) throw new Error(`Unexpected dependency ${name}`);
       return dependencies[name];
     },
@@ -154,34 +160,19 @@ const response = (body, status = 200) =>
 
 test("API handles invalid JSON and empty responses correctly", async () => {
   // A successful response containing invalid JSON must fail.
-  const invalid = authFixture(async () =>
-    new Response("not valid JSON", { status: 200 }),
-  );
+  const invalid = authFixture(async () => new Response("not valid JSON", { status: 200 }));
 
-  await assert.rejects(
-    invalid.api.apiRequest("/probe"),
-    (error) => error.status === 502,
-  );
+  await assert.rejects(invalid.api.apiRequest("/probe"), (error) => error.status === 502);
 
   // HTTP 204 is allowed to contain no response body.
-  const empty = authFixture(async () =>
-    new Response(null, { status: 204 }),
-  );
+  const empty = authFixture(async () => new Response(null, { status: 204 }));
 
-  assert.equal(
-    await empty.api.apiRequest("/probe"),
-    undefined,
-  );
+  assert.equal(await empty.api.apiRequest("/probe"), undefined);
 
   // Invalid JSON must not hide the original HTTP 400 status.
-  const failed = authFixture(async () =>
-    new Response("invalid JSON", { status: 400 }),
-  );
+  const failed = authFixture(async () => new Response("invalid JSON", { status: 400 }));
 
-  await assert.rejects(
-    failed.api.apiRequest("/probe"),
-    (error) => error.status === 400,
-  );
+  await assert.rejects(failed.api.apiRequest("/probe"), (error) => error.status === 400);
 });
 
 test("an old account refresh response cannot overwrite a newer login or retry the old operation", async () => {
@@ -534,3 +525,40 @@ test("a repeated successful completion preserves its original completion time wi
   assert.equal(result.elapsed_seconds, 1800);
   assert.equal(fixture.updates(), 0);
 });
+
+for (const status of [500, 429]) {
+  test(`session recovery backs off after ${status} without erasing credentials`, async () => {
+    const fixture = authFixture(async (url) =>
+      url.endsWith("/auth/refresh")
+        ? new Response(JSON.stringify({ message: "Unavailable" }), {
+            status,
+            headers: { "Retry-After": "120", "Content-Type": "application/json" },
+          })
+        : response({}, 401),
+    );
+    await fixture.api.storeSessionTokens({
+      accessToken: "old-access",
+      refreshToken: "saved-refresh",
+    });
+    for (let i = 0; i < 5; i++) {
+      await assert.rejects(
+        fixture.api.apiRequest("/program-follow/devices"),
+        (error) => error.status === status,
+      );
+    }
+    assert.equal(
+      fixture.requests.filter((request) => request.url.endsWith("/auth/refresh")).length,
+      1,
+    );
+    assert.equal(fixture.storage.get("fitsync.refresh-token.v1"), "saved-refresh");
+    await fixture.api.storeSessionTokens({
+      accessToken: "new-access",
+      refreshToken: "new-refresh",
+    });
+    await assert.rejects(fixture.api.refreshAccessToken(), (error) => error.status === status);
+    assert.equal(
+      fixture.requests.filter((request) => request.url.endsWith("/auth/refresh")).length,
+      2,
+    );
+  });
+}

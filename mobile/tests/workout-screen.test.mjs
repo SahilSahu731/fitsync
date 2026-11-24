@@ -1,3 +1,4 @@
+import * as weightUnits from "../src/lib/weight.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -160,6 +161,13 @@ function screen({ completed = false, busy = false, isPro = true } = {}) {
     clearInterval() {},
     requestAnimationFrame: (callback) => frames.push(callback),
     require(name) {
+      if (name === "@/src/lib/weight") return weightUnits;
+      if (name === "@/src/services/telemetry" || name === "./telemetry")
+        return { trackEvent() {}, recordError() {} };
+      if (name === "@/src/components/health-disclaimer") return { HealthDisclaimer: () => null };
+      if (name === "@/src/context/session")
+        return { useSession: () => ({ settings: { weightUnit: "kg" } }) };
+
       assert.ok(name in deps, `Unexpected dependency ${name}`);
       return deps[name];
     },
@@ -268,7 +276,7 @@ test("phone and watch next-set guidance follows the shared focused exercise", ()
   );
 });
 
-test("Pro working-set guidance receives canonical history and superset session state, and expires immediately", () => {
+test("free and Pro working-set hints receive canonical history and superset session state", () => {
   const app = screen();
   let card = find(app.render(), (node) => node.type === "ExerciseCard");
   assert.equal(card.props.history, app.progress.journal.workouts);
@@ -277,12 +285,12 @@ test("Pro working-set guidance receives canonical history and superset session s
   assert.equal(card.props.today, "2026-11-14");
   app.billing.isPro = false;
   card = find(app.render(), (node) => node.type === "ExerciseCard");
-  assert.equal(card.props.history, undefined);
+  assert.equal(card.props.history, app.progress.journal.workouts);
   assert.equal(card.props.sessionExercises[0], app.session.workout_session_exercises[0]);
   const free = screen({ isPro: false });
   assert.equal(
     find(free.render(), (node) => node.type === "ExerciseCard").props.history,
-    undefined,
+    free.progress.journal.workouts,
   );
 });
 

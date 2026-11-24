@@ -33,6 +33,13 @@ test("EAS release builds require HTTPS API and legal destinations", () => {
     "EXPO_PUBLIC_WEB_URL",
     "EXPO_PUBLIC_PRIVACY_URL",
     "EXPO_PUBLIC_TERMS_URL",
+    "EXPO_PUBLIC_POSTHOG_KEY",
+    "EXPO_PUBLIC_POSTHOG_HOST",
+    "EXPO_PUBLIC_SENTRY_DSN",
+    "SENTRY_ORG",
+    "SENTRY_PROJECT",
+    "SENTRY_AUTH_TOKEN",
+    "EXPO_PUBLIC_TELEMETRY_DEBUG",
   ];
   const original = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
   try {
@@ -44,6 +51,15 @@ test("EAS release builds require HTTPS API and legal destinations", () => {
     process.env.EXPO_PUBLIC_WEB_URL = "https://www.example.test";
     assert.throws(() => resolveConfig({ config }), /require HTTPS/);
     process.env.EXPO_PUBLIC_API_URL = "https://api.example.test";
+    assert.throws(() => resolveConfig({ config }), /require PostHog/);
+    Object.assign(process.env, {
+      EXPO_PUBLIC_POSTHOG_KEY: "phc_test",
+      EXPO_PUBLIC_POSTHOG_HOST: "https://us.i.posthog.com",
+      EXPO_PUBLIC_SENTRY_DSN: "https://publickey@sentry.example.test/42",
+      SENTRY_ORG: "test",
+      SENTRY_PROJECT: "fitsync",
+      SENTRY_AUTH_TOKEN: "test-token-not-real",
+    });
     const resolved = resolveConfig({ config });
     const privacy = resolved.plugins.find(
       (p) => Array.isArray(p) && p[0] === "./plugins/with-health-privacy",
@@ -51,7 +67,9 @@ test("EAS release builds require HTTPS API and legal destinations", () => {
     assert.equal(privacy[1].privacyUrl, "https://www.example.test/privacy");
     process.env.EXPO_PUBLIC_PRIVACY_URL = "https://legal.example.test/policy";
     assert.equal(
-      resolveConfig({ config }).plugins.at(-1)[1].privacyUrl,
+      resolveConfig({ config }).plugins.find(
+        (p) => Array.isArray(p) && p[0] === "./plugins/with-health-privacy",
+      )[1].privacyUrl,
       "https://legal.example.test/policy",
     );
   } finally {

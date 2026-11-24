@@ -413,3 +413,60 @@ test("monthly reports use local calendar days, exclude warmup/assistance volume,
   );
   assert.match(report.text, /not verified all-time personal records/);
 });
+
+test("only validated workout-only reminder records bypass the Pro guard", async () => {
+  const { default: router } = await import("../src/modules/companion/companion.routes.js");
+  const route = router.stack.find(
+    (layer) => layer.route?.path === "/records/:id" && layer.route.methods.put,
+  );
+  assert.ok(route?.route);
+  const authorize = route.route.stack[0].handle;
+  const data = {
+    enabled: true,
+    time: "18:00",
+    days: [1, 3, 5],
+    quietStart: "22:00",
+    quietEnd: "08:00",
+    snoozeMinutes: 30,
+    timezone: "Asia/Kolkata",
+  };
+  async function check(id: string, value: unknown) {
+    let called = false,
+      failure: unknown;
+    // The parent router authenticates first. An absent session here makes any
+    // accidental delegation to the Pro guard fail without a network request.
+    await authorize({ params: { id }, body: value } as never, {} as never, (error?: unknown) => {
+      called = true;
+      failure = error;
+    });
+    assert.equal(called, true);
+    return failure;
+  }
+  const body = { kind: "reminders", expectedRevision: 0, data };
+  assert.equal(await check("reminders", body), undefined);
+  assert.equal(
+    await check("reminders", {
+      ...body,
+      data: { ...data, habits: { hydration: { enabled: false, time: "15:00" } } },
+    }),
+    undefined,
+  );
+  for (const kind of ["hydration", "meals", "sleep"]) {
+    assert.ok(
+      await check("reminders", {
+        ...body,
+        data: { ...data, habits: { [kind]: { enabled: true, time: "15:00" } } },
+      }),
+    );
+  }
+  assert.ok(await check("other", body));
+  assert.ok(await check("reminders", { ...body, data: { ...data, days: [] } }));
+  assert.ok(
+    await check("reminders", {
+      kind: "readiness",
+      expectedRevision: 0,
+      date: "2026-11-24",
+      data: { energy: 3 },
+    }),
+  );
+});

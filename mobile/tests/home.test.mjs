@@ -221,6 +221,7 @@ function homeFixture({ isPro = false, loading = false, storageError = "", increm
     "@/src/constants/theme": { C: { brand: "white", ink: "white", muted: "gray" } },
     "@/src/context/session": { useSession: () => session },
     "@/src/features/billing/billing-context": { useBilling: () => billing },
+    "@/src/features/billing/experience-moments": { HomeUpgradeMoments: "HomeUpgradeMoments" },
     "@/src/features/progress/home-goals": { HomeGoals: "HomeGoals" },
     "@/src/features/progress/use-progress": { useProgress: () => progress },
     "@/src/features/progress/model": progressModel,
@@ -240,9 +241,11 @@ function homeFixture({ isPro = false, loading = false, storageError = "", increm
     "@/src/features/companion/today-card": { TodayForYouCard: "TodayForYouCard" },
     "@/src/features/program-follow/program-context": { useProgram: () => program },
     "@/src/features/home/daily-overview": { DailyOverview: "DailyOverview" },
+    "@/src/features/home/health-detail-sheet": { HealthDetailSheet: "HealthDetailSheet" },
     "@/src/features/home/week-overview": { WeekOverview: "WeekOverview" },
     "@/src/features/home/workout-card": { HomeWorkoutCard: "HomeWorkoutCard" },
     "@/src/features/home/top-bar": { HomeTopBar: "HomeTopBar" },
+    "@/src/components/onboarding/home-welcome": { HomeOnboardingWelcome: "HomeOnboardingWelcome" },
     "@/src/features/home/reminder-sheet": { HomeReminderSheet: "HomeReminderSheet" },
     "@/src/features/home/quick-access": {
       HomeQuickLog: "HomeQuickLog", HomeEssentials: "HomeEssentials",
@@ -418,46 +421,47 @@ test("Home closes reminders when the account changes", () => {
   assert.equal(nodes(ui.render(), (n) => n.type === "HomeReminderSheet").length, 0);
 });
 
-test("Home logging supports free nutrition and Pro food diary", async () => {
+test("Home health cards open details before logging, with free totals and Pro diary access", async () => {
   const ui = homeFixture();
-  component(ui.render(), "HomeQuickLog").props.onSteps();
-
+  assert.equal(nodes(ui.render(), (n) => n.type === "HomeQuickLog").length, 0);
+  component(ui.render(), "DailyOverview").props.onOpen("steps");
+  let detail = component(ui.render(), "HealthDetailSheet").props;
+  assert.equal(detail.kind, "steps");
+  assert.equal(nodes(ui.render(), (n) => n.type === "MetricEditor").length, 0);
+  detail.onLog("steps", "2026-11-17");
   let editor = component(ui.render(), "MetricEditor").props;
   assert.equal(editor.initialMetric, "steps");
-  assert.equal(editor.date, "2026-11-18");
-
+  assert.equal(editor.date, "2026-11-17");
+  assert.equal(nodes(ui.render(), (n) => n.type === "HealthDetailSheet").length, 0);
   await editor.onSave("steps", editor.date, 0, "Rest day");
-  assert.deepEqual(ui.calls.logs, [["steps", "2026-11-18", 0, "Rest day"]]);
-
+  assert.deepEqual(ui.calls.logs, [["steps", "2026-11-17", 0, "Rest day"]]);
   editor.onClose();
-  component(ui.render(), "HomeQuickLog").props.onFood();
+  assert.equal(component(ui.render(), "HealthDetailSheet").props.initialDate, "2026-11-17");
+  component(ui.render(), "HealthDetailSheet").props.onClose();
+  component(ui.render(), "DailyOverview").props.onOpen("nutrition");
+  detail = component(ui.render(), "HealthDetailSheet").props;
+  assert.equal(detail.isPro, false);
+  detail.onLog("caloriesIn", "2026-11-18");
   editor = component(ui.render(), "MetricEditor").props;
-
   assert.equal(editor.initialMetric, "caloriesIn");
   editor.onClose();
-
   ui.billing.isPro = true;
-  component(ui.render(), "HomeQuickLog").props.onFood();
-
+  component(ui.render(), "HealthDetailSheet").props.onFood("2026-11-17");
   assert.equal(ui.calls.routes.at(-1).pathname, "/nutrition");
-  assert.equal(ui.calls.routes.at(-1).params.date, "2026-11-18");
+  assert.equal(ui.calls.routes.at(-1).params.date, "2026-11-17");
 });
 
-test("Home blocks logging before data loads and clears dialogs across accounts", () => {
+test("Home blocks unavailable data and clears health details and editors across accounts", () => {
   const ui = homeFixture({ loading: true });
-
-  assert.equal(component(ui.render(), "HomeQuickLog").props.disabled, true);
-  component(ui.render(), "HomeQuickLog").props.onWater();
-  assert.equal(nodes(ui.render(), (n) => n.type === "MetricEditor").length, 0);
-
+  assert.equal(component(ui.render(), "DailyOverview").props.disabled, true);
+  component(ui.render(), "DailyOverview").props.onOpen("water");
+  assert.equal(nodes(ui.render(), (n) => n.type === "HealthDetailSheet").length, 0);
   ui.progress.loading = false;
-  component(ui.render(), "HomeQuickLog").props.onMore();
-  assert.equal(component(ui.render(), "MetricEditor").props.startWithPicker, true);
-
+  component(ui.render(), "DailyOverview").props.onOpen("weight");
+  component(ui.render(), "HealthDetailSheet").props.onLog("weight", "2026-11-18");
+  assert.equal(component(ui.render(), "MetricEditor").props.initialMetric, "weight");
   ui.session.user = { id: "bob", name: "Bob" };
-  assert.equal(nodes(ui.render(), (n) => n.type === "MetricEditor").length, 0);
-  assert.equal(nodes(ui.render(), (n) => n.type === "Sheet").length, 0);
-
+  assert.equal(nodes(ui.render(), (n) => n.type === "MetricEditor" || n.type === "HealthDetailSheet").length, 0);
   ui.progress.storageError = "Storage unavailable";
   assert.equal(component(ui.render(), "DailyOverview").props.disabled, true);
 });
@@ -468,25 +472,28 @@ test("Water quick-add prevents duplicates and protects account switches", async 
     increment: () => new Promise((resolve) => pending.push(resolve)),
   });
 
-  const add = component(ui.render(), "DailyOverview").props.onWater;
+  component(ui.render(), "DailyOverview").props.onOpen("water");
+  const add = component(ui.render(), "HealthDetailSheet").props.onWater;
   add();
   add();
 
   assert.equal(ui.calls.water.length, 1);
-  assert.equal(component(ui.render(), "DailyOverview").props.waterBusy, true);
+  assert.equal(component(ui.render(), "HealthDetailSheet").props.waterBusy, true);
 
   ui.session.user = { id: "bob", name: "Bob" };
-  component(ui.render(), "DailyOverview").props.onWater();
+  component(ui.render(), "DailyOverview").props.onOpen("water");
+  component(ui.render(), "HealthDetailSheet").props.onWater();
   assert.equal(ui.calls.water.length, 2);
 
   ui.session.user = { id: "alice", name: "Alex" };
-  component(ui.render(), "DailyOverview").props.onWater();
+  component(ui.render(), "DailyOverview").props.onOpen("water");
+  component(ui.render(), "HealthDetailSheet").props.onWater();
   assert.equal(ui.calls.water.length, 2);
 
   pending[0]();
   await settle();
 
-  assert.equal(component(ui.render(), "DailyOverview").props.waterBusy, false);
+  assert.equal(component(ui.render(), "HealthDetailSheet").props.waterBusy, false);
   assert.match(text(ui.render()), /250 ml added/);
 
   pending[1]();
@@ -506,14 +513,15 @@ test("A failed water save shows failure and allows retry", async () => {
     },
   });
 
-  component(ui.render(), "DailyOverview").props.onWater();
+  component(ui.render(), "DailyOverview").props.onOpen("water");
+  component(ui.render(), "HealthDetailSheet").props.onWater();
   await settle();
 
   assert.match(text(ui.render()), /Could not save water/);
   assert.doesNotMatch(text(ui.render()), /250 ml added/);
-  assert.equal(component(ui.render(), "DailyOverview").props.waterBusy, false);
+  assert.equal(component(ui.render(), "HealthDetailSheet").props.waterBusy, false);
 
-  component(ui.render(), "DailyOverview").props.onWater();
+  component(ui.render(), "HealthDetailSheet").props.onWater();
   await settle();
 
   assert.equal(attempts, 2);

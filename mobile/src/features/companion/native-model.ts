@@ -1,3 +1,4 @@
+import { weightText, type WeightUnit } from "../../lib/weight";
 import type { WorkoutSession, WorkoutSet } from "../workouts/api";
 import { nextWorkoutSet } from "../workouts/session-progress";
 import type { WorkoutControlsSnapshot } from "./native-controls";
@@ -29,6 +30,7 @@ export function workoutControlsSnapshot(
   session: WorkoutSession | null,
   rest: WorkoutControlsSnapshot["rest"],
   focusedId?: string,
+  unit: WeightUnit = "kg",
 ): WorkoutControlsSnapshot | null {
   if (!ownerId || session?.status !== "active") return null;
   const next = nextWorkoutSet(session.workout_session_exercises, focusedId);
@@ -42,7 +44,7 @@ export function workoutControlsSnapshot(
         ? `${set.duration_seconds ?? "—"} sec`
         : exercise.tracking_type === "distance_duration"
           ? `${set.distance_meters ?? "—"} m · ${set.duration_seconds ?? "—"} sec`
-          : `${set.weight_kg ?? (exercise.tracking_type === "reps" ? 0 : "—")} kg × ${set.reps ?? "—"} reps`
+          : `${set.weight_kg == null ? (exercise.tracking_type === "reps" ? "0" : "—") : weightText(set.weight_kg, unit)} ${unit} × ${set.reps ?? "—"} reps`
       : "";
   return {
     ownerId,

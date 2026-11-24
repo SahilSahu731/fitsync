@@ -2,7 +2,8 @@ export const PRO_BENEFITS = [
   {
     art: "trainer",
     title: "A plan that adapts to you",
-    description: "Choose your program, build a personal plan and adapt it around your week.",
+    description:
+      "Build a rule-based training plan around your schedule, then review and accept adjustments.",
   },
   {
     art: "history",
@@ -46,18 +47,19 @@ export type ProArt = (typeof PRO_BENEFITS)[number]["art"];
 export const PRO_COMPARISON: { feature: string; free: string | boolean; pro: string | boolean }[] =
   [
     { feature: "Workout logging", free: "Unlimited", pro: "Unlimited" },
+    { feature: "Previous-session hints", free: true, pro: true },
     { feature: "Saved routines", free: true, pro: true },
     { feature: "Create custom exercises", free: false, pro: true },
     { feature: "Daily health tracking", free: true, pro: true },
     { feature: "Graph history", free: "90 days", pro: "All time" },
     { feature: "Muscle & training insights", free: "Basic", pro: "Advanced" },
     { feature: "Choose a training program", free: false, pro: true },
-    { feature: "Personal training plan", free: false, pro: true },
+    { feature: "Structured training plan", free: false, pro: true },
     { feature: "Plan adjustments & progression", free: false, pro: true },
-    { feature: "Weekly coaching reviews", free: false, pro: true },
+    { feature: "Weekly training reviews", free: false, pro: true },
     { feature: "Warm-up & plate tools", free: false, pro: true },
     { feature: "Weekly meal planning", free: false, pro: true },
-    { feature: "Personal trainer reminders", free: false, pro: true },
+    { feature: "Custom workout reminders", free: false, pro: true },
   ];
 
 export const PRO_FAQS = [
@@ -67,9 +69,9 @@ export const PRO_FAQS = [
       "Pro brings together your choice of training program, personal plans, all-time graph history, advanced muscle insights, custom exercises, progression and weekly reviews, warm-up and plate tools, meal planning, and customizable training, meal, hydration and wind-down reminders. Your workouts, routines and daily tracking remain available on Free, with the latest 90 days of standard graphs.",
   },
   {
-    question: "Is the personal coach a human trainer?",
+    question: "How are training recommendations made?",
     answer:
-      "FitSync’s coaching uses your fitness profile, saved plan and recorded training to build structured recommendations. It is an in-app planning tool, rather than a live personal trainer. You review and accept changes to your plan.",
+      "FitSync uses rules based on your fitness profile, saved plan and recorded training. Recommendations are automated and are not provided by a human trainer. You review and accept changes to your plan.",
   },
   {
     question: "Will my subscription renew automatically?",

@@ -331,34 +331,12 @@ test("Android requests read permissions only and does not query denied record ty
   assert.equal(result.warnings.length, 3);
 });
 
-test("iOS reads daily step statistics, excludes awake/in-bed sleep, and requests no write access", async () => {
-  let request;
+test("Android-only build never loads HealthKit or reads health data on iOS", async () => {
   const adapter = nativeFixture("ios", {
-    isHealthDataAvailable: () => true,
-    requestAuthorization: async (input) => {
-      request = input;
-      return true;
-    },
-    queryStatisticsForQuantity: async () => ({ sumQuantity: { quantity: 100 } }),
-    queryCategorySamples: async () =>
-      [0, 1, 2].map((value, index) => ({
-        value,
-        startDate: new Date(NOW.getTime() - (index + 1) * 3600_000),
-        endDate: new Date(NOW.getTime() - index * 3600_000),
-      })),
-    queryQuantitySamples: async () => [{ startDate: NOW, quantity: 80 }],
-    CategoryValueSleepAnalysis: {
-      asleepUnspecified: 1,
-      asleepCore: 3,
-      asleepDeep: 4,
-      asleepREM: 5,
+    isHealthDataAvailable() {
+      throw Error("must not call HealthKit");
     },
   });
-  await adapter.requestReadAccess();
-  assert.equal(request.toShare.length, 0);
-  assert.equal(request.toRead.length, 3);
-  const result = await adapter.readLastWeek(NOW);
-  assert.equal(result.values.filter((item) => item.metric === "steps").length, 7);
-  assert.equal(result.values.find((item) => item.metric === "sleep").value, 1);
-  assert.equal(result.values.find((item) => item.metric === "weight").value, 80);
+  assert.equal((await adapter.available()).available, false);
+  await assert.rejects(adapter.requestReadAccess(), /not available/);
 });

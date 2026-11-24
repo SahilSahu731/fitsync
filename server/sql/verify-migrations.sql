@@ -1,10 +1,12 @@
--- Read-only verification of every numbered FitSync migration through 020.
+-- Read-only verification of every numbered FitSync migration through 021.
 -- A successful deployment returns no rows. Run after applying missing migrations.
 WITH expected_tables(name) AS (VALUES
   ('app_users'),
   ('fitness_profiles'),
   ('user_settings'),
   ('auth_sessions'),
+  ('api_rate_limits'),
+  ('auth_session_refresh_history'),
   ('exercise_categories'),
   ('exercise_activity_types'),
   ('exercise_body_regions'),
@@ -53,6 +55,8 @@ expected_private_tables(name) AS (VALUES
   ('fitness_profiles'),
   ('user_settings'),
   ('auth_sessions'),
+  ('api_rate_limits'),
+  ('auth_session_refresh_history'),
   ('progress_events'),
   ('billing_entitlements'),
   ('billing_webhook_events'),
@@ -108,6 +112,8 @@ expected_indexes(name) AS (VALUES
   ('companion_photos_owner_date'),
   ('companion_shares_owner')),
 expected_functions(name) AS (VALUES
+  ('consume_rate_limit'),
+  ('rotate_auth_session_refresh'),
   ('save_fitsync_exercise'),
   ('follow_fitsync_program'),
   ('stop_fitsync_program'),
@@ -132,6 +138,8 @@ expected_functions(name) AS (VALUES
   ('bump_fitsync_template_revision'),
   ('edit_fitsync_workout_template')),
 expected_signatures(signature) AS (VALUES
+  ('consume_rate_limit(text,integer)'),
+  ('rotate_auth_session_refresh(uuid,text,text)'),
   ('save_fitsync_exercise(UUID,UUID,JSONB)'),
   ('follow_fitsync_program(uuid,uuid,date,text,boolean,integer,integer,uuid)'),
   ('stop_fitsync_program(uuid,uuid)'),

@@ -1,3 +1,5 @@
+import { TelemetrySettings } from "@/src/features/experience/telemetry-settings";
+import { trackEvent } from "@/src/services/telemetry";
 import { useProgram } from "@/src/features/program-follow/program-context";
 import { ProgramSetup } from "@/src/features/program-follow/program-setup";
 import { useAppAlert } from "@/src/components/app-dialog";
@@ -5,7 +7,7 @@ import React, { useState } from "react";
 import { LegalLinks } from "@/src/components/legal-links";
 import { ExperienceSettings } from "@/src/features/experience/settings-section";
 
-import { Pressable, ScrollView, Switch, View } from "react-native";
+import { Pressable, ScrollView, Share, Switch, View } from "react-native";
 
 import { Redirect, useRouter } from "expo-router";
 
@@ -118,8 +120,7 @@ export default function SettingsScreen() {
         </Txt>
 
         <Txt className="mb-4 mt-1 text-sm text-muted">
-          Your preferred unit for future workout logging. Body measurements are currently entered in
-          kg.
+          Used for workout entry, previous-session hints, history, weight goals and training tools.
         </Txt>
 
         <View className="flex-row gap-2">
@@ -309,6 +310,25 @@ export default function SettingsScreen() {
         </Pressable>
       </View>
 
+      <Pressable
+        accessibilityRole="button"
+        className="mt-6 min-h-14 flex-row items-center rounded-2xl bg-panel p-5"
+        onPress={() => {
+          trackEvent("invite_share_opened");
+          void Share.share({
+            message:
+              "I’m tracking my training with FitSync. Join me: https://play.google.com/store/apps/details?id=com.sahil.fitsync",
+          }).catch(() =>
+            Alert.alert("Sharing unavailable", "Could not open sharing. Please try again."),
+          );
+        }}
+      >
+        <MaterialCommunityIcons name="account-multiple-plus-outline" color={C.brand} size={23} />
+        <Txt weight="semibold" className="ml-4 flex-1">
+          Invite a training partner
+        </Txt>
+      </Pressable>
+      <TelemetrySettings />
       <LegalLinks />
       <Txt className="mt-8 text-center text-muted">FitSync · Made for your next rep.</Txt>
     </ScrollView>

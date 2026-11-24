@@ -1,3 +1,4 @@
+import { trackEvent, recordError } from "@/src/services/telemetry";
 import { unregisterProgramNotifications } from "@/src/features/program-follow/notifications";
 import React, {
   createContext,
@@ -167,7 +168,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
           }
         }
       } catch (error) {
-        console.warn("Could not restore backend session:", error);
+        recordError(error, "session_restore");
       } finally {
         if (mounted) setReady(true);
       }
@@ -185,6 +186,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       showPlayServicesUpdateDialog: true,
     });
 
+    trackEvent("sign_in_started");
     const response = await GoogleSignin.signIn();
 
     if (!isSuccessResponse(response)) {
@@ -231,6 +233,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
     const data = result as unknown as MeResponse;
     applyMe(data);
+    trackEvent("sign_in_completed");
 
     return true;
   }, [applyMe]);

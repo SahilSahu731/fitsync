@@ -1,3 +1,4 @@
+import { fromKg, toKg } from "@/src/lib/weight";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -526,6 +527,8 @@ function ReadinessPanel({ record }: { record?: CompanionRecord<"readiness"> }) {
 }
 
 function GoalsPanel() {
+  const { settings } = useSession();
+  const unit = settings?.weightUnit ?? "kg";
   const companion = useCompanion(),
     progress = useProgress(),
     pro = useProWrite(),
@@ -549,8 +552,13 @@ function GoalsPanel() {
     setEditing(record);
     setKind(g.type);
     setTitle(g.title);
-    setTarget(String(g.target));
-    setBaseline(g.baseline?.toString() ?? "");
+    const weighted = g.type === "strength" || (g.type === "measurement" && g.metric === "weight");
+    setTarget(String(weighted ? Math.round(fromKg(g.target, unit) * 100) / 100 : g.target));
+    setBaseline(
+      g.baseline == null
+        ? ""
+        : String(weighted ? Math.round(fromKg(g.baseline, unit) * 100) / 100 : g.baseline),
+    );
     setDeadline(g.deadline ?? "");
     setExercise(g.exerciseId ?? "");
     setMetric((g.metric as Metric) ?? "weight");
@@ -570,8 +578,19 @@ function GoalsPanel() {
               <Txt className="my-3 text-[25px]">
                 {value.current == null
                   ? "—"
-                  : value.current.toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
-                / {g.target} <Txt className="text-sm text-muted">{g.unit}</Txt>
+                  : (g.type === "strength" || (g.type === "measurement" && g.metric === "weight")
+                      ? fromKg(value.current, unit)
+                      : value.current
+                    ).toLocaleString(undefined, { maximumFractionDigits: 2 })}{" "}
+                /{" "}
+                {g.type === "strength" || (g.type === "measurement" && g.metric === "weight")
+                  ? Math.round(fromKg(g.target, unit) * 100) / 100
+                  : g.target}{" "}
+                <Txt className="text-sm text-muted">
+                  {g.type === "strength" || (g.type === "measurement" && g.metric === "weight")
+                    ? unit
+                    : g.unit}
+                </Txt>
               </Txt>
               <Txt className="text-xs leading-5 text-muted">
                 {value.evidence}
@@ -615,7 +634,7 @@ function GoalsPanel() {
         {kind === "strength" && (
           <>
             <Txt className="mb-2 text-xs text-muted">
-              Strength uses completed external load in kg.
+              Strength uses completed external load in {unit}.
             </Txt>
             <Field label="Find your exercise" value={query} onChange={setQuery} />
             <Choices
@@ -656,7 +675,7 @@ function GoalsPanel() {
           />
         )}
         <Field
-          label={`Target · ${kind === "strength" ? "kg" : kind === "consistency" ? "sessions in rolling 7 days" : METRICS[metric].unit}`}
+          label={`Target · ${kind === "strength" || (kind === "measurement" && metric === "weight") ? unit : kind === "consistency" ? "sessions in rolling 7 days" : METRICS[metric].unit}`}
           value={target}
           onChange={setTarget}
           numeric
@@ -675,8 +694,14 @@ function GoalsPanel() {
           onPress={() => {
             if (!pro.guard()) return;
             void action.run(async () => {
+              const weighted =
+                kind === "strength" || (kind === "measurement" && metric === "weight");
+              const parseValue = (text: string, label: string, min = 0) => {
+                const raw = number(text, label, min, 1000000, kind === "consistency");
+                return weighted ? toKg(raw, unit) : raw;
+              };
               const startingValue = baseline.trim()
-                ? number(baseline, "Starting value", 0, 1000000)
+                ? parseValue(baseline, "Starting value")
                 : kind === "measurement"
                   ? latestMetrics(progress.journal.events)
                       .filter((e) => e.metric === metric && e.date <= today)
@@ -689,7 +714,7 @@ function GoalsPanel() {
               const data: Milestone = {
                 type: kind,
                 title,
-                target: number(target, "Target", 0.01, 1000000, kind === "consistency"),
+                target: parseValue(target, "Target", 0.01),
                 unit:
                   kind === "strength"
                     ? "kg"

@@ -25,7 +25,7 @@ export default function DeleteAccountScreen() {
   const router = useRouter();
 
   const { user, deleteAccount } = useSession();
-  const { entitlement, manage } = useBilling();
+  const { manage } = useBilling();
 
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
@@ -39,7 +39,7 @@ export default function DeleteAccountScreen() {
 
     Alert.alert(
       "Permanently delete your FitSync account?",
-      "Your FitSync data will be permanently removed. Deleting your account does not cancel a store subscription. Manage or cancel it in the store before deleting.",
+      "Your FitSync data will be permanently removed. Deleting your account does not cancel your Google Play subscription. Cancel in Google Play to stop future charges.",
       [
         {
           text: "Cancel",
@@ -123,10 +123,11 @@ export default function DeleteAccountScreen() {
           ))}
         </View>
 
-        {entitlement.source === "revenuecat" && (
+        {
           <View className="mt-6 rounded-2xl bg-panel p-5">
             <Txt className="text-sm leading-6">
-              Deleting your account does not cancel your store subscription.
+              Deleting your account does not cancel your Google Play subscription. Cancel it in
+              Google Play to stop future charges.
             </Txt>
             <Pressable
               className="mt-3"
@@ -135,11 +136,11 @@ export default function DeleteAccountScreen() {
               }
             >
               <Txt weight="semibold" className="text-ink">
-                Manage or cancel subscription
+                Manage Google Play subscription
               </Txt>
             </Pressable>
           </View>
-        )}
+        }
 
         <Txt weight="semibold" className="mb-3 mt-8 text-xs tracking-[1px] text-muted">
           TYPE DELETE TO CONFIRM

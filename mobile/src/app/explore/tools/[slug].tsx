@@ -1,3 +1,5 @@
+import { fromKg } from "@/src/lib/weight";
+import { useSession } from "@/src/context/session";
 import React, { useState } from "react";
 
 import { Image, Pressable, ScrollView, TextInput, View } from "react-native";
@@ -68,18 +70,20 @@ export default function ExploreCalculator() {
   }>();
 
   const router = useRouter();
+  const { settings } = useSession();
+  const unit = settings?.weightUnit ?? "kg";
 
   const { tools: TOOLS, loading, error, reload } = usePublishedTools();
   const tool = TOOLS.find((item) => item.id === slug);
 
-  const [weight, setWeight] = useState("60");
+  const [weight, setWeight] = useState(unit === "lb" ? "135" : "60");
   const [reps, setReps] = useState("8");
   const [sets, setSets] = useState("3");
 
-  const [bar, setBar] = useState("20");
-  const [target, setTarget] = useState("80");
+  const [bar, setBar] = useState(unit === "lb" ? "45" : "20");
+  const [target, setTarget] = useState(unit === "lb" ? "185" : "80");
 
-  const [increment, setIncrement] = useState("2.5");
+  const [increment, setIncrement] = useState(unit === "lb" ? "5" : "2.5");
 
   if (!tool) {
     return (
@@ -107,7 +111,14 @@ export default function ExploreCalculator() {
   const volume =
     weight.trim() && reps.trim() && sets.trim() ? workoutVolume(setCount, repCount, load) : null;
 
-  const plates = bar.trim() && target.trim() ? calculatePlates(Number(target), Number(bar)) : null;
+  const plates =
+    bar.trim() && target.trim()
+      ? calculatePlates(
+          Number(target),
+          Number(bar),
+          unit === "lb" ? [45, 35, 25, 10, 5, 2.5] : undefined,
+        )
+      : null;
 
   const warmups = weight.trim() && increment.trim() ? warmupLoads(load, Number(increment)) : null;
 
@@ -141,17 +152,21 @@ export default function ExploreCalculator() {
         </View>
       )}
       {tool.calculator_key && EXTRA_CALCULATORS[tool.calculator_key] && (
-        <ExtraCalculator key={tool.calculator_key} id={tool.calculator_key} />
+        <ExtraCalculator
+          key={`${tool.calculator_key}-${unit}`}
+          id={tool.calculator_key}
+          unit={unit}
+        />
       )}
       {tool.calculator_key === "one-rep-max" ? (
         <>
-          <NumberField label="Weight lifted (kg)" value={weight} onChange={setWeight} />
+          <NumberField label={`Weight lifted (${unit})`} value={weight} onChange={setWeight} />
 
           <NumberField label="Repetitions (1–12)" value={reps} onChange={setReps} />
 
           <Result
             label="Estimated one-rep max"
-            value={max === null ? "Enter valid values" : `${max.toFixed(1)} kg`}
+            value={max === null ? "Enter valid values" : `${max.toFixed(1)} ${unit}`}
             note="Uses a simplified Epley estimate for sets of 1–12 reps. It is not an instruction to attempt a maximal lift."
           />
         </>
@@ -163,11 +178,15 @@ export default function ExploreCalculator() {
 
           <NumberField label="Repetitions per set" value={reps} onChange={setReps} />
 
-          <NumberField label="Weight per repetition (kg)" value={weight} onChange={setWeight} />
+          <NumberField
+            label={`Weight per repetition (${unit})`}
+            value={weight}
+            onChange={setWeight}
+          />
 
           <Result
             label="Total volume"
-            value={volume === null ? "Enter valid values" : `${volume.toLocaleString()} kg`}
+            value={volume === null ? "Enter valid values" : `${volume.toLocaleString()} ${unit}`}
             note="Volume load is sets × reps × weight. It is just one measure of training workload."
           />
         </>
@@ -175,14 +194,22 @@ export default function ExploreCalculator() {
 
       {tool.calculator_key === "plate-calculator" ? (
         <>
-          <NumberField label="Target total weight (kg)" value={target} onChange={setTarget} />
+          <NumberField
+            label={`Target total weight (${unit})`}
+            value={target}
+            onChange={setTarget}
+          />
 
-          <NumberField label="Barbell weight (kg)" value={bar} onChange={setBar} />
+          <NumberField label={`Barbell weight (${unit})`} value={bar} onChange={setBar} />
 
           <Result
             label="Balanced plate loading"
-            value={plates ? `${plates.actualTotal} kg total` : "Check weight values"}
-            note="Assumes pairs of standard kg plates are available: 25, 20, 15, 10, 5, 2.5, 1.25. Collars are not included."
+            value={plates ? `${plates.actualTotal} ${unit} total` : "Check weight values"}
+            note={
+              unit === "lb"
+                ? "Assumes pairs of lb plates: 45, 35, 25, 10, 5, 2.5. Collars are excluded."
+                : "Assumes pairs of kg plates: 25, 20, 15, 10, 5, 2.5, 1.25. Collars are excluded."
+            }
           />
 
           {plates ? (
@@ -217,7 +244,7 @@ export default function ExploreCalculator() {
               {plates.perSide.length ? (
                 plates.perSide.map((plate) => (
                   <Txt key={plate.weight} className="mb-2 text-base">
-                    {plate.countPerSide} × {plate.weight} kg
+                    {plate.countPerSide} × {plate.weight} {unit}
                   </Txt>
                 ))
               ) : (
@@ -226,7 +253,8 @@ export default function ExploreCalculator() {
 
               {plates.remaining ? (
                 <Txt className="mt-3 text-xs text-muted">
-                  The target cannot be loaded exactly with the assumed plates; {plates.remaining} kg
+                  The target cannot be loaded exactly with the assumed plates; {plates.remaining}{" "}
+                  {unit}
                   per side remains.
                 </Txt>
               ) : null}
@@ -237,9 +265,17 @@ export default function ExploreCalculator() {
 
       {tool.calculator_key === "warmup-sets" ? (
         <>
-          <NumberField label="Planned working weight (kg)" value={weight} onChange={setWeight} />
+          <NumberField
+            label={`Planned working weight (${unit})`}
+            value={weight}
+            onChange={setWeight}
+          />
 
-          <NumberField label="Rounding increment (kg)" value={increment} onChange={setIncrement} />
+          <NumberField
+            label={`Rounding increment (${unit})`}
+            value={increment}
+            onChange={setIncrement}
+          />
 
           <Result
             label="Example warm-up loads"
@@ -253,7 +289,9 @@ export default function ExploreCalculator() {
                 <View key={index} className="mb-3 flex-row items-center justify-between">
                   <Txt className="text-muted">Step {index + 1}</Txt>
 
-                  <Txt weight="semibold">{value.toFixed(1)} kg</Txt>
+                  <Txt weight="semibold">
+                    {value.toFixed(1)} {unit}
+                  </Txt>
                 </View>
               ))}
             </View>
@@ -263,10 +301,17 @@ export default function ExploreCalculator() {
     </ScrollView>
   );
 }
-function ExtraCalculator({ id }: { id: string }) {
+function ExtraCalculator({ id, unit }: { id: string; unit: "kg" | "lb" }) {
   const definition = EXTRA_CALCULATORS[id];
   const [values, setValues] = useState<Record<string, string>>(() =>
-    Object.fromEntries(definition.fields.map((f) => [f.key, f.initial])),
+    Object.fromEntries(
+      definition.fields.map((f) => [
+        f.key,
+        unit === "lb" && f.label.includes("(kg)")
+          ? String(Math.round(fromKg(Number(f.initial), unit) * 10) / 10)
+          : f.initial,
+      ]),
+    ),
   );
   const result = calculateExtra(id, values);
   return (
@@ -300,13 +345,20 @@ function ExtraCalculator({ id }: { id: string }) {
         ) : (
           <NumberField
             key={f.key}
-            label={f.label}
+            label={unit === "lb" ? f.label.replace("(kg)", "(lb)") : f.label}
             value={values[f.key]}
             onChange={(next) => setValues((v) => ({ ...v, [f.key]: next }))}
           />
         ),
       )}
-      <Result label="Result" value={result ?? "Enter valid values"} />
+      <Result
+        label="Result"
+        value={
+          (unit === "lb" && id !== "weight-converter"
+            ? result?.replace(/\bkg\b/g, "lb")
+            : result) ?? "Enter valid values"
+        }
+      />
     </View>
   );
 }

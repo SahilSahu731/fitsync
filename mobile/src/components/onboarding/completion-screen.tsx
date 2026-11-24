@@ -1,90 +1,96 @@
-import React, { useEffect, useState } from "react";
+import React, { useRef, useState } from "react";
 import { ScrollView, View } from "react-native";
-import Animated, { FadeInDown, FadeOut, ReduceMotion, ZoomIn } from "react-native-reanimated";
+import Animated, { FadeIn, ReduceMotion } from "react-native-reanimated";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { C } from "@/src/constants/theme";
-import { PrimaryButton, Txt } from "@/src/components/ui";
-import { useReducedMotion } from "./motion";
+import { Txt } from "@/src/components/ui";
+import { useSession } from "@/src/context/session";
+import { CompletionIllustration } from "./completion-illustration";
+import { SlideToEnter } from "./slide-to-enter";
+import { armOnboardingWelcome } from "./welcome-state";
 import type { Draft } from "./config";
 
-// Stable builders run through Reanimated's layout lifecycle, not NativeWind's
-// render-time CSS animation adapter. All visual styling stays in className.
-const checkEntrance = ZoomIn.springify().damping(14).reduceMotion(ReduceMotion.System);
-const copyEntrance = FadeInDown.duration(350).delay(400).reduceMotion(ReduceMotion.System);
-const burstEntrance = ZoomIn.duration(650).reduceMotion(ReduceMotion.System);
-const burstExit = FadeOut.duration(350).reduceMotion(ReduceMotion.System);
-const particles = [
-  "-translate-y-28",
-  "translate-x-20 -translate-y-20",
-  "translate-x-28",
-  "translate-x-20 translate-y-20",
-  "translate-y-28",
-  "-translate-x-20 translate-y-20",
-  "-translate-x-28",
-  "-translate-x-20 -translate-y-20",
-];
+// One plain fade for the whole screen. No scale, no spring, no stagger.
+const entrance = FadeIn.duration(350).reduceMotion(ReduceMotion.System);
+
+function Stat({ value, unit, label }: { value: number; unit: string; label: string }) {
+  return (
+    <View className="flex-1 items-center py-4">
+      <Txt weight="semibold" className="text-2xl tracking-[-0.5px]">
+        {value}
+        <Txt className="text-sm text-muted"> {unit}</Txt>
+      </Txt>
+      <Txt className="mt-1 text-xs text-muted">{label}</Txt>
+    </View>
+  );
+}
 
 export function CompletionScreen({ draft, onContinue }: { draft: Draft; onContinue: () => void }) {
-  const reduced = useReducedMotion();
-  const [showBurst, setShowBurst] = useState(true);
-  useEffect(() => {
-    const timer = setTimeout(() => setShowBurst(false), 900);
-    return () => clearTimeout(timer);
-  }, []);
+  const { user } = useSession();
+  const [entering, setEntering] = useState(false);
+  const lock = useRef(false);
+
+  async function enter() {
+    if (lock.current) return;
+    lock.current = true;
+    setEntering(true);
+    // Only the explicit entry into Home arms its delayed, one-time introduction.
+    if (user?.id) await armOnboardingWelcome(user.id);
+    onContinue();
+  }
+
+  const weeklyMinutes = draft.trainingDays * draft.minutesPerWorkout;
 
   return (
-    <SafeAreaView edges={["bottom"]} className="flex-1 bg-bg">
-      <ScrollView contentContainerClassName="grow items-center justify-center p-7">
-        <View
-          className="h-[260px] w-[260px] items-center justify-center"
-          accessible={false}
-          importantForAccessibility="no-hide-descendants"
-        >
-          {!reduced && showBurst && (
-            <Animated.View
-              entering={burstEntrance}
-              exiting={burstExit}
-              className="absolute h-[260px] w-[260px] items-center justify-center"
-            >
-              <View className="absolute h-48 w-48 rounded-full" />
-              {particles.map((position, i) => (
-                <View key={position} className={`absolute ${position}`}>
-                  <View
-                    className={`rounded-sm ${i % 2 ? "h-3 w-[5px] bg-ink" : "h-2 w-2 bg-ink"}`}
-                  />
-                </View>
-              ))}
-            </Animated.View>
-          )}
-          <Animated.View
-            entering={checkEntrance}
-            className="h-28 w-28 items-center justify-center rounded-full bg-ink"
+    <SafeAreaView edges={["top", "bottom"]} className="flex-1 bg-bg">
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerClassName="grow items-center justify-center px-6 pb-10 pt-6"
+      >
+        <Animated.View entering={entrance} className="w-full max-w-[380px] items-center">
+          <View
+            className="w-full max-w-[270px]"
+            importantForAccessibility="no-hide-descendants"
+            accessibilityElementsHidden
           >
-            <MaterialCommunityIcons name="check" color={C.bg} size={58} />
-          </Animated.View>
-        </View>
-        <Animated.View entering={copyEntrance} className="items-center">
+            <CompletionIllustration trainingDays={draft.trainingDays} />
+          </View>
+
+          <View className="mt-6 flex-row items-center gap-1.5">
+            <MaterialCommunityIcons name="check-circle-outline" size={16} color="#FFFFFF" />
+            <Txt weight="medium" className="text-sm">
+              Setup complete
+            </Txt>
+          </View>
+
           <Txt
             accessibilityRole="header"
             weight="semibold"
-            className="text-center text-4xl tracking-[-1px]"
+            className="mt-3 text-center text-[34px] leading-[40px] tracking-[-1.2px]"
           >
-            You showed up.
+            Your plan is ready.
           </Txt>
-          <Txt className="mt-3 text-center text-base leading-[25px] text-muted">
-            Your setup is saved. Now take it{"\n"}one workout at a time.
+          <Txt className="mt-2 text-center text-sm leading-6 text-muted">
+            Small sessions, done consistently, add up.
           </Txt>
-          <View className="mt-7 rounded-full bg-panel px-5 py-3">
-            <Txt weight="medium" className="text-sm text-ink">
-              {draft.trainingDays} days a week · {draft.minutesPerWorkout} minutes for you
-            </Txt>
+
+          <View className="mt-7 w-full flex-row items-center rounded-2xl border border-white/10">
+            <Stat value={draft.minutesPerWorkout} unit="min" label="Per session" />
+            <View className="h-9 w-px bg-white/10" />
+            <Stat value={weeklyMinutes} unit="min" label="Per week" />
+          </View>
+
+          <View className="mt-8 w-full">
+            <SlideToEnter
+              label="Slide to enter FitSync"
+              busyLabel="Opening FitSync…"
+              busy={entering}
+              onComplete={() => void enter()}
+            />
+            <Txt className="mt-3 text-center text-xs text-muted">or tap the bar</Txt>
           </View>
         </Animated.View>
       </ScrollView>
-      <View className="px-6 pb-5">
-        <PrimaryButton title="Let’s get moving" onPress={onContinue} />
-      </View>
     </SafeAreaView>
   );
 }

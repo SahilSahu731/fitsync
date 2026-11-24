@@ -6,6 +6,8 @@ export type BillingOffer = {
   price: string;
   period: string;
   intro: string | null;
+  /** Exact eligible store offer used by purchasePackage; never an app-created trial. */
+  trialDays?: number | null;
   purchaseType: "subscription" | "lifetime";
   package: PurchasesPackage;
 };
@@ -50,6 +52,7 @@ export function makeOffers(packages: PurchasesPackage[], platform: string): Bill
         : null;
       let price = product.priceString;
       let period = periodLabel(product.subscriptionPeriod);
+      let trialDays: number | null = null;
       if (platform === "android" && product.defaultOption) {
         const full = product.defaultOption.fullPricePhase;
         if (full) {
@@ -58,6 +61,14 @@ export function makeOffers(packages: PurchasesPackage[], platform: string): Bill
         }
         const phases = product.defaultOption.pricingPhases;
         const introductory = phases.slice(0, -1);
+        const free = introductory[0];
+        if (
+          introductory.length === 1 &&
+          free.price.amountMicros === 0 &&
+          free.billingCycleCount === 1 &&
+          /^(P7D|P1W)$/.test(free.billingPeriod.iso8601)
+        )
+          trialDays = 7;
         introText = introductory.length
           ? introductory
               .map(
@@ -73,6 +84,7 @@ export function makeOffers(packages: PurchasesPackage[], platform: string): Bill
         price,
         period,
         intro: introText,
+        trialDays,
         purchaseType: "subscription" as const,
         package: item,
       };

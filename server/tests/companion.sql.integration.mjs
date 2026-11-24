@@ -1,8 +1,8 @@
 // Always runs against a fresh in-memory PostgreSQL instance; accepts no database URL.
 import { readFile } from "node:fs/promises";
 import assert from "node:assert/strict";
-const { PGlite } = await import(process.env.FITSYNC_PGLITE_MODULE ?? "@electric-sql/pglite");
-const db = new PGlite();
+import { isolatedDatabase } from "./sql/isolated-database.mjs";
+const db = await isolatedDatabase();
 const owner = "00000000-0000-4000-8000-000000000001",
   other = "00000000-0000-4000-8000-000000000002";
 try {

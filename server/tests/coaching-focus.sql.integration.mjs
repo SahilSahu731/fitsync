@@ -1,8 +1,8 @@
 // Real migration functions on a fresh in-memory database. Never accepts a live connection.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-const { PGlite } = await import(process.env.FITSYNC_PGLITE_MODULE ?? "@electric-sql/pglite");
-const db = new PGlite();
+import { isolatedDatabase } from "./sql/isolated-database.mjs";
+const db = await isolatedDatabase();
 const id = (n) => `00000000-0000-4000-8000-${String(n).padStart(12, "0")}`;
 const owner = id(1),
   foreign = id(2),

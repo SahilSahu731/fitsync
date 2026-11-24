@@ -20,6 +20,10 @@ import exploreRoutes from "./modules/explore/explore.routes.js";
 
 import { notFound, errorHandler } from "./middleware/error-handler.js";
 
+import { apiRateLimit } from "./middleware/rate-limit.js";
+import { isDraining } from "./common/lifecycle.js";
+import { requestLog } from "./middleware/request-log.js";
+
 export const app = express();
 
 // Deployment must expose this process through one trusted ingress proxy.
@@ -27,7 +31,20 @@ app.set("trust proxy", 1);
 
 app.disable("x-powered-by");
 
+app.use(requestLog);
 app.use(helmet());
+app.use("/api", (_req, res, next) => {
+  if (isDraining()) {
+    res
+      .set("Connection", "close")
+      .set("Retry-After", "5")
+      .status(503)
+      .json({ message: "Server restarting. Please retry shortly." });
+    return;
+  }
+  next();
+});
+app.use("/api", apiRateLimit("api", { limit: 600 }));
 
 app.use(express.json({ limit: "64kb" }));
 
@@ -36,8 +53,8 @@ app.get("/health", health);
 app.use("/api/auth", authRoutes);
 app.use("/api/me", profileRoutes);
 app.use("/api/me", accountRoutes);
-app.use("/api/exercises", exerciseRoutes);
-app.use("/api/workouts", workoutRoutes);
+app.use("/api/exercises", apiRateLimit("exercises", { limit: 180 }), exerciseRoutes);
+app.use("/api/workouts", apiRateLimit("workouts", { limit: 240 }), workoutRoutes);
 app.use("/api/billing", billingRoutes);
 app.use("/api/coaching", coachingRoutes);
 app.use("/api/wellness", wellnessRoutes);

@@ -39,11 +39,11 @@ export default function PrivacyPage() {
         </ul>
       </section>
       <section id="health-connect">
-        <h2>Health Connect and Apple Health</h2>
+        <h2>Health Connect</h2>
         <p>
           Health import is optional and off until you enable it. With your permission, FitSync reads
-          steps, sleep and body weight from Health Connect on Android or Apple Health on supported
-          iOS builds. It requests read access only and does not write records to these services.
+          steps, sleep and body weight from Health Connect on Android. It requests read access only
+          and does not write records to Health Connect.
         </p>
         <p>
           Imports cover the last seven days. FitSync derives daily step totals, sleep duration
@@ -54,16 +54,33 @@ export default function PrivacyPage() {
         </p>
         <p>
           You can grant only selected data types, decline access, stop imports in FitSync, or revoke
-          permissions in your device’s Health Connect or Apple Health settings. Revoking access
-          stops future reads. It does not remove records already imported into FitSync or delete the
-          original records held by your health provider. Edit or delete saved progress entries, or
-          delete your FitSync account, to remove imported information from FitSync.
+          permissions in your device’s Health Connect settings. Revoking access stops future reads.
+          It does not remove records already imported into FitSync or delete the original records
+          held by your health provider. Edit or delete saved progress entries, or delete your
+          FitSync account, to remove imported information from FitSync.
         </p>
         <p>
-          We do not sell health data or use Health Connect or Apple Health data for advertising,
-          marketing profiles, credit decisions or insurance decisions. Health data is used to
-          provide your requested health and fitness features. We do not provide it to advertising
-          networks or data brokers.
+          We do not sell health data or use Health Connect data for advertising, marketing profiles,
+          credit decisions or insurance decisions. Health data is used to provide your requested
+          health and fitness features. We do not provide it to advertising networks or data brokers.
+        </p>
+      </section>
+      <section>
+        <h2>Optional product analytics and error reports</h2>
+        <p>
+          PostHog processes anonymous installation activity, such as onboarding steps, feature entry
+          points, paywall views and purchase outcomes, to help us understand where the app is useful
+          or difficult to use. We do not identify your FitSync account in these events or send
+          workout names, exercise details, measurements, nutrition values or notes. Session
+          recordings and automatic tap capture are disabled.
+        </p>
+        <p>
+          Sentry processes sanitized JavaScript crash and error reports containing code locations
+          and release information. Our app filter removes account details, request content, health
+          data, raw error messages and breadcrumbs. You can turn usage analytics and error reports
+          off independently in Settings under Help improve FitSync. These choices are saved on your
+          device. The API also uses limited operational error reporting and request IDs to maintain
+          the service.
         </p>
       </section>
       <section>

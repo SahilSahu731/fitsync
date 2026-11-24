@@ -1,3 +1,4 @@
+import { trackEvent } from "@/src/services/telemetry";
 import React, { useEffect, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -14,11 +15,11 @@ const PERKS: { icon: IconName; title: string; body: string }[] = [
     body: "Follow plans built for your goal.",
   },
   { icon: "chart-line", title: "Deeper insights", body: "Trends and progress beyond the basics." },
-  { icon: "human", title: "Every body part tracked", body: "Measure and track each muscle group." },
+  { icon: "human", title: "Muscle balance", body: "See where your training is focused." },
   {
     icon: "food-apple",
-    title: "Nutrition & macros",
-    body: "Calories and macros next to training.",
+    title: "Meals & shopping lists",
+    body: "Plan your week, swap meals and shop easily.",
   },
 ];
 
@@ -211,7 +212,10 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
     <Pressable
       accessibilityRole="button"
       accessibilityLabel={isPro ? "Explore what is included in Pro" : "Unlock FitSync Pro"}
-      onPress={onPress}
+      onPress={() => {
+        trackEvent("pro_preview_opened", { source: "home", membership: isPro ? "pro" : "free" });
+        onPress();
+      }}
       className="flex-1"
     >
       <View

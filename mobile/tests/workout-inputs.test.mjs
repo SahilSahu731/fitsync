@@ -1,3 +1,4 @@
+import * as weightUnits from "../src/lib/weight.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -17,6 +18,13 @@ function load(file, dependencies = {}) {
   vm.runInNewContext(js, {
     exports,
     require: (name) => {
+      if (name === "@/src/lib/weight") return weightUnits;
+      if (name === "@/src/services/telemetry" || name === "./telemetry")
+        return { trackEvent() {}, recordError() {} };
+      if (name === "@/src/components/health-disclaimer") return { HealthDisclaimer: () => null };
+      if (name === "@/src/context/session")
+        return { useSession: () => ({ settings: { weightUnit: "kg" } }) };
+
       if (name === "./custom-discovery")
         return load("../src/features/exercises/custom-discovery.ts");
       if (!(name in dependencies)) throw Error(`Unexpected dependency ${name}`);

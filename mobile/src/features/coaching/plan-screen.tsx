@@ -1,3 +1,4 @@
+import { HealthDisclaimer } from "@/src/components/health-disclaimer";
 import React, { useRef, useState } from "react";
 import { ActivityIndicator, RefreshControl, ScrollView, View } from "react-native";
 import { router } from "expo-router";
@@ -188,6 +189,7 @@ export function CoachPlanScreen() {
         }
         contentContainerStyle={{ padding: 24, paddingBottom: 140 }}
       >
+        <HealthDisclaimer />
         {resource.error && (
           <View className="mb-5 rounded-2xl bg-panel p-4">
             <Txt accessibilityRole="alert" className="text-sm leading-6">
@@ -219,7 +221,7 @@ export function CoachPlanScreen() {
             <View className="mt-7">
               <Card>
                 <Txt weight="semibold" className="text-lg">
-                  Your program. Your personal trainer.
+                  Your program. Your training guide.
                 </Txt>
                 <Txt className="mt-2 text-sm leading-6 text-muted">
                   Pro brings your personal program, session guidance, target reviews and schedule

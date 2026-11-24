@@ -1,4 +1,6 @@
-import React from "react";
+import React, { useEffect, useRef, useState } from "react";
+import { useSession } from "@/src/context/session";
+import { toKg, weightText, type WeightUnit } from "@/src/lib/weight";
 import { Pressable, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { Txt } from "@/src/components/ui";
@@ -32,6 +34,8 @@ export function RoutineExerciseCard({
   onPatchSet: (setId: string, change: Partial<DraftSet>) => void;
   onAddSet: () => void;
 }) {
+  const { settings } = useSession();
+  const unit = settings?.weightUnit ?? "kg";
   const timed =
     item.exercise.trackingType === "duration" || item.exercise.trackingType === "distance_duration";
   return (
@@ -98,7 +102,11 @@ export function RoutineExerciseCard({
           <View className="mx-3 mb-2 flex-row items-center gap-2 px-2">
             <Txt className="w-11 text-center text-[10px] tracking-wider text-muted">TYPE</Txt>
             <Txt className="flex-1 text-center text-[10px] tracking-wider text-muted">
-              {timed ? "SECONDS" : item.exercise.trackingType === "reps" ? "ADDED KG" : "KG"}
+              {timed
+                ? "SECONDS"
+                : item.exercise.trackingType === "reps"
+                  ? `ADDED ${unit.toUpperCase()}`
+                  : unit.toUpperCase()}
             </Txt>
             {!timed && (
               <Txt className="flex-1 text-center text-[10px] tracking-wider text-muted">REPS</Txt>
@@ -130,18 +138,12 @@ export function RoutineExerciseCard({
                     />
                   ) : (
                     <>
-                      <NumberEntry
-                        compact
-                        showLabel={false}
-                        showStepper={false}
-                        allowDrag={false}
-                        label={`${item.exercise.name}, set ${setIndex + 1} weight in kg`}
-                        value={set.weight}
-                        onChange={(weight) =>
-                          onPatchSet(set.id, { weight: weight.replace(",", ".") })
-                        }
-                        step={0.5}
-                        max={100000}
+                      <RoutineWeightEntry
+                        key={`${set.id}-${unit}`}
+                        label={`${item.exercise.name}, set ${setIndex + 1} weight in ${unit}`}
+                        kg={set.weight}
+                        unit={unit}
+                        onChange={(weight) => onPatchSet(set.id, { weight })}
                         disabled={disabled}
                       />
                       <NumberEntry
@@ -200,5 +202,47 @@ export function RoutineExerciseCard({
         </>
       )}
     </View>
+  );
+}
+
+// Drafts stay in canonical kg; preserve the typed decimal while editing in lb.
+function RoutineWeightEntry({
+  kg,
+  unit,
+  onChange,
+  label,
+  disabled,
+}: {
+  kg: string;
+  unit: WeightUnit;
+  onChange: (kg: string) => void;
+  label: string;
+  disabled: boolean;
+}) {
+  const [text, setText] = useState(() => (kg === "" ? "" : weightText(Number(kg), unit)));
+  const last = useRef(kg);
+  useEffect(() => {
+    if (kg !== last.current) setText(kg === "" ? "" : weightText(Number(kg), unit));
+    last.current = kg;
+  }, [kg, unit]);
+  return (
+    <NumberEntry
+      compact
+      showLabel={false}
+      showStepper={false}
+      allowDrag={false}
+      label={label}
+      value={text}
+      step={0.5}
+      max={100000}
+      disabled={disabled}
+      onChange={(value) => {
+        const normalized = value.replace(",", ".");
+        setText(normalized);
+        const canonical = normalized.trim() === "" ? "" : String(toKg(Number(normalized), unit));
+        last.current = canonical;
+        onChange(canonical);
+      }}
+    />
   );
 }

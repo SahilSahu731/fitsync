@@ -1,3 +1,5 @@
+import { useSession } from "@/src/context/session";
+import { fromKg } from "@/src/lib/weight";
 import React, { useImperativeHandle, useMemo, useState, type Ref } from "react";
 import { ActivityIndicator, View } from "react-native";
 import { router, type Href } from "expo-router";
@@ -298,6 +300,8 @@ export function TodayForYouCard({ refreshRef }: { refreshRef?: Ref<TodayCardHand
 }
 
 function ProgramBriefing({ detail }: { detail: FollowedProgram }) {
+  const { settings } = useSession();
+  const unit = settings?.weightUnit ?? "kg";
   const workout = useWorkout(),
     billing = useBilling();
   const focus = programFocus(detail);
@@ -331,7 +335,10 @@ function ProgramBriefing({ detail }: { detail: FollowedProgram }) {
             Last program session: {last.routineName} ·{" "}
             {dateLabel(localDate(new Date(last.completedAt!)))} · {last.completedSets} completed
             sets
-            {last.volumeKg > 0 ? ` · ${last.volumeKg.toLocaleString()} kg logged volume` : ""}.
+            {last.volumeKg > 0
+              ? ` · ${Math.round(fromKg(last.volumeKg, unit)).toLocaleString()} ${unit} logged volume`
+              : ""}
+            .
           </Txt>
         )}
         {billing.isPro && (

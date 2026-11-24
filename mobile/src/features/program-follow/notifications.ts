@@ -7,30 +7,38 @@ import { programFollowApi } from "./api";
 
 const DEVICE_KEY = "fitsync.program-push-token.v1";
 let operations: Promise<void> = Promise.resolve();
+let registration: { permission: boolean; operation: Promise<void> } | null = null;
 function enqueue(operation: () => Promise<void>) {
   const result = operations.then(operation);
-  operations = result.catch(() => { });
+  operations = result.catch(() => {});
   return result;
 }
 export function registerProgramNotifications(requestPermission = false) {
-  return enqueue(() => register(requestPermission));
+  // Fetching the native token can itself emit a token-change event. Reuse the
+  // current registration instead of enqueueing another registration forever.
+  if (registration && (registration.permission || !requestPermission))
+    return registration.operation;
+  const operation = enqueue(() => register(requestPermission)).finally(() => {
+    if (registration?.operation === operation) registration = null;
+  });
+  registration = { permission: requestPermission, operation };
+  return operation;
 }
 async function register(requestPermission: boolean) {
   if (Platform.OS === "web") throw new Error("Daily reminders are available in the mobile app.");
   await configureWorkoutNotifications();
   if (Platform.OS === "android") {
+    // Omit sound to use Android's default; strings are treated as bundled filenames.
     // General push notifications: achievements, motivation, etc.
     await Notifications.setNotificationChannelAsync("general-v1", {
       name: "General notifications",
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: "default",
     });
 
     // Existing scheduled workout reminders.
     await Notifications.setNotificationChannelAsync("program-reminders-v2", {
       name: "Workout reminders",
       importance: Notifications.AndroidImportance.DEFAULT,
-      sound: "default",
     });
   }
   let permission = await Notifications.getPermissionsAsync();

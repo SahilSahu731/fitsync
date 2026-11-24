@@ -1,3 +1,4 @@
+import { recordError } from "./telemetry";
 import { loadSecureStore } from "./native-modules";
 
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "");
@@ -11,6 +12,7 @@ let sessionGeneration = 0;
 export const apiSessionKey = () => sessionGeneration;
 let credentialWork: Promise<unknown> = Promise.resolve();
 let refreshInFlight: { generation: number; operation: Promise<boolean> } | null = null;
+let refreshFailure: { generation: number; until: number; error: unknown } | null = null;
 
 function withCredentials<T>(operation: () => Promise<T>): Promise<T> {
   // SecureStore has no compare-and-swap. Serialize reads/writes, and check the
@@ -69,7 +71,7 @@ function baseUrl() {
   return API_URL;
 }
 
-type JsonResponse = { ok: boolean; status: number; result: unknown };
+type JsonResponse = { ok: boolean; status: number; result: unknown; retryAfterMs?: number };
 const REQUEST_TIMEOUT_MS = 20_000;
 const requestTimedOut = () =>
   new HttpError(
@@ -89,20 +91,30 @@ async function fetchJson(url: string, init: RequestInit): Promise<JsonResponse> 
   try {
     const request = (async () => {
       const response = await fetch(url, { ...init, signal: controller.signal });
-      const result: unknown = response.status === 204 || response.status === 205 ? undefined : await response.json().catch((error) => {
-        if (controller.signal.aborted) throw error;
+      const result: unknown =
+        response.status === 204 || response.status === 205
+          ? undefined
+          : await response.json().catch((error) => {
+              if (controller.signal.aborted) throw error;
 
-        if (response.ok) {
-          throw new HttpError(
-            502,
-            "The server returned an invalid response. Please try again.",
-          );
-        }
+              if (response.ok) {
+                throw new HttpError(
+                  502,
+                  "The server returned an invalid response. Please try again.",
+                );
+              }
 
-        return null;
-      });
+              return null;
+            });
       if (controller.signal.aborted) throw requestTimedOut();
-      return { ok: response.ok, status: response.status, result };
+      if (response.status >= 500) recordError(new Error("API server failure"), "api_server");
+      const retryAfter = response.headers?.get?.("Retry-After");
+      const retryAfterMs = retryAfter
+        ? /^\d+$/.test(retryAfter)
+          ? Number(retryAfter) * 1000
+          : Date.parse(retryAfter) - Date.now()
+        : undefined;
+      return { ok: response.ok, status: response.status, result, retryAfterMs };
     })();
     // Keep a deadline even if a platform fetch/body implementation does not
     // reject promptly after abort. A hung upload must release the offline queue.
@@ -135,12 +147,14 @@ async function readResponse<T>(response: JsonResponse): Promise<T> {
 
 export async function storeSessionTokens(tokens: SessionTokens) {
   const generation = ++sessionGeneration;
+  refreshFailure = null;
   accessToken = null;
   if (!(await persistTokens(tokens, generation))) assertGeneration(generation);
 }
 
 export async function clearSessionTokens() {
   const generation = ++sessionGeneration;
+  refreshFailure = null;
   accessToken = null;
   await withCredentials(async () => {
     if (generation !== sessionGeneration) return;
@@ -202,6 +216,22 @@ async function performRefresh(generation: number): Promise<boolean> {
       return false;
     }
 
+    if (response.status === 429 || response.status >= 500) {
+      const error = new HttpError(
+        response.status,
+        response.status === 429
+          ? "Session recovery is temporarily rate limited. Please wait before trying again."
+          : "Session recovery is temporarily unavailable. Please try again shortly.",
+      );
+      const delay = Number.isFinite(response.retryAfterMs)
+        ? Math.max(5_000, response.retryAfterMs!)
+        : response.status === 429
+          ? 60_000
+          : 15_000;
+      refreshFailure = { generation, until: Date.now() + delay, error };
+      throw error;
+    }
+
     const tokens = await readResponse<SessionTokens>(response);
 
     if (generation !== sessionGeneration) return false;
@@ -215,12 +245,19 @@ async function performRefresh(generation: number): Promise<boolean> {
       return false;
     }
 
+    if (generation === sessionGeneration && !refreshFailure)
+      refreshFailure = { generation, until: Date.now() + 15_000, error };
+
     throw error;
   }
 }
 
 export async function refreshAccessToken() {
   const generation = sessionGeneration;
+  if (refreshFailure?.generation === generation) {
+    if (Date.now() < refreshFailure.until) throw refreshFailure.error;
+    refreshFailure = null;
+  }
   if (refreshInFlight?.generation !== generation) {
     const operation = performRefresh(generation).finally(() => {
       if (refreshInFlight?.operation === operation) refreshInFlight = null;

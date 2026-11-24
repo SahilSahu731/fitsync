@@ -68,3 +68,7 @@ mobile; privacy and terms links derive from it unless explicitly overridden.
 More detail: [web setup](web/README.md), [mobile setup](mobile/README.md),
 [billing](docs/billing.md), [health sync](docs/health-sync.md),
 [program reminders](docs/program-following.md).
+
+Analytics, error reporting, migration 021 and Android release configuration: [step-by-step setup guide](docs/observability-setup.md).
+
+Personal Pro previews, Google Play seven-day trial configuration and funnel checks: [conversion setup guide](docs/pro-conversion-setup.md).

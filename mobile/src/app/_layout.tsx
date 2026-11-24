@@ -1,8 +1,12 @@
+import { initializeTelemetry, recordError, withCrashReporting } from "@/src/services/telemetry";
+import { TelemetryBridge } from "@/src/services/telemetry-bridge";
+import { Txt } from "@/src/components/ui";
+import type { ErrorBoundaryProps } from "expo-router";
 import "../global.css";
 
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 
-import { View } from "react-native";
+import { Pressable, View } from "react-native";
 import { SafeAreaProvider, SafeAreaView } from "react-native-safe-area-context";
 
 import { Stack } from "expo-router";
@@ -14,6 +18,7 @@ import {
 } from "@/src/features/program-follow/program-context";
 import { HealthSyncBridge } from "@/src/features/health-sync/use-health-sync";
 import { BillingProvider } from "@/src/features/billing/billing-context";
+import { TrialNotificationLinks } from "@/src/features/billing/trial-notification-links";
 import { WorkoutProvider } from "@/src/features/workouts/workout-context";
 import { ActiveWorkoutBar } from "@/src/features/workouts/components/active-workout-bar";
 import { CompanionProvider } from "@/src/features/companion/companion-context";
@@ -36,6 +41,8 @@ import { getMissingNativeModules } from "@/src/services/native-modules";
 import { ExperienceProvider } from "@/src/features/experience/experience-context";
 import { MotionProvider, useReducedAppMotion } from "@/src/components/motion";
 import { C } from "@/src/constants/theme";
+
+void initializeTelemetry();
 
 void SplashScreen.preventAutoHideAsync().catch(console.warn);
 
@@ -99,6 +106,7 @@ function Navigator() {
       </SafeAreaView>
 
       <ProgramNotificationLinks />
+      <TrialNotificationLinks />
       <CompanionNativeBridge />
       <FoodReminderBridge />
       <ActiveWorkoutBar />
@@ -108,11 +116,12 @@ function Navigator() {
   );
 }
 
-export default function RootLayout() {
+function RootLayout() {
   const [missingNativeModules] = useState(getMissingNativeModules);
 
   return (
     <SafeAreaProvider>
+      <TelemetryBridge />
       <ExperienceProvider>
         <MotionProvider>
           {missingNativeModules.length ? (
@@ -138,3 +147,29 @@ export default function RootLayout() {
     </SafeAreaProvider>
   );
 }
+
+export function ErrorBoundary({ error, retry }: ErrorBoundaryProps) {
+  useEffect(() => {
+    void initializeTelemetry().then(() => recordError(error, "screen_render"));
+  }, [error]);
+  return (
+    <View style={{ flex: 1, backgroundColor: C.bg, padding: 28, justifyContent: "center" }}>
+      <Txt weight="semibold" className="text-2xl">
+        Let’s reopen this screen
+      </Txt>
+      <Txt className="mt-3 text-sm leading-6 text-muted">
+        Something interrupted the screen. Your saved workout edits remain on this device.
+      </Txt>
+      <Pressable
+        accessibilityRole="button"
+        onPress={() => void retry()}
+        className="mt-6 min-h-14 items-center justify-center rounded-2xl bg-brand"
+      >
+        <Txt weight="semibold" className="text-bg">
+          Try again
+        </Txt>
+      </Pressable>
+    </View>
+  );
+}
+export default withCrashReporting(RootLayout);

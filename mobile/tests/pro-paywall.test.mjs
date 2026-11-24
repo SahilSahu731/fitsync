@@ -1,3 +1,4 @@
+import * as weightUnits from "../src/lib/weight.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -72,6 +73,8 @@ test("the annual default and savings use the real recurring store prices", () =>
     ["Monthly", "Yearly"],
   );
   assert.equal(plans[1].savings, 33);
+  assert.match(plans[1].monthlyEquivalent, /200/);
+  assert.equal(plans[0].monthlyEquivalent, null);
   assert.equal(selectedPlan(plans, null).offer.id, "yearly");
   assert.equal(selectedPlan(plans, "monthly").offer.id, "monthly");
   assert.equal(selectedPlan([], "removed"), null);
@@ -143,6 +146,7 @@ function fixture(options = {}) {
   const jsx = (type, props) => ({ type, props });
   const dependencies = {
     react: {
+      useEffect() {},
       useState(initial) {
         const index = cursor++;
         if (!(index in slots)) slots[index] = typeof initial === "function" ? initial() : initial;
@@ -170,6 +174,7 @@ function fixture(options = {}) {
       useWindowDimensions: () => dimensions,
     },
     "expo-router": {
+      useLocalSearchParams: () => ({ source: options.source ?? "pro_tab" }),
       router: {
         canGoBack: () => true,
         back: () => calls.push(["back"]),
@@ -189,6 +194,10 @@ function fixture(options = {}) {
     "./plan-presentation": { presentPlans, selectedPlan },
     "./pro-feature-art": { ProFeatureArt: "Art" },
     "./pro-marketing-content": { PRO_BENEFITS, PRO_COMPARISON, PRO_FAQS },
+    "./personal-preview": { PaywallEvidence: () => null },
+    "./trial-reminders": {
+      requestTrialReminderPermission: async () => options.notifications ?? true,
+    },
   };
   const exports = {};
   const code = ts.transpileModule(
@@ -217,6 +226,11 @@ function fixture(options = {}) {
           },
     },
     require: (name) => {
+      if (name === "@/src/lib/weight") return weightUnits;
+      if (name === "@/src/services/telemetry" || name === "./telemetry")
+        return { trackEvent() {}, recordError() {} };
+      if (name === "@/src/components/health-disclaimer") return { HealthDisclaimer: () => null };
+
       if (!(name in dependencies)) throw Error(name);
       return dependencies[name];
     },
@@ -390,13 +404,13 @@ test("real-store development and all release checkout still require published le
 test("the FAQs expand accessibly and the last content stays clear of the measured purchase dock", () => {
   const f = fixture();
   let tree = f.render();
-  const question = button(tree, "Is the personal coach a human trainer?");
+  const question = button(tree, "How are training recommendations made?");
   assert.equal(question.props.accessibilityState.expanded, false);
   question.props.onPress();
   tree = f.render();
-  assert.match(text(tree), /rather than a live personal trainer/);
+  assert.match(text(tree), /not provided by a human trainer/);
   assert.equal(
-    button(tree, "Is the personal coach a human trainer?").props.accessibilityState.expanded,
+    button(tree, "How are training recommendations made?").props.accessibilityState.expanded,
     true,
   );
   const dock = find(tree, "View").find((node) => node.props.onLayout);
@@ -431,4 +445,64 @@ test("restoring an empty store account reports the result and Not now returns ho
     f.calls.some((call) => call[0] === "purchase"),
     false,
   );
+});
+
+test("the paywall leads with an outcome, three concise benefits and transparent yearly terms", () => {
+  const f = fixture();
+  const tree = f.render();
+  const copy = text(tree);
+  assert.match(copy, /Know exactly what to lift next session/);
+  assert.match(copy, /logging stays free forever/);
+  assert.match(copy, /200.*month equivalent/);
+  assert.match(copy, /INR 2400.*Billed yearly/);
+  const everything = copy.indexOf("Everything included in Pro");
+  for (const benefit of [
+    "Go in with your next working-set targets",
+    "Move a missed session with one confirmation",
+    "Know what your week’s training tells you",
+  ])
+    assert.ok(copy.indexOf(benefit) < everything);
+  assert.ok(find(tree, "Pressable").some((node) => text(node) === "Restore"));
+  assert.ok(
+    find(tree, "Pressable").some((node) => node.props.accessibilityLabel === "Close Pro page"),
+  );
+  assert.doesNotMatch(copy, /Start my 7-day free trial|Day 7:/);
+});
+test("an eligible trial has a truthful timeline and an explicit permission-backed reminder option", async () => {
+  for (const notifications of [true, false]) {
+    const f = fixture({ notifications, source: "personal_best" });
+    f.billing.offers = [{ ...yearly(), trialDays: 7 }];
+    f.billing.purchase = async (...args) => {
+      f.calls.push(args);
+      return "cancelled";
+    };
+    let tree = f.render();
+    assert.match(
+      text(tree),
+      /Today: full Pro access.*Day 5:\s+optional device reminder.*Day 7:\s+INR 2400/,
+    );
+    const option = find(tree, "Pressable").find(
+      (node) => node.props.accessibilityRole === "checkbox",
+    );
+    assert.equal(option.props.accessibilityState.checked, false);
+    option.props.onPress();
+    await tick();
+    tree = f.render();
+    assert.equal(
+      find(tree, "Pressable").find((node) => node.props.accessibilityRole === "checkbox").props
+        .accessibilityState.checked,
+      notifications,
+    );
+    if (!notifications) assert.match(text(tree), /Notifications are off/);
+    button(tree, "Start my 7-day free trial").props.onPress();
+    await tick();
+    assert.equal(f.calls[0][0], "yearly");
+    assert.equal(f.calls[0][1].trialReminder, notifications);
+  }
+});
+test("small screens show checkout before the extended feature list", () => {
+  const f = fixture();
+  f.dimensions.height = 580;
+  const copy = text(f.render());
+  assert.ok(copy.indexOf("Continue with yearly") < copy.indexOf("Everything included in Pro"));
 });

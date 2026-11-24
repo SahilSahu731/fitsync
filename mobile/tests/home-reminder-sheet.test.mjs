@@ -455,17 +455,22 @@ test("A failed save keeps the edited time and revision, while pending writes blo
   assert.equal(ui.calls.pickers.at(-1).value.getMinutes(), 45);
 });
 
-test("Free users can inspect their reminders but editing is gated to Pro", () => {
+test("Free users can save workout reminders and see a separate Pro upgrade", async () => {
   const ui = fixture({ isPro: false });
-  for (const item of nodes(ui.instance.tree, (node) => node.type === "Switch"))
-    assert.equal(item.props.disabled, true);
-  ui.toggle("Water reminders", true);
-  assert.equal(control(ui.instance.tree, "Water reminders", "switch").props.value, false);
-  control(ui.instance.tree, "Explore Pro reminders").props.onPress();
+  assert.equal(control(ui.instance.tree, "Workout reminders", "switch").props.disabled, false);
+  assert.equal(nodes(ui.instance.tree, (node) => node.type === "Switch").length, 1);
+  ui.toggle("Workout reminders", true);
+  ui.chooseTime("Choose workout reminder time", 19, 15);
+  ui.save();
+  await ui.instance.settle();
+  assert.equal(ui.calls.saves.length, 1);
+  assert.equal(ui.calls.saves[0][2].enabled, true);
+  assert.equal(ui.calls.saves[0][2].time, "19:15");
+  assert.deepEqual(Object.keys(ui.calls.saves[0][2].habits), []);
   assert.equal(ui.calls.closes, 1);
-  assert.deepEqual(ui.calls.routes, ["/membership"]);
-  assert.equal(ui.calls.permissions, 0);
-  assert.equal(ui.calls.saves.length, 0);
+  const upgrade = fixture({ isPro: false });
+  control(upgrade.instance.tree, "Explore Pro reminders").props.onPress();
+  assert.deepEqual(upgrade.calls.routes, ["/membership"]);
 });
 
 test("A followed program owns workout timing, registers push permission, and preserves its timezone", async () => {
@@ -580,7 +585,7 @@ for (const readiness of ["refreshing", "failed"]) {
 }
 
 for (const change of ["membership", "active program"]) {
-  test(`Pending saves stop after ${change} changes`, async () => {
+  test(`Pending workout saves respect ${change} changes`, async () => {
     const pending = deferred();
     const ui = fixture({ program: enrollment(), register: () => pending.promise });
     ui.chooseTime("Choose workout reminder time", 19, 0);

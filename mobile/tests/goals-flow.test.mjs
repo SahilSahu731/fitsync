@@ -1,3 +1,4 @@
+import * as weightUnits from "../src/lib/weight.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -19,6 +20,11 @@ function load(file, deps = {}, globals = {}) {
       Intl,
       ...globals,
       require: (name) => {
+        if (name === "@/src/lib/weight") return weightUnits;
+        if (name === "@/src/services/telemetry" || name === "./telemetry")
+          return { trackEvent() {}, recordError() {} };
+        if (name === "@/src/components/health-disclaimer") return { HealthDisclaimer: () => null };
+
         if (!(name in deps)) throw Error(name);
         return deps[name];
       },
@@ -693,4 +699,116 @@ test("Cancel and Android Back discard unconfirmed input; Remove is explicit", ()
   tree.find((n) => n.type === "Pressable" && visibleText(n) === "Remove target").props.onPress();
   assert.equal(h.removals, 1);
   assert.equal(h.saves.length, 0);
+});
+
+function dailyGoalsHarness() {
+  const state = [];
+  let cursor = 0,
+    closes = 0;
+  const saved = [];
+  const progress = {
+    goals: model.defaultGoals(4),
+    loading: false,
+    refreshing: false,
+    storageError: "",
+    syncError: "",
+    refresh: async () => {},
+    saveGoals: async (goals) => {
+      saved.push(goals);
+    },
+  };
+  const module = load("../src/components/onboarding/daily-goals-popup.tsx", {
+    react: {
+      ...react,
+      useEffect() {},
+      useRef(initial) {
+        const index = cursor++;
+        state[index] ??= { current: initial };
+        return state[index];
+      },
+      useState(initial) {
+        const index = cursor++;
+        if (!(index in state)) state[index] = initial;
+        return [
+          state[index],
+          (value) => {
+            state[index] = value;
+          },
+        ];
+      },
+    },
+    "react-native": { ActivityIndicator: "Loading", TextInput: "Input", View: "View" },
+    "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
+    "@/src/components/motion": { MotionPressable: "Pressable" },
+    "@/src/components/ui": { Txt: "Text" },
+    "@/src/context/session": { useSession: () => ({ settings: { weightUnit: "lb" } }) },
+    "./popup": {
+      OnboardingPopup: (props) => ({
+        type: "Popup",
+        props,
+        children: [props.children, props.footer],
+      }),
+    },
+    "@/src/features/progress/use-progress": { useProgress: () => progress },
+    "@/src/features/progress/goal-draft": { goalsToDraft, parseGoalsDraft },
+    "@react-native-async-storage/async-storage": {},
+    "@/src/features/progress/home-goals": { goalWelcomeKey: () => "seen" },
+  });
+  return {
+    render() {
+      cursor = 0;
+      return nodes(
+        module.DailyGoalsPopup({
+          onClose: () => {
+            closes++;
+          },
+        }),
+      );
+    },
+    saved,
+    progress,
+    get closes() {
+      return closes;
+    },
+  };
+}
+
+test("post-onboarding daily targets validate, preserve workout frequency and save to existing goals", async () => {
+  const h = dailyGoalsHarness();
+  const input = (label) => h.render().find((n) => n.props.accessibilityLabel === label);
+  assert.equal(h.render().filter((n) => n.type === "Input").length, 3);
+  input("Water target").props.onChangeText("-1");
+  input("Save daily goals").props.onPress();
+  await flush();
+  assert.equal(h.saved.length, 0);
+  assert.equal(h.closes, 0);
+  input("Water target").props.onChangeText("2200");
+  input("Steps target").props.onChangeText("7500");
+  input("Food energy target").props.onChangeText("2100");
+  h.render()
+    .find((n) => n.props.accessibilityState?.expanded === false)
+    .props.onPress();
+  input("Goal weight target").props.onChangeText("154.324");
+  input("Save daily goals").props.onPress();
+  await flush();
+  assert.equal(h.saved[0].water, 2200);
+  assert.equal(h.saved[0].steps, 7500);
+  assert.equal(h.saved[0].caloriesIn, 2100);
+  assert.equal(h.saved[0].weeklyWorkouts, 4);
+  assert.ok(Math.abs(h.saved[0].weight - 70) < 0.01);
+  assert.equal(h.closes, 1);
+});
+
+test("daily goals cannot overwrite goals that have not loaded", () => {
+  const h = dailyGoalsHarness();
+  h.progress.loading = true;
+  assert.equal(
+    h.render().find((n) => n.props.accessibilityLabel === "Save daily goals").props.disabled,
+    true,
+  );
+  h.render()
+    .find((n) => n.type === "Popup")
+    .props.onClose();
+  assert.equal(h.closes, 1);
+  assert.equal(h.saved.length, 0);
 });

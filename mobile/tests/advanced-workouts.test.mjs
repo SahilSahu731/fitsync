@@ -1,3 +1,4 @@
+import * as weightUnits from "../src/lib/weight.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -159,6 +160,13 @@ function setRowFixture({ weight = 20, reps = null, suppressRest = false } = {}) 
   vm.runInNewContext(code, {
     exports,
     require: (name) => {
+      if (name === "@/src/lib/weight") return weightUnits;
+      if (name === "@/src/services/telemetry" || name === "./telemetry")
+        return { trackEvent() {}, recordError() {} };
+      if (name === "@/src/components/health-disclaimer") return { HealthDisclaimer: () => null };
+      if (name === "@/src/context/session")
+        return { useSession: () => ({ settings: { weightUnit: "kg" } }) };
+
       assert.ok(name in dependencies, `Unexpected dependency ${name}`);
       return dependencies[name];
     },

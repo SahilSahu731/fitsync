@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { rateLimit } from "express-rate-limit";
+import { apiRateLimit } from "../../middleware/rate-limit.js";
 import { z } from "zod";
 import { authRateLimitKey } from "../../common/client-ip.js";
 
@@ -11,9 +11,18 @@ import { rotateRefreshToken, revokeSession } from "./tokens.js";
 
 const router = Router();
 
-const limiter = rateLimit({
+const limiter = apiRateLimit("auth-1", {
   windowMs: 15 * 60 * 1000,
   limit: 30,
+  keyGenerator: authRateLimitKey,
+  standardHeaders: "draft-8",
+  legacyHeaders: false,
+});
+
+// Background recovery must not consume the interactive Google sign-in budget.
+const refreshLimiter = apiRateLimit("auth-refresh", {
+  windowMs: 15 * 60 * 1000,
+  limit: 120,
   keyGenerator: authRateLimitKey,
   standardHeaders: "draft-8",
   legacyHeaders: false,
@@ -35,7 +44,7 @@ router.post(
 
 router.post(
   "/refresh",
-  limiter,
+  refreshLimiter,
   asyncHandler(async (req, res) => {
     const { refreshToken } = z
       .object({

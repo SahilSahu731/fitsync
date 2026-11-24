@@ -152,7 +152,7 @@ test("an old binary and web return a useful error without importing RevenueCat",
     });
     assert.throws(
       () => native.loadPurchases(),
-      os === "android" ? /latest FitSync build/ : /iOS or Android/,
+      os === "android" ? /latest FitSync build/ : /Android/,
     );
   }
 });

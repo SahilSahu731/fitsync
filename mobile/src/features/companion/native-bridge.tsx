@@ -15,7 +15,6 @@ import { addDays, currentGoals, emptyJournal, type Journal } from "../progress/m
 import { useCompanion } from "./companion-context";
 import { defaultReminders, type CompanionRecord } from "./api";
 import {
-  clearCompanionReminders,
   retainCompanionRemindersForOwner,
   handleCompanionReminderResponse,
   reconcileCompanionReminders,
@@ -35,7 +34,7 @@ export function CompanionNativeBridge() {
   return <AccountNativeBridge key={user?.id ?? "signed-out"} ownerId={user?.id ?? ""} />;
 }
 function AccountNativeBridge({ ownerId }: { ownerId: string }) {
-  const { profile } = useSession(),
+  const { profile, settings } = useSession(),
     billing = useBilling(),
     workout = useWorkout(),
     companion = useCompanion(),
@@ -215,6 +214,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
     workout.session,
     activeRest,
     workout.focusedExerciseId,
+    settings?.weightUnit ?? "kg",
   );
   useLayoutEffect(() => {
     current.current = { workout, prefs, controls, isPro: billing.isPro };
@@ -266,10 +266,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
   useEffect(() => {
     if (Platform.OS === "web" || !ownerId) return;
     if (billing.loading) return;
-    if (!billing.isPro) {
-      void Promise.allSettled([clearCompanionReminders(), clearCompanionWidget()]);
-      return;
-    }
+    if (!billing.isPro) void clearCompanionWidget().catch(() => {});
     if (!companion.stateLoaded) return;
     let valid = true;
     void (async () => {
@@ -305,7 +302,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
           : prefs;
       const result = await reconcileCompanionReminders({
         ownerId,
-        prefs: personalPrefs,
+        prefs: billing.isPro ? personalPrefs : { ...personalPrefs, habits: {} },
         preserveTraining: !trainingReady,
         sessions,
         completedDates:
@@ -314,7 +311,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
             : completed.map((item) => reminderDate(Date.parse(item.finished_at!), timezone)),
       });
       if (!valid || !alive.current) return;
-      if (trainingReady)
+      if (trainingReady && billing.isPro)
         await publishCompanionWidget({
           ownerId,
           nextSessionTitle: next?.title ?? null,
@@ -358,14 +355,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
     if (!ownerId || Platform.OS === "web") return;
     let mounted = true;
     const handle = async (response: Notifications.NotificationResponse | null) => {
-      if (
-        !mounted ||
-        !response ||
-        !current.current.isPro ||
-        actionBusy.current ||
-        workout.loading ||
-        !companion.stateLoaded
-      )
+      if (!mounted || !response || actionBusy.current || workout.loading || !companion.stateLoaded)
         return;
       const request = response.notification.request;
       if (
@@ -380,7 +370,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
       try {
         const { workout: latest, controls: snapshot, prefs: preferences } = current.current;
         const action = parseCompanionWorkoutControl(response, snapshot);
-        if (action) {
+        if (action && current.current.isPro) {
           if (action.action === "pause-rest" && latest.restTimer) {
             const seconds = Math.max(1, Math.ceil((latest.restTimer.endsAt - Date.now()) / 1000));
             const value = { sessionId: action.sessionId, seconds };
@@ -412,7 +402,11 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
           }
           if (mounted) router.push("/workout");
         } else {
-          const reminder = await handleCompanionReminderResponse(response, ownerId, preferences);
+          const reminder = await handleCompanionReminderResponse(
+            response,
+            ownerId,
+            current.current.isPro ? preferences : { ...preferences, habits: {} },
+          );
           if (reminder === "open" && mounted) router.push("/(tabs)/train");
           else if (reminder === "meals" && mounted) router.push("/wellness");
           else if ((reminder === "hydration" || reminder === "sleep") && mounted)

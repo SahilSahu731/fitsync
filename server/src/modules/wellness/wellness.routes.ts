@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { createHash, randomBytes } from "node:crypto";
-import { rateLimit } from "express-rate-limit";
+import { apiRateLimit } from "../../middleware/rate-limit.js";
 import { z } from "zod";
 import { db } from "../../config/supabase.js";
 import { ApiError, checkDbError } from "../../common/errors.js";
@@ -228,7 +228,12 @@ router.post(
 );
 router.post(
   "/partner/join",
-  rateLimit({ windowMs: 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false }),
+  apiRateLimit("wellness-1", {
+    windowMs: 60000,
+    limit: 10,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  }),
   asyncHandler(async (req, res) => {
     const { code } = z
       .object({ code: z.string().regex(/^[A-Za-z0-9_-]{24}$/) })

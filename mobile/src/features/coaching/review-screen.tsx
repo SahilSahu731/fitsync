@@ -10,6 +10,7 @@ import { useBilling } from "@/src/features/billing/billing-context";
 import { coachingForOwner, type WeeklyReview } from "./api";
 import { CoachHeader, CoachLink, Notes } from "./components";
 import { displayDate } from "./model";
+import { WeeklyReviewPreview } from "../billing/personal-preview";
 
 export function CoachReviewScreen() {
   const { isPro, loading: billingLoading } = useBilling();
@@ -75,6 +76,7 @@ export function CoachReviewScreen() {
           <ActivityIndicator color={C.ink} style={{ marginVertical: 40 }} />
         ) : !isPro ? (
           <>
+            <WeeklyReviewPreview />
             <View className="mb-6 h-16 w-16 items-center justify-center rounded-[23px] bg-white/5">
               <MaterialCommunityIcons name="chart-timeline-variant" color={C.ink} size={30} />
             </View>
@@ -85,7 +87,10 @@ export function CoachReviewScreen() {
               Review your completed workouts and next steps with FitSync Pro. Your normal progress
               tracking and history stay free.
             </Txt>
-            <PrimaryButton title="Explore FitSync Pro" onPress={() => router.push("/pro")} />
+            <PrimaryButton
+              title="Explore FitSync Pro"
+              onPress={() => router.push({ pathname: "/pro", params: { source: "weekly_review" } })}
+            />
           </>
         ) : (
           <>
@@ -99,6 +104,7 @@ export function CoachReviewScreen() {
             )}
             {review && (
               <>
+                <WeeklyReviewPreview unlocked />
                 <Txt weight="semibold" className="mb-3 text-xs tracking-[1px] text-ink">
                   {displayDate(review.period.start)} – {displayDate(review.period.end)}
                 </Txt>

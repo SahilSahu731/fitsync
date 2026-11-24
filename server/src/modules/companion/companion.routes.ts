@@ -1,5 +1,5 @@
 import { Router } from "express";
-import { rateLimit } from "express-rate-limit";
+import { apiRateLimit } from "../../middleware/rate-limit.js";
 import { z } from "zod";
 import { asyncHandler } from "../../common/async-handler.js";
 import { getAuth, requireAuth } from "../../middleware/auth.js";
@@ -26,7 +26,12 @@ router.use((_req, res, next) => {
 });
 router.get(
   "/shared/:token",
-  rateLimit({ windowMs: 60000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }),
+  apiRateLimit("companion-1", {
+    windowMs: 60000,
+    limit: 30,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  }),
   asyncHandler(async (req, res) => {
     res.json(await service.readShare(shareTokenSchema.parse(req.params.token)));
   }),
@@ -52,7 +57,18 @@ router.get(
 );
 router.put(
   "/records/:id",
-  requirePro,
+  (req, res, next) => {
+    const input = saveRecordSchema.safeParse(req.body);
+    // Workout schedules are free; enabling a daily habit still requires Pro.
+    if (
+      req.params.id === "reminders" &&
+      input.success &&
+      input.data.kind === "reminders" &&
+      !Object.values(input.data.data.habits ?? {}).some((habit) => habit?.enabled)
+    )
+      return next();
+    return requirePro(req, res, next);
+  },
   asyncHandler(async (req, res) => {
     res.json(
       await service.saveRecord(
@@ -79,7 +95,12 @@ router.delete(
 router.post(
   "/photos",
   requirePro,
-  rateLimit({ windowMs: 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false }),
+  apiRateLimit("companion-2", {
+    windowMs: 60000,
+    limit: 10,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  }),
   photoUpload,
   asyncHandler(async (req, res) => {
     res.status(201).json(await uploadPhoto(getAuth(req).userId, req.file, req.body));
@@ -94,7 +115,12 @@ router.delete(
 router.post(
   "/shares",
   requirePro,
-  rateLimit({ windowMs: 60000, limit: 10, standardHeaders: "draft-8", legacyHeaders: false }),
+  apiRateLimit("companion-3", {
+    windowMs: 60000,
+    limit: 10,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  }),
   asyncHandler(async (req, res) => {
     res
       .status(201)

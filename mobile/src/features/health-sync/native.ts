@@ -1,4 +1,4 @@
-import { Linking, Platform } from "react-native";
+import { Platform } from "react-native";
 import Constants, { ExecutionEnvironment } from "expo-constants";
 import { healthDays, latestWeightValues, sleepValues, type SleepInterval } from "./model";
 import type { HealthAdapter, HealthMetric, HealthValue } from "./types";
@@ -9,16 +9,7 @@ function healthConnect() {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   return require("react-native-health-connect") as typeof import("react-native-health-connect");
 }
-function healthKit() {
-  // eslint-disable-next-line @typescript-eslint/no-require-imports
-  return require("@kingstinct/react-native-healthkit") as typeof import("@kingstinct/react-native-healthkit");
-}
 const permissions = ["Steps", "SleepSession", "Weight"] as const;
-const readTypes = [
-  "HKQuantityTypeIdentifierStepCount",
-  "HKCategoryTypeIdentifierSleepAnalysis",
-  "HKQuantityTypeIdentifierBodyMass",
-] as const;
 const buildReason =
   "Health import is not available in this version of FitSync. You can still track manually.";
 
@@ -164,118 +155,10 @@ const androidAdapter: HealthAdapter = {
   },
 };
 
-const iosAdapter: HealthAdapter = {
-  source: "healthkit",
-  async available() {
-    try {
-      return (await healthKit().isHealthDataAvailable())
-        ? { available: true }
-        : {
-            available: false,
-            reason:
-              "Apple Health is unavailable on this device. Manual tracking is still available.",
-          };
-    } catch {
-      return { available: false, reason: buildReason };
-    }
-  },
-  async requestReadAccess() {
-    const completed = await healthKit().requestAuthorization({
-      toRead: [...readTypes],
-      toShare: [],
-    });
-    if (!completed)
-      throw new Error("Apple Health access was not completed. You can keep tracking manually.");
-    // HealthKit deliberately does not disclose whether read access was granted.
-  },
-  async readLastWeek(now) {
-    const hk = healthKit();
-    const days = healthDays(now);
-    const dates = days.map((day) => day.date);
-    const values: HealthValue[] = [];
-    const warnings: string[] = [];
-    const read = async (name: string, action: () => Promise<void>) => {
-      try {
-        await action();
-      } catch {
-        warnings.push(
-          `${name} could not be read. Review FitSync access in Apple Health and retry.`,
-        );
-      }
-    };
-    await read("Steps", async () => {
-      for (const day of days) {
-        if (day.end <= day.start) continue;
-        const stats = await hk.queryStatisticsForQuantity(
-          "HKQuantityTypeIdentifierStepCount",
-          ["cumulativeSum"],
-          {
-            unit: "count",
-            filter: { date: { startDate: day.start, endDate: day.end, strictStartDate: true } },
-          },
-        );
-        if (stats.sumQuantity && Number.isFinite(stats.sumQuantity.quantity))
-          values.push({
-            metric: "steps",
-            date: day.date,
-            value: Math.round(stats.sumQuantity.quantity),
-          });
-      }
-    });
-    const startDate = new Date(days[0].start);
-    startDate.setDate(startDate.getDate() - 1);
-    const filter = { date: { startDate, endDate: now } };
-    await read("Sleep", async () => {
-      const samples = await hk.queryCategorySamples("HKCategoryTypeIdentifierSleepAnalysis", {
-        filter,
-        limit: 0,
-      });
-      const asleep = [
-        hk.CategoryValueSleepAnalysis.asleepUnspecified,
-        hk.CategoryValueSleepAnalysis.asleepCore,
-        hk.CategoryValueSleepAnalysis.asleepDeep,
-        hk.CategoryValueSleepAnalysis.asleepREM,
-      ];
-      values.push(
-        ...sleepValues(
-          samples
-            .filter((sample) => asleep.includes(sample.value))
-            .map((sample) => ({
-              start: sample.startDate.getTime(),
-              end: sample.endDate.getTime(),
-            })),
-          dates,
-        ),
-      );
-    });
-    await read("Weight", async () => {
-      const samples = await hk.queryQuantitySamples("HKQuantityTypeIdentifierBodyMass", {
-        filter,
-        unit: "kg",
-        limit: 0,
-      });
-      values.push(
-        ...latestWeightValues(
-          samples.map((sample) => ({ at: sample.startDate.getTime(), kg: sample.quantity })),
-          dates,
-        ),
-      );
-    });
-    if (!values.length)
-      warnings.push(
-        "No readable records were returned. Apple Health does not tell FitSync whether read access is denied or there is no data.",
-      );
-    return { source: "healthkit", values, warnings };
-  },
-  async openSettings() {
-    await Linking.openURL("x-apple-health://");
-  },
-};
-
 export function getHealthAdapter(): HealthAdapter {
-  const adapter = Platform.OS === "android" ? androidAdapter : iosAdapter;
+  const adapter = androidAdapter;
   if (
-    (Platform.OS !== "android" && Platform.OS !== "ios") ||
+    Platform.OS !== "android" ||
     Constants.executionEnvironment === ExecutionEnvironment.StoreClient
   ) {
     return {
@@ -283,9 +166,7 @@ export function getHealthAdapter(): HealthAdapter {
       available: async () => ({
         available: false,
         reason:
-          Platform.OS === "web"
-            ? "Health import is available in the iOS and Android apps."
-            : buildReason,
+          Platform.OS === "web" ? "Health import is available in the Android app." : buildReason,
       }),
       requestReadAccess: async () => {
         throw new Error(buildReason);

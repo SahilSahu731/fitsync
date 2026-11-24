@@ -1,8 +1,8 @@
 // Fresh in-memory PostgreSQL only; no production connection is accepted.
 import assert from "node:assert/strict";
 import { readFile } from "node:fs/promises";
-const { PGlite } = await import(process.env.FITSYNC_PGLITE_MODULE ?? "@electric-sql/pglite");
-const db = new PGlite();
+import { isolatedDatabase } from "./sql/isolated-database.mjs";
+const db = await isolatedDatabase();
 try {
   await db.exec(
     "CREATE TABLE app_users(id uuid PRIMARY KEY); CREATE TABLE exercises(id uuid PRIMARY KEY);",

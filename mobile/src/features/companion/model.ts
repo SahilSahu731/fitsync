@@ -131,7 +131,7 @@ export function milestoneProgress(
     );
     if (values.length) {
       current = Math.max(...values);
-      evidence = "Highest completed working-set load; stored in kg.";
+      evidence = "Highest completed working-set load.";
     }
   } else if (goal.type === "consistency") {
     const start = addDays(today, -6);

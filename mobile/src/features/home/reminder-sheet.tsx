@@ -24,6 +24,7 @@ import {
 } from "./reminder-settings";
 
 type Kind = "workout" | "water" | "diet";
+type IconName = React.ComponentProps<typeof MaterialCommunityIcons>["name"];
 type Draft = {
   values: HomeReminderDraft;
   base: ReturnType<typeof defaultReminders>;
@@ -37,13 +38,21 @@ const ITEMS = [
     title: "Workout",
     icon: "dumbbell",
     detail: "A nudge to make time for training",
+    accent: "#FF7A59",
   },
-  { kind: "water", title: "Water", icon: "water-outline", detail: "A daily hydration check-in" },
+  {
+    kind: "water",
+    title: "Water",
+    icon: "water-outline",
+    detail: "A daily hydration check-in",
+    accent: "#4FC3F7",
+  },
   {
     kind: "diet",
     title: "Diet",
     icon: "silverware-fork-knife",
     detail: "A daily nudge for food & nutrition",
+    accent: "#7CE08A",
   },
 ] as const;
 const DAYS = ["Mon", "Tue", "Wed", "Thu", "Fri", "Sat", "Sun"];
@@ -56,6 +65,173 @@ const timeDate = (time: string) => {
 const timeText = (time: string) =>
   timeDate(time).toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" });
 const changed = (a: unknown, b: unknown) => JSON.stringify(a) !== JSON.stringify(b);
+
+/* ----------------------------- presentation only ----------------------------- */
+
+const GOLD = "#E9D5A1";
+const rgba = (hex: string, alpha: number) => {
+  const n = parseInt(hex.slice(1), 16);
+  return `rgba(${(n >> 16) & 255},${(n >> 8) & 255},${n & 255},${alpha})`;
+};
+
+/** A tappable field row: icon, label, current value, chevron. */
+function FieldRow({
+  icon,
+  accent,
+  label,
+  value,
+  chevron = "chevron-down",
+  disabled,
+  dimmed,
+  accessibilityLabel,
+  onPress,
+}: {
+  icon: IconName;
+  accent: string;
+  label: string;
+  value: string;
+  chevron?: IconName;
+  disabled: boolean;
+  dimmed?: boolean;
+  accessibilityLabel: string;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={accessibilityLabel}
+      accessibilityState={{ disabled }}
+      disabled={disabled}
+      onPress={onPress}
+      className="mt-3 min-h-12 flex-row items-center gap-2.5 rounded-xl px-3.5"
+      style={{
+        opacity: dimmed ? 0.4 : 1,
+        backgroundColor: "rgba(255,255,255,0.06)",
+        borderWidth: 1,
+        borderColor: rgba(accent, 0.16),
+      }}
+    >
+      <MaterialCommunityIcons name={icon} size={17} color={accent} />
+      <Txt className="text-sm text-muted">{label}</Txt>
+      <Txt weight="medium" numberOfLines={1} className="min-w-0 flex-1 text-right text-sm">
+        {value}
+      </Txt>
+      <MaterialCommunityIcons name={chevron} size={18} color="#A3A3A3" />
+    </Pressable>
+  );
+}
+
+/** A quiet inline notice with a tinted icon. */
+function Notice({
+  icon = "information-outline",
+  tint = "#A3A3A3",
+  children,
+  action,
+}: {
+  icon?: IconName;
+  tint?: string;
+  children: React.ReactNode;
+  action?: React.ReactNode;
+}) {
+  return (
+    <View
+      className="mb-3 flex-row gap-3 rounded-2xl p-4"
+      style={{ backgroundColor: rgba(tint, 0.09), borderWidth: 1, borderColor: rgba(tint, 0.25) }}
+    >
+      <MaterialCommunityIcons name={icon} size={18} color={tint} style={{ marginTop: 1 }} />
+      <View className="min-w-0 flex-1">
+        <Txt className="text-xs leading-5 text-muted">{children}</Txt>
+        {action}
+      </View>
+    </View>
+  );
+}
+
+const PREVIEWS: { icon: IconName; accent: string; title: string; body: string; when: string }[] = [
+  {
+    icon: "water-outline",
+    accent: "#4FC3F7",
+    title: "Time to hydrate",
+    body: "You’re 2 glasses behind today. Tap to log one.",
+    when: "now",
+  },
+  {
+    icon: "silverware-fork-knife",
+    accent: "#7CE08A",
+    title: "Lunch check-in",
+    body: "Add your meal and keep your calories on track.",
+    when: "12:30 PM",
+  },
+  {
+    icon: "weather-night",
+    accent: "#B39DFF",
+    title: "Wind down",
+    body: "Log your sleep and close out the day.",
+    when: "9:30 PM",
+  },
+];
+const CARD_H = 78;
+const STEP = 46;
+const CARD_BG = ["#2A2A2D", "#202022", "#171718"];
+const CARD_FADE = [1, 0.7, 0.45];
+const PRO_FEATURES = ["Water & hydration", "Meals & calories", "Weigh-in check-ins", "Sleep wind-down"];
+
+/** Notification-style cards stacked like a phone lock screen, fading back. */
+function ProNotificationStack() {
+  return (
+    <View
+      accessibilityElementsHidden
+      importantForAccessibility="no-hide-descendants"
+      style={{ height: CARD_H + STEP * (PREVIEWS.length - 1) }}
+    >
+      {PREVIEWS.map((item, i) => (
+        <View
+          key={item.title}
+          style={{
+            position: "absolute",
+            top: i * STEP,
+            left: i * 10,
+            right: i * 10,
+            height: CARD_H,
+            zIndex: PREVIEWS.length - i,
+            borderRadius: 20,
+            backgroundColor: CARD_BG[i],
+            borderWidth: 1,
+            borderColor: "rgba(255,255,255,0.08)",
+            shadowColor: "#000000",
+            shadowOpacity: 0.45,
+            shadowRadius: 10,
+            shadowOffset: { width: 0, height: 4 },
+            elevation: 6 - i,
+          }}
+        >
+          <View className="flex-1 flex-row gap-3 p-3" style={{ opacity: CARD_FADE[i] }}>
+            <View
+              className="h-9 w-9 items-center justify-center rounded-[10px]"
+              style={{ backgroundColor: item.accent }}
+            >
+              <MaterialCommunityIcons name={item.icon} size={19} color="#0B0B0B" />
+            </View>
+            <View className="min-w-0 flex-1">
+              <View className="flex-row items-center">
+                <Txt className="min-w-0 flex-1 text-[11px] text-muted">FitSync</Txt>
+                <Txt className="text-[11px] text-muted">{item.when}</Txt>
+              </View>
+              <Txt weight="semibold" numberOfLines={1} className="mt-0.5 text-[13px]">
+                {item.title}
+              </Txt>
+              <Txt numberOfLines={1} className="mt-0.5 text-xs text-muted">
+                {item.body}
+              </Txt>
+            </View>
+          </View>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+/* ---------------------------------- logic ---------------------------------- */
 
 export function HomeReminderSheet({ onClose }: { onClose: () => void }) {
   const { user } = useSession();
@@ -114,9 +290,9 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
   const sourceError = companion.stateError;
   const programChanged = draft !== null && draft.programId !== (activeEnrollment?.id ?? null);
   const workoutUnavailable = program.loading || Boolean(program.error) || programChanged;
-  const disabled =
-    loading || !companion.stateLoaded || working || companion.busy || !billing.isPro || !ownerId;
-  const disabledFor = (kind: Kind) => disabled || (kind === "workout" && workoutUnavailable);
+  const disabled = loading || !companion.stateLoaded || working || companion.busy || !ownerId;
+  const disabledFor = (kind: Kind) =>
+    disabled || (kind === "workout" ? workoutUnavailable : !billing.isPro);
   const personal = homeReminderPreferences(draft?.base ?? base, values, Boolean(enrollment));
   const quietKinds = ITEMS.filter((item) => {
     if (!values[item.kind].enabled || (item.kind === "workout" && enrollment)) return false;
@@ -150,7 +326,12 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
         mode: "time",
         value: timeDate(values[kind].time),
         onValueChange: (_, value) => {
-          if (!current.current.isPro || current.current.ownerId !== ownerId || lock.current) return;
+          if (
+            (kind !== "workout" && !current.current.isPro) ||
+            current.current.ownerId !== ownerId ||
+            lock.current
+          )
+            return;
           const time = `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
           change(kind, (previous) => ({ ...previous, [kind]: { ...previous[kind], time } }));
         },
@@ -170,7 +351,7 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
     const mapped = homeReminderPreferences(snapshot.base, snapshot.values, Boolean(enrollment));
     // Water/diet changes never rewrite workout settings using an unavailable
     // or changed program snapshot.
-    const next = snapshot.workoutEdited
+    const nextWithHabits = snapshot.workoutEdited
       ? mapped
       : {
           ...mapped,
@@ -178,6 +359,7 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
           time: snapshot.base.time,
           days: snapshot.base.days,
         };
+    const next = billing.isPro ? nextWithHabits : { ...nextWithHabits, habits: {} };
     const checkedValues = snapshot.workoutEdited
       ? snapshot.values
       : {
@@ -197,9 +379,10 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
     }
     const account = ownerId;
     const enrollmentId = activeEnrollment?.id ?? null;
+    const requiresPro = Object.values(next.habits ?? {}).some((habit) => habit?.enabled);
     const valid = () =>
       current.current.ownerId === account &&
-      current.current.isPro &&
+      (!requiresPro || current.current.isPro) &&
       (!snapshot.workoutEdited ||
         (current.current.workoutReady && current.current.programId === enrollmentId));
     const personalChanged = changed(snapshot.base, next);
@@ -276,11 +459,14 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
       if (current.current.ownerId === account) setWorking(false);
     }
   }
+
+  const visibleItems = ITEMS.filter((item) => billing.isPro || item.kind === "workout");
+
   return (
     <Sheet
       eyebrow="A LITTLE NUDGE"
       title="Your reminders"
-      subtitle="Three small ways to stay in sync."
+      subtitle="Make time for training. Build your daily routine."
       busy={working}
       onClose={close}
       footer={
@@ -290,36 +476,20 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
               {error}
             </Txt>
           )}
-          {!billing.isPro && !billing.loading ? (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Explore Pro reminders"
-              onPress={() => {
-                onClose();
-                router.push("/membership");
-              }}
-              className="min-h-14 items-center justify-center rounded-full bg-white px-5"
-            >
-              <Txt weight="medium" className="text-sm text-black">
-                Explore Pro
-              </Txt>
-            </Pressable>
-          ) : (
-            <Pressable
-              accessibilityRole="button"
-              accessibilityLabel="Save reminders"
-              accessibilityState={{ disabled: disabled || !draft, busy: working }}
-              disabled={disabled || !draft}
-              onPress={() => void save()}
-              className="min-h-14 flex-row items-center justify-center gap-2 rounded-full bg-white px-5"
-              style={{ opacity: disabled || !draft ? 0.4 : 1 }}
-            >
-              {working && <ActivityIndicator color="#000000" />}
-              <Txt weight="medium" className="text-sm text-black">
-                {working ? "Saving…" : "Save reminders"}
-              </Txt>
-            </Pressable>
-          )}
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Save reminders"
+            accessibilityState={{ disabled: disabled || !draft, busy: working }}
+            disabled={disabled || !draft}
+            onPress={() => void save()}
+            className="min-h-14 flex-row items-center justify-center gap-2 rounded-2xl bg-white px-5"
+            style={{ opacity: disabled || !draft ? 0.4 : 1 }}
+          >
+            {working && <ActivityIndicator color="#000000" />}
+            <Txt weight="semibold" className="text-[15px] text-black">
+              {working ? "Saving…" : "Save reminders"}
+            </Txt>
+          </Pressable>
         </>
       }
     >
@@ -329,58 +499,62 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
           <Txt className="flex-1 text-xs text-muted">Opening your saved reminders…</Txt>
         </View>
       )}
-      {!billing.isPro && !billing.loading && (
-        <Txt className="mb-4 text-xs leading-6 text-muted">
-          Custom workout, water and diet reminders are included with Pro.
-        </Txt>
-      )}
       {!!sourceError && (
-        <View className="mb-4 rounded-2xl bg-white/5 p-4">
-          <Txt className="text-xs leading-5 text-muted">
-            {companion.stateLoaded
-              ? "Showing your last loaded reminder settings."
-              : "Your reminder settings haven’t loaded yet."}{" "}
-            {sourceError}
-          </Txt>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Retry reminders"
-            disabled={working || loading}
-            onPress={() => void companion.refresh()}
-            className="min-h-11 justify-center"
-          >
-            <Txt weight="medium" className="text-xs">
-              Try again
-            </Txt>
-          </Pressable>
-        </View>
+        <Notice
+          icon="alert-circle-outline"
+          tint="#FF8A80"
+          action={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Retry reminders"
+              disabled={working || loading}
+              onPress={() => void companion.refresh()}
+              className="min-h-11 justify-center"
+            >
+              <Txt weight="medium" className="text-xs">
+                Try again
+              </Txt>
+            </Pressable>
+          }
+        >
+          {companion.stateLoaded
+            ? "Showing your last loaded reminder settings."
+            : "Your reminder settings haven’t loaded yet."}{" "}
+          {sourceError}
+        </Notice>
       )}
       {!!program.error && (
-        <View className="mb-4 rounded-2xl bg-white/5 p-4">
-          <Txt className="text-xs leading-5 text-muted">
-            Workout reminders couldn’t refresh. You can still change water and diet reminders.
-          </Txt>
-          <Pressable
-            accessibilityRole="button"
-            accessibilityLabel="Retry workout reminders"
-            disabled={working || program.loading}
-            onPress={() => void program.refresh()}
-            className="min-h-11 justify-center"
-          >
-            <Txt weight="medium" className="text-xs">
-              Try again
-            </Txt>
-          </Pressable>
-        </View>
+        <Notice
+          icon="alert-circle-outline"
+          tint="#FF8A80"
+          action={
+            <Pressable
+              accessibilityRole="button"
+              accessibilityLabel="Retry workout reminders"
+              disabled={working || program.loading}
+              onPress={() => void program.refresh()}
+              className="min-h-11 justify-center"
+            >
+              <Txt weight="medium" className="text-xs">
+                Try again
+              </Txt>
+            </Pressable>
+          }
+        >
+          Workout reminders couldn’t refresh. You can still change water and diet reminders.
+        </Notice>
       )}
       {programChanged && (
-        <Txt accessibilityRole="alert" className="mb-4 text-xs leading-5 text-muted">
-          Your training program changed. Reopen this sheet to edit workout reminders. Water and diet
-          are still available.
-        </Txt>
+        <View accessibilityRole="alert">
+          <Notice icon="swap-horizontal" tint="#4FC3F7">
+            Your training program changed. Reopen this sheet to edit workout reminders. Water and
+            diet are still available.
+          </Notice>
+        </View>
       )}
-      <View className="gap-3">
-        {ITEMS.map((item) => {
+
+      <View className="overflow-hidden rounded-3xl border bg-white/[0.035]">
+        {visibleItems.map((item, index) => {
           const setting = values[item.kind];
           const itemDisabled = disabledFor(item.kind);
           const timezone =
@@ -388,17 +562,31 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
           return (
             <View
               key={item.kind}
-              className="rounded-[24px] border border-white/5 bg-white/[0.04] p-4"
+              className={`px-4 py-2 ${index > 0 ? "border-t border-white/[0.07]" : ""}`}
             >
-              <View className="flex-row items-center gap-3">
-                <View className="h-11 w-11 items-center justify-center rounded-full bg-white/5">
-                  <MaterialCommunityIcons name={item.icon} size={22} color="#FFFFFF" />
+              <View className="flex-row items-center gap-3.5">
+                <View
+                  className="h-11 w-11 items-center justify-center rounded-xl"
+                  style={{
+                    backgroundColor: rgba(item.accent, setting.enabled ? 0.22 : 0.12),
+                    borderWidth: 1,
+                    borderColor: rgba(item.accent, setting.enabled ? 0.5 : 0.18),
+                  }}
+                >
+                  <MaterialCommunityIcons name={item.icon} size={22} color={item.accent} />
                 </View>
                 <View className="min-w-0 flex-1">
-                  <Txt weight="medium" className="text-sm">
-                    {item.title}
-                  </Txt>
-                  <Txt className="mt-1 text-[10px] leading-4 text-muted">
+                  <View className="flex-row items-center gap-2">
+                    <Txt weight="semibold" className="text-[15px]">
+                      {item.title}
+                    </Txt>
+                    {item.kind === "workout" && (
+                      <View className="rounded-md bg-white/10 px-1.5 py-0.5">
+                        <Txt className="text-[9px] text-muted">Free</Txt>
+                      </View>
+                    )}
+                  </View>
+                  <Txt className="mt-0.5 text-xs leading-4 text-muted">
                     {item.kind === "workout" && enrollment
                       ? "Your daily program reminder"
                       : item.detail}
@@ -414,130 +602,200 @@ function AccountReminderSheet({ ownerId, onClose }: { ownerId: string; onClose: 
                       [item.kind]: { ...previous[item.kind], enabled },
                     }))
                   }
-                  trackColor={{ false: "#333333", true: "#FFFFFF" }}
-                  thumbColor={setting.enabled ? "#111111" : "#A3A3A3"}
+                  trackColor={{ false: "#333333", true: item.accent }}
+                  thumbColor={setting.enabled ? "#FFFFFF" : "#A3A3A3"}
                 />
               </View>
-              <Pressable
-                accessibilityRole="button"
-                accessibilityLabel={`Choose ${item.title.toLowerCase()} reminder time`}
-                accessibilityState={{ disabled: itemDisabled || !setting.enabled }}
-                disabled={itemDisabled || !setting.enabled}
-                onPress={() => chooseTime(item.kind)}
-                className="mt-3 min-h-12 flex-row items-center gap-2 rounded-full bg-white/5 px-4"
-                style={{ opacity: setting.enabled ? 1 : 0.4 }}
-              >
-                <MaterialCommunityIcons name="clock-outline" size={17} color="#A3A3A3" />
-                <Txt weight="medium" className="min-w-0 flex-1 text-sm">
-                  {timeText(setting.time)}
-                </Txt>
-                <MaterialCommunityIcons name="chevron-down" size={18} color="#A3A3A3" />
-              </Pressable>
-              {picker === item.kind && Platform.OS !== "android" && (
-                <DateTimePicker
-                  mode="time"
-                  display="spinner"
-                  themeVariant="dark"
-                  value={timeDate(setting.time)}
-                  onValueChange={(_, value) => {
-                    const time = `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
-                    change(item.kind, (previous) => ({
-                      ...previous,
-                      [item.kind]: { ...previous[item.kind], time },
-                    }));
-                  }}
-                />
-              )}
-              {item.kind === "workout" && !enrollment && setting.enabled && (
-                <View className="mt-1">
-                  <Pressable
-                    accessibilityRole="button"
-                    accessibilityLabel="Change workout reminder days"
-                    disabled={itemDisabled}
-                    onPress={() => setShowDays((value) => !value)}
-                    className="min-h-11 flex-row items-center gap-2"
-                  >
-                    <Txt className="min-w-0 flex-1 text-[10px] leading-5 text-muted">
-                      {values.days.length === 7
-                        ? "Every day"
-                        : values.days.length
-                          ? values.days.map((day) => DAYS[day - 1]).join(" · ")
-                          : "Choose workout days"}
-                    </Txt>
-                    <MaterialCommunityIcons
-                      name={showDays ? "chevron-up" : "chevron-down"}
-                      size={17}
-                      color="#A3A3A3"
-                    />
-                  </Pressable>
-                  {showDays && (
-                    <View className="flex-row flex-wrap gap-2">
-                      {DAYS.map((day, index) => {
-                        const number = index + 1,
-                          selected = values.days.includes(number);
-                        return (
-                          <Pressable
-                            key={day}
-                            accessibilityRole="checkbox"
-                            accessibilityLabel={day}
-                            accessibilityState={{ checked: selected, disabled: itemDisabled }}
-                            disabled={itemDisabled}
-                            onPress={() =>
-                              change("workout", (previous) => ({
-                                ...previous,
-                                days: selected
-                                  ? previous.days.filter((value) => value !== number)
-                                  : [...previous.days, number].sort((a, b) => a - b),
-                              }))
-                            }
-                            className={`min-h-11 min-w-14 items-center justify-center rounded-full px-3 ${selected ? "bg-white" : "bg-white/5"}`}
-                          >
-                            <Txt
-                              className={`text-[11px] ${selected ? "text-black" : "text-muted"}`}
-                            >
-                              {day}
-                            </Txt>
-                          </Pressable>
-                        );
-                      })}
-                    </View>
-                  )}
-                </View>
-              )}
+
               {setting.enabled && (
-                <Txt className="mt-2 text-[9px] leading-4 text-muted">
-                  {item.kind !== "workout" ? "Every day · " : enrollment ? "Daily · " : ""}
-                  {timezone}
-                </Txt>
+                <>
+                  <FieldRow
+                    icon="clock-outline"
+                    accent={item.accent}
+                    label="Time"
+                    value={timeText(setting.time)}
+                    disabled={itemDisabled || !setting.enabled}
+                    accessibilityLabel={`Choose ${item.title.toLowerCase()} reminder time`}
+                    onPress={() => chooseTime(item.kind)}
+                  />
+                  {picker === item.kind && Platform.OS !== "android" && (
+                    <DateTimePicker
+                      mode="time"
+                      display="spinner"
+                      themeVariant="dark"
+                      value={timeDate(setting.time)}
+                      onValueChange={(_, value) => {
+                        const time = `${String(value.getHours()).padStart(2, "0")}:${String(value.getMinutes()).padStart(2, "0")}`;
+                        change(item.kind, (previous) => ({
+                          ...previous,
+                          [item.kind]: { ...previous[item.kind], time },
+                        }));
+                      }}
+                    />
+                  )}
+                  {item.kind === "workout" && !enrollment && (
+                    <>
+                      <FieldRow
+                        icon="calendar-outline"
+                        accent={item.accent}
+                        label="Repeat"
+                        value={
+                          values.days.length === 7
+                            ? "Every day"
+                            : values.days.length
+                              ? values.days.map((day) => DAYS[day - 1]).join(" · ")
+                              : "Choose workout days"
+                        }
+                        chevron={showDays ? "chevron-up" : "chevron-down"}
+                        disabled={itemDisabled}
+                        accessibilityLabel="Change workout reminder days"
+                        onPress={() => setShowDays((value) => !value)}
+                      />
+                      {showDays && (
+                        <View className="mt-3 flex-row gap-1.5">
+                          {DAYS.map((day, dayIndex) => {
+                            const number = dayIndex + 1,
+                              selected = values.days.includes(number);
+                            return (
+                              <Pressable
+                                key={day}
+                                accessibilityRole="checkbox"
+                                accessibilityLabel={day}
+                                accessibilityState={{ checked: selected, disabled: itemDisabled }}
+                                disabled={itemDisabled}
+                                onPress={() =>
+                                  change("workout", (previous) => ({
+                                    ...previous,
+                                    days: selected
+                                      ? previous.days.filter((value) => value !== number)
+                                      : [...previous.days, number].sort((a, b) => a - b),
+                                  }))
+                                }
+                                className="h-11 flex-1 items-center justify-center rounded-xl"
+                                style={{
+                                  backgroundColor: selected ? item.accent : "rgba(255,255,255,0.06)",
+                                }}
+                              >
+                                <Txt
+                                  weight="medium"
+                                  className={`text-xs ${selected ? "text-black" : "text-muted"}`}
+                                >
+                                  {day.charAt(0)}
+                                </Txt>
+                              </Pressable>
+                            );
+                          })}
+                        </View>
+                      )}
+                    </>
+                  )}
+                  <Txt className="mt-3 text-[10px] leading-4 text-muted">
+                    {item.kind !== "workout" ? "Every day · " : enrollment ? "Daily · " : ""}
+                    {timezone}
+                  </Txt>
+                </>
               )}
             </View>
           );
         })}
       </View>
-      {!!quietKinds.length && (
-        <Txt className="mt-4 text-[11px] leading-5 text-muted">
-          {quietKinds.map((item) => item.title).join(" & ")} falls inside your saved quiet hours (
-          {personal.quietStart}–{personal.quietEnd}) and will be skipped. Choose another time.
-        </Txt>
-      )}
-      <Txt className="mt-4 text-[10px] leading-5 text-muted">
-        Workout nudges follow your training schedule. Water and diet are daily check-ins.
+
+      <Txt className="mb-1 mt-3 px-1 text-[11px] leading-5 text-muted">
+        Workout reminders follow your training schedule. Water and diet are daily check-ins.
       </Txt>
+
+      {!!quietKinds.length && (
+        <View className="mt-3">
+          <Notice icon="weather-night" tint="#B39DFF">
+            {quietKinds.map((item) => item.title).join(" & ")} falls inside your saved quiet hours (
+            {personal.quietStart}–{personal.quietEnd}) and will be skipped. Choose another time.
+          </Notice>
+        </View>
+      )}
+
       {(permissionDenied || status.permission === "denied") && (
-        <Pressable
-          accessibilityRole="button"
-          accessibilityLabel="Open phone notification settings"
-          onPress={() =>
-            void Linking.openSettings().catch(() =>
-              setError("Open your phone settings, then FitSync notifications."),
-            )
-          }
-          className="mt-2 min-h-11 justify-center"
-        >
-          <Txt weight="medium" className="text-xs">
-            Open phone notification settings
+        <View className="mt-3">
+          <Notice
+            icon="bell-off-outline"
+            tint="#FFB74D"
+            action={
+              <Pressable
+                accessibilityRole="button"
+                accessibilityLabel="Open phone notification settings"
+                onPress={() =>
+                  void Linking.openSettings().catch(() =>
+                    setError("Open your phone settings, then FitSync notifications."),
+                  )
+                }
+                className="min-h-11 justify-center"
+              >
+                <Txt weight="medium" className="text-xs">
+                  Open phone notification settings
+                </Txt>
+              </Pressable>
+            }
+          >
+            Notifications are off for FitSync.
+          </Notice>
+        </View>
+      )}
+
+      {!billing.isPro && !billing.loading && (
+        <View className="mt-8 overflow-hidden rounded-3xl border-none bg-[#121212] p-2">
+          <View className="flex-row items-center justify-between">
+            <View className="flex-row items-center gap-2">
+              <View
+                className="items-center justify-center rounded-[10px]"
+               >
+                <MaterialCommunityIcons name="crown-circle" size={24} color={"yellow"} />
+              </View>
+              <Txt weight="semibold" className="text-[15px]">
+                FITSYNC Pro
+              </Txt>
+            </View>
+            <MaterialCommunityIcons name="lock-outline" size={17} color="#737373" />
+          </View>
+
+          <View className="mt-5">
+            <ProNotificationStack />
+          </View>
+
+          <Txt
+            accessibilityRole="header"
+            weight="semibold"
+            className="mt-6 text-2xl leading-8 tracking-[-0.6px]"
+          >
+            Every nudge, right on time.
           </Txt>
-        </Pressable>
+          <Txt className="mt-1.5 text-sm leading-6 text-muted">
+            Do it all with Pro. One routine for training, food and recovery.
+          </Txt>
+
+          <View className="mt-4 flex-row flex-wrap">
+            {PRO_FEATURES.map((label) => (
+              <View key={label} className="w-1/2 flex-row items-center gap-2 py-1.5 pr-2">
+                <MaterialCommunityIcons name="check-circle" size={16} color={"yellow"} />
+                <Txt className="min-w-0 flex-1 text-xs">{label}</Txt>
+              </View>
+            ))}
+          </View>
+
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel="Explore Pro reminders"
+            onPress={() => {
+              onClose();
+              router.push("/membership");
+            }}
+            className="mt-5 min-h-14 flex-row items-center justify-center gap-2 rounded-2xl px-5"
+            style={{ backgroundColor: "yellow" }}
+          >
+            <Txt weight="semibold" className="text-[15px] text-black">
+              Unlock all reminders with Pro
+            </Txt>
+            <MaterialCommunityIcons name="arrow-right" size={18} color="#000000" />
+          </Pressable>
+        </View>
       )}
     </Sheet>
   );

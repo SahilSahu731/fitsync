@@ -13,6 +13,9 @@ import { setAppearance } from "../set-types";
 import { validTempo } from "../routine-draft";
 import type { WorkingSetSuggestion } from "../../pro/companion-insights";
 
+import { useSession } from "@/src/context/session";
+import { inputWeightKg, toKg, weightText } from "@/src/lib/weight";
+
 type Patch = Parameters<typeof workoutApi.updateSet>[2];
 export const SetRow = React.memo(function SetRow({
   set,
@@ -37,12 +40,14 @@ export const SetRow = React.memo(function SetRow({
   recommendation?: WorkingSetSuggestion;
   previousDate?: string | null;
 }) {
+  const { settings } = useSession();
+  const unit = settings?.weightUnit ?? "kg";
   const { updateSet, removeSet, startRest, busy, pendingSetIds = [] } = useWorkout();
   const creating = pendingSetIds.includes(set.id);
   const Alert = useAppAlert();
   const { feedback } = useExperience();
   const [weight, setWeight] = useState(
-    set.weight_kg == null ? (trackingType === "reps" ? "0" : "") : String(set.weight_kg),
+    set.weight_kg == null ? (trackingType === "reps" ? "0" : "") : weightText(set.weight_kg, unit),
   );
   const [reps, setReps] = useState(set.reps == null ? "" : String(set.reps));
   const [duration, setDuration] = useState(
@@ -65,12 +70,19 @@ export const SetRow = React.memo(function SetRow({
   const inFlight = useRef(false);
   const dirtyFields = useRef(new Set<string>());
   const inputVersions = useRef<Record<string, number>>({});
+  const displayedUnit = useRef(unit);
   useEffect(() => {
+    if (displayedUnit.current !== unit) dirtyFields.current.delete("weightKg");
+    displayedUnit.current = unit;
     if (!dirtyFields.current.has("weightKg"))
       setWeight(
-        set.weight_kg == null ? (trackingType === "reps" ? "0" : "") : String(set.weight_kg),
+        set.weight_kg == null
+          ? trackingType === "reps"
+            ? "0"
+            : ""
+          : weightText(set.weight_kg, unit),
       );
-  }, [set.weight_kg, trackingType]);
+  }, [set.weight_kg, trackingType, unit]);
   useEffect(() => {
     if (!dirtyFields.current.has("reps")) setReps(set.reps == null ? "" : String(set.reps));
   }, [set.reps]);
@@ -144,7 +156,14 @@ export const SetRow = React.memo(function SetRow({
       return;
     }
     setError("");
-    void updateSet(set.id, { [key]: normalized.trim() === "" ? null : Number(normalized) })
+    void updateSet(set.id, {
+      [key]:
+        normalized.trim() === ""
+          ? null
+          : key === "weightKg"
+            ? toKg(Number(normalized), unit)
+            : Number(normalized),
+    })
       .then(() => {
         if (inputVersions.current[key] === version) dirtyFields.current.delete(key);
       })
@@ -165,7 +184,7 @@ export const SetRow = React.memo(function SetRow({
       return null;
     }
     return {
-      ...(weighted ? { weightKg: Number(weight) } : {}),
+      ...(weighted ? { weightKg: inputWeightKg(weight, set.weight_kg, unit) } : {}),
       ...(!timed ? { reps: Number(reps) } : { durationSeconds: Number(duration) }),
       ...(trackingType === "distance_duration"
         ? { distanceMeters: distance.trim() ? Number(distance) : null }
@@ -209,7 +228,7 @@ export const SetRow = React.memo(function SetRow({
             showLabel={false}
             allowDrag={false}
             onFocus={focus}
-            label={`Set ${number}, ${trackingType === "reps" ? "added weight" : "weight"} in kg`}
+            label={`Set ${number}, ${trackingType === "reps" ? "added weight" : "weight"} in ${unit}`}
             value={weight}
             onChange={(value) => {
               const next = value.replace(",", ".");
@@ -308,7 +327,7 @@ export const SetRow = React.memo(function SetRow({
           <Txt className="text-[10px] text-muted">
             Previous{previousDate ? ` · ${previousDate}` : ""}:{" "}
             {recommendation.previous.weightKg !== null
-              ? `${recommendation.previous.weightKg} kg × `
+              ? `${weightText(recommendation.previous.weightKg, unit)} ${unit} × `
               : ""}
             {recommendation.previous.reps ?? recommendation.previous.durationSeconds ?? "—"}
             {timed ? "s" : " reps"}
@@ -316,7 +335,7 @@ export const SetRow = React.memo(function SetRow({
           <Txt className="mt-1 text-[11px]">
             Suggested:{" "}
             {recommendation.suggested.weightKg !== null && !timed
-              ? `${recommendation.suggested.weightKg} kg × `
+              ? `${weightText(recommendation.suggested.weightKg, unit)} ${unit} × `
               : ""}
             {recommendation.suggested.reps ?? recommendation.suggested.durationSeconds ?? "—"}
             {timed ? "s" : " reps"}

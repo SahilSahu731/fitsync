@@ -60,30 +60,19 @@ export async function rotateRefreshToken(refreshToken: string) {
   }
 
   const nextToken = `${sessionId}.${createRefresh()}`;
-  const now = new Date().toISOString();
-
-  const { data, error } = await db
-    .from("auth_sessions")
-    .update({
-      refresh_hash: hash(nextToken),
-      expires_at: expirationDate(),
-      updated_at: now,
-    })
-    .eq("id", sessionId)
-    .eq("refresh_hash", hash(refreshToken))
-    .is("revoked_at", null)
-    .gt("expires_at", now)
-    .select("user_id")
-    .maybeSingle();
-
+  const { data, error } = await db.rpc("rotate_auth_session_refresh", {
+    p_session_id: sessionId,
+    p_presented_hash: hash(refreshToken),
+    p_next_hash: hash(nextToken),
+  });
   checkDbError(error, "rotate auth token");
-
-  if (!data) {
-    throw new ApiError(401, "Session expired or refresh token already used.");
+  const rotation = data?.[0];
+  if (rotation?.outcome !== "rotated" || !rotation.user_id) {
+    throw new ApiError(401, "Session expired or refresh token already used. Please sign in again.");
   }
 
   return {
-    accessToken: createAccessToken(data.user_id, sessionId),
+    accessToken: createAccessToken(rotation.user_id, sessionId),
     refreshToken: nextToken,
   };
 }

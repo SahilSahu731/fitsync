@@ -1,5 +1,5 @@
 import { Router } from "express";
-import rateLimit from "express-rate-limit";
+import { apiRateLimit } from "../../middleware/rate-limit.js";
 import { z } from "zod";
 import { asyncHandler } from "../../common/async-handler.js";
 import { requireAuth, getAuth } from "../../middleware/auth.js";
@@ -17,7 +17,12 @@ router.post(
 
 router.use(requireAuth);
 router.use(
-  rateLimit({ windowMs: 60_000, limit: 30, standardHeaders: "draft-8", legacyHeaders: false }),
+  apiRateLimit("billing-1", {
+    windowMs: 60_000,
+    limit: 30,
+    standardHeaders: "draft-8",
+    legacyHeaders: false,
+  }),
 );
 router.get(
   "/status",

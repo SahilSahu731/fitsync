@@ -21,6 +21,36 @@ module.exports = ({ config }) => {
         "Release builds require HTTPS EXPO_PUBLIC_API_URL and published privacy/terms URLs (or EXPO_PUBLIC_WEB_URL).",
       );
     }
+    const dsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+    let validDsn = false;
+    try {
+      const parsed = new URL(dsn);
+      validDsn =
+        parsed.protocol === "https:" &&
+        /^[a-zA-Z0-9]+$/.test(parsed.username) &&
+        !parsed.password &&
+        /\/\d+$/.test(parsed.pathname) &&
+        !parsed.search &&
+        !parsed.hash;
+    } catch {}
+    if (
+      !process.env.EXPO_PUBLIC_POSTHOG_KEY?.trim() ||
+      !https(process.env.EXPO_PUBLIC_POSTHOG_HOST) ||
+      !validDsn ||
+      !process.env.SENTRY_ORG ||
+      !process.env.SENTRY_PROJECT ||
+      !process.env.SENTRY_AUTH_TOKEN
+    ) {
+      throw new Error(
+        "Release builds require PostHog key/HTTPS host, Sentry DSN, SENTRY_ORG, SENTRY_PROJECT and secret SENTRY_AUTH_TOKEN. See docs/observability-setup.md.",
+      );
+    }
+    if (
+      process.env.EAS_BUILD_PROFILE === "production" &&
+      process.env.EXPO_PUBLIC_TELEMETRY_DEBUG === "true"
+    ) {
+      throw new Error("Disable EXPO_PUBLIC_TELEMETRY_DEBUG for production builds.");
+    }
   }
   return {
     ...config,
@@ -45,6 +75,11 @@ module.exports = ({ config }) => {
         ];
       }),
       ["./plugins/with-health-privacy", { privacyUrl }],
+      [
+        "@sentry/react-native/expo",
+        { organization: process.env.SENTRY_ORG, project: process.env.SENTRY_PROJECT },
+      ],
+      "expo-localization",
     ],
   };
 };

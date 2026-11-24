@@ -1,3 +1,4 @@
+import { HealthDisclaimer } from "@/src/components/health-disclaimer";
 import React, { useCallback, useLayoutEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -214,6 +215,7 @@ function WellnessWeek({
             <Txt className="mt-1 text-sm text-muted">Simple meals. A commitment you can keep.</Txt>
           </View>
         </View>
+        <HealthDisclaimer />
         <View className="mb-5 flex-row gap-2">
           <OptionPill
             disabled={busy}

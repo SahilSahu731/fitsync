@@ -1,3 +1,5 @@
+import { useSession } from "@/src/context/session";
+import { weightText, type WeightUnit } from "@/src/lib/weight";
 import React, { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -196,11 +198,11 @@ function repsRange(sets: TemplateSet[]) {
   return "—";
 }
 
-function topWeight(sets: TemplateSet[]) {
+function topWeight(sets: TemplateSet[], unit: WeightUnit) {
   const weights = sets
     .map((s) => s.target_weight)
     .filter((n): n is number => typeof n === "number" && n > 0);
-  return weights.length ? `${Math.max(...weights)} kg` : null;
+  return weights.length ? `${weightText(Math.max(...weights), unit)} ${unit}` : null;
 }
 
 function ExerciseRow({
@@ -212,9 +214,10 @@ function ExerciseRow({
   index: number;
   last: boolean;
 }) {
+  const { settings } = useSession();
   const sets = sortedSets(exercise);
   const rest = formatRest(exercise.rest_seconds);
-  const weight = topWeight(sets);
+  const weight = topWeight(sets, settings?.weightUnit ?? "kg");
 
   return (
     <View className={`flex-row items-center px-4 py-3.5 ${last ? "" : " "}`}>

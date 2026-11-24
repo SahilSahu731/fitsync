@@ -5,6 +5,9 @@ import type { SessionExercise } from "../api";
 import { MuscleFocus } from "./muscle-focus";
 import { WorkoutGlassSurface } from "./workout-glass";
 
+import { useSession } from "@/src/context/session";
+import { fromKg } from "@/src/lib/weight";
+
 export const SessionOverview = React.memo(function SessionOverview({
   name,
   completedSets,
@@ -20,6 +23,8 @@ export const SessionOverview = React.memo(function SessionOverview({
   exercises?: SessionExercise[] | null;
   currentId?: string;
 }) {
+  const { settings } = useSession();
+  const unit = settings?.weightUnit ?? "kg";
   const progress = totalSets ? Math.round((completedSets / totalSets) * 100) : 0;
   return (
     <View className="mb-2 pt-2">
@@ -52,8 +57,8 @@ export const SessionOverview = React.memo(function SessionOverview({
                 adjustsFontSizeToFit
                 style={{ fontVariant: ["tabular-nums"] }}
               >
-                {Math.round(volume).toLocaleString()}
-                <Txt className="text-[10px] text-muted"> kg</Txt>
+                {Math.round(fromKg(volume, unit)).toLocaleString()}
+                <Txt className="text-[10px] text-muted"> {unit}</Txt>
               </Txt>
             </View>
             <View className="mb-2 mt-4 flex-row items-center justify-between gap-2">

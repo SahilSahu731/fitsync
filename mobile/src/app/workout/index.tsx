@@ -1,3 +1,6 @@
+import { useSession } from "@/src/context/session";
+import { fromKg } from "@/src/lib/weight";
+import { trackEvent, recordError } from "@/src/services/telemetry";
 import { useExperience } from "@/src/features/experience/experience-context";
 import { useWorkoutAwake } from "@/src/features/experience/keep-workout-awake";
 import { useAppAlert } from "@/src/components/app-dialog";
@@ -23,7 +26,6 @@ import { Txt } from "@/src/components/ui";
 import { C } from "@/src/constants/theme";
 import { useProgress } from "@/src/features/progress/use-progress";
 import { localDate } from "@/src/features/progress/model";
-import { useBilling } from "@/src/features/billing/billing-context";
 
 import { useWorkout } from "@/src/features/workouts/workout-context";
 import { WorkoutDrawer } from "@/src/features/workouts/components/workout-controls";
@@ -44,7 +46,8 @@ import {
 
 export default function LiveWorkoutScreen() {
   const progress = useProgress();
-  const billing = useBilling();
+  const { settings } = useSession();
+  const unit = settings?.weightUnit ?? "kg";
   const Alert = useAppAlert();
   const { feedback } = useExperience();
   const router = useRouter();
@@ -197,17 +200,22 @@ export default function LiveWorkoutScreen() {
       Alert.alert("No sets logged yet", "Log at least one set before finishing your workout.");
       return;
     }
+    trackEvent("workout_finish_reviewed");
     setFinishReview(true);
   };
   const confirmFinish = async () => {
     const id = session?.id;
     if (!id || busy) return;
     try {
+      trackEvent("workout_finish_started");
       await finish();
+      trackEvent("workout_finished");
       setFinishReview(false);
       feedback("workout");
-      router.replace({ pathname: "/workout/history/[id]", params: { id } });
+      router.replace({ pathname: "/workout/history/[id]", params: { id, celebrate: "1" } });
     } catch (error) {
+      recordError(error, "workout_finish");
+      trackEvent("workout_finish_failed");
       Alert.alert("Could not finish", error instanceof Error ? error.message : "Please try again.");
     }
   };
@@ -492,7 +500,7 @@ export default function LiveWorkoutScreen() {
               <SessionExerciseCard
                 key={exercise.id}
                 exercise={exercise}
-                history={billing.isPro ? progress.journal.workouts : undefined}
+                history={progress.journal.workouts}
                 today={localDate()}
                 sessionExercises={exercises}
                 index={index}
@@ -676,14 +684,14 @@ export default function LiveWorkoutScreen() {
                 </Txt>
               </View>
               <View className="flex-1">
-                <Txt className="text-[10px] text-muted">Volume · kg</Txt>
+                <Txt className="text-[10px] text-muted">Volume · {unit}</Txt>
                 <Txt
                   weight="medium"
                   className="mt-1 text-lg"
                   numberOfLines={1}
                   adjustsFontSizeToFit
                 >
-                  {Math.round(volume).toLocaleString()}
+                  {Math.round(fromKg(volume, unit)).toLocaleString()}
                 </Txt>
               </View>
             </View>

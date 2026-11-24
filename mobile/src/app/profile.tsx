@@ -50,7 +50,7 @@ const NAVIGATION: {
       },
       {
         icon: "star-four-points-outline",
-        title: "Personal coach",
+        title: "Training guidance",
         subtitle: "A plan around your time and equipment",
         route: "/coach",
       },
@@ -456,7 +456,7 @@ export default function ProfileScreen() {
             {billing.loading
               ? "Checking your membership status…"
               : billing.isPro
-                ? "Your Pro tools, personal coaching and deeper insights, together."
+                ? "Your Pro tools, training guidance and deeper insights, together."
                 : billing.pendingActivation
                   ? "Review your pending activation and purchase status."
                   : billing.error

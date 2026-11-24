@@ -1,3 +1,4 @@
+import { trackEvent, recordError } from "@/src/services/telemetry";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useEffect, useRef, useState } from "react";
 import { ActivityIndicator, BackHandler, Keyboard, View } from "react-native";
@@ -29,6 +30,9 @@ export default function OnboardingScreen() {
   const [complete, setComplete] = useState(false);
   const saveInFlight = useRef(false);
   const finalStep = STEPS.length - 1;
+  useEffect(() => {
+    if (loaded && !complete) trackEvent("onboarding_step_viewed", { step });
+  }, [loaded, step, complete]);
 
   // Keep the button busy while the next screen's entrance animation runs.
   useEffect(() => {
@@ -96,10 +100,13 @@ export default function OnboardingScreen() {
     setSaving(true);
     try {
       await saveProfile({ ...draft, completedAt: new Date().toISOString() });
+      trackEvent("onboarding_completed");
       setComplete(true);
       void clearDraft();
       void Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success).catch(() => {});
     } catch (error) {
+      trackEvent("onboarding_save_failed");
+      recordError(error, "onboarding_save");
       Alert.alert(
         "Your setup hasn’t been saved yet",
         error instanceof Error ? error.message : "Please try again. Your choices are still here.",

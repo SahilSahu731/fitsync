@@ -14,6 +14,8 @@ import { useWorkout } from "../workout-context";
 import { NumberEntry, WorkoutDrawer } from "./workout-controls";
 import { validSupersetGroup } from "../routine-draft";
 
+import { useSession } from "@/src/context/session";
+
 export const SessionExerciseCard = React.memo(function SessionExerciseCard({
   exercise,
   index,
@@ -48,6 +50,8 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
   sessionExercises?: SessionExercise[];
 }) {
   const workout = useWorkout();
+  const { settings: userSettings } = useSession();
+  const unit = userSettings?.weightUnit ?? "kg";
   const [settings, setSettings] = useState(false);
   const [rest, setRest] = useState(String(exercise.rest_seconds));
   const [group, setGroup] = useState(exercise.superset_group ?? "");
@@ -151,7 +155,11 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
             <View className="mx-3 mb-2 flex-row items-center gap-2 px-2">
               <Txt className="w-11 text-center text-[10px] tracking-wider text-muted">TYPE</Txt>
               <Txt className="flex-1 text-center text-[10px] tracking-wider text-muted">
-                {timed ? "SECONDS" : exercise.tracking_type === "reps" ? "ADDED KG" : "KG"}
+                {timed
+                  ? "SECONDS"
+                  : exercise.tracking_type === "reps"
+                    ? `ADDED ${unit.toUpperCase()}`
+                    : unit.toUpperCase()}
               </Txt>
               {exercise.tracking_type !== "duration" && (
                 <Txt className="flex-1 text-center text-[10px] tracking-wider text-muted">

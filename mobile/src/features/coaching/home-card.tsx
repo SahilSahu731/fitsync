@@ -132,7 +132,7 @@ export function CoachHomeButton() {
       <MotionPressable
         accessibilityRole="button"
         accessibilityLabel={
-          isPro ? "Open your Pro personal coach" : "Explore personal coaching with Pro"
+          isPro ? "Open your Pro training guidance" : "Explore training guidanceing with Pro"
         }
         accessibilityState={{ disabled: loading, busy: loading }}
         disabled={loading}
@@ -165,7 +165,7 @@ export function CoachHomeButton() {
           </View>
 
           <Txt weight="semibold" className="flex-1 text-[15px]">
-            Personal coach
+            Training guidance
           </Txt>
 
           <View className="rounded-full bg-yellow-400 px-2.5 py-1">

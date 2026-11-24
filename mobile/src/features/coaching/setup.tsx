@@ -1,3 +1,4 @@
+import { HealthDisclaimer } from "@/src/components/health-disclaimer";
 import React, { useState } from "react";
 import { ActivityIndicator, ScrollView, View } from "react-native";
 import { router } from "expo-router";
@@ -16,8 +17,9 @@ export function CoachSetupScreen() {
   if (billing.isPro) return <MemberCoachSetup />;
   return (
     <View className="flex-1 bg-bg">
-      <CoachHeader title="Your personal program" subtitle="Built around you with Pro" />
+      <CoachHeader title="Your structured program" subtitle="Built around you with Pro" />
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>
+        <HealthDisclaimer />
         {billing.loading ? (
           <View className="items-center py-10">
             <ActivityIndicator color={C.brand} />
@@ -79,6 +81,7 @@ function MemberCoachSetup() {
     <View className="flex-1 bg-bg">
       <CoachHeader title="Make it yours" subtitle="Your personal program with Pro" />
       <ScrollView contentContainerStyle={{ padding: 24, paddingBottom: 80 }}>
+        <HealthDisclaimer />
         <Txt weight="semibold" className="text-[34px] leading-[39px] tracking-[-0.8px]">
           One plan. Your pace.
         </Txt>

@@ -1,8 +1,14 @@
 import type { RequestHandler } from "express";
 import { db } from "../config/supabase.js";
 
+import { isDraining } from "./lifecycle.js";
+
 export const health: RequestHandler = async (_req, res) => {
   res.setHeader("Cache-Control", "no-store");
+  if (isDraining()) {
+    res.status(503).json({ ok: false, service: "fitsync-api", status: "draining" });
+    return;
+  }
   try {
     // HEAD verifies the real REST/database path, schema and credentials without
     // retrieving any account rows or performing a costly exact count.

@@ -4,9 +4,9 @@
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import assert from "node:assert/strict";
-const { PGlite } = await import(process.env.FITSYNC_PGLITE_MODULE ?? "@electric-sql/pglite");
+import { isolatedDatabase } from "./sql/isolated-database.mjs";
 // No dataDir is accepted here: this is always an isolated in-memory PostgreSQL instance.
-const db = new PGlite();
+const db = await isolatedDatabase();
 try {
   await db.exec(`
     CREATE ROLE anon; CREATE ROLE authenticated; CREATE ROLE service_role BYPASSRLS;

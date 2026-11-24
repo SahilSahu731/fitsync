@@ -1,6 +1,6 @@
 import { Router } from "express";
 import { z } from "zod";
-import { rateLimit } from "express-rate-limit";
+import { apiRateLimit } from "../../middleware/rate-limit.js";
 
 import { asyncHandler } from "../../common/async-handler.js";
 import { ApiError } from "../../common/errors.js";
@@ -175,7 +175,7 @@ router.patch(
   }),
 );
 
-const uploadLimiter = rateLimit({
+const uploadLimiter = apiRateLimit("exercises-1", {
   windowMs: 60_000,
   limit: 10,
   standardHeaders: "draft-8",

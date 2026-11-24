@@ -13,6 +13,10 @@ export const notFound: RequestHandler = (_req, res) => {
 };
 
 export const errorHandler: ErrorRequestHandler = (error: unknown, req, res, _next) => {
+  if (res.headersSent) {
+    _next(error);
+    return;
+  }
   if (error instanceof ZodError) {
     res.status(400).json({
       message: "Invalid request.",
@@ -37,16 +41,17 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, req, res, _nex
   }
 
   if (error instanceof ApiError) {
-    if (error.status >= 500) reportError(error, "http");
+    if (error.status >= 500) reportError(error, "http", res.locals.requestId);
     res.status(error.status).json({
       message: error.message,
     });
     return;
   }
 
-  reportError(error, "http");
+  reportError(error, "http", res.locals.requestId);
 
   res.status(500).json({
     message: "An unexpected error occurred.",
+    requestId: res.locals.requestId,
   });
 };

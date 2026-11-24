@@ -7,6 +7,7 @@ export type PresentedPlan = {
   months: number | null;
   savings: number | null;
   oneTime: boolean;
+  monthlyEquivalent: string | null;
 };
 
 function recurring(offer: BillingOffer, platform: string) {
@@ -36,6 +37,7 @@ export function presentPlans(offers: BillingOffer[], platform: string): Presente
           cadence: "Pay once",
           savings: null,
           oneTime: true,
+          monthlyEquivalent: null,
         };
       const price = recurring(offer, platform);
       const comparison = monthly
@@ -45,6 +47,22 @@ export function presentPlans(offers: BillingOffer[], platform: string): Presente
         price.months === 12 && comparison && Number.isFinite(price.price) && price.price > 0
           ? Math.floor((1 - price.price / (comparison.price * 12)) * 100)
           : 0;
+      let monthlyEquivalent: string | null = null;
+      if (
+        price.months === 12 &&
+        price.currency &&
+        Number.isFinite(price.price) &&
+        price.price > 0
+      ) {
+        try {
+          monthlyEquivalent = new Intl.NumberFormat(undefined, {
+            style: "currency",
+            currency: price.currency,
+          }).format(price.price / 12);
+        } catch {
+          /* Keep the exact store price if a currency cannot be formatted. */
+        }
+      }
       return {
         offer,
         oneTime: false,
@@ -62,6 +80,7 @@ export function presentPlans(offers: BillingOffer[], platform: string): Presente
               ? "Billed yearly"
               : `Billed every ${offer.period}`,
         savings: savings > 0 && savings < 100 ? savings : null,
+        monthlyEquivalent,
       };
     })
     .sort((a, b) => (a.months ?? Infinity) - (b.months ?? Infinity));

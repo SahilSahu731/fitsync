@@ -5,6 +5,7 @@ import { MotionPressable as Pressable } from "@/src/components/motion";
 import { Txt } from "@/src/components/ui";
 import { dateLabel } from "../progress/model";
 import type { HomeSnapshot } from "./model";
+import { weekInsight } from "./week-insight";
 
 export function WeekOverview({
   snapshot,
@@ -23,6 +24,7 @@ export function WeekOverview({
 }) {
   const hasTarget = target != null && Number.isFinite(target) && target > 0;
   const reached = hasTarget && !loading && snapshot.weeklyCount >= target;
+  const insight = weekInsight(snapshot, today, target);
   return (
     <View className="rounded-[28px] border border-white/5 bg-panel p-5">
       <View className="flex-row items-start justify-between gap-3">
@@ -45,13 +47,24 @@ export function WeekOverview({
           <MaterialCommunityIcons name="calendar-blank-outline" size={21} color="#FFFFFF" />
         </Pressable>
       </View>
-      <View className="mb-5 mt-5 flex-row items-baseline gap-2">
+      <View className="mt-5 flex-row items-baseline gap-2">
         <Txt weight="medium" className="text-[32px] leading-[42px] tracking-[-1px]">
           {loading ? "—" : snapshot.weeklyCount}
           {hasTarget && <Txt className="text-lg tracking-normal text-muted"> / {target}</Txt>}
         </Txt>
         <Txt className="min-w-0 flex-1 text-[11px] text-muted">sessions this week</Txt>
         <Txt className="text-[11px] text-muted">{loading ? "—" : snapshot.weeklyMinutes} min</Txt>
+      </View>
+      <View className="mb-5 mt-2 flex-row items-center gap-2">
+        <MaterialCommunityIcons
+          name={loading ? "calendar-blank-outline" : insight.icon}
+          size={14}
+          color="#A3A3A3"
+          accessible={false}
+        />
+        <Txt className="min-w-0 flex-1 text-[11px] leading-[17px] text-muted">
+          {loading ? "Loading your weekly rhythm…" : insight.text}
+        </Txt>
       </View>
       <View className="flex-row gap-1.5">
         {snapshot.days.map((day) => {

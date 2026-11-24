@@ -267,7 +267,7 @@ export function NumberEntry({
           >
             <MaterialCommunityIcons name="minus" size={20} color={disabled ? C.muted : C.ink} />
           </Pressable>
-          <Txt className="text-[11px] text-muted">{step < 1 ? `${step} kg` : `±${step}`}</Txt>
+          <Txt className="text-[11px] text-muted">{step < 1 ? `±${step}` : `±${step}`}</Txt>
           <Pressable
             disabled={disabled}
             accessibilityLabel={`Increase ${label} by one step`}

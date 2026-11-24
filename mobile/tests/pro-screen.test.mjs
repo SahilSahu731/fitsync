@@ -110,7 +110,11 @@ function fixture() {
       View: "View",
     },
     "expo-linear-gradient": { LinearGradient: "Gradient" },
-    "expo-router": { router: { push: (path) => calls.push(path) }, useFocusEffect() {} },
+    "expo-router": {
+      router: { push: (path) => calls.push(path), replace: (path) => calls.push(path) },
+      useFocusEffect() {},
+      useLocalSearchParams: () => ({}),
+    },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
     "@/src/context/session": { useSession: () => session },
     "@/src/components/motion": { MotionPressable: "Pressable", ScreenEntrance: "Entrance" },

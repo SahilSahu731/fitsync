@@ -3,15 +3,14 @@ import type Purchases from "react-native-purchases";
 import { createStoreSession } from "./store-session";
 
 export function revenueCatKey() {
-  if (Platform.OS === "ios") return process.env.EXPO_PUBLIC_REVENUECAT_IOS_KEY?.trim() || null;
   if (Platform.OS === "android")
     return process.env.EXPO_PUBLIC_REVENUECAT_ANDROID_KEY?.trim() || null;
   return null;
 }
 
 export function loadPurchases(): typeof Purchases {
-  if (Platform.OS !== "ios" && Platform.OS !== "android") {
-    throw new Error("Subscribe or restore in the FitSync iOS or Android app.");
+  if (Platform.OS !== "android") {
+    throw new Error("Subscribe or restore in the FitSync Android app.");
   }
   if (!NativeModules.RNPurchases) {
     throw new Error(

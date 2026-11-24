@@ -1,3 +1,4 @@
+import * as weightUnits from "../src/lib/weight.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -103,6 +104,10 @@ function load(file, dependencies = {}) {
     Promise,
     Intl,
     require: (name) => {
+      if (name === "@/src/lib/weight") return weightUnits;
+      if (name === "@/src/context/session")
+        return { useSession: () => ({ settings: { weightUnit: "kg" } }) };
+
       if (!(name in dependencies)) throw new Error(`Unexpected dependency ${name}`);
       return dependencies[name];
     },
