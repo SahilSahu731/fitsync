@@ -38,11 +38,8 @@ import {
   WorkoutGlassScene,
   WorkoutGlassSurface,
 } from "@/src/features/workouts/components/workout-glass";
-import { RestTimer } from "@/src/features/workouts/components/rest-timer";
-import {
-  nextWorkoutSet,
-  workoutTime as formatTime,
-} from "@/src/features/workouts/session-progress";
+import { LiveRestTimer, WorkoutDuration } from "@/src/features/workouts/components/workout-clock";
+import { nextWorkoutSet } from "@/src/features/workouts/session-progress";
 
 export default function LiveWorkoutScreen() {
   const progress = useProgress();
@@ -84,7 +81,6 @@ export default function LiveWorkoutScreen() {
 
   useWorkoutAwake(!!session);
 
-  const [now, setNow] = useState(() => Date.now());
   const [notesOpen, setNotesOpen] = useState(false);
   const [finishReview, setFinishReview] = useState(false);
   const [restOpen, setRestOpen] = useState(false);
@@ -92,21 +88,9 @@ export default function LiveWorkoutScreen() {
   const [reordering, setReordering] = useState(false);
   const [expanded, setExpanded] = useState<string[]>([]);
 
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setNow(Date.now());
-    }, 1000);
-
-    return () => clearInterval(interval);
-  }, []);
-
   const exercises = useMemo(() => {
     return [...(session?.workout_session_exercises ?? [])].sort((a, b) => a.position - b.position);
   }, [session]);
-
-  const elapsed = session ? Math.floor((now - new Date(session.started_at).getTime()) / 1000) : 0;
-
-  const restRemaining = restTimer ? Math.max(0, Math.ceil((restTimer.endsAt - now) / 1000)) : 0;
 
   const { completedSets, totalSets, volume } = workoutSummary(session);
   const next = useMemo(
@@ -334,15 +318,7 @@ export default function LiveWorkoutScreen() {
           </View>
           <View className="flex-row items-center gap-3">
             <View className="items-end justify-center">
-              <Txt
-                accessibilityLabel={`Workout duration ${formatTime(elapsed)}`}
-                weight="semibold"
-                numberOfLines={1}
-                className="text-[15px] text-[#25d22d]"
-                style={{ fontVariant: ["tabular-nums"] }}
-              >
-                {formatTime(elapsed)}
-              </Txt>
+              <WorkoutDuration startedAt={session.started_at} />
             </View>
             <Pressable
               accessibilityRole="button"
@@ -358,14 +334,7 @@ export default function LiveWorkoutScreen() {
           </View>
         </View>
 
-        {restRemaining > 0 && (
-          <RestTimer
-            remaining={restRemaining}
-            duration={restTimer?.duration ?? restRemaining}
-            onExtend={() => startRest(restRemaining + 30)}
-            onSkip={stopRest}
-          />
-        )}
+        {restTimer && <LiveRestTimer timer={restTimer} onExtend={startRest} onSkip={stopRest} />}
 
         <View ref={viewport} collapsable={false} className="flex-1">
           <ScrollView
@@ -502,7 +471,7 @@ export default function LiveWorkoutScreen() {
                 exercise={exercise}
                 history={progress.journal.workouts}
                 today={localDate()}
-                sessionExercises={exercises}
+                sessionExercises={exercise.superset_group ? exercises : undefined}
                 index={index}
                 nextSetId={next?.exercise.id === exercise.id ? next.set.id : undefined}
                 collapsed={!expanded.includes(exercise.id)}
@@ -564,7 +533,7 @@ export default function LiveWorkoutScreen() {
               <View className="min-w-0 flex-1">
                 <Txt className="text-[10px] tracking-wider text-ink">
                   {next
-                    ? `${restRemaining ? "AFTER REST" : "UP NEXT"} · SET ${next.number}`
+                    ? `${restTimer ? "AFTER REST" : "UP NEXT"} · SET ${next.number}`
                     : "ALL SETS LOGGED"}
                 </Txt>
                 <Txt weight="medium" className="mt-0.5 text-sm" numberOfLines={1}>
@@ -673,9 +642,7 @@ export default function LiveWorkoutScreen() {
             <View className="mt-5 flex-row rounded-2xl bg-elevated p-4">
               <View className="flex-1">
                 <Txt className="text-[10px] text-muted">Duration</Txt>
-                <Txt weight="medium" className="mt-1 text-lg">
-                  {formatTime(elapsed)}
-                </Txt>
+                <WorkoutDuration startedAt={session.started_at} summary />
               </View>
               <View className="flex-1">
                 <Txt className="text-[10px] text-muted">Logged sets</Txt>

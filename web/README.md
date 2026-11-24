@@ -1,17 +1,17 @@
 # FitSync web client
 
-Next.js web client using the white/blue layout, Figtree typography, landing-page structure, exercise cards, sign-in artwork, and admin sidebar from the supplied `src.zip`. It uses the existing Express/Supabase API and the same Google identity as mobile.
+Next.js web client with Poppins typography, a black-and-white marketing site, a shared training planner, and catalog administration. It uses the Express/Supabase API and the same Google identity as mobile.
 
 ## Run locally
 
 1. Install dependencies with `npm ci` in `server/` and `web/` if needed.
 2. Keep the existing `server/.env` configuration (Supabase, Google Web client ID, JWT secret, and Cloudinary credentials).
-3. Apply `server/sql/005_cloudinary_exercise_images.sql` in the Supabase SQL editor **after** migrations 001–004. This permits Cloudinary image records while preserving legacy Supabase images. This migration has been prepared but is not automatically applied to your database.
-4. Copy `web/.env.example` to `web/.env.local` and set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to the server's `GOOGLE_WEB_CLIENT_ID`. The local file has already been populated from the existing public client ID in this checkout; no service credentials are copied to the web client.
+3. Apply the ordered server migrations using [the SQL setup instructions](../server/sql/README.md). The planner, shared training, catalog and account features require the current schema, beyond the original Cloudinary migration. Migrations are not automatically applied by the web build.
+4. Copy `web/.env.example` to `web/.env.local` and set `NEXT_PUBLIC_GOOGLE_CLIENT_ID` to the server's `GOOGLE_WEB_CLIENT_ID`. Keep service credentials on the API server.
 5. Add your frontend origins to the Google Web OAuth client's **Authorized JavaScript origins**: `http://localhost:3000`, and `http://127.0.0.1:3000` if you use that address. Add your HTTPS frontend origin for production. See [Google's setup guide](https://developers.google.com/identity/gsi/web/guides/get-google-api-clientid).
 6. Run `npm run dev` in `server/`, and `npm run dev` in `web/`. Open `http://localhost:3000`.
 
-`API_BASE_URL` is the API origin without `/api` (default `http://localhost:4000`). `WEB_ORIGIN` is the exact browser-facing origin when behind a reverse proxy. Cloudinary and Supabase service credentials stay on the Express server.
+`API_BASE_URL` is the API origin without `/api` (default `http://localhost:4000`). `WEB_ORIGIN` is the exact browser-facing origin when behind a reverse proxy. In production, set the server-only `WEB_PROXY_SECRET` to the same shared secret as the API and configure the trusted ingress to append or overwrite `X-Forwarded-For`. Cloudinary and Supabase service credentials stay on the Express server.
 
 For production, run `npm run build` then `npm start`. The production web origin must use HTTPS because session cookies are Secure in production. Configure the API URL and frontend origin in the hosting environment. The web client requires a Next.js server; it is not a static export.
 
@@ -53,7 +53,9 @@ Mobile exercise creation/editing screens, buttons, and upload/mutation helpers h
 
 ## API and session behavior
 
-The browser talks to same-origin Next.js route handlers. Access and refresh tokens are stored in HttpOnly, SameSite=Lax cookies, with Secure enabled in production. Tokens are not exposed in browser JSON or localStorage. Refresh is coordinated between requests and tabs. Mutations require a matching origin, and the proxy only forwards exercise and account paths to the configured API.
+The browser talks to same-origin Next.js route handlers. Access and refresh tokens are stored in HttpOnly, SameSite=Lax cookies, with Secure enabled in production. Tokens are not exposed in browser JSON or localStorage. Refresh is coordinated between requests and, where Web Locks are supported, tabs. Mutations require a matching origin. Authenticated editors capture the account ID and send `X-FitSync-Owner`, so the API rejects saves, uploads and deletion if another tab changes accounts. The proxy allows the exercise, account, catalog, Explore, workout, coaching and companion route families; only published catalog reads and valid shared training links work without a session.
+
+Uploads are read with a streaming size limit before forwarding, including requests without `Content-Length`. Google credential requests have a separate 20 KB body limit. Logout attempts server session revocation with a refreshed access token when necessary and always clears the current browser cookies when the API is unreachable.
 
 The existing Express endpoints remain compatible with the mobile reader:
 
@@ -75,7 +77,7 @@ See [Cloudinary's Node upload documentation](https://cloudinary.com/documentatio
 
 ## Validation
 
-- Web: `npm run build`
+- Web: `npm test && npm run typecheck && npm run lint && npm run build`
 - Server: `npm run build && npm test`
 - Mobile: `npm run typecheck && npm run lint`
 

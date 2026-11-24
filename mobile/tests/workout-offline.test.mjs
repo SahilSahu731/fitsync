@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
-function setup(storage = new Map()) {
+function setup(storage = new Map(), overrides = {}) {
   const load = (file, deps) => {
     const exports = {};
     const source = readFileSync(new URL(file, import.meta.url), "utf8");
@@ -30,6 +30,7 @@ function setup(storage = new Map()) {
       getItem: async (k) => storage.get(k) ?? null,
       setItem: async (k, v) => storage.set(k, v),
       removeItem: async (k) => storage.delete(k),
+      ...overrides,
     },
   });
   return { api, storage };
@@ -47,6 +48,64 @@ const session = () => ({
   ],
 });
 const noop = { set: async () => {}, notes: async () => {}, finish: async () => {} };
+test("deleting an account cannot be undone by a late workout upload acknowledgement", async () => {
+  const { api, storage } = setup();
+  await api.cacheWorkout("alice", session());
+  await api.cacheWorkout("bob", session());
+  await api.queueSet("alice", "set", { reps: 12 });
+  let release, started;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const began = new Promise((resolve) => {
+    started = resolve;
+  });
+  const syncing = api
+    .flushWorkoutDraft("alice", () => true, {
+      ...noop,
+      set: async () => {
+        started();
+        await gate;
+      },
+    })
+    .catch((error) => error);
+  await began;
+  await api.deleteWorkoutDraft("alice");
+  release();
+  assert.match((await syncing).message, /deleted/);
+  assert.equal(await api.readWorkoutDraft("alice"), null);
+  assert.equal(storage.has("fitsync.workout.draft.v1.alice"), false);
+  assert.equal((await api.readWorkoutDraft("bob")).session.id, "session");
+  await assert.rejects(api.cacheWorkout("alice", session()), /deleted/);
+});
+
+test("account deletion waits for a pending rest save before removing its device data", async () => {
+  let release, started;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const began = new Promise((resolve) => {
+    started = resolve;
+  });
+  const storage = new Map();
+  const { api } = setup(storage, {
+    setItem: async (key, value) => {
+      if (key === "fitsync.workout.rest.v2.alice") {
+        started();
+        await gate;
+      }
+      storage.set(key, value);
+    },
+  });
+  const saving = api.saveWorkoutRest("alice", { endsAt: 1234 });
+  await began;
+  const deleting = api.deleteWorkoutDraft("alice");
+  release();
+  await Promise.all([saving, deleting]);
+  assert.equal(storage.has("fitsync.workout.rest.v2.alice"), false);
+  await api.saveWorkoutRest("alice", { endsAt: 5678 });
+  assert.equal(storage.has("fitsync.workout.rest.v2.alice"), false);
+});
 test("offline edits persist through reload, merge patches and remain scoped to their owner", async () => {
   const { api, storage } = setup();
   await api.cacheWorkout("alice", session());
@@ -160,6 +219,28 @@ test("corrupt persisted data is preserved and cannot be silently overwritten", a
   storage.set("fitsync.workout.draft.v1.alice", '{"version":99}');
   await assert.rejects(() => api.cacheWorkout("alice", session()), /kept on this device/);
   assert.equal(storage.get("fitsync.workout.draft.v1.alice"), '{"version":99}');
+});
+
+test("editing one row preserves unchanged row objects so memoized controls can skip rendering", async () => {
+  const { api, storage } = setup();
+  const initial = session();
+  initial.workout_session_exercises.push({
+    id: "other",
+    workout_logged_sets: [{ id: "other-set", reps: 5 }],
+  });
+  await api.cacheWorkout("alice", initial);
+  const before = await api.readWorkoutDraft("alice");
+  const after = await api.queueSet("alice", "set", { reps: 12 });
+  assert.equal(
+    after.session.workout_session_exercises[1],
+    before.session.workout_session_exercises[1],
+  );
+  assert.notEqual(
+    after.session.workout_session_exercises[0],
+    before.session.workout_session_exercises[0],
+  );
+  storage.set("fitsync.workout.draft.v1.alice", "broken");
+  await assert.rejects(api.readWorkoutDraft("alice"));
 });
 
 test("finishing advances the journal revision, survives a stale refresh and preserves the original finish on retry", async () => {

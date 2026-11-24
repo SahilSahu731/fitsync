@@ -123,8 +123,12 @@ async function fixture(options = {}) {
         },
       ];
     },
-    useMemo(callback) {
-      return callback();
+    useMemo(callback, dependencies) {
+      const index = cursor++;
+      const previous = slots[index];
+      if (!previous || !same(previous.dependencies, dependencies))
+        slots[index] = { value: callback(), dependencies };
+      return slots[index].value;
     },
     useCallback(callback, dependencies) {
       const index = cursor++;
@@ -206,14 +210,21 @@ async function fixture(options = {}) {
       "./offline": offline,
       "./summary": summary,
     },
-    { setInterval: () => 1, clearInterval: () => {} },
+    {
+      setInterval: () => 1,
+      clearInterval: () => {},
+      setTimeout: options.setTimeout ?? setTimeout,
+      clearTimeout: options.clearTimeout ?? clearTimeout,
+    },
   );
   const element = provider.WorkoutProvider({ children: null });
-  let context;
+  let context, controls;
   function render() {
     cursor = 0;
     changed = false;
-    context = element.type(element.props).props.value;
+    const tree = element.type(element.props);
+    context = tree.props.value;
+    controls = tree.props.children.props.value;
     effects.splice(0).forEach((run) => run());
   }
   async function settle() {
@@ -227,6 +238,9 @@ async function fixture(options = {}) {
   return {
     get context() {
       return context;
+    },
+    get controls() {
+      return controls;
     },
     settle,
     render,
@@ -266,6 +280,35 @@ test("exercise focus is session-local and never changes the persisted workout dr
   harness.context.setFocusedExerciseId(undefined);
   await harness.settle();
   assert.equal(harness.context.focusedExerciseId, undefined);
+});
+
+test("rapid set edits remain durable while sharing one delayed upload and stable row controls", async () => {
+  const timers = new Map();
+  let sequence = 0;
+  const f = await fixture({
+    setTimeout: (callback) => {
+      const id = ++sequence;
+      timers.set(id, callback);
+      return id;
+    },
+    clearTimeout: (id) => timers.delete(id),
+  });
+  const controls = f.controls,
+    updateSet = f.context.updateSet,
+    addSet = f.context.addSet;
+  for (const reps of [1, 12, 15]) {
+    await f.context.updateSet("set", { reps });
+    await f.settle();
+    assert.equal(f.controls, controls);
+    assert.equal(f.context.updateSet, updateSet);
+    assert.equal(f.context.addSet, addSet);
+  }
+  assert.equal((await f.offline.readWorkoutDraft("owner")).sets.set.patch.reps, 15);
+  assert.equal(f.calls.filter((call) => Array.isArray(call) && call[0] === "set").length, 0);
+  assert.equal(timers.size, 1);
+  for (const callback of timers.values()) callback();
+  await f.settle();
+  assert.equal(f.calls.filter((call) => Array.isArray(call) && call[0] === "set").length, 1);
 });
 
 test("offline finish returns immediately, exposes the local summary, and invalidates subscribers after upload", async () => {

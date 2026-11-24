@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { api, pretty } from "@/lib/api";
+import { pretty } from "@/lib/api";
+import { useAccountApi } from "./session";
 import { ConfirmDialog } from "./confirm-dialog";
 import { Icon } from "./icon";
 
@@ -44,6 +45,7 @@ function message(error: unknown) {
 }
 
 export function CatalogAdmin({ kind }: { kind: Kind }) {
+  const api = useAccountApi();
   const [records, setRecords] = useState<RecordData[]>([]);
   const [categories, setCategories] = useState<Choice[]>([]);
   const [choices, setChoices] = useState<Choice[]>([]);
@@ -85,7 +87,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
     return () => {
       active = false;
     };
-  }, [kind, retry]);
+  }, [api, kind, retry]);
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
       if (dirty) {
@@ -539,6 +541,7 @@ function CatalogContents({
   choices: Choice[];
   onUpdate: (record: RecordData) => void;
 }) {
+  const api = useAccountApi();
   const routine = kind === "routines";
   const key = routine ? "training_routine_exercises" : "training_program_days";
   const items = record[key] ?? [];

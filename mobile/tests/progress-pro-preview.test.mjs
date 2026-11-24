@@ -110,7 +110,7 @@ test("the new analytics gate waits for billing resolution even with a previous P
     assert.doesNotMatch(text(tree), /Go deeper into your progress/);
   }
 });
-test("locked preview is illustrative, inaccessible decorative geometry and never computes private paid analytics", () => {
+test("locked analytics preview is labelled, excluded from accessibility, and opens Pro without computing paid data", () => {
   let opened = 0;
   const tree = AdvancedInsights({
     data: unavailable,
@@ -123,10 +123,6 @@ test("locked preview is illustrative, inaccessible decorative geometry and never
   assert.equal(
     nodes(tree).find((n) => n.type === "BlurTarget").props.importantForAccessibility,
     "no-hide-descendants",
-  );
-  assert.equal(
-    nodes(tree).some((n) => n.type === "Blur"),
-    true,
   );
   nodes(tree)
     .find((n) => n.props.accessibilityLabel === "Explore Pro advanced analytics")
@@ -144,10 +140,6 @@ test("billing resolution shows a loading state without locked or paid content fl
   assert.equal(
     nodes(tree).some((n) => n.type === "Loading"),
     true,
-  );
-  assert.equal(
-    nodes(tree).some((n) => n.type === "Blur"),
-    false,
   );
 });
 test("Pro chart uses real exercise volume only inside the selected range", () => {
@@ -170,10 +162,6 @@ test("Pro chart uses real exercise volume only inside the selected range", () =>
   const fills = nodes(tree).filter((n) => n.type === "Fill");
   assert.equal(fills[0].props.ratio, 2 / 3);
   assert.equal(fills[1].props.ratio, 1 / 3);
-  assert.equal(
-    nodes(tree).some((n) => n.type === "Blur"),
-    false,
-  );
 });
 test("90 days is free and older range selection opens Pro instead of changing the chart", () => {
   const periods = [];

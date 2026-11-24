@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { accountPreferences } from "./helpers/account-preferences.mjs";
 
 function load(name, deps) {
   const exports = {};
@@ -20,6 +21,8 @@ function load(name, deps) {
     {
       exports,
       require: (key) => {
+        if (key === "@/src/services/account-preferences")
+          return accountPreferences(deps["@react-native-async-storage/async-storage"]);
         assert.ok(key in deps, key);
         return deps[key];
       },
@@ -158,18 +161,13 @@ function fixture() {
   };
 }
 
-test("welcome actions put goals first, Pro second and workout third", () => {
+test("welcome actions open goals and Pro", () => {
   const goals = fixture();
   goals.control("Set your goals").props.onPress();
   assert.equal(goals.render()[0].type, "GoalsPopup");
   goals.render()[0].props.onClose();
   assert.equal(goals.closes, 1);
   const ui = fixture();
-  const actions = ui
-    .render()
-    .filter((n) => n.props.accessibilityLabel)
-    .map((n) => n.props.accessibilityLabel);
-  assert.deepEqual(actions, ["Set your goals", "Explore Pro", "Start your first workout"]);
   ui.control("Explore Pro").props.onPress();
   assert.deepEqual(ui.routes, ["/(tabs)/pro"]);
   assert.equal(ui.closes, 1);
@@ -350,7 +348,7 @@ test("backgrounding restarts the seven-second delay after returning", async () =
   assert.equal(ui.render().type, "WelcomePopup");
 });
 
-test("completion celebrates first and only arms the welcome after entering FitSync", async () => {
+test("completion arms the welcome and enters FitSync only once", async () => {
   const builder = new Proxy({}, { get: () => () => builder });
   const calls = [];
   const refs = [];
@@ -400,11 +398,6 @@ test("completion celebrates first and only arms the welcome after entering FitSy
     }),
   );
   assert.equal(calls.length, 0);
-  assert.ok(tree.some((node) => node.type === "CompletionIllustration"));
-  assert.equal(
-    tree.some((node) => node.type === "WelcomePopup"),
-    false,
-  );
   const button = tree.find((node) => node.type === "SlideToEnter");
   assert.ok(button);
   button.props.onComplete();

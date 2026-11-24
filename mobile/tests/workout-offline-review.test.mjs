@@ -137,6 +137,7 @@ function authFixture(fetcher, options = {}) {
             storage.set(key, value);
           },
           deleteItemAsync: async (key) => {
+            await options.beforeDelete?.(key);
             storage.delete(key);
           },
         }),
@@ -157,6 +158,116 @@ function authFixture(fetcher, options = {}) {
 }
 const response = (body, status = 200) =>
   new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json" } });
+
+test("offline identity requires credentials, survives same-account refresh, and clears on account replacement", async () => {
+  const f = authFixture(async () => response({ accessToken: "fresh", refreshToken: "rotated" }));
+  await f.api.cacheSessionSnapshot({ user: { id: A } });
+  assert.equal(await f.api.readSessionSnapshot(), null);
+  assert.equal(await f.api.hasStoredSession(), false);
+  await f.api.storeSessionTokens({ accessToken: "alice", refreshToken: "alice-refresh" });
+  await f.api.cacheSessionSnapshot({ user: { id: A } });
+  assert.equal((await f.api.readSessionSnapshot()).user.id, A);
+  await f.api.restoreBackendSession();
+  assert.equal((await f.api.readSessionSnapshot()).user.id, A);
+  await f.api.storeSessionTokens({ accessToken: "bob", refreshToken: "bob-refresh" });
+  assert.equal(await f.api.readSessionSnapshot(), null);
+  await f.api.cacheSessionSnapshot({ user: { id: B } });
+  await f.api.clearSessionTokens();
+  assert.equal(await f.api.hasStoredSession(), false);
+  assert.equal(f.storage.has("fitsync.session-snapshot.v1"), false);
+});
+
+test("a delayed previous-account snapshot write cannot survive a newer login", async () => {
+  let release;
+  const f = authFixture(async () => response({}), {
+    beforeSet: async (key) => {
+      if (key === "fitsync.session-snapshot.v1")
+        await new Promise((done) => {
+          release = done;
+        });
+    },
+  });
+  await f.api.storeSessionTokens({ accessToken: "alice", refreshToken: "alice-refresh" });
+  const saving = f.api.cacheSessionSnapshot({ user: { id: A } });
+  await tick();
+  const login = f.api.storeSessionTokens({ accessToken: "bob", refreshToken: "bob-refresh" });
+  release();
+  await Promise.all([saving, login]);
+  assert.equal(await f.api.readSessionSnapshot(), null);
+  assert.equal(f.storage.get("fitsync.refresh-token.v1"), "bob-refresh");
+});
+
+test("corrupt offline identity does not discard valid credentials and a rejected session clears both", async () => {
+  for (const status of [401, 403]) {
+    const f = authFixture(async () => response({ message: "Revoked" }, status));
+    await f.api.storeSessionTokens({ accessToken: "alice", refreshToken: "alice-refresh" });
+    f.storage.set("fitsync.session-snapshot.v1", "{broken");
+    assert.equal(await f.api.readSessionSnapshot(), null);
+    assert.equal(await f.api.hasStoredSession(), true);
+    await f.api.cacheSessionSnapshot({ user: { id: A } });
+    assert.equal(await f.api.restoreBackendSession(), false);
+    assert.equal(await f.api.hasStoredSession(), false);
+    assert.equal(f.storage.has("fitsync.session-snapshot.v1"), false);
+  }
+});
+
+test("logout attempts to erase offline identity even if native credential deletion fails", async () => {
+  let failing = false;
+  const f = authFixture(async () => response({}), {
+    beforeDelete: async (key) => {
+      if (failing && key === "fitsync.refresh-token.v1") throw Error("Storage failed");
+    },
+  });
+  await f.api.storeSessionTokens({ accessToken: "alice", refreshToken: "alice-refresh" });
+  await f.api.cacheSessionSnapshot({ user: { id: A } });
+  failing = true;
+  await assert.rejects(f.api.clearSessionTokens(), /Storage failed/);
+  assert.equal(f.storage.has("fitsync.session-snapshot.v1"), false);
+  assert.equal(await f.api.readSessionSnapshot(), null);
+});
+
+test("simultaneous identical reads share one request without caching later reads or writes", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const f = authFixture(async () => {
+    await gate;
+    return response({ ok: true });
+  });
+  const reads = Array.from({ length: 20 }, () =>
+    f.api.apiRequest("/progress/workouts", { expectedOwnerId: A }),
+  );
+  assert.equal(f.requests.length, 1);
+  release();
+  await Promise.all(reads);
+  await f.api.apiRequest("/progress/workouts", { expectedOwnerId: A });
+  assert.equal(f.requests.length, 2);
+  await Promise.all([
+    f.api.apiRequest("/probe", { method: "POST", json: {} }),
+    f.api.apiRequest("/probe", { method: "POST", json: {} }),
+  ]);
+  assert.equal(f.requests.length, 4);
+});
+test("a mutation separates new reads from an older in-flight response", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  let reads = 0;
+  const f = authFixture(async (_url, init) => {
+    if (init.method !== "GET") return response({ saved: true });
+    const version = ++reads;
+    if (version === 1) await gate;
+    return response({ version });
+  });
+  const before = f.api.apiRequest("/probe");
+  await f.api.apiRequest("/probe", { method: "PATCH", json: {} });
+  const after = await f.api.apiRequest("/probe");
+  assert.equal(after.version, 2);
+  release();
+  assert.equal((await before).version, 1);
+});
 
 test("API handles invalid JSON and empty responses correctly", async () => {
   // A successful response containing invalid JSON must fail.

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from "react
 import { useFocusEffect } from "expo-router";
 import { AppState } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { writeAccountPreference } from "@/src/services/account-preferences";
 import { trackEvent } from "@/src/services/telemetry";
 import { firstEligibleMoment, parseMomentHistory, type UpgradeMoment } from "./moments";
 
@@ -101,7 +102,8 @@ export function useUpgradeMoment(
     const operation = queue.then(async () => {
       const history = parseMomentHistory(await AsyncStorage.getItem(key));
       const now = Date.now();
-      await AsyncStorage.setItem(
+      await writeAccountPreference(
+        ownerId,
         key,
         JSON.stringify({
           seen: [...history.seen, moment.key].slice(-100),

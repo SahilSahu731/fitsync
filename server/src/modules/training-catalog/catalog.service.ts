@@ -13,6 +13,34 @@ function required<T>(value: T | null, message: string): T {
   return value;
 }
 
+function publicRoutine(routine: any) {
+  if (
+    !routine?.published ||
+    !routine.training_routine_exercises?.length ||
+    routine.training_routine_exercises.some(
+      (item: any) =>
+        !item.exercises ||
+        item.exercises.status !== "published" ||
+        item.exercises.owner_user_id !== null ||
+        item.rest_seconds > 900 ||
+        (!["duration", "distance_duration"].includes(item.exercises.tracking_type) &&
+          item.max_reps > 1000),
+    )
+  )
+    throw new ApiError(404, "Routine not found.");
+  return {
+    ...routine,
+    training_routine_exercises: routine.training_routine_exercises.map((item: any) => ({
+      ...item,
+      exercises: {
+        id: item.exercises.id,
+        name: item.exercises.name,
+        tracking_type: item.exercises.tracking_type,
+      },
+    })),
+  };
+}
+
 export async function listPrograms(filters: Filters = {}) {
   let query = db.from("training_programs").select("*").eq("published", true);
 
@@ -40,7 +68,7 @@ export async function getProgram(id: string) {
           *,
           training_routine_exercises(
             *,
-            exercises(id,name,tracking_type)
+            exercises(id,name,tracking_type,status,owner_user_id)
           )
         )
       )
@@ -51,7 +79,14 @@ export async function getProgram(id: string) {
     .maybeSingle();
 
   checkDbError(error, "get program");
-  return required(data, "Program not found.");
+  const program = required(data, "Program not found.");
+  return {
+    ...program,
+    training_program_days: program.training_program_days.map((day: any) => ({
+      ...day,
+      training_routines: day.routine_id ? publicRoutine(day.training_routines) : null,
+    })),
+  };
 }
 
 export async function listCategories() {
@@ -96,7 +131,7 @@ export async function getRoutine(id: string) {
       *,
       training_routine_exercises(
         *,
-        exercises(id,name,tracking_type)
+        exercises(id,name,tracking_type,status,owner_user_id)
       )
     `,
     )
@@ -105,7 +140,7 @@ export async function getRoutine(id: string) {
     .maybeSingle();
 
   checkDbError(error, "get routine");
-  return required(data, "Routine not found.");
+  return publicRoutine(required(data, "Routine not found."));
 }
 
 async function copyRoutine(userId: string, routineId: string): Promise<string> {

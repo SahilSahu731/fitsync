@@ -57,7 +57,7 @@ export default function DeleteAccountScreen() {
               router.replace("/(auth)/sign-in");
             } catch (error) {
               Alert.alert(
-                "Deletion failed",
+                "Account deletion",
                 error instanceof Error ? error.message : "Please try again.",
               );
             } finally {

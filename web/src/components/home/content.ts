@@ -61,7 +61,7 @@ export const pillars = [
   {
     art: "sync",
     title: "Bring your health data",
-    text: "Optionally import steps, sleep and weight from Health Connect on Android or Apple Health on iOS. Import is read-only.",
+    text: "Optionally import steps, sleep and weight from Health Connect on Android. Import is read-only, and extra steps you add are tracked separately.",
     href: "/features",
     action: "About health import",
   },
@@ -207,7 +207,7 @@ export const questions = [
   {
     question: "Which health data can FitSync import?",
     answer:
-      "Steps, sleep and body weight, from Health Connect on Android and Apple Health on iOS, for the last seven days. It is optional and read-only: FitSync does not write to your health records.",
+      "Steps, sleep and body weight from Health Connect on Android for the last seven days. It is optional and read-only: FitSync does not write to your health records. Detected steps and extra steps you add are tracked separately.",
   },
   {
     question: "How do the website and mobile app work together?",

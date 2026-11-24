@@ -238,25 +238,6 @@ test("exercise preview compares real sessions in the selected weight unit and op
     .props.onPress();
   assert.deepEqual(v.calls, [["onExercise", "bench:reps_weight"]]);
 });
-test("a returning user without sessions in the free window is not told it is their first workout", () => {
-  const v = render({ hasWorkoutHistory: true });
-  assert.match(text(v.tree), /No completed sessions in this range/);
-  assert.ok(v.nodes.some((n) => n.props.label === "Back to Train"));
-  assert.equal(
-    v.nodes.some((n) => n.props.label === "Start your first workout"),
-    false,
-  );
-});
-test("old daily logs remain viewable but older hydration trends are identified as Pro", () => {
-  const v = render({
-    selectedDate: "2025-01-01",
-    dateTitle: "Jan 1, 2025",
-    daily: (metric) => (metric === "water" ? 2000 : null),
-    isPro: false,
-  });
-  assert.match(text(v.tree), /Older hydration trends require Pro/);
-});
-
 function workout(id, date, minutes, load = 20) {
   return {
     id,

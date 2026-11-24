@@ -5,10 +5,17 @@ import { getHealthAdapter } from "./native";
 import {
   disconnectHealthSync,
   importHealthForUser,
+  latestHealthImportResult,
   readHealthSyncSettings,
+  subscribeHealthSync,
   type HealthImportResult,
 } from "./service";
-import { disabledHealthSync, type HealthAvailability, type HealthSyncSettings } from "./types";
+import {
+  disabledHealthSync,
+  type HealthAvailability,
+  type HealthSyncSettings,
+  type HealthMetric,
+} from "./types";
 
 export function useHealthSync() {
   const { user } = useSession();
@@ -42,7 +49,7 @@ export function useHealthSync() {
     Promise.all([readHealthSyncSettings(ownerId), getHealthAdapter().available()])
       .then(([settings, available]) => {
         if (!cancelled) {
-          setCache({ ownerId, settings, result: null });
+          setCache({ ownerId, settings, result: latestHealthImportResult(ownerId) });
           setAvailability(available);
         }
       })
@@ -54,18 +61,33 @@ export function useHealthSync() {
             error: cause instanceof Error ? cause.message : "Could not open health import.",
           });
       });
+    const unsubscribe = subscribeHealthSync((id) => {
+      if (id !== ownerId) return;
+      void readHealthSyncSettings(ownerId)
+        .then((settings) => {
+          if (!cancelled)
+            setCache({
+              ownerId,
+              settings,
+              result: latestHealthImportResult(ownerId),
+            });
+        })
+        .catch(() => {});
+    });
     return () => {
       cancelled = true;
+      unsubscribe();
     };
   }, [ownerId]);
-  const importNow = async (requestAccess = false) => {
+  const importNow = async (requestAccess = false, metrics?: HealthMetric[]) => {
     if (!ownerId || busy) return;
     const current = () => active.current && currentOwner.current === ownerId;
     setOperation({ ownerId, busy: true, error: "" });
     try {
-      const result = await importHealthForUser(ownerId, current, requestAccess);
+      const result = await importHealthForUser(ownerId, current, requestAccess, metrics);
       const settings = await readHealthSyncSettings(ownerId);
-      if (current()) setCache({ ownerId, settings, result });
+      if (current())
+        setCache({ ownerId, settings, result: latestHealthImportResult(ownerId) ?? result });
     } catch (cause) {
       if (current())
         setOperation({
@@ -123,15 +145,16 @@ export function HealthSyncBridge() {
   useEffect(() => {
     if (!ownerId) return;
     let mounted = true;
-    const current = () => mounted && owner.current === ownerId;
+    const current = () =>
+      mounted && owner.current === ownerId && AppState.currentState === "active";
     const run = async () => {
+      if (!current()) return;
       try {
         const settings = await readHealthSyncSettings(ownerId);
         if (
           !current() ||
           !settings.enabled ||
-          (settings.lastImportedAt &&
-            Date.now() - Date.parse(settings.lastImportedAt) < 15 * 60_000)
+          (settings.lastImportedAt && Date.now() - Date.parse(settings.lastImportedAt) < 60_000)
         )
           return;
         await importHealthForUser(ownerId, current);
@@ -143,9 +166,17 @@ export function HealthSyncBridge() {
     const listener = AppState.addEventListener("change", (state) => {
       if (state === "active") void run();
     });
+    const timer = setInterval(() => {
+      if (AppState.currentState === "active") void run();
+    }, 60_000);
+    const unsubscribe = subscribeHealthSync((id) => {
+      if (id === ownerId) void run();
+    });
     return () => {
       mounted = false;
       listener.remove();
+      clearInterval(timer);
+      unsubscribe();
     };
   }, [ownerId]);
   return null;

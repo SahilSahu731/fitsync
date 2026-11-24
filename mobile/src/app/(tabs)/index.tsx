@@ -436,6 +436,10 @@ export default function HomeScreen() {
           events={snapshot.metrics}
           unit={unit}
           onClose={() => setEditor(null)}
+          onAddSteps={async (date, count, notes) => {
+            await progress.increment("steps", date, count, notes, "manual");
+            setNotice({ ownerId, text: `${count.toLocaleString()} extra steps added.` });
+          }}
           onSave={async (metric, date, value, notes) => {
             await progress.log(metric, date, value, notes);
             setNotice({

@@ -17,6 +17,26 @@ export const errorHandler: ErrorRequestHandler = (error: unknown, req, res, _nex
     _next(error);
     return;
   }
+  // body-parser errors can carry the rejected request body. Classify only its
+  // known input failures and never report or return the original error.
+  const parserFailure = error as { type?: unknown; status?: unknown } | null;
+  const parserErrors: Record<string, { status: number; message: string }> = {
+    "entity.parse.failed": { status: 400, message: "Invalid JSON request body." },
+    "entity.too.large": { status: 413, message: "Request body is too large." },
+    "encoding.unsupported": { status: 415, message: "Unsupported request encoding." },
+    "charset.unsupported": { status: 415, message: "Unsupported request charset." },
+    "request.aborted": { status: 400, message: "Request body was interrupted." },
+    "request.size.invalid": { status: 400, message: "Request body length is invalid." },
+  };
+  if (typeof parserFailure?.type === "string") {
+    const failure = Object.hasOwn(parserErrors, parserFailure.type)
+      ? parserErrors[parserFailure.type]
+      : undefined;
+    if (failure && parserFailure.status === failure.status) {
+      res.status(failure.status).json({ message: failure.message });
+      return;
+    }
+  }
   if (error instanceof ZodError) {
     res.status(400).json({
       message: "Invalid request.",

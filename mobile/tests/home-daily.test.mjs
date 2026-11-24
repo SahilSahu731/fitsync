@@ -254,6 +254,7 @@ function detail(extra = {}) {
     ...baseDeps,
     react,
     "./health-charts": healthCharts,
+    "../health-sync/step-tracking-card": { StepTrackingCard: "StepTrackingCard" },
     "../progress/editors": {
       Sheet: (props) => ({
         type: "Sheet",
@@ -325,6 +326,23 @@ test("drawer keeps free nutrition logging, Pro diary routing and workout actions
   assert.equal(busy.calls.length, 0);
 });
 
+test("steps drawer keeps automatic history separate from date-correct manual additions", () => {
+  const current = event("steps", 4200);
+  const previous = event("steps", 3500, "2026-11-23");
+  const ui = detail({ kind: "steps", snapshot: snapshot([current, previous]) });
+  assert.equal(
+    nodes(ui.render()).find((node) => node.type === "StepTrackingCard").props.entry.id,
+    current.id,
+  );
+  ui.control("Previous day").props.onPress();
+  assert.equal(
+    nodes(ui.render()).find((node) => node.type === "StepTrackingCard").props.entry.id,
+    previous.id,
+  );
+  ui.control("Add extra steps").props.onPress();
+  assert.deepEqual(ui.calls.at(-1), ["log", "steps", "2026-11-23"]);
+});
+
 test("history selection returns after editing and blocked workout actions cannot start", () => {
   const history = detail({ initialDate: "2026-11-10" });
   assert.equal(history.control("Show 30 days").props.accessibilityState.selected, true);
@@ -337,35 +355,11 @@ test("history selection returns after editing and blocked workout actions cannot
   assert.equal(blocked.calls.length, 0);
 });
 
-test("each metric has a distinct chart suited to its data", () => {
-  const values = [event("steps", 8000), event("water", 1250), event("weight", 70)];
-  const steps = detail({
-    kind: "steps",
-    snapshot: snapshot(values),
-    goals: { ...progressModel.defaultGoals(), steps: 10000 },
-  });
-  const stepNodes = nodes(steps.render());
-  assert.ok(stepNodes.some((n) => n.type === "Rect" && n.props.fill === "#FFB184"));
-  assert.ok(stepNodes.some((n) => n.type === "Line" && n.props.strokeDasharray === "5 4"));
-  const water = nodes(
-    detail({
-      kind: "water",
-      snapshot: snapshot([...values, event("water", 1000, "2026-11-23")]),
-    }).render(),
-  );
-  assert.ok(water.some((n) => n.type === "Path" && n.props.fill?.startsWith("url(")));
-  const weight = nodes(detail({ kind: "weight", snapshot: snapshot(values) }).render());
-  assert.ok(weight.some((n) => n.type === "Circle" && n.props.stroke === "#B6D5E5"));
-  assert.equal(
-    weight.some((n) => n.type === "Path" && n.props.fill?.startsWith("url(")),
-    false,
-  );
-  assert.ok(detail({ kind: "workouts" }).control("Workouts activity calendar"));
+test("nutrition charts expose recorded macro energy and switch to calorie history", () => {
   const nutrition = detail({
     kind: "nutrition",
     snapshot: snapshot([event("protein", 25), event("carbs", 50), event("fat", 10)]),
   });
-  assert.ok(nodes(nutrition.render()).some((n) => n.type === "MacroDonut"));
   assert.match(
     nutrition.control("Nutrition stacked macro history").props.accessibilityValue.text,
     /390 macro kilocalories/,

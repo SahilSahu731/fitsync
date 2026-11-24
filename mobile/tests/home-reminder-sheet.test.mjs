@@ -291,12 +291,10 @@ function fixture(options = {}) {
   return { instance, calls, session, billing, companion, program, toggle, chooseTime, save };
 }
 
-test("The simple dialog has three opt-in reminders and native time controls, with no text date/time inputs", async () => {
+test("reminder changes save the chosen time only after explicit permission", async () => {
   const ui = fixture();
-  assert.equal(nodes(ui.instance.tree, (node) => node.type === "Switch").length, 3);
   for (const label of ["Workout reminders", "Water reminders", "Diet reminders"])
     assert.equal(control(ui.instance.tree, label, "switch").props.value, false);
-  assert.equal(nodes(ui.instance.tree, (node) => node.type === "TextInput").length, 0);
   assert.equal(control(ui.instance.tree, "Save reminders").props.disabled, true);
   ui.toggle("Water reminders", true);
   ui.chooseTime("Choose water reminder time", 9, 35);

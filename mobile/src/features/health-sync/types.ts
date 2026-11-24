@@ -6,11 +6,16 @@ export type HealthAvailability = { available: boolean; reason?: string };
 export interface HealthAdapter {
   source: HealthSource;
   available(): Promise<HealthAvailability>;
-  requestReadAccess(): Promise<void>;
-  readLastWeek(now: Date): Promise<HealthReadResult>;
+  requestReadAccess(metrics?: readonly HealthMetric[]): Promise<void>;
+  readLastWeek(now: Date, metrics?: readonly HealthMetric[]): Promise<HealthReadResult>;
   openSettings(): Promise<void>;
 }
-export type HealthSyncSettings = { version: 1; enabled: boolean; lastImportedAt: string | null };
+export type HealthSyncSettings = {
+  version: 1;
+  enabled: boolean;
+  lastImportedAt: string | null;
+  metrics?: HealthMetric[];
+};
 export const disabledHealthSync = (): HealthSyncSettings => ({
   version: 1,
   enabled: false,

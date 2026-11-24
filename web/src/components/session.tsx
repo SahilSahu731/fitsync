@@ -1,8 +1,16 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useState } from "react";
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
-import { api, ApiError } from "@/lib/api";
+import { usePathname, useRouter } from "next/navigation";
+import { api, apiForAccount, ApiError } from "@/lib/api";
 import type { Account } from "@/lib/types";
 import { Icon } from "./icon";
 
@@ -17,57 +25,92 @@ type Session = {
 };
 const Context = createContext<Session | null>(null);
 export function SessionProvider({ children }: { children: React.ReactNode }) {
+  const router = useRouter();
   const [account, setAccount] = useState<Account | null>(null);
   const [admin, setAdmin] = useState(false);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const generation = useRef(0);
+  const mounted = useRef(true);
   const reload = useCallback(async () => {
+    const requestGeneration = ++generation.current;
+    const current = () => mounted.current && requestGeneration === generation.current;
     setLoading(true);
     setError("");
     try {
-      const me = await api<Account>("/me");
-      const permissions = await api<{ canManageExercises: boolean }>("/exercises/permissions");
+      const [me, permissions] = await Promise.all([
+        api<Account>("/me"),
+        api<{ canManageExercises: boolean }>("/exercises/permissions"),
+      ]);
+      if (!current()) return;
       setAccount(me);
       setAdmin(permissions.canManageExercises);
     } catch (e) {
+      if (!current()) return;
       setAccount(null);
       setAdmin(false);
       if (!(e instanceof ApiError && e.status === 401))
         setError(e instanceof Error ? e.message : "Could not load your account.");
     } finally {
-      setLoading(false);
+      if (current()) setLoading(false);
     }
   }, []);
   useEffect(() => {
+    mounted.current = true;
+    generation.current++;
     const initial = setTimeout(() => void reload(), 0);
     const expired = () => {
+      generation.current++;
       setAccount(null);
       setAdmin(false);
+      setLoading(false);
+      setError("");
     };
     window.addEventListener("fitsync-session-expired", expired);
     return () => {
+      mounted.current = false;
       clearTimeout(initial);
       window.removeEventListener("fitsync-session-expired", expired);
     };
   }, [reload]);
-  async function logout() {
-    await fetch("/api/auth/logout", { method: "POST" });
-    setAccount(null);
-    setAdmin(false);
-    window.location.assign("/");
-  }
-  return (
-    <Context.Provider
-      value={{ account, admin, loading, error, updateAccount: setAccount, reload, logout }}
-    >
-      {children}
-    </Context.Provider>
+  const logout = useCallback(async () => {
+    const requestGeneration = ++generation.current;
+    setLoading(true);
+    setError("");
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok)
+        throw new Error("Could not sign out. Please check your connection and try again.");
+      if (!mounted.current || requestGeneration !== generation.current) return;
+      setAccount(null);
+      setAdmin(false);
+      router.replace("/");
+      router.refresh();
+    } catch {
+      if (mounted.current && requestGeneration === generation.current)
+        setError("Could not sign out. Please check your connection and try again.");
+    } finally {
+      if (mounted.current && requestGeneration === generation.current) setLoading(false);
+    }
+  }, [router]);
+  const updateAccount = useCallback((next: Account) => {
+    // A profile save from an old tab/session must not restore a signed-out user.
+    setAccount((current) => (current?.user.id === next.user.id ? next : current));
+  }, []);
+  const value = useMemo(
+    () => ({ account, admin, loading, error, updateAccount, reload, logout }),
+    [account, admin, loading, error, updateAccount, reload, logout],
   );
+  return <Context.Provider value={value}>{children}</Context.Provider>;
 }
 export function useSession() {
   const value = useContext(Context);
   if (!value) throw new Error("Missing session provider");
   return value;
+}
+export function useAccountApi() {
+  const owner = useSession().account?.user.id;
+  return useMemo(() => apiForAccount(owner), [owner]);
 }
 export function AccessGate({
   children,

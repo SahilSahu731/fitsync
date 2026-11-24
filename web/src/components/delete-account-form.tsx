@@ -6,7 +6,7 @@ import { useSession } from "./session";
 
 export function DeleteAccountForm() {
   const router = useRouter();
-  const { reload } = useSession();
+  const { account, reload } = useSession();
   const [confirmation, setConfirmation] = useState("");
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -21,11 +21,15 @@ export function DeleteAccountForm() {
         className="mt-6 flex flex-col items-start gap-4"
         onSubmit={async (event) => {
           event.preventDefault();
-          if (confirmation !== "DELETE" || busy) return;
+          if (confirmation !== "DELETE" || busy || !account) return;
           setBusy(true);
           setError("");
           try {
-            await api("/me", { method: "DELETE", json: { confirmation } });
+            await api("/me", {
+              method: "DELETE",
+              headers: { "X-FitSync-Owner": account.user.id },
+              json: { confirmation },
+            });
             // Clear browser session cookies even though the upstream session is now revoked.
             await fetch("/api/auth/logout", { method: "POST" }).catch(() => {});
             await reload();

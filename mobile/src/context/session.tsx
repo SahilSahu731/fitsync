@@ -12,11 +12,16 @@ import React, {
 
 import { GoogleSignin, isSuccessResponse } from "@react-native-google-signin/google-signin";
 import { createAvatarForm } from "@/src/services/avatar-upload";
+import { deleteAccountData } from "@/src/services/account-data";
 
 import {
   apiRequest,
+  cacheSessionSnapshot,
   clearSessionTokens,
   googleBackendLogin,
+  hasStoredSession,
+  HttpError,
+  readSessionSnapshot,
   restoreBackendSession,
   storeSessionTokens,
 } from "@/src/services/api";
@@ -69,6 +74,45 @@ export type MeResponse = {
   settings: UserSettings;
 };
 
+function isMeResponse(value: unknown): value is MeResponse {
+  if (!value || typeof value !== "object") return false;
+  const { user, profile, settings } = value as MeResponse;
+  if (
+    !user ||
+    typeof user.id !== "string" ||
+    !user.id.trim() ||
+    typeof user.email !== "string" ||
+    typeof user.name !== "string" ||
+    typeof user.bio !== "string" ||
+    (user.avatarUrl !== null && typeof user.avatarUrl !== "string") ||
+    typeof user.hasCustomAvatar !== "boolean" ||
+    typeof user.createdAt !== "string" ||
+    !settings ||
+    !["kg", "lb"].includes(settings.weightUnit) ||
+    ![30, 60, 90, 120, 180].includes(settings.restSeconds) ||
+    typeof settings.workoutReminders !== "boolean"
+  )
+    return false;
+  return (
+    profile === null ||
+    Boolean(
+      profile &&
+      ["muscle", "strength", "fat_loss", "fitness"].includes(profile.goal) &&
+      ["beginner", "intermediate", "advanced"].includes(profile.experience) &&
+      ["male", "female", "prefer_not_to_say"].includes(profile.gender) &&
+      Number.isFinite(profile.heightCm) &&
+      Number.isFinite(profile.weightKg) &&
+      [null, "slim", "medium", "broad"].includes(profile.bodyType) &&
+      Number.isInteger(profile.trainingDays) &&
+      profile.trainingDays >= 1 &&
+      profile.trainingDays <= 7 &&
+      [30, 45, 60].includes(profile.minutesPerWorkout) &&
+      ["gym", "dumbbells", "bodyweight"].includes(profile.equipment) &&
+      typeof profile.completedAt === "string",
+    )
+  );
+}
+
 type SessionContextType = {
   ready: boolean;
 
@@ -114,11 +158,15 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   const [settings, setSettings] = useState<UserSettings | null>(null);
 
-  const applyMe = useCallback((data: MeResponse) => {
+  const applyMe = useCallback((data: MeResponse, persist = true) => {
+    if (!isMeResponse(data))
+      throw new Error("The server returned incomplete account information. Please try again.");
     identity.current = data.user.id;
     setUser(data.user);
     setProfile(data.profile);
     setSettings(data.settings);
+    if (persist)
+      void cacheSessionSnapshot(data).catch((error) => recordError(error, "session_cache"));
   }, []);
 
   const resetState = useCallback(() => {
@@ -155,22 +203,44 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     let mounted = true;
+    const revision = generation.current;
+    const current = () => mounted && generation.current === revision;
 
     async function restore() {
       try {
+        const cached = await readSessionSnapshot<unknown>();
+        if (!current()) return;
+        if (isMeResponse(cached)) applyMe(cached, false);
+      } catch (error) {
+        recordError(error, "session_cache_restore");
+      }
+      if (!current()) return;
+      // Open saved workouts immediately; server verification continues in the background.
+      setReady(true);
+      try {
         const exists = await restoreBackendSession();
-
-        if (exists && mounted) {
-          const data = await apiRequest<MeResponse>("/me");
-
-          if (mounted) {
-            applyMe(data);
-          }
+        if (!current()) return;
+        if (!exists) {
+          resetState();
+          return;
         }
+        const data = await apiRequest<MeResponse>("/me");
+        if (current()) applyMe(data);
       } catch (error) {
         recordError(error, "session_restore");
-      } finally {
-        if (mounted) setReady(true);
+        if (!current()) return;
+        if (error instanceof HttpError && (error.status === 401 || error.status === 403)) {
+          await clearSessionTokens().catch((cause) => recordError(cause, "session_clear"));
+          if (current()) resetState();
+          return;
+        }
+        try {
+          // A network failure preserves local access; revoked/missing credentials do not.
+          const stored = await hasStoredSession();
+          if (current() && !stored) resetState();
+        } catch (cause) {
+          recordError(cause, "session_credentials_read");
+        }
       }
     }
 
@@ -179,15 +249,18 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     return () => {
       mounted = false;
     };
-  }, [applyMe]);
+  }, [applyMe, resetState]);
 
   const signInGoogle = useCallback(async () => {
+    const revision = ++generation.current;
+    const current = () => generation.current === revision;
     await GoogleSignin.hasPlayServices({
       showPlayServicesUpdateDialog: true,
     });
 
     trackEvent("sign_in_started");
     const response = await GoogleSignin.signIn();
+    if (!current()) throw new Error("Your account changed. Please try again.");
 
     if (!isSuccessResponse(response)) {
       return false;
@@ -207,22 +280,12 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
     // Verify the identity on our Express backend.
 
     const result = await googleBackendLogin(idToken);
+    if (!current()) throw new Error("Your account changed. Please try again.");
 
     const user = result.user;
     const settings = result.settings;
 
-    if (
-      !user ||
-      typeof user !== "object" ||
-      !("id" in user) ||
-      typeof user.id !== "string" ||
-      !user.id.trim() ||
-      !settings ||
-      typeof settings !== "object" ||
-      !("weightUnit" in settings) ||
-      (settings.weightUnit !== "kg" && settings.weightUnit !== "lb") ||
-      result.profile === undefined
-    ) {
+    if (!isMeResponse({ user, profile: result.profile, settings })) {
       throw new Error("The server returned incomplete account information. Please try again.");
     }
 
@@ -230,6 +293,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       accessToken: result.accessToken,
       refreshToken: result.refreshToken,
     });
+    if (!current()) throw new Error("Your account changed. Please try again.");
 
     const data = result as unknown as MeResponse;
     applyMe(data);
@@ -321,7 +385,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
   const signOut = useCallback(async () => {
     const account = identity.current;
     identity.current = null;
-    generation.current++;
+    const revision = ++generation.current;
     await unregisterProgramNotifications().catch(() =>
       console.warn("Could not unregister program reminders on this device."),
     );
@@ -334,19 +398,25 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       console.warn("Server logout failed:", error);
     }
 
-    await clearSessionTokens();
-
+    if (generation.current !== revision) return;
     try {
-      await GoogleSignin.signOut();
-    } catch {
-      // Clear the local FitSync session regardless.
+      await clearSessionTokens();
+    } finally {
+      if (generation.current === revision) {
+        try {
+          await GoogleSignin.signOut();
+        } catch {
+          // Clear the local FitSync session regardless.
+        } finally {
+          if (generation.current === revision) resetState();
+        }
+      }
     }
-
-    resetState();
   }, [resetState]);
 
   const deleteAccount = useCallback(async () => {
     const account = identity.current;
+    const revision = generation.current;
     if (!account) throw new Error("Sign in to delete your account.");
     await apiRequest("/me", {
       method: "DELETE",
@@ -355,16 +425,37 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
         confirmation: "DELETE",
       },
     });
+    if (generation.current !== revision || identity.current !== account)
+      throw new Error("Your account changed. Please try again.");
 
-    await clearSessionTokens();
-
+    // Fence pending local saves before account providers unmount.
+    const localCleanup = deleteAccountData(account).then(
+      () => null,
+      (error: unknown) => error,
+    );
     try {
-      await GoogleSignin.signOut();
-    } catch {
-      // Google account itself is not deleted.
+      await clearSessionTokens();
+    } catch (error) {
+      // The account is already deleted on the server, including its refresh sessions.
+      recordError(error, "deleted_session_clear");
+    } finally {
+      if (generation.current === revision) {
+        try {
+          await GoogleSignin.signOut();
+        } catch {
+          // Google account itself is not deleted.
+        } finally {
+          if (generation.current === revision) resetState();
+        }
+      }
     }
-
-    resetState();
+    const cleanupFailure = await localCleanup;
+    if (cleanupFailure) {
+      recordError(cleanupFailure, "deleted_account_data_clear");
+      throw new Error(
+        "Your account was deleted, but some saved data on this device could not be removed. Reopen the app and try clearing its local data in Android settings.",
+      );
+    }
   }, [resetState]);
 
   const value = useMemo(

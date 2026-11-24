@@ -2,7 +2,8 @@
 import Link from "next/link";
 import { badgeClasses } from "@/lib/ui";
 import { useEffect, useRef, useState } from "react";
-import { api, pretty } from "@/lib/api";
+import { pretty } from "@/lib/api";
+import { useAccountApi } from "./session";
 import type {
   Exercise,
   ExerciseInput,
@@ -39,6 +40,7 @@ const splitLines = (text: string) =>
     .map((line) => line.trim())
     .filter(Boolean);
 export function ExerciseEditor({ id }: { id?: string }) {
+  const api = useAccountApi();
   const [tax, setTax] = useState<ExerciseTaxonomies | null>(null);
   const [value, setValue] = useState<ExerciseInput>(empty);
   const [saved, setSaved] = useState<Exercise | null>(null);
@@ -88,7 +90,7 @@ export function ExerciseEditor({ id }: { id?: string }) {
     return () => {
       active = false;
     };
-  }, [id, retry]);
+  }, [api, id, retry]);
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
       if (dirty || image || animation) {

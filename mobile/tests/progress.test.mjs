@@ -210,18 +210,35 @@ test("metric series preserve missing days, unit conversions and calorie separati
 
 function journalFixture(api) {
   const data = new Map();
+  const stats = { reads: 0, writes: 0 };
+  let session = 0;
   const storage = {
-    getItem: async (key) => data.get(key) ?? null,
+    getItem: async (key) => {
+      stats.reads++;
+      return data.get(key) ?? null;
+    },
     setItem: async (key, value) => {
+      stats.writes++;
       data.set(key, value);
+    },
+    removeItem: async (key) => {
+      data.delete(key);
     },
   };
   const journal = load("../src/features/progress/journal.ts", {
     "@react-native-async-storage/async-storage": storage,
-    "@/src/services/api": { apiRequest: api },
+    "@/src/services/api": { apiRequest: api, apiSessionKey: () => session },
     "./model": model,
   });
-  return { journal, data, storage };
+  return {
+    journal,
+    data,
+    storage,
+    stats,
+    session: () => {
+      session++;
+    },
+  };
 }
 test("local journal is account-scoped and failed uploads preserve pending entries", async () => {
   const { journal } = journalFixture(async () => {
@@ -234,6 +251,57 @@ test("local journal is account-scoped and failed uploads preserve pending entrie
     /offline/,
   );
   assert.equal((await journal.readJournal("alice")).pending.length, 1);
+});
+test("account deletion drains queued progress writes and fences late saves without clearing another account", async () => {
+  const f = journalFixture(async () => ({ events: [], next: null }));
+  await f.journal.appendEvent("bob", event("bob", "steps", "2026-11-04", 100));
+  let release;
+  let started;
+  const writing = new Promise((resolve) => {
+    started = resolve;
+  });
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const save = f.storage.setItem;
+  f.storage.setItem = async (key, value) => {
+    started();
+    await gate;
+    await save(key, value);
+  };
+  const pending = f.journal.appendEvent("alice", event("alice", "steps", "2026-11-04", 500));
+  await writing;
+  const deleting = f.journal.deleteProgressJournal("alice");
+  const late = assert.rejects(
+    f.journal.appendEvent("alice", event("late", "steps", "2026-11-04", 900)),
+    /removed/,
+  );
+  release();
+  await Promise.all([pending, deleting, late]);
+  assert.equal(f.data.has("fitsync.progress.v1.alice"), false);
+  assert.equal((await f.journal.readJournal("alice")).events.length, 0);
+  assert.equal((await f.journal.readJournal("bob")).events[0].value, 100);
+});
+test("a response arriving after account deletion cannot recreate saved progress", async () => {
+  let finish;
+  let started;
+  const requested = new Promise((resolve) => {
+    started = resolve;
+  });
+  const f = journalFixture(async () => {
+    started();
+    return new Promise((resolve) => {
+      finish = resolve;
+    });
+  });
+  const pending = f.journal.syncJournal("alice", () => true);
+  const rejected = assert.rejects(pending, /Account changed/);
+  await requested;
+  await f.journal.deleteProgressJournal("alice");
+  finish({ events: [event("late", "steps", "2026-11-04", 700)], next: null });
+  await rejected;
+  assert.equal(f.data.has("fitsync.progress.v1.alice"), false);
+  assert.equal((await f.journal.readJournal("alice")).events.length, 0);
 });
 test("serialized increments preserve concurrent water taps and don't lose uploads appended during sync", async () => {
   let j;
@@ -291,6 +359,131 @@ test("corrupt storage and failed disk writes never silently replace saved progre
     /disk full/,
   );
   assert.equal((await journal.readJournal("bob")).events.length, 0);
+});
+
+test("many progress consumers share one disk read and one history download per resource", async () => {
+  const calls = [];
+  const f = journalFixture(async (path) => {
+    calls.push(path);
+    return path.includes("/workouts")
+      ? { workouts: [workout("a", "2026-11-03")], next: null }
+      : { events: [event("e", "steps", "2026-11-04", 500)], next: null };
+  });
+  const local = await Promise.all(Array.from({ length: 20 }, () => f.journal.readJournal("alice")));
+  assert.equal(f.stats.reads, 1);
+  assert.ok(local.every((value) => value === local[0]));
+  await Promise.all(
+    Array.from({ length: 20 }, () =>
+      Promise.all([
+        f.journal.syncJournal("alice", () => true),
+        f.journal.syncWorkouts("alice", () => true),
+      ]),
+    ),
+  );
+  assert.equal(calls.length, 2);
+  assert.equal(f.stats.reads, 1);
+  const saved = await f.journal.readJournal("alice");
+  assert.equal(saved.workouts.length, 1);
+  assert.equal(saved.events.length, 1);
+  f.session();
+  await f.journal.readJournal("alice");
+  assert.equal(f.stats.reads, 2, "a new login must reread its own durable cache");
+});
+test("a consumer leaving does not cancel a shared sync still needed by another screen", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const f = journalFixture(async () => {
+    await gate;
+    return { workouts: [], next: null };
+  });
+  let firstCurrent = true;
+  const result = Promise.allSettled([
+    f.journal.syncWorkouts("alice", () => firstCurrent),
+    f.journal.syncWorkouts("alice", () => true),
+  ]);
+  await new Promise(setImmediate);
+  firstCurrent = false;
+  release();
+  const [first, second] = await result;
+  assert.equal(first.status, "rejected");
+  assert.equal(second.status, "fulfilled");
+});
+test("a local edit during a shared sync requests a trailing upload without losing pending events", async () => {
+  let release;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const calls = [];
+  let reads = 0;
+  const f = journalFixture(async (_path, options) => {
+    calls.push(options?.method ?? "GET");
+    if (options?.method === "POST") return { accepted: options.json.events.map((row) => row.id) };
+    if (++reads === 1) await gate;
+    return { events: [], next: null };
+  });
+  const first = f.journal.syncJournal("alice", () => true);
+  await new Promise(setImmediate);
+  await f.journal.saveMetric("alice", "water", "2026-11-04", 250, "", "manual", true);
+  const afterEdit = f.journal.syncJournal("alice", () => true, true);
+  release();
+  await Promise.all([first, afterEdit]);
+  assert.equal((await f.journal.readJournal("alice")).pending.length, 0);
+  assert.deepEqual(calls, ["GET", "POST", "GET"]);
+});
+
+test("manual step additions preserve the automatic contribution and serialize rapid taps", async () => {
+  const f = journalFixture(async () => {
+    throw Error("offline");
+  });
+  await f.journal.appendEvent("alice", {
+    ...event("auto", "steps", "2026-11-04", 4000),
+    source: "healthconnect",
+    stepBreakdown: { automatic: 4000, manual: 0, source: "healthconnect" },
+  });
+  await Promise.all(
+    Array.from({ length: 3 }, () =>
+      f.journal.saveMetric("alice", "steps", "2026-11-04", 100, "", "manual", true),
+    ),
+  );
+  const saved = model.latestMetrics((await f.journal.readJournal("alice")).events)[0];
+  assert.equal(saved.value, 4300);
+  assert.deepEqual(JSON.parse(JSON.stringify(saved.stepBreakdown)), {
+    automatic: 4000,
+    manual: 300,
+    source: "healthconnect",
+  });
+  await assert.rejects(
+    f.journal.saveMetric("alice", "steps", "2026-11-04", 3900, "", "manual"),
+    /automatic steps/,
+  );
+  await f.journal.saveMetric("bob", "steps", "2026-11-04", 250, "", "manual", true);
+  const manual = model.latestMetrics((await f.journal.readJournal("bob")).events)[0];
+  assert.deepEqual(JSON.parse(JSON.stringify(manual.stepBreakdown)), {
+    automatic: null,
+    manual: 250,
+    source: null,
+  });
+});
+
+test("saved foreground walks keep protection against a duplicate Health Connect import", async () => {
+  const f = journalFixture(async () => {
+    throw Error("offline");
+  });
+  await f.journal.saveMetric("alice", "steps", "2026-11-04", 500, "", "pedometer", true);
+  const saved = model.latestMetrics((await f.journal.readJournal("alice")).events)[0];
+  assert.equal(saved.value, 500);
+  assert.equal(saved.source, "pedometer");
+  assert.equal(saved.stepBreakdown, undefined);
+  await f.journal.saveMetric("alice", "steps", "2026-11-04", 100, "", "manual", true);
+  const extra = model.latestMetrics((await f.journal.readJournal("alice")).events)[0];
+  assert.equal(extra.value, 600);
+  assert.equal(
+    extra.stepBreakdown,
+    undefined,
+    "adding a manual amount cannot relabel an overlapping old walk as extra activity",
+  );
 });
 
 test("every health metric has exactly one category and matching range validation", () => {

@@ -10,7 +10,7 @@ import { SetRow } from "./set-row";
 import { localDate, type ProgressWorkout } from "../../progress/model";
 import { suggestWorkingSetTargets } from "../../pro/companion-insights";
 import { restAfterWorkoutSet } from "../session-progress";
-import { useWorkout } from "../workout-context";
+import { useWorkoutControls } from "../workout-context";
 import { NumberEntry, WorkoutDrawer } from "./workout-controls";
 import { validSupersetGroup } from "../routine-draft";
 
@@ -50,7 +50,7 @@ export const SessionExerciseCard = React.memo(function SessionExerciseCard({
   today?: string;
   sessionExercises?: SessionExercise[];
 }) {
-  const workout = useWorkout();
+  const workout = useWorkoutControls();
   const { settings: userSettings } = useSession();
   const unit = userSettings?.weightUnit ?? "kg";
   const [settings, setSettings] = useState(false);

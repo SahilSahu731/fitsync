@@ -34,6 +34,7 @@ function setup(storage = new Map(), overrides = {}) {
     setItem: async (key, value) => {
       storage.set(key, value);
     },
+    removeItem: async (key) => storage.delete(key),
     ...overrides,
   };
   vm.runInNewContext(js, {
@@ -178,4 +179,39 @@ test("listener errors do not fail a durable save or hide it from other subscribe
   await api.updateFoodDiary("alice", (diary) => model.storeFoodEntry(diary, entry()));
   assert.equal(received, "alice");
   assert.equal((await api.readFoodDiary("alice")).entries.length, 1);
+});
+
+test("account deletion drains in-flight food saves and prevents stale saves from recreating data", async () => {
+  let release, started;
+  const gate = new Promise((resolve) => {
+    release = resolve;
+  });
+  const began = new Promise((resolve) => {
+    started = resolve;
+  });
+  const storage = new Map();
+  const { api } = setup(storage, {
+    setItem: async (key, value) => {
+      if (key.endsWith(".alice")) {
+        started();
+        await gate;
+      }
+      storage.set(key, value);
+    },
+  });
+  await api.updateFoodDiary("bob", (diary) => model.storeFoodEntry(diary, entry("bob")));
+  const saving = api.updateFoodDiary("alice", (diary) => model.storeFoodEntry(diary, entry()));
+  const saved = saving.catch((error) => error);
+  await began;
+  const deleting = api.deleteFoodDiary("alice");
+  await assert.rejects(
+    api.updateFoodDiary("alice", (diary) => model.storeFoodEntry(diary, entry("late"))),
+    /deleted/,
+  );
+  release();
+  assert.match((await saved).message, /deleted/);
+  await deleting;
+  assert.equal(storage.has("fitsync.nutrition.v1.alice"), false);
+  assert.equal((await api.readFoodDiary("alice")).entries.length, 0);
+  assert.equal((await api.readFoodDiary("bob")).entries[0].id, "bob");
 });

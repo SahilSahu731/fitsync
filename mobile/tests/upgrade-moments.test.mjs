@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { accountPreferences } from "./helpers/account-preferences.mjs";
 import {
   workoutMoment,
   weeklyMoment,
@@ -476,6 +477,7 @@ function momentHookFixture() {
       useFocusEffect: (fn) => react.useEffect(() => (focused ? fn() : undefined), [focused, fn]),
     },
     "@react-native-async-storage/async-storage": storageApi,
+    "@/src/services/account-preferences": accountPreferences(storageApi),
     "@/src/services/telemetry": { trackEvent: (...event) => events.push(event) },
     "./moments": { firstEligibleMoment, parseMomentHistory },
   };

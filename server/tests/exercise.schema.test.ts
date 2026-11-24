@@ -35,46 +35,24 @@ const validExercise = {
   status: "draft",
 };
 
-test("accepts a valid exercise", () => {
+test("accepts a draft exercise without animation metadata", () => {
   const result = exerciseInputSchema.safeParse(validExercise);
 
   assert.equal(result.success, true);
 });
 
-test("rejects a missing exercise name", () => {
-  const result = exerciseInputSchema.safeParse({
-    ...validExercise,
-    name: "",
-  });
-
-  assert.equal(result.success, false);
-});
-
-test("rejects an unsafe slug", () => {
-  const result = exerciseInputSchema.safeParse({
-    ...validExercise,
-    slug: "Incline Dumbbell Press!",
-  });
-
-  assert.equal(result.success, false);
-});
-
-test("rejects overlapping primary and secondary muscles", () => {
-  const result = exerciseInputSchema.safeParse({
-    ...validExercise,
-    secondaryMuscles: ["chest"],
-  });
-
-  assert.equal(result.success, false);
-});
-
-test("rejects duplicate equipment", () => {
-  const result = exerciseInputSchema.safeParse({
-    ...validExercise,
-    equipment: ["dumbbell", "dumbbell"],
-  });
-
-  assert.equal(result.success, false);
+test("rejects missing names, unsafe slugs, overlapping muscles and duplicate equipment", () => {
+  for (const [reason, patch] of [
+    ["missing name", { name: "" }],
+    ["unsafe slug", { slug: "Incline Dumbbell Press!" }],
+    ["overlapping muscles", { secondaryMuscles: ["chest"] }],
+    ["duplicate equipment", { equipment: ["dumbbell", "dumbbell"] }],
+  ] as const)
+    assert.equal(
+      exerciseInputSchema.safeParse({ ...validExercise, ...patch }).success,
+      false,
+      reason,
+    );
 });
 
 test("supports partial exercise updates", () => {
@@ -85,13 +63,16 @@ test("supports partial exercise updates", () => {
   assert.equal(result.success, true);
 });
 
-test("limits pagination size", () => {
+test("exercise listing validates pagination and publication status", () => {
   const result = exerciseListSchema.safeParse({
     page: "1",
     pageSize: "1000",
   });
 
   assert.equal(result.success, false);
+  for (const status of ["draft", "published", "archived"])
+    assert.equal(exerciseListSchema.parse({ status, includeDrafts: "true" }).status, status);
+  assert.equal(exerciseListSchema.safeParse({ status: "deleted" }).success, false);
 });
 
 test("requires usage rights on media uploads", () => {

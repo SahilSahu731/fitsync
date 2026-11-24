@@ -10,6 +10,7 @@ function healthConnect() {
   return require("react-native-health-connect") as typeof import("react-native-health-connect");
 }
 const permissions = ["Steps", "SleepSession", "Weight"] as const;
+const recordTypes = { steps: "Steps", sleep: "SleepSession", weight: "Weight" } as const;
 const buildReason =
   "Health import is not available in this version of FitSync. You can still track manually.";
 
@@ -40,25 +41,29 @@ const androidAdapter: HealthAdapter = {
       return { available: false, reason: buildReason };
     }
   },
-  async requestReadAccess() {
+  async requestReadAccess(metrics) {
+    const requested = metrics ? metrics.map((metric) => recordTypes[metric]) : permissions;
     const granted = await healthConnect().requestPermission(
-      permissions.map((recordType) => ({ accessType: "read", recordType })),
+      requested.map((recordType) => ({ accessType: "read", recordType })),
     );
     if (
       !granted.some(
         (permission) =>
           permission.accessType === "read" &&
-          (permissions as readonly string[]).includes(permission.recordType),
+          (requested as readonly string[]).includes(permission.recordType),
       )
     )
       throw new Error(
         "No health access was granted. You can keep tracking manually or change access in Health Connect.",
       );
   },
-  async readLastWeek(now) {
+  async readLastWeek(now, metrics) {
     const hc = healthConnect();
     const granted = await hc.getGrantedPermissions();
+    const selected = (type: (typeof permissions)[number]) =>
+      !metrics || metrics.some((metric) => recordTypes[metric] === type);
     const canRead = (type: (typeof permissions)[number]) =>
+      selected(type) &&
       granted.some(
         (permission) => permission.accessType === "read" && permission.recordType === type,
       );
@@ -89,7 +94,11 @@ const androidAdapter: HealthAdapter = {
               endTime: day.end.toISOString(),
             },
           });
-          if (Number.isFinite(aggregate.COUNT_TOTAL) && aggregate.COUNT_TOTAL > 0)
+          if (
+            Number.isFinite(aggregate.COUNT_TOTAL) &&
+            (aggregate.COUNT_TOTAL > 0 ||
+              (aggregate.COUNT_TOTAL === 0 && aggregate.dataOrigins?.length))
+          )
             values.push({
               metric: "steps",
               date: day.date,
@@ -97,7 +106,10 @@ const androidAdapter: HealthAdapter = {
             });
         }
       });
-    else warnings.push("Steps access is off.");
+    else if (selected("Steps"))
+      warnings.push(
+        "Steps access is off. Enable it in Health Connect to track walking automatically.",
+      );
     const start = new Date(days[0].start);
     start.setDate(start.getDate() - 1);
     const timeRangeFilter = {
@@ -134,7 +146,7 @@ const androidAdapter: HealthAdapter = {
         } while (pageToken);
         values.push(...sleepValues(intervals, dates));
       });
-    else warnings.push("Sleep access is off.");
+    else if (selected("SleepSession")) warnings.push("Sleep access is off.");
     if (canRead("Weight"))
       await read("weight", async () => {
         const samples: { at: number; kg: number }[] = [];
@@ -147,7 +159,7 @@ const androidAdapter: HealthAdapter = {
         } while (pageToken);
         values.push(...latestWeightValues(samples, dates));
       });
-    else warnings.push("Weight access is off.");
+    else if (selected("Weight")) warnings.push("Weight access is off.");
     return { source: "healthconnect", values, warnings };
   },
   async openSettings() {

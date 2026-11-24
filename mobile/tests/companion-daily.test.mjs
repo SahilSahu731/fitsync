@@ -522,6 +522,7 @@ test("a failing journal subscriber cannot turn a persisted save into failure or 
       setItem: async (key, value) => data.set(key, value),
     },
     "@/src/services/api": {
+      apiSessionKey: () => 0,
       apiRequest: async () => {
         throw Error("No network expected");
       },

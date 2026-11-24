@@ -1,0 +1,21 @@
+{
+  "name": "query-string",
+  "version": "7.1.3+fitsync.1",
+  "main": "index.js",
+  "private": true,
+  "license": "MIT",
+  "dependencies": {
+    "decode-uri-component": "file:../decode-uri-component",
+    "filter-obj": "^1.1.0",
+    "split-on-first": "^1.0.0",
+    "strict-uri-encode": "^2.0.0"
+  },
+  "types": "index.d.ts",
+  "description": "Vendored query-string 7.1.3 with patched decoder dependency wiring",
+  "fitsyncVendor": {
+    "upstreamVersion": "7.1.3",
+    "source": "https://github.com/sindresorhus/query-string/tree/v7.1.3",
+    "upstreamSourceSha256": "caa3f2c8b45dfe1e91db22ae10743af68de8d96f26515132bb52485ec0f037fa",
+    "change": "Dependency wiring only; index.js and index.d.ts unchanged"
+  }
+}

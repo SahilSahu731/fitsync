@@ -31,7 +31,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/images/android-icon-monochrome.png",
+          "icon": "./assets/images/notification-icon.png",
           "color": "#C5F460",
           "defaultChannel": "general-v1",
           "sounds": ["./assets/sound/rest_complete.wav"]
@@ -105,7 +105,7 @@
       "favicon": "./assets/images/favicon.png"
     },
     "runtimeVersion": {
-      "policy": "appVersion"
+      "policy": "fingerprint"
     },
     "updates": {
       "url": "https://u.expo.dev/d9829030-6ee5-45ac-8cbb-55fe6602c5dc"

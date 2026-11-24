@@ -53,7 +53,7 @@ export async function rotateRefreshToken(refreshToken: string) {
     !sessionId ||
     !secret ||
     extra !== undefined ||
-    !/^[0-9a-f-]{36}$/i.test(sessionId) ||
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(sessionId) ||
     secret.length < 40
   ) {
     throw new ApiError(401, "Invalid refresh token.");

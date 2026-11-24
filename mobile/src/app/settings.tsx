@@ -87,8 +87,15 @@ export default function SettingsScreen() {
       {
         text: "Sign out",
         onPress: async () => {
-          await signOut();
-          router.replace("/(auth)/sign-in");
+          try {
+            await signOut();
+            router.replace("/(auth)/sign-in");
+          } catch (error) {
+            Alert.alert(
+              "Could not finish sign-out cleanup",
+              error instanceof Error ? error.message : "Please try again.",
+            );
+          }
         },
       },
     ]);

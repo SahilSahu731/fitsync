@@ -87,7 +87,7 @@ export default function HealthSyncScreen() {
           </Txt>
           <Txt className="mt-3 text-sm leading-6 text-muted">
             {health.settings.enabled
-              ? "Updates run when you open FitSync or bring it to the foreground. You can also import now. This does not run while the app is closed."
+              ? "FitSync refreshes while the app is open and when you return. On compatible Android phones, Health Connect keeps counting walking while FitSync is closed. Older phones need a connected fitness app or watch recording steps. You can also import now."
               : "Tap below to choose permissions in your device’s health settings. Each FitSync account chooses separately."}
           </Txt>
           {health.settings.lastImportedAt && (
@@ -96,9 +96,10 @@ export default function HealthSyncScreen() {
             </Txt>
           )}
           <Txt className="mt-3 text-xs leading-5 text-muted">
-            Manual entries and saved phone-step totals take priority. Repeated imports replace
-            imported totals; they do not add them again. Missing data is never turned into zero.
-            Existing imports stay saved until you edit them.
+            Automatic steps and extra steps you add are kept separately, then combined in your daily
+            total. Repeated imports replace the automatic part without adding it twice. Older manual
+            daily corrections and saved phone-walk totals stay protected. Missing data is never
+            turned into zero.
           </Txt>
           {Platform.OS === "ios" && (
             <Txt className="mt-3 text-xs leading-5 text-muted">

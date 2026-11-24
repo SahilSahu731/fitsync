@@ -1,5 +1,6 @@
 import { trackEvent } from "@/src/services/telemetry";
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { AccessibilityInfo, Animated, Easing, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable } from "@/src/components/motion";
@@ -123,76 +124,80 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
   // -1 = waiting below, 0 = visible, 1 = gone above
   const [swap] = useState(() => new Animated.Value(0));
 
-  useEffect(() => {
-    const loops: Animated.CompositeAnimation[] = [];
-    let cancelled = false;
+  useFocusEffect(
+    useCallback(() => {
+      const loops: Animated.CompositeAnimation[] = [];
+      let cancelled = false;
 
-    AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (cancelled || reduce) return;
-      loops.push(
-        Animated.loop(
-          Animated.sequence([
-            Animated.delay(1400),
-            Animated.timing(sweep, {
-              toValue: 1,
-              duration: 1500,
-              easing: Easing.inOut(Easing.quad),
-              useNativeDriver: true,
-            }),
-            Animated.delay(3000),
-            Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
-          ]),
-        ),
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(pulse, {
-              toValue: 1,
-              duration: 2400,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(pulse, {
-              toValue: 0,
-              duration: 2400,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-          ]),
-        ),
-      );
-      loops.forEach((l) => l.start());
-    });
-
-    return () => {
-      cancelled = true;
-      loops.forEach((l) => l.stop());
-    };
-  }, [sweep, pulse]);
-
-  useEffect(() => {
-    const timer = setInterval(() => {
-      Animated.timing(swap, {
-        toValue: 1,
-        duration: 200,
-        easing: Easing.in(Easing.quad),
-        useNativeDriver: true,
-      }).start(({ finished }) => {
-        if (!finished) return;
-        setIndex((i) => (i + 1) % PERKS.length);
-        swap.setValue(-1);
-        Animated.timing(swap, {
-          toValue: 0,
-          duration: 340,
-          easing: Easing.out(Easing.cubic),
-          useNativeDriver: true,
-        }).start();
+      AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
+        if (cancelled || reduce) return;
+        loops.push(
+          Animated.loop(
+            Animated.sequence([
+              Animated.delay(1400),
+              Animated.timing(sweep, {
+                toValue: 1,
+                duration: 1500,
+                easing: Easing.inOut(Easing.quad),
+                useNativeDriver: true,
+              }),
+              Animated.delay(3000),
+              Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
+            ]),
+          ),
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(pulse, {
+                toValue: 1,
+                duration: 2400,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(pulse, {
+                toValue: 0,
+                duration: 2400,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+            ]),
+          ),
+        );
+        loops.forEach((l) => l.start());
       });
-    }, CYCLE_MS);
-    return () => {
-      clearInterval(timer);
-      swap.stopAnimation();
-    };
-  }, [swap]);
+
+      return () => {
+        cancelled = true;
+        loops.forEach((l) => l.stop());
+      };
+    }, [sweep, pulse]),
+  );
+
+  useFocusEffect(
+    useCallback(() => {
+      const timer = setInterval(() => {
+        Animated.timing(swap, {
+          toValue: 1,
+          duration: 200,
+          easing: Easing.in(Easing.quad),
+          useNativeDriver: true,
+        }).start(({ finished }) => {
+          if (!finished) return;
+          setIndex((i) => (i + 1) % PERKS.length);
+          swap.setValue(-1);
+          Animated.timing(swap, {
+            toValue: 0,
+            duration: 340,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }).start();
+        });
+      }, CYCLE_MS);
+      return () => {
+        clearInterval(timer);
+        swap.stopAnimation();
+      };
+    }, [swap]),
+  );
 
   // Animated values are the only inline props left; Tailwind can't express them
   const sweepX = sweep.interpolate({ inputRange: [0, 1], outputRange: [-140, w + 140] });

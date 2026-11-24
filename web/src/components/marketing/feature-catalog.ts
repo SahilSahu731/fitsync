@@ -75,7 +75,7 @@ export const featureGroups = [
     icon: Activity,
     title: "Bring your health data along.",
     description:
-      "Optionally import steps, sleep and body weight from Apple Health on iOS or Health Connect on Android. Access is read-only.",
+      "Optionally import steps, sleep and body weight from Health Connect on Android. Access is read-only, and extra steps you add stay separate from detected steps.",
     label: "Connected health",
   },
   {

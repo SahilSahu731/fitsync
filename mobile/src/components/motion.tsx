@@ -1,4 +1,11 @@
-import React, { createContext, useCallback, useContext, useEffect, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useState,
+  useSyncExternalStore,
+} from "react";
 import {
   AccessibilityInfo,
   Animated,
@@ -49,6 +56,28 @@ cssInterop(Animated.View, { className: "style" });
 const AnimatedPressable = Animated.createAnimatedComponent(Pressable);
 cssInterop(AnimatedPressable, { className: "style" });
 
+const idleInteraction = { pressed: false, hovered: false };
+const readIdleInteraction = () => idleInteraction;
+const skipInteractionSubscription = () => () => {};
+function createInteractionStore() {
+  let state = idleInteraction;
+  const listeners = new Set<() => void>();
+  return {
+    read: () => state,
+    subscribe(listener: () => void) {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+    update(name: "pressed" | "hovered", value: boolean) {
+      if (state[name] === value) return;
+      state = { ...state, [name]: value };
+      for (const listener of listeners) listener();
+    },
+  };
+}
+
 /** Keeps the original layout, hit area and callbacks while adding a short spring. */
 export function MotionPressable({
   style,
@@ -61,8 +90,14 @@ export function MotionPressable({
 }: PressableProps & { className?: string }) {
   const reduced = useReducedAppMotion();
   const [scale] = useState(() => new Animated.Value(1));
-  const [pressed, setPressed] = useState(false);
-  const [hovered, setHovered] = useState(false);
+  const [interaction] = useState(createInteractionStore);
+  // Only functional styles subscribe to React updates. Native-driven feedback
+  // on static controls does not need to rebuild their JSX on every touch.
+  const state: PressableStateCallbackType & { hovered: boolean } = useSyncExternalStore(
+    typeof style === "function" ? interaction.subscribe : skipInteractionSubscription,
+    typeof style === "function" ? interaction.read : readIdleInteraction,
+    readIdleInteraction,
+  );
   useEffect(() => {
     if (reduced || disabled) {
       scale.stopAnimation();
@@ -70,14 +105,13 @@ export function MotionPressable({
     }
     return () => scale.stopAnimation();
   }, [disabled, reduced, scale]);
-  const state: PressableStateCallbackType & { hovered: boolean } = { pressed, hovered };
   return (
     <AnimatedPressable
       {...props}
       disabled={disabled}
       style={[typeof style === "function" ? style(state) : style, { transform: [{ scale }] }]}
       onHoverIn={(event) => {
-        setHovered(true);
+        interaction.update("hovered", true);
         if (!reduced && !disabled)
           Animated.spring(scale, {
             toValue: 1.015,
@@ -88,7 +122,7 @@ export function MotionPressable({
         onHoverIn?.(event);
       }}
       onHoverOut={(event) => {
-        setHovered(false);
+        interaction.update("hovered", false);
         if (!reduced)
           Animated.spring(scale, {
             toValue: 1,
@@ -99,7 +133,7 @@ export function MotionPressable({
         onHoverOut?.(event);
       }}
       onPressIn={(event) => {
-        setPressed(true);
+        interaction.update("pressed", true);
         if (!reduced && !disabled)
           Animated.spring(scale, {
             toValue: 0.975,
@@ -110,7 +144,7 @@ export function MotionPressable({
         onPressIn?.(event);
       }}
       onPressOut={(event) => {
-        setPressed(false);
+        interaction.update("pressed", false);
         if (!reduced)
           Animated.spring(scale, {
             toValue: 1,

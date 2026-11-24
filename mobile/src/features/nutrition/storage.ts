@@ -8,6 +8,7 @@ import {
 } from "./model";
 
 const locks = new Map<string, Promise<FoodDiary>>();
+const deletedOwners = new Set<string>();
 const listeners = new Set<(ownerId: string, diary: FoodDiary) => void>();
 const PRESERVED =
   "Could not read your food diary. Your saved data has been kept on this device. Retry before adding food.";
@@ -63,12 +64,14 @@ export function subscribeFoodDiary(
 
 export async function readFoodDiary(ownerId: string): Promise<FoodDiary> {
   const key = storageKey(ownerId);
+  if (deletedOwners.has(ownerId)) return emptyDiary();
   let raw: string | null;
   try {
     raw = await AsyncStorage.getItem(key);
   } catch {
     throw new Error("Could not open your food diary on this device. Please retry.");
   }
+  if (deletedOwners.has(ownerId)) return emptyDiary();
   if (raw === null) return emptyDiary();
   try {
     const value: unknown = JSON.parse(raw);
@@ -84,19 +87,23 @@ export function updateFoodDiary(
   ownerId: string,
   update: (diary: FoodDiary) => FoodDiary,
 ): Promise<FoodDiary> {
+  if (deletedOwners.has(ownerId)) return Promise.reject(new Error("This account was deleted."));
   // Validate synchronously through a resolved Promise so every failure follows
   // the same async contract as a storage error.
   const next = (locks.get(ownerId) ?? Promise.resolve(emptyDiary()))
     .catch(() => emptyDiary())
     .then(async () => {
       const key = storageKey(ownerId);
-      const value = update(await readFoodDiary(ownerId));
+      const previous = await readFoodDiary(ownerId);
+      if (deletedOwners.has(ownerId)) throw new Error("This account was deleted.");
+      const value = update(previous);
       assertDiary(value);
       try {
         await AsyncStorage.setItem(key, JSON.stringify(value));
       } catch {
         throw new Error("Your food was not saved. Device storage is unavailable; please retry.");
       }
+      if (deletedOwners.has(ownerId)) throw new Error("This account was deleted.");
       for (const listener of listeners) {
         try {
           listener(ownerId, value);
@@ -112,4 +119,30 @@ export function updateFoodDiary(
   };
   void next.then(clean, clean);
   return next;
+}
+
+/** Fence stale saves immediately, then remove data after the owner's active write. */
+export function deleteFoodDiary(ownerId: string): Promise<void> {
+  const key = storageKey(ownerId);
+  deletedOwners.add(ownerId);
+  const next = (locks.get(ownerId) ?? Promise.resolve(emptyDiary()))
+    .catch(() => emptyDiary())
+    .then(async () => {
+      await AsyncStorage.removeItem(key);
+      const empty = emptyDiary();
+      for (const listener of listeners) {
+        try {
+          listener(ownerId, empty);
+        } catch {
+          /* The deletion is already committed. */
+        }
+      }
+      return empty;
+    });
+  locks.set(ownerId, next);
+  const clean = () => {
+    if (locks.get(ownerId) === next) locks.delete(ownerId);
+  };
+  void next.then(clean, clean);
+  return next.then(() => undefined);
 }

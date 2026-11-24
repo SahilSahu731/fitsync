@@ -55,7 +55,7 @@ async function publication(kind: "categories" | "routines" | "programs", id: str
   if (kind === "routines") {
     const { data, error } = await db
       .from("training_routine_exercises")
-      .select("exercise_id,exercises(status)")
+      .select("exercise_id,max_reps,rest_seconds,exercises(status,tracking_type)")
       .eq("routine_id", id);
     databaseError(error);
     if (
@@ -67,6 +67,20 @@ async function publication(kind: "categories" | "routines" | "programs", id: str
       throw new ApiError(
         409,
         "Add at least one exercise and publish every selected exercise before publishing this routine.",
+      );
+    if (
+      data.some((row) => {
+        const exercise = row.exercises as unknown as { tracking_type: string };
+        return (
+          row.rest_seconds > 900 ||
+          (!["duration", "distance_duration"].includes(exercise.tracking_type) &&
+            row.max_reps > 1000)
+        );
+      })
+    )
+      throw new ApiError(
+        409,
+        "Routine rest periods must be at most 900 seconds and rep-based sets at most 1000 reps.",
       );
   }
   if (kind === "programs") {

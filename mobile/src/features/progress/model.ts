@@ -145,6 +145,11 @@ export type MetricEvent = {
   value: number | null;
   source: "manual" | "pedometer" | "healthkit" | "healthconnect";
   notes: string;
+  stepBreakdown?: {
+    automatic: number | null;
+    manual: number;
+    source: "healthconnect" | "healthkit" | "pedometer" | null;
+  };
 };
 export type ProgressEvent =
   MetricEvent | { id: string; observedAt: string; kind: "goals"; goals: Goals };

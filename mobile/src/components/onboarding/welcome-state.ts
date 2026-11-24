@@ -1,4 +1,5 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { writeAccountPreference } from "@/src/services/account-preferences";
 
 export const onboardingWelcomeKey = (ownerId: string) => `fitsync.onboarding-welcome.v1.${ownerId}`;
 const pendingKey = (ownerId: string) => `fitsync.onboarding-welcome-pending.v1.${ownerId}`;
@@ -9,9 +10,9 @@ const pending = new Map<string, Promise<boolean>>();
 export async function armOnboardingWelcome(ownerId: string): Promise<void> {
   if (!ownerId) return;
   try {
-    await AsyncStorage.setItem(`fitsync.goals-welcome.v1.${ownerId}`, "seen");
+    await writeAccountPreference(ownerId, `fitsync.goals-welcome.v1.${ownerId}`, "seen");
     if (shown.has(ownerId) || (await AsyncStorage.getItem(onboardingWelcomeKey(ownerId)))) return;
-    await AsyncStorage.setItem(pendingKey(ownerId), "ready");
+    await writeAccountPreference(ownerId, pendingKey(ownerId), "ready");
   } catch {
     // Entering the app stays available when local preferences cannot be written.
   }
@@ -35,9 +36,9 @@ export function claimOnboardingWelcome(
       }
       const armed = await AsyncStorage.getItem(pendingKey(ownerId));
       if (!armed || !current()) return false;
-      await AsyncStorage.setItem(onboardingWelcomeKey(ownerId), "seen");
+      await writeAccountPreference(ownerId, onboardingWelcomeKey(ownerId), "seen");
       if (!current()) {
-        await AsyncStorage.removeItem(onboardingWelcomeKey(ownerId));
+        await writeAccountPreference(ownerId, onboardingWelcomeKey(ownerId), null);
         return false;
       }
       shown.add(ownerId);

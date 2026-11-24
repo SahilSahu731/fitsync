@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { writeAccountPreference } from "@/src/services/account-preferences";
 import { useFocusEffect } from "expo-router";
 import { apiRequest } from "@/src/services/api";
 import type { MuscleMetadata } from "./analytics";
@@ -59,7 +60,7 @@ export function useProCatalog(ownerId: string) {
       }
       if (current()) {
         setItems(rows);
-        void AsyncStorage.setItem(key, JSON.stringify(rows)).catch(() => {});
+        void writeAccountPreference(ownerId, key, JSON.stringify(rows)).catch(() => {});
       }
     } catch (e) {
       if (current())

@@ -156,14 +156,18 @@ export function ProfileForm({ settings = false }: { settings?: boolean }) {
   );
   async function save(e: React.FormEvent) {
     e.preventDefault();
+    if (!account || busy) return;
+    const headers = { "X-FitSync-Owner": account.user.id };
     setBusy(true);
     setError("");
     setMessage("");
     try {
       if (settings)
-        updateAccount(await api<Account>("/me/settings", { method: "PATCH", json: preferences }));
+        updateAccount(
+          await api<Account>("/me/settings", { method: "PATCH", headers, json: preferences }),
+        );
       else {
-        await api("/me", { method: "PATCH", json: { name, bio } });
+        await api("/me", { method: "PATCH", headers, json: { name, bio } });
         const {
           goal,
           experience,
@@ -178,6 +182,7 @@ export function ProfileForm({ settings = false }: { settings?: boolean }) {
         updateAccount(
           await api<Account>("/me/profile", {
             method: "PUT",
+            headers,
             json: {
               goal,
               experience,

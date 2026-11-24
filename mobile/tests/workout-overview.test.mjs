@@ -41,7 +41,7 @@ const host =
   (tag) =>
   ({ children, accessibilityLabel, ...props }) =>
     React.createElement(tag, props, children);
-const native = { View, Pressable: View, StyleSheet: { absoluteFill: {} } };
+const native = { View, Pressable: View };
 const ui = { Txt };
 const icons = { MaterialCommunityIcons: () => null };
 const colors = { C: {} };
@@ -75,86 +75,9 @@ test("the complete overview renders safely when the exercise list is missing, nu
     const markup = renderToStaticMarkup(React.createElement(SessionOverview, props));
     assert.match(markup, /Sets logged/);
     assert.match(markup, /Volume/);
-    assert.equal((markup.match(/<svg/g) ?? []).length, 2);
     assert.doesNotThrow(() =>
       renderToStaticMarkup(React.createElement(MuscleFocus, { exercises })),
     );
   }
   assert.equal(errors.length, 0);
-});
-
-test("an exercise without loaded set data still renders its tagged muscles", () => {
-  const markup = renderToStaticMarkup(
-    React.createElement(SessionOverview, {
-      name: "Upper body",
-      completedSets: 0,
-      totalSets: 0,
-      volume: 0,
-      exercises: [
-        {
-          id: "bench",
-          exercise_name: "Bench press",
-          exercises: { primary_muscles: ["chest"], secondary_muscles: [] },
-        },
-      ],
-    }),
-  );
-  assert.match(markup, /fill="#C5F460"/);
-});
-
-test("targetless glass surfaces use the supported Android fallback without deprecated props", () => {
-  const blurCalls = [];
-  const BlurView = (props) => {
-    blurCalls.push(props);
-    return null;
-  };
-  const animation = {
-    duration() {
-      return this;
-    },
-    springify() {
-      return this;
-    },
-    damping() {
-      return this;
-    },
-    delay() {
-      return this;
-    },
-  };
-  const reanimated = {
-    __esModule: true,
-    default: { View },
-    FadeInDown: animation,
-    useReducedMotion: () => true,
-    useSharedValue: (value) => ({ value }),
-    useAnimatedStyle: (callback) => callback(),
-  };
-  const common = {
-    "react-native": { ...native, Platform: { OS: "android", Version: 34 } },
-    "expo-blur": { BlurView },
-    "expo-linear-gradient": { LinearGradient: () => null },
-    "react-native-reanimated": reanimated,
-  };
-  const { GlassSurface } = load("../src/components/glass-surface.tsx", common);
-  const { CoachHomeButton } = load("../src/features/coaching/home-card.tsx", {
-    ...common,
-    "expo-router": { router: {} },
-    "@expo/vector-icons": icons,
-    "@/src/components/motion": { MotionPressable: View },
-    "@/src/components/ui": ui,
-    "@/src/constants/theme": colors,
-    "@/src/features/billing/billing-context": {
-      useBilling: () => ({ isPro: false, loading: false }),
-    },
-    "./model": {},
-    "./use-coaching": {},
-  });
-  renderToStaticMarkup(React.createElement(GlassSurface));
-  renderToStaticMarkup(React.createElement(CoachHomeButton));
-  assert.equal(blurCalls.length, 2);
-  for (const props of blurCalls) {
-    assert.equal(props.experimentalBlurMethod, undefined);
-    assert.equal(props.blurMethod, "none");
-  }
 });

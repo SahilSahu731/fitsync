@@ -30,6 +30,7 @@ import { useWorkout } from "@/src/features/workouts/workout-context";
 import { catalogApi, type SavedProgram } from "@/src/features/training-catalog/api";
 
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { writeAccountPreference } from "@/src/services/account-preferences";
 import { useSession } from "@/src/context/session";
 import {
   TrainActions,
@@ -536,7 +537,8 @@ function TrainAccountScreen() {
       programs: programs.map((row) => row.id),
       [reordering]: ids,
     };
-    await AsyncStorage.setItem(orderKey, JSON.stringify(data));
+    if (!user?.id) throw new Error("Sign in to save your training order.");
+    await writeAccountPreference(user.id, orderKey, JSON.stringify(data));
     if (reordering === "routines") setTemplates((rows) => ordered(rows, ids));
     else setPrograms((rows) => ordered(rows, ids));
   };

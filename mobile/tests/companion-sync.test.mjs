@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { accountPreferences } from "./helpers/account-preferences.mjs";
 import {
   reminderDate,
   validReminderPreferences,
@@ -45,6 +46,8 @@ function load(file, dependencies, globals = {}) {
     clearInterval() {},
     ...globals,
     require: (name) => {
+      if (name === "@/src/services/account-preferences")
+        return accountPreferences(dependencies["@react-native-async-storage/async-storage"]);
       if (!(name in dependencies)) throw Error(`Unexpected dependency ${name}`);
       return dependencies[name];
     },

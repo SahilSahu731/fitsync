@@ -137,6 +137,15 @@ export function Workspace({
             {admin ? "FitSync administration" : "My FitSync"}
           </Link>
           <span className="flex items-center gap-3">
+            {account && (
+              <button
+                type="button"
+                onClick={() => void logout()}
+                className={`min-h-11 rounded-lg px-3 text-sm text-white/70 hover:bg-white/10 hover:text-white lg:hidden ${focusRing}`}
+              >
+                Sign out
+              </button>
+            )}
             {name && <span className="hidden font-medium text-ink sm:inline">{name}</span>}
             <Avatar name={name} />
           </span>

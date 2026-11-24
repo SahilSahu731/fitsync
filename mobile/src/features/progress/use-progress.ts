@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useFocusEffect } from "expo-router";
 import { useSession } from "@/src/context/session";
 import {
@@ -43,7 +43,7 @@ export function useProgress() {
   const [syncError, setSyncError] = useState("");
   const [workoutError, setWorkoutError] = useState("");
   const [storageError, setStorageError] = useState("");
-  const syncing = useRef<Promise<void> | null>(null);
+  const syncing = useRef<{ ownerId: string; operation: Promise<void> } | null>(null);
   const load = useCallback(async () => {
     if (!ownerId) return;
     // A new account never waits for an old account's request.
@@ -96,7 +96,7 @@ export function useProgress() {
     }
   }, [ownerId]);
   const refresh = useCallback(() => {
-    if (syncing.current) return syncing.current;
+    if (syncing.current?.ownerId === ownerId) return syncing.current.operation;
     const request = load()
       .catch((error) => {
         if (ownerRef.current === ownerId) {
@@ -105,9 +105,9 @@ export function useProgress() {
         }
       })
       .finally(() => {
-        if (syncing.current === request) syncing.current = null;
+        if (syncing.current?.operation === request) syncing.current = null;
       });
-    syncing.current = request;
+    syncing.current = { ownerId, operation: request };
     return request;
   }, [load, ownerId]);
   useFocusEffect(
@@ -120,15 +120,28 @@ export function useProgress() {
     if (!ownerId || storageError) throw new Error(storageError || "Sign in to log progress.");
     const saved = await write();
     if (ownerRef.current === ownerId) setCache({ ownerId, journal: saved });
-    // Save is local and durable; retry after an existing upload to drain new entries.
-    if (syncing.current) void syncing.current.then(() => refresh());
-    else void refresh();
+    // A metric changes the event journal, not workout history. Coalesce with other
+    // screens and request a trailing upload if another sync was already running.
+    void syncJournal(ownerId, () => ownerRef.current === ownerId, true)
+      .then(() => {
+        if (ownerRef.current === ownerId) setSyncError("");
+      })
+      .catch((error) => {
+        if (ownerRef.current === ownerId)
+          setSyncError(error instanceof Error ? error.message : "Cloud sync unavailable.");
+      });
   }
+
+  const goals = useMemo(
+    () => currentGoals(journal.events, profile?.trainingDays ?? 3),
+    [journal.events, profile?.trainingDays],
+  );
+  const hasGoals = useMemo(() => hasSavedGoals(journal.events), [journal.events]);
 
   return {
     journal,
-    goals: currentGoals(journal.events, profile?.trainingDays ?? 3),
-    hasGoals: hasSavedGoals(journal.events),
+    goals,
+    hasGoals,
     loading: loading || (cache.ownerId !== ownerId && !storageError),
     refreshing,
     syncError,

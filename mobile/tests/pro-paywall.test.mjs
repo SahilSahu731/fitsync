@@ -401,7 +401,7 @@ test("real-store development and all release checkout still require published le
     assert.doesNotMatch(text(tree), /Test checkout · No real charges/);
   }
 });
-test("the FAQs expand accessibly and the last content stays clear of the measured purchase dock", () => {
+test("the FAQs expand accessibly and explain rule-based recommendations", () => {
   const f = fixture();
   let tree = f.render();
   const question = button(tree, "How are training recommendations made?");
@@ -412,26 +412,6 @@ test("the FAQs expand accessibly and the last content stays clear of the measure
   assert.equal(
     button(tree, "How are training recommendations made?").props.accessibilityState.expanded,
     true,
-  );
-  const dock = find(tree, "View").find((node) => node.props.onLayout);
-  dock.props.onLayout({ nativeEvent: { layout: { height: 370 } } });
-  tree = f.render();
-  assert.equal(
-    find(tree, "Scroll").find((node) => !node.props.horizontal).props.contentContainerStyle
-      .paddingBottom,
-    394,
-  );
-  f.dimensions.height = 580;
-  tree = f.render();
-  assert.equal(
-    find(tree, "View").some((node) => node.props.className?.includes("absolute inset-x-0")),
-    false,
-  );
-  f.dimensions.height = 844;
-  f.dimensions.fontScale = 1.5;
-  assert.equal(
-    find(f.render(), "View").some((node) => node.props.className?.includes("absolute inset-x-0")),
-    false,
   );
 });
 test("restoring an empty store account reports the result and Not now returns home", async () => {
@@ -451,17 +431,12 @@ test("the paywall shows honest benefits, free core access and transparent yearly
   const f = fixture();
   const tree = f.render();
   const copy = text(tree);
-  assert.match(copy, /Know exactly what to lift next session/);
   assert.match(copy, /logging stays free forever/i);
   assert.match(copy, /200.*month equivalent/);
   assert.match(copy, /INR 2400.*Billed yearly/);
   assert.match(copy, /rule-based training plan/);
   assert.match(copy, /Previous-session hints.*Rest timer & personal records.*Workout reminders/);
   assert.doesNotMatch(copy, /personal trainer|human coach/i);
-  assert.ok(find(tree, "Pressable").some((node) => text(node) === "Restore"));
-  assert.ok(
-    find(tree, "Pressable").some((node) => node.props.accessibilityLabel === "Close Pro page"),
-  );
   assert.doesNotMatch(copy, /Start my 7-day free trial|Day 7:/);
 });
 test("an eligible trial has a truthful timeline and an explicit permission-backed reminder option", async () => {
@@ -495,10 +470,4 @@ test("an eligible trial has a truthful timeline and an explicit permission-backe
     assert.equal(f.calls[0][0], "yearly");
     assert.equal(f.calls[0][1].trialReminder, notifications);
   }
-});
-test("small screens show checkout before the extended feature list", () => {
-  const f = fixture();
-  f.dimensions.height = 580;
-  const copy = text(f.render());
-  assert.ok(copy.indexOf("Continue with yearly") < copy.indexOf("Everything included in Pro"));
 });

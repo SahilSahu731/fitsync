@@ -34,6 +34,7 @@ import { StrengthSection } from "./strength";
 import { ConsistencySection } from "./consistency";
 import { MetricDetail } from "./metric-detail";
 import { WalkCounter } from "./walk-counter";
+import { StepTrackingCard } from "../health-sync/step-tracking-card";
 import { Icon, IconButton, PanelCard, SectionTitle, SmallButton } from "./visuals";
 import {
   DailyMetricGrid,
@@ -231,6 +232,12 @@ export function ProgressDashboard() {
     setSelectedDate(date);
     setMessageError(false);
     setMessage(value === null ? "Check-in cleared." : `${METRICS[metric].label} saved.`);
+  }
+  async function addSteps(date: string, count: number, notes: string) {
+    await progress.increment("steps", date, count, notes, "manual");
+    setSelectedDate(date);
+    setMessageError(false);
+    setMessage("Extra steps added to your daily total.");
   }
   async function addWater() {
     if (waterBusy || !canLog) return;
@@ -604,7 +611,13 @@ export function ProgressDashboard() {
                 onWater={() => void addWater()}
                 waterBusy={waterBusy}
                 walkCounter={
-                  <WalkCounter draft={walkDraft} onDraftChange={setWalkDraft} onSave={saveWalk} />
+                  <StepTrackingCard
+                    entry={metrics.find(
+                      (entry) => entry.metric === "steps" && entry.date === selectedDate,
+                    )}
+                  >
+                    <WalkCounter draft={walkDraft} onDraftChange={setWalkDraft} onSave={saveWalk} />
+                  </StepTrackingCard>
                 }
               />
             ) : visibleMetrics.length ? (
@@ -786,6 +799,7 @@ export function ProgressDashboard() {
           unit={unit}
           onClose={() => setEditor(null)}
           onSave={saveLog}
+          onAddSteps={addSteps}
         />
       )}
       {detailMetric && (

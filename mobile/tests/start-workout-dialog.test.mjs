@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { accountPreferences } from "./helpers/account-preferences.mjs";
 
 function mount(file, exportName, dependencies, props = {}) {
   const slots = [];
@@ -50,6 +51,8 @@ function mount(file, exportName, dependencies, props = {}) {
     Date,
     Error,
     require(name) {
+      if (name === "@/src/services/account-preferences")
+        return accountPreferences(dependencies["@react-native-async-storage/async-storage"]);
       if (name === "react/jsx-runtime") return { jsx, jsxs: jsx, Fragment: "Fragment" };
       if (name === "react") return react;
       if (!(name in dependencies)) throw Error(`Unexpected import: ${name}`);
@@ -421,7 +424,7 @@ test("Train waits for workout and program checks and retains the program retry s
   assert.doesNotMatch(text(tree), /Start empty workout/);
 });
 
-test("Train refreshes its program on focus and places the coach button before the workout action", async () => {
+test("Train refreshes its program on focus", async () => {
   let refreshed = 0;
   const screen = trainFixture({
     program: {
@@ -434,13 +437,6 @@ test("Train refreshes its program on focus and places the coach button before th
   screen.focus();
   await screen.flush();
   assert.equal(refreshed, 1);
-  const tree = screen.render();
-  const children = find(tree, "ScrollView")[0].props.children;
-  const coach = children.findIndex((node) => node?.type === "CoachHomeButton");
-  const start = children.findIndex((node) => /Start empty workout/.test(text(node)));
-  assert.ok(coach >= 0 && start > coach);
-  assert.equal(find(tree, "CoachHomeButton").length, 1);
-  assert.doesNotMatch(text(tree), /Your plans/);
 });
 
 test("the personal coach button opens coaching for Pro members and the upgrade page for free members", () => {

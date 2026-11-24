@@ -65,6 +65,14 @@ const metricEvent = z
     value: z.number().finite().nullable(),
     source: z.enum(["manual", "pedometer", "healthkit", "healthconnect"]),
     notes: z.string().trim().max(500),
+    stepBreakdown: z
+      .object({
+        automatic: z.number().int().min(0).max(200000).nullable(),
+        manual: z.number().int().min(0).max(200000),
+        source: z.enum(["healthconnect", "healthkit", "pedometer"]).nullable(),
+      })
+      .strict()
+      .optional(),
   })
   .strict()
   .superRefine((entry, ctx) => {
@@ -101,6 +109,18 @@ const metricEvent = z
         code: "custom",
         path: ["source"],
         message: "Pedometer readings are only for steps.",
+      });
+    if (
+      entry.stepBreakdown &&
+      (entry.metric !== "steps" ||
+        entry.value === null ||
+        (entry.stepBreakdown.source === null) !== (entry.stepBreakdown.automatic === null) ||
+        (entry.stepBreakdown.automatic ?? 0) + entry.stepBreakdown.manual !== entry.value)
+    )
+      ctx.addIssue({
+        code: "custom",
+        path: ["stepBreakdown"],
+        message: "Step breakdowns must add up to a recorded steps total.",
       });
   });
 export const eventSchema = z.discriminatedUnion("kind", [

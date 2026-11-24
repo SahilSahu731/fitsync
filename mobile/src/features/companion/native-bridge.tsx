@@ -1,6 +1,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { AppState, Platform } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { writeAccountPreference } from "@/src/services/account-preferences";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
 import { useSession } from "@/src/context/session";
@@ -183,9 +184,9 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
           value.seconds <= 86400
         )
           setPaused(value);
-        else void AsyncStorage.removeItem(pauseKey);
+        else void writeAccountPreference(ownerId, pauseKey, null);
       } catch {
-        void AsyncStorage.removeItem(pauseKey);
+        void writeAccountPreference(ownerId, pauseKey, null);
       }
     });
     return () => {
@@ -253,17 +254,31 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
   const followed = program.active?.enrollment.status === "active" ? program.active : null;
   const programKnown = !program.loading && (!program.error || Boolean(program.active));
   const trainingReady = journalLoaded && programKnown && (Boolean(followed) || planLoaded);
-  const snapshotKey = JSON.stringify({
-    prefs,
-    plan,
-    program: program.active,
-    complete: completed.map((item) => [item.id, item.finished_at]),
-    active: workout.session?.id,
-    tick,
-    trainingReady,
-    journalLoaded,
-    fetchedAt,
-  });
+  const snapshotKey = useMemo(
+    () =>
+      JSON.stringify({
+        prefs,
+        plan,
+        program: program.active,
+        complete: completed.map((item) => [item.id, item.finished_at]),
+        active: workout.session?.id,
+        tick,
+        trainingReady,
+        journalLoaded,
+        fetchedAt,
+      }),
+    [
+      prefs,
+      plan,
+      program.active,
+      completed,
+      workout.session?.id,
+      tick,
+      trainingReady,
+      journalLoaded,
+      fetchedAt,
+    ],
+  );
   useEffect(() => {
     if (Platform.OS === "web" || !ownerId) return;
     if (billing.loading) return;
@@ -378,12 +393,12 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
           if (action.action === "pause-rest" && latest.restTimer) {
             const seconds = Math.max(1, Math.ceil((latest.restTimer.endsAt - Date.now()) / 1000));
             const value = { sessionId: action.sessionId, seconds };
-            await AsyncStorage.setItem(pauseKey, JSON.stringify(value));
+            await writeAccountPreference(ownerId, pauseKey, JSON.stringify(value));
             if (!mounted) return;
             setPaused(value);
             latest.stopRest();
           } else if (action.action === "resume-rest" && snapshot?.rest?.paused) {
-            await AsyncStorage.removeItem(pauseKey);
+            await writeAccountPreference(ownerId, pauseKey, null);
             if (!mounted) return;
             setPaused(null);
             latest.startRest(snapshot.rest.remainingSeconds);
@@ -399,7 +414,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
             const rest = exercise ? restAfterWorkoutSet(exercises, exercise.id, action.setId) : 0;
             await latest.updateSet(action.setId, { completed: true });
             if (!mounted || current.current.workout.session?.id !== action.sessionId) return;
-            await AsyncStorage.removeItem(pauseKey);
+            await writeAccountPreference(ownerId, pauseKey, null);
             if (!mounted) return;
             setPaused(null);
             if (rest > 0) latest.startRest(rest);

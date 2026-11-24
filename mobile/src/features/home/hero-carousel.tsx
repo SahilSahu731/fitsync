@@ -1,4 +1,5 @@
-import React, { ReactNode, useEffect, useState } from "react";
+import React, { ReactNode, useCallback, useEffect, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { Animated, Easing, PanResponder, PanResponderInstance, View } from "react-native";
 
 const SIDE = 32; // visible sliver of the neighbour cards
@@ -164,10 +165,12 @@ export function HomeHeroCarousel({ slides, initialIndex = 0 }: Props) {
   useEffect(() => {
     ctl.setStep(stepX);
   }, [ctl, stepX]);
-  useEffect(() => {
-    if (!ready) return;
-    return ctl.start();
-  }, [ctl, ready]);
+  useFocusEffect(
+    useCallback(() => {
+      if (!ready) return;
+      return ctl.start();
+    }, [ctl, ready]),
+  );
 
   return (
     <View onLayout={(e) => setWidth(e.nativeEvent.layout.width)} style={{ opacity: ready ? 1 : 0 }}>

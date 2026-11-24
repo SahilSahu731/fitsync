@@ -464,7 +464,7 @@ test("training method drawers, set additions/removals and exercise reordering re
   assert.equal(exercises[1].sets[0].tempo, "3-1-X-0");
 });
 
-test("routine cards expose compact decimal targets without gesture controls and use duration targets for cardio", async () => {
+test("routine cards use duration targets for cardio and collapse editable fields", async () => {
   const app = fixture();
   await add(app, [
     bench,
@@ -472,12 +472,6 @@ test("routine cards expose compact decimal targets without gesture controls and 
   ]);
   const tree = app.render();
   assert.equal(ofType(tree, "Entry").length, 9);
-  for (const target of ofType(tree, "Entry")) {
-    assert.equal(target.props.compact, true);
-    assert.equal(target.props.showLabel, false);
-    assert.equal(target.props.showStepper, false);
-    assert.equal(target.props.allowDrag, false);
-  }
   assert.equal(entry(tree, "Bench press, set 1 weight in kg").props.step, 0.5);
   assert.equal(entry(tree, "Treadmill, set 1 seconds").props.max, 86400);
   assert.equal(

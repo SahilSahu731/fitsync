@@ -48,7 +48,8 @@ export const prescriptionSchema = z
     sets: z.number().int().min(1).max(20),
     min_reps: z.number().int().min(1).max(10000),
     max_reps: z.number().int().min(1).max(10000),
-    rest_seconds: z.number().int().min(0).max(3600),
+    // Copied personal routines use the logger's 0–900 second rest column.
+    rest_seconds: z.number().int().min(0).max(900),
     set_type: z.enum(["normal", "warmup", "heavy", "drop", "failure"]).default("normal"),
     notes: z.string().trim().max(2000).default(""),
   })

@@ -5,6 +5,12 @@ const require = createRequire(import.meta.url);
 const resolveConfig = require("../app.config.js");
 const { expo: config } = require("../app.json");
 
+test("native changes receive their own update runtime even when the marketing version stays unchanged", () => {
+  const resolved = resolveConfig({ config });
+  assert.equal(resolved.runtimeVersion.policy, "fingerprint");
+  assert.deepEqual(resolved.platforms, ["android"]);
+});
+
 test("cleartext networking is restricted to the explicit development build", () => {
   const original = process.env.EAS_BUILD_PROFILE;
   try {

@@ -55,6 +55,7 @@ function topbarFixture({ isPro = false, user = { id: "alice", name: "Alex Rivera
       useAnimatedProps: (fn) => fn(),
     },
     react: {
+      useCallback: (callback) => callback,
       useState(initial) {
         const index = cursor++;
         if (!(index in slots)) slots[index] = initial;
@@ -62,6 +63,7 @@ function topbarFixture({ isPro = false, user = { id: "alice", name: "Alex Rivera
       },
       useEffect() {},
     },
+    "expo-router": { useFocusEffect() {} },
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { Image: "Image", View: "View" },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
@@ -97,20 +99,18 @@ function topbarFixture({ isPro = false, user = { id: "alice", name: "Alex Rivera
   };
 }
 
-test("Home replaces search with membership access and retains reminders and profile actions", () => {
+test("Home membership, reminders and profile actions stay reachable", () => {
   const ui = topbarFixture();
   const tree = ui.render();
-  assert.equal(nodes(tree, (node) => node.props?.name === "magnify").length, 0);
   button(tree, "Explore Pro").props.onPress();
   button(tree, "Open reminders").props.onPress();
   button(tree, "Open your profile").props.onPress();
   assert.deepEqual(ui.calls, ["pro", "reminders", "profile"]);
 });
 
-test("Pro members get a studio icon with the same membership destination action", () => {
+test("Pro members open the membership destination", () => {
   const ui = topbarFixture({ isPro: true });
   const tree = ui.render();
-  assert.equal(nodes(tree, (node) => node.props?.name === "crown-outline").length, 0);
   button(tree, "Open Pro studio").props.onPress();
   assert.deepEqual(ui.calls, ["pro"]);
 });

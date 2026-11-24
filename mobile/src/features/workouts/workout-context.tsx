@@ -29,6 +29,7 @@ import {
   queueNotes,
   queueSet,
   readWorkoutDraft,
+  saveWorkoutRest,
   type WorkoutDraft,
 } from "./offline";
 
@@ -68,6 +69,11 @@ type WorkoutContextType = {
   stopRest: () => void;
 };
 const Context = createContext<WorkoutContextType | null>(null);
+type WorkoutControls = Pick<
+  WorkoutContextType,
+  "updateSet" | "removeSet" | "startRest" | "updateExercise" | "busy" | "pendingSetIds"
+>;
+const ControlsContext = createContext<WorkoutControls | null>(null);
 export function WorkoutProvider({ children }: { children: React.ReactNode }) {
   const { user } = useSession();
   return (
@@ -99,7 +105,6 @@ function WorkoutAccountProvider({
   const [pendingAdds, setPendingAdds] = useState<
     { exerciseId: string; sessionId: string; set: WorkoutSet }[]
   >([]);
-  const restWrites = useRef(Promise.resolve());
   const [dataRevision, setDataRevision] = useState(0);
   const [lastCompleted, setLastCompleted] = useState<WorkoutSession | null>(null);
   const [snapshot, setSnapshot] = useState<{ ownerId: string; draft: WorkoutDraft | null }>({
@@ -139,10 +144,11 @@ function WorkoutAccountProvider({
     sessionId: string;
     exerciseId: string;
   } | null>(null);
-  const focusSession = useRef<string | undefined>(undefined);
+  const focusSession = useRef(session);
   useLayoutEffect(() => {
-    focusSession.current = session?.id;
-  }, [session?.id]);
+    focusSession.current = session;
+  }, [session]);
+  const sessionId = session?.id;
   const focusedExerciseId =
     exerciseFocus &&
     session &&
@@ -152,14 +158,19 @@ function WorkoutAccountProvider({
       : undefined;
   const setFocusedExerciseId = useCallback(
     (id: string | undefined) => {
-      if (!ownerId || owner.current !== ownerId || focusSession.current !== session?.id) return;
-      setExerciseFocus(
-        session && id && session.workout_session_exercises.some((exercise) => exercise.id === id)
-          ? { sessionId: session.id, exerciseId: id }
-          : null,
+      const current = focusSession.current;
+      if (!ownerId || owner.current !== ownerId || current?.id !== sessionId) return;
+      const next =
+        current && id && current.workout_session_exercises.some((exercise) => exercise.id === id)
+          ? { sessionId: current.id, exerciseId: id }
+          : null;
+      setExerciseFocus((previous) =>
+        previous?.sessionId === next?.sessionId && previous?.exerciseId === next?.exerciseId
+          ? previous
+          : next,
       );
     },
-    [ownerId, session],
+    [ownerId, sessionId],
   );
   const [syncError, setSyncError] = useState(false);
   const syncing = useRef<{ ownerId: string; operation: Promise<WorkoutDraft | null> } | null>(null);
@@ -179,7 +190,12 @@ function WorkoutAccountProvider({
       );
   }, []);
   const resyncRequested = useRef(false);
+  const uploadTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const sync = useCallback(() => {
+    if (uploadTimer.current !== null) {
+      clearTimeout(uploadTimer.current);
+      uploadTimer.current = null;
+    }
     if (!ownerId) return Promise.resolve(null);
     if (syncing.current?.ownerId === ownerId) {
       resyncRequested.current = true;
@@ -219,6 +235,19 @@ function WorkoutAccountProvider({
     syncing.current = { ownerId, operation };
     return operation;
   }, [ownerId, apply]);
+  const scheduleSync = useCallback(() => {
+    if (uploadTimer.current !== null) clearTimeout(uploadTimer.current);
+    uploadTimer.current = setTimeout(() => {
+      uploadTimer.current = null;
+      void sync().catch(() => {});
+    }, 350);
+  }, [sync]);
+  useEffect(
+    () => () => {
+      if (uploadTimer.current !== null) clearTimeout(uploadTimer.current);
+    },
+    [],
+  );
   const refresh = useCallback(async () => {
     if (!ownerId) {
       setLoading(false);
@@ -272,6 +301,10 @@ function WorkoutAccountProvider({
     void configureWorkoutNotifications().catch(console.warn);
     const subscription = AppState.addEventListener("change", (state) => {
       if (state === "active") void refresh().catch(() => {});
+      else
+        void Promise.all([...pendingWrites.current])
+          .then(() => sync())
+          .catch(() => {});
     });
     const retry = setInterval(() => {
       if (AppState.currentState === "active") void sync().catch(() => {});
@@ -417,7 +450,7 @@ function WorkoutAccountProvider({
     pendingWrites.current.add(write);
     try {
       apply(ownerId, await write);
-      void sync().catch(() => {});
+      scheduleSync();
     } finally {
       pendingWrites.current.delete(write);
     }
@@ -430,7 +463,7 @@ function WorkoutAccountProvider({
     pendingWrites.current.add(write);
     try {
       apply(ownerId, await write);
-      void sync().catch(() => {});
+      scheduleSync();
     } finally {
       pendingWrites.current.delete(write);
     }
@@ -439,20 +472,14 @@ function WorkoutAccountProvider({
     restRevision.current++;
     void cancelRestNotification().catch(console.warn);
     setRestTimer(null);
-    restWrites.current = restWrites.current
-      .catch(() => {})
-      .then(() => AsyncStorage.removeItem(restKey));
-    void restWrites.current.catch(console.warn);
+    void saveWorkoutRest(ownerId, null).catch(console.warn);
   };
   const startRest = (seconds: number) => {
     if (!ownerId || !session || !Number.isFinite(seconds) || seconds <= 0) return;
     const revision = ++restRevision.current;
     const value = { endsAt: Date.now() + seconds * 1000, duration: seconds, sessionId: session.id };
     setRestTimer(value);
-    restWrites.current = restWrites.current
-      .catch(() => {})
-      .then(() => AsyncStorage.setItem(restKey, JSON.stringify(value)));
-    void restWrites.current.catch(console.warn);
+    void saveWorkoutRest(ownerId, value).catch(console.warn);
     void (async () => {
       await requestWorkoutNotificationPermission().catch(console.warn);
       if (revision !== restRevision.current || owner.current !== ownerId) return;
@@ -494,6 +521,75 @@ function WorkoutAccountProvider({
         return null;
       });
   }
+  // Rows subscribe to this small, stable controls value. Editing one set must
+  // not redraw every other row and every exercise in the active workout.
+  const handlers = useRef({
+    start,
+    addExercise,
+    addExercises,
+    updateExercise,
+    addSet,
+    removeSet,
+    removeExercise,
+    reorderExercises,
+    updateSet,
+    updateNotes,
+    finish,
+    discard,
+    startRest,
+    stopRest,
+    ensureSynced: requireSynced,
+  });
+  useLayoutEffect(() => {
+    handlers.current = {
+      start,
+      addExercise,
+      addExercises,
+      updateExercise,
+      addSet,
+      removeSet,
+      removeExercise,
+      reorderExercises,
+      updateSet,
+      updateNotes,
+      finish,
+      discard,
+      startRest,
+      stopRest,
+      ensureSynced: requireSynced,
+    };
+  });
+  const actions = useMemo(
+    () => ({
+      start: (...args: Parameters<typeof start>) => handlers.current.start(...args),
+      addExercise: (...args: Parameters<typeof addExercise>) =>
+        handlers.current.addExercise(...args),
+      addExercises: (...args: Parameters<typeof addExercises>) =>
+        handlers.current.addExercises(...args),
+      updateExercise: (...args: Parameters<typeof updateExercise>) =>
+        handlers.current.updateExercise(...args),
+      addSet: (...args: Parameters<typeof addSet>) => handlers.current.addSet(...args),
+      removeSet: (...args: Parameters<typeof removeSet>) => handlers.current.removeSet(...args),
+      removeExercise: (...args: Parameters<typeof removeExercise>) =>
+        handlers.current.removeExercise(...args),
+      reorderExercises: (...args: Parameters<typeof reorderExercises>) =>
+        handlers.current.reorderExercises(...args),
+      updateSet: (...args: Parameters<typeof updateSet>) => handlers.current.updateSet(...args),
+      updateNotes: (...args: Parameters<typeof updateNotes>) =>
+        handlers.current.updateNotes(...args),
+      finish: () => handlers.current.finish(),
+      discard: () => handlers.current.discard(),
+      startRest: (...args: Parameters<typeof startRest>) => handlers.current.startRest(...args),
+      stopRest: () => handlers.current.stopRest(),
+      ensureSynced: () => handlers.current.ensureSynced(),
+    }),
+    [],
+  );
+  const pendingSetIds = useMemo(() => pendingAdds.map((add) => add.set.id), [pendingAdds]);
+  const controls = useMemo(
+    () => ({ ...actions, busy, pendingSetIds }),
+    [actions, busy, pendingSetIds],
+  );
   return (
     <Context.Provider
       value={{
@@ -501,21 +597,12 @@ function WorkoutAccountProvider({
         loading,
         busy,
         addingSetExerciseIds: pendingAdds.map((add) => add.exerciseId),
-        pendingSetIds: pendingAdds.map((add) => add.set.id),
+        pendingSetIds,
         restTimer,
         focusedExerciseId,
         setFocusedExerciseId,
         refresh,
-        ensureSynced: requireSynced,
-        start,
-        addExercise,
-        addExercises,
-        removeExercise,
-        reorderExercises,
-        updateExercise,
-        addSet,
-        removeSet,
-        updateSet,
+        ...actions,
         dataRevision,
         completedWorkout: draft?.finish
           ? completeSession(draft.session, draft.finish.elapsedSeconds)
@@ -523,19 +610,19 @@ function WorkoutAccountProvider({
         pendingSaves: draftPending(draft) + pendingAdds.length,
         syncError,
         pendingCompletion: !!draft?.finish,
-        updateNotes,
-        finish,
-        discard,
-        startRest,
-        stopRest,
       }}
     >
-      {children}
+      <ControlsContext.Provider value={controls}>{children}</ControlsContext.Provider>
     </Context.Provider>
   );
 }
 export function useWorkout() {
   const value = useContext(Context);
+  if (!value) throw new Error("WorkoutProvider is missing.");
+  return value;
+}
+export function useWorkoutControls() {
+  const value = useContext(ControlsContext);
   if (!value) throw new Error("WorkoutProvider is missing.");
   return value;
 }

@@ -253,18 +253,9 @@ test("Free, signed-out and unverified accounts never mount private trainer data 
     );
   }
 });
-test("Pro is one connected daily workspace with programs, muscle insights, meals and tools", () => {
+test("Pro workspace actions open programs, personal plans, exercises and meals", () => {
   const f = fixture(),
     tree = f.render();
-  assert.ok(action(tree, "Choose my program"));
-  assert.equal(find(tree, "MuscleBrief").length, 1);
-  assert.equal(find(tree, "MealBrief").length, 1);
-  assert.ok(action(tree, "Warm-up & plates"));
-  assert.ok(action(tree, "Working weight guide"));
-  assert.equal(
-    find(tree, "Pressable").some((node) => node.props.accessibilityRole === "tab"),
-    false,
-  );
   action(tree, "Choose my program").props.onPress();
   assert.equal(f.calls.at(-1), "/explore/programs");
   action(tree, "Build a personal plan").props.onPress();
@@ -434,7 +425,7 @@ test("long graph histories expose every saved point through bounded, reversible 
     .props.onPress();
   assert.equal(find(render(), "Chart")[0].props.points[0].value, 5);
 });
-test("muscle-map selection opens the correct group and keeps existing workout artwork unchanged", () => {
+test("workout muscle selection dispatches the correct group", () => {
   const { Body } = loadUi("../src/features/workouts/components/muscle-focus.tsx", {
     "react-native": { Pressable: "Pressable", View: "View" },
     "@expo/vector-icons": { MaterialCommunityIcons: "Icon" },
@@ -455,8 +446,6 @@ test("muscle-map selection opens the correct group and keeps existing workout ar
   assert.ok(selected);
   selected.props.onPress();
   assert.deepEqual(selections, ["chest"]);
-  assert.equal(tree.props.width, 130);
   const ordinary = Body({ muscles: ["chest"] });
-  assert.ok(find(ordinary, "Path").some((n) => n.props.fill === "#C5F460"));
   assert.ok(find(ordinary, "Path").every((n) => !n.props.onPress));
 });

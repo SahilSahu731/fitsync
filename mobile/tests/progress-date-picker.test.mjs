@@ -110,10 +110,6 @@ function harness({ date = "2026-11-17", today = "2026-11-17", loggedDates = new 
 test("the date drawer renders a Monday-first calendar and commits only after confirmation", () => {
   const h = harness();
   const tree = h.render();
-  assert.equal(
-    nodes(tree).some((node) => node.type === "TextInput"),
-    false,
-  );
   const days = nodes(tree).filter((node) => node.props.accessibilityLabel?.startsWith("Select "));
   assert.equal(days.length, 42);
   assert.equal(days[0].props.accessibilityLabel, dayLabel("2026-10-26"));

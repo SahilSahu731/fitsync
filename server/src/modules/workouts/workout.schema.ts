@@ -1,5 +1,9 @@
 import { z } from "zod";
 
+// These values are stored in PostgreSQL INTEGER and NUMERIC(10, 2) columns.
+const maxSeconds = 2147483647;
+const maxDistanceMeters = 99999999.99;
+
 export const setTypeSchema = z.enum(["warmup", "normal", "heavy", "failure", "drop", "rest_pause"]);
 
 export const uuidSchema = z.uuid();
@@ -15,7 +19,7 @@ export const workoutSetSchema = z.object({
   setType: setTypeSchema.default("normal"),
   targetReps: z.number().int().min(1).max(1000).nullable().optional(),
   targetWeight: z.number().min(0).max(100000).nullable().optional(),
-  targetDurationSeconds: z.number().int().min(0).nullable().optional(),
+  targetDurationSeconds: z.number().int().min(0).max(maxSeconds).nullable().optional(),
   restSeconds: z.number().int().min(0).max(900).nullable().optional(),
   tempo: tempoSchema.nullable().optional(),
 });
@@ -42,8 +46,8 @@ export const updateSetSchema = z
     setType: setTypeSchema.optional(),
     weightKg: z.number().min(0).max(100000).nullable().optional(),
     reps: z.number().int().min(0).max(1000).nullable().optional(),
-    durationSeconds: z.number().int().min(0).nullable().optional(),
-    distanceMeters: z.number().min(0).nullable().optional(),
+    durationSeconds: z.number().int().min(0).max(maxSeconds).nullable().optional(),
+    distanceMeters: z.number().min(0).max(maxDistanceMeters).nullable().optional(),
     rpe: z.number().min(1).max(10).nullable().optional(),
     rir: z.number().int().min(0).max(10).nullable().optional(),
     completed: z.boolean().optional(),
@@ -77,13 +81,13 @@ export const addSessionExercisesSchema = z.object({
 
 export const addSessionSetSchema = z.object({
   setType: setTypeSchema.default("normal"),
-  weightKg: z.number().min(0).nullable().default(null),
-  reps: z.number().int().min(0).nullable().default(null),
+  weightKg: z.number().min(0).max(100000).nullable().default(null),
+  reps: z.number().int().min(0).max(1000).nullable().default(null),
 });
 
 export const finishWorkoutSchema = z.object({
   notes: z.string().max(2000).default(""),
-  elapsedSeconds: z.number().int().min(0).optional(),
+  elapsedSeconds: z.number().int().min(0).max(maxSeconds).optional(),
 });
 
 export type CreateTemplateInput = z.infer<typeof createTemplateSchema>;

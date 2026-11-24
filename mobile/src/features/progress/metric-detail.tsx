@@ -7,6 +7,7 @@ import { Sheet } from "./editors";
 import { HistoryChart } from "../pro/history-chart";
 import { TrendChart } from "./charts";
 import { average } from "./analytics";
+import { StepTrackingCard, stepEntryLabel } from "../health-sync/step-tracking-card";
 import {
   dateLabel,
   isTotalMetric,
@@ -160,6 +161,7 @@ export function MetricDetail({
       <Txt className="mb-5 mt-2 text-xs text-muted">
         {rows.length}/{days} days logged · {Math.round((rows.length / days) * 100)}% coverage
       </Txt>
+      {metric === "steps" && <StepTrackingCard entry={rows.find((entry) => entry.date === end)} />}
       <Chart
         key={metric + start}
         points={rows.map((entry) => ({ date: entry.date, value: convert(entry.value!) }))}
@@ -194,8 +196,10 @@ export function MetricDetail({
       </View>
       <Txt className="mb-5 text-[11px] leading-5 text-muted">
         Only actual dated check-ins are plotted. Lines connect observations; they do not create
-        measurements on missing days. Daily totals are replacements, so edits are not
-        double-counted.
+        measurements on missing days.{" "}
+        {metric === "steps"
+          ? "Automatic steps and your manual additions form each daily total."
+          : "Daily totals are replacements, so edits are not double-counted."}
       </Txt>
       <Txt weight="semibold" className="text-base">
         Recorded days
@@ -212,7 +216,13 @@ export function MetricDetail({
               {dateLabel(entry.date, { month: "short", day: "numeric", year: "numeric" })}
             </Txt>
             <Txt className="mt-1 text-[11px] text-muted">
-              {entry.source === "pedometer" ? "Includes saved phone steps" : "Manual log"}
+              {metric === "steps"
+                ? stepEntryLabel(entry)
+                : entry.source === "healthconnect"
+                  ? "Imported from Health Connect"
+                  : entry.source === "healthkit"
+                    ? "Imported from Apple Health"
+                    : "Manual log"}
             </Txt>
             {entry.notes && <Txt className="mt-1 text-[11px] text-muted">{entry.notes}</Txt>}
           </View>
@@ -238,7 +248,7 @@ export function MetricDetail({
         }}
       >
         <Txt weight="semibold" style={{ color: C.bg }}>
-          Log {spec.label.toLowerCase()}
+          {metric === "steps" ? "Add extra steps" : `Log ${spec.label.toLowerCase()}`}
         </Txt>
       </Pressable>
     </Sheet>

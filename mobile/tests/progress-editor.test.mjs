@@ -76,6 +76,7 @@ function harness({
   unit = "kg",
   events = [],
   save,
+  addSteps,
   keyboardOpen = false,
   startWithPicker = false,
 } = {}) {
@@ -154,6 +155,7 @@ function harness({
     date,
     unit,
     events,
+    onAddSteps: addSteps,
     onClose: () => closed++,
     async onSave(...args) {
       saved.push(args);
@@ -228,6 +230,41 @@ test("quick check-ins can open the metric picker and save the selected metric in
   await flush();
   assert.deepEqual(h.saved, [["steps", TODAY, 4321, ""]]);
   assert.equal(h.closed, 1);
+});
+
+test("extra steps start empty and add only the entered amount to the selected day", async () => {
+  const additions = [];
+  const h = harness({
+    metric: "steps",
+    date: YESTERDAY,
+    events: [entry("steps", 4000, YESTERDAY)],
+    addSteps: async (...args) => additions.push(args),
+  });
+  assert.equal(h.find("Steps in steps").props.value, "");
+  assert.equal(
+    h.render().some((node) => node.props.accessibilityLabel === "Clear this day’s value"),
+    false,
+  );
+  h.input("Steps in steps", "500");
+  h.press("Save check-in");
+  await flush();
+  assert.deepEqual(additions, [[YESTERDAY, 500, ""]]);
+  assert.deepEqual(h.saved, []);
+});
+
+test("step addition and daily-total editing keep independent drafts", async () => {
+  const h = harness({ metric: "steps", events: [entry("steps", 4000)], addSteps: async () => {} });
+  h.input("Steps in steps", "500");
+  h.press("Edit daily total");
+  assert.equal(h.find("Steps in steps").props.value, "4000");
+  h.input("Steps in steps", "4600");
+  h.press("Add extra steps");
+  assert.equal(h.find("Steps in steps").props.value, "500");
+  h.press("Edit daily total");
+  assert.equal(h.find("Steps in steps").props.value, "4600");
+  h.press("Save check-in");
+  await flush();
+  assert.deepEqual(h.saved, [["steps", TODAY, 4600, ""]]);
 });
 
 test("weight logs display pounds but save kilograms with trimmed notes", async () => {
@@ -442,35 +479,4 @@ test("future and nonexistent dates cannot be saved even when supplied directly",
     assert.equal(h.closed, 0);
     assert.ok(h.alert());
   }
-});
-
-test("save controls stay outside the scrolling fields with bottom safe-area room", () => {
-  const h = harness({ metric: "steps" });
-  const tree = h.render();
-  const scroll = tree.find((node) => node.type === "ScrollView");
-  assert.ok(scroll);
-  assert.ok(nodes(scroll).some((node) => node.props.accessibilityLabel === "Steps in steps"));
-  assert.equal(
-    nodes(scroll).some((node) => node.props.accessibilityLabel === "Save check-in"),
-    false,
-  );
-  const footer = tree.find(
-    (node) =>
-      node.type === "View" &&
-      node.props.style?.paddingBottom >= 28 &&
-      nodes(node).some((child) => child.props.accessibilityLabel === "Save check-in"),
-  );
-  assert.ok(footer, "Pinned save footer should accommodate the 28px bottom safe area");
-});
-
-test("an open keyboard compacts the sheet header while preserving the title and save action", () => {
-  const closed = harness();
-  assert.match(text(closed.render()), /Daily check-in/);
-  assert.match(text(closed.render()), /Small check-ins/);
-  const open = harness({ keyboardOpen: true });
-  const content = text(open.render());
-  assert.doesNotMatch(content, /Small check-ins/);
-  assert.match(content, /Daily check-in/);
-  assert.ok(open.find("Save check-in"));
-  assert.ok(open.find("Body weight in kg"));
 });

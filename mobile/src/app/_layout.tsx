@@ -97,6 +97,7 @@ function Navigator() {
         <Stack
           screenOptions={{
             headerShown: false,
+            freezeOnBlur: true,
             contentStyle: {
               backgroundColor: C.bg,
             },

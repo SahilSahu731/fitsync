@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { Image, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable } from "@/src/components/motion";
@@ -45,21 +46,25 @@ export function HomeTopBar({
 
   const shine = useSharedValue(-30);
 
-  useEffect(() => {
-    shine.value = withRepeat(
-      withSequence(
-        withTiming(76, {
-          duration: 850,
-          easing: Easing.inOut(Easing.ease),
-        }),
-        withDelay(2400, withTiming(-30, { duration: 0 })),
-      ),
-      -1,
-      false,
-    );
+  useFocusEffect(
+    useCallback(() => {
+      shine.set(
+        withRepeat(
+          withSequence(
+            withTiming(76, {
+              duration: 850,
+              easing: Easing.inOut(Easing.ease),
+            }),
+            withDelay(2400, withTiming(-30, { duration: 0 })),
+          ),
+          -1,
+          false,
+        ),
+      );
 
-    return () => cancelAnimation(shine);
-  }, [shine]);
+      return () => cancelAnimation(shine);
+    }, [shine]),
+  );
 
   const shineProps = useAnimatedProps(() => ({
     x: shine.value,

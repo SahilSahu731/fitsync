@@ -6,7 +6,7 @@ import { C } from "@/src/constants/theme";
 import { useAppAlert } from "@/src/components/app-dialog";
 import { Txt } from "@/src/components/ui";
 import { type WorkoutSet, type workoutApi } from "../api";
-import { useWorkout } from "../workout-context";
+import { useWorkoutControls } from "../workout-context";
 import { NumberEntry, WorkoutDrawer } from "./workout-controls";
 import { SetTypePicker } from "./set-type-picker";
 import { setAppearance } from "../set-types";
@@ -42,7 +42,7 @@ export const SetRow = React.memo(function SetRow({
 }) {
   const { settings } = useSession();
   const unit = settings?.weightUnit ?? "kg";
-  const { updateSet, removeSet, startRest, busy, pendingSetIds = [] } = useWorkout();
+  const { updateSet, removeSet, startRest, busy, pendingSetIds = [] } = useWorkoutControls();
   const creating = pendingSetIds.includes(set.id);
   const Alert = useAppAlert();
   const { feedback } = useExperience();

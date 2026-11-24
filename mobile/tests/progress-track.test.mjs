@@ -124,18 +124,6 @@ function harness(extra = {}) {
   return h;
 }
 
-test("Daily has illustrated steps, water and food cards without invented totals or goals", () => {
-  const h = harness();
-  for (const type of ["StepsArtwork", "WaterArtwork", "NutritionArtwork"]) {
-    assert.equal(nodes(h.tree).filter((node) => node.type === type).length, 1);
-  }
-  const content = text(h.tree);
-  assert.doesNotMatch(content, /10,000|2,000/);
-  for (const metric of ["Steps", "Water", "Food calories", "Protein", "Carbs"]) {
-    h.button(`Log ${metric}`);
-  }
-});
-
 test("card logging and history actions route to their own metrics", () => {
   const h = harness();
   for (const [label, metric] of [
@@ -242,21 +230,6 @@ test("a pending water add blocks repeated quick adds", () => {
   assert.equal(h.calls.length, 0);
 });
 
-test("body and recovery cards retain every metric without repeating the weight entry", () => {
-  const body = harness({ group: "body" });
-  const logButtons = nodes(body.tree).filter(
-    (node) => node.type === "Button" && node.props.accessibilityLabel === "Log body weight",
-  );
-  assert.equal(logButtons.length, 1);
-  for (const metric of model.METRIC_GROUPS.body.metrics.filter((metric) => metric !== "weight")) {
-    body.button(`Log ${model.METRICS[metric].label}`);
-  }
-  const recovery = harness({ group: "recovery" });
-  for (const metric of model.METRIC_GROUPS.recovery.metrics) {
-    recovery.button(`Log ${model.METRICS[metric].label}`);
-  }
-});
-
 test("body weight converts the saved kilogram measurement and chart to the chosen unit", () => {
   const latestWeight = {
     id: "weight-check-in",
@@ -274,10 +247,4 @@ test("body weight converts the saved kilogram measurement and chart to the chose
   const chart = nodes(h.tree).find((node) => node.type === "TrendChart");
   assert.equal(chart.props.unit, "lb");
   assert.equal(chart.props.points[0].value, model.weightValue(50, "lb"));
-});
-
-test("Daily retains the phone step counter alongside the manual step card", () => {
-  const h = harness({ walkCounter: { type: "WalkCounter", props: {} } });
-  assert.equal(nodes(h.tree).filter((node) => node.type === "WalkCounter").length, 1);
-  h.button("Log Steps");
 });

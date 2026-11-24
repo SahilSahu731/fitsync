@@ -8,7 +8,6 @@ import {
   ArrowRight,
   CircleAlert,
   Dumbbell,
-  KeyRound,
   LoaderCircle,
   Waypoints,
 } from "lucide-react";

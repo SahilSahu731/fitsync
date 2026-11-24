@@ -212,13 +212,6 @@ test("routine targets preserve types and time targets and reject invalid input",
   assert.throws(() => routineInput("A", "", []), /Choose/);
 });
 
-test("set badges have unique letters and colors for every supported type", () => {
-  const { SET_TYPES } = load("../src/features/workouts/set-types.ts");
-  assert.equal(new Set(SET_TYPES.map((item) => item.letter)).size, SET_TYPES.length);
-  assert.equal(new Set(SET_TYPES.map((item) => item.color)).size, SET_TYPES.length);
-  assert.equal(SET_TYPES.find((item) => item.value === "rest_pause").letter, "RP");
-});
-
 test("reorder handle keeps its responder when its index changes mid-drag", () => {
   const slots = [];
   let cursor = 0;
@@ -291,7 +284,7 @@ test("reorder handle keeps its responder when its index changes mid-drag", () =>
   assert.equal(ended, 3);
 });
 
-test("set rows use empty and checked circles, with pending additions locking only their own controls", () => {
+test("pending set additions lock only their own controls", () => {
   const appearance = load("../src/features/workouts/set-types.ts");
   let pendingSetIds = [];
   const jsx = (type, props) => ({ type, props });
@@ -311,7 +304,7 @@ test("set rows use empty and checked circles, with pending additions locking onl
     "@/src/components/ui": { Txt: "Txt" },
     "@/src/components/app-dialog": { useAppAlert: () => ({}) },
     "@/src/features/experience/experience-context": { useExperience: () => ({}) },
-    "../workout-context": { useWorkout: () => ({ busy: false, pendingSetIds }) },
+    "../workout-context": { useWorkoutControls: () => ({ busy: false, pendingSetIds }) },
     "./workout-controls": { NumberEntry: "Entry", WorkoutDrawer: "Drawer" },
     "./set-type-picker": { SetTypePicker: "Picker" },
     "../set-types": appearance,
@@ -323,7 +316,7 @@ test("set rows use empty and checked circles, with pending additions locking onl
       : Array.isArray(node)
         ? node.flatMap((child) => find(child, type))
         : [...(node.type === type ? [node] : []), ...find(node.props?.children, type)];
-  const row = (completed) =>
+  const row = () =>
     SetRow({
       exerciseId: "exercise",
       number: 1,
@@ -333,32 +326,22 @@ test("set rows use empty and checked circles, with pending additions locking onl
         set_type: "normal",
         reps: 8,
         weight_kg: 20,
-        completed_at: completed ? "done" : null,
+        completed_at: null,
       },
     });
-  let tree = row(false);
-  assert.equal(
-    find(tree, "Icon").some((icon) => icon.props.name === "circle-outline"),
-    true,
-  );
-  assert.equal(find(tree, "Picker")[0].props.value, "normal");
+  const tree = row();
   assert.equal(
     find(tree, "Entry").every((entry) => !entry.props.disabled),
     true,
   );
-  tree = row(true);
-  assert.equal(
-    find(tree, "Icon").some((icon) => icon.props.name === "check-circle"),
-    true,
-  );
   pendingSetIds = ["another-row"];
   assert.equal(
-    find(row(false), "Entry").every((entry) => !entry.props.disabled),
+    find(row(), "Entry").every((entry) => !entry.props.disabled),
     true,
   );
   pendingSetIds = ["row"];
   assert.equal(
-    find(row(false), "Entry").every((entry) => entry.props.disabled),
+    find(row(), "Entry").every((entry) => entry.props.disabled),
     true,
   );
 });

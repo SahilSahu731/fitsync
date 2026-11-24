@@ -2,7 +2,7 @@
 
 import Image from "next/image";
 import { useEffect, useState } from "react";
-import { api } from "@/lib/api";
+import { useAccountApi } from "./session";
 
 type Step = {
   title: string;
@@ -89,6 +89,7 @@ const message = (error: unknown) =>
   error instanceof Error ? error.message : "Could not save content.";
 
 export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" }) {
+  const api = useAccountApi();
   const [rows, setRows] = useState<RecordData[]>([]);
   const [value, setValue] = useState<RecordData | null>(null);
   const [error, setError] = useState("");
@@ -119,7 +120,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
     return () => {
       active = false;
     };
-  }, [endpoint, retry]);
+  }, [api, endpoint, retry]);
   useEffect(() => {
     const warn = (e: BeforeUnloadEvent) => {
       if (dirty) {
@@ -810,6 +811,7 @@ function ImageField({
   onError: (message: string) => void;
   onBusy: (busy: boolean) => void;
 }) {
+  const api = useAccountApi();
   return (
     <div className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2 col-span-full">
       <label>

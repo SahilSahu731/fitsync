@@ -4,6 +4,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import vm from "node:vm";
 import ts from "typescript";
+import { accountPreferences } from "./helpers/account-preferences.mjs";
 function load(file, deps = {}, globals = {}) {
   const exports = {};
   vm.runInNewContext(
@@ -20,6 +21,8 @@ function load(file, deps = {}, globals = {}) {
       Intl,
       ...globals,
       require: (name) => {
+        if (name === "@/src/services/account-preferences")
+          return accountPreferences(deps["@react-native-async-storage/async-storage"]);
         if (name === "@/src/lib/weight") return weightUnits;
         if (name === "@/src/services/telemetry" || name === "./telemetry")
           return { trackEvent() {}, recordError() {} };

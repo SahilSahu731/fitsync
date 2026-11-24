@@ -38,6 +38,8 @@ test("prescriptions reject reversed rep ranges and invalid set counts", () => {
   assert.equal(prescriptionSchema.safeParse(row).success, true);
   assert.equal(prescriptionSchema.safeParse({ ...row, min_reps: 15 }).success, false);
   assert.equal(prescriptionSchema.safeParse({ ...row, sets: 0 }).success, false);
+  assert.equal(prescriptionSchema.safeParse({ ...row, rest_seconds: 900 }).success, true);
+  assert.equal(prescriptionSchema.safeParse({ ...row, rest_seconds: 901 }).success, false);
 });
 test("schedule accepts rest days and restricts day numbers", () => {
   assert.equal(

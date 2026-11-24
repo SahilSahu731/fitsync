@@ -38,6 +38,7 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
     if (account)
       void api<{ program_id?: string; routine_id?: string; training_programs?: { id: string } }[]>(
         `/catalog/my-${kind}`,
+        { headers: { "X-FitSync-Owner": account.user.id } },
       )
         .then((rows) => {
           if (active)
@@ -55,10 +56,15 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
     };
   }, [account, kind, id]);
   async function save() {
+    if (!account || saving) return;
     setSaving(true);
     setSaveError("");
     try {
-      await api(`/catalog/${kind}/${id}/save`, { method: "POST", json: {} });
+      await api(`/catalog/${kind}/${id}/save`, {
+        method: "POST",
+        headers: { "X-FitSync-Owner": account.user.id },
+        json: {},
+      });
       setSaved(true);
     } catch (e) {
       setSaveError(e instanceof Error ? e.message : "Could not save. Please try again.");

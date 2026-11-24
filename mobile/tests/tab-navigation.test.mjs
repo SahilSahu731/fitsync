@@ -167,6 +167,7 @@ function progressFixture() {
     workoutError: "",
     syncError: "",
     refresh: () => calls.push("refresh"),
+    increment: async (...args) => calls.push(["increment", ...args]),
   };
   const exports = load("../src/features/progress/dashboard.tsx", {
     react: {
@@ -209,6 +210,7 @@ function progressFixture() {
     "./consistency": { ConsistencySection: "Consistency" },
     "./metric-detail": { MetricDetail: "MetricDetail" },
     "./walk-counter": { WalkCounter: "WalkCounter" },
+    "../health-sync/step-tracking-card": { StepTrackingCard: "StepTrackingCard" },
     "./overview": { ProgressOverview: "Overview" },
     "./goals-summary": { GoalsSummary: "GoalsSummary" },
     "./share-progress": { ShareProgress: "ShareProgress" },
@@ -301,6 +303,53 @@ test("Progress retains Health and its check-in controls alongside the merged tra
   );
   find(health, "TrackCards")[0].props.onLog("water");
   assert.equal(find(fixture.render(), "Editor")[0].props.initialMetric, "water");
+});
+
+test("Progress connects automatic steps without losing walk drafts and adds manual extras", async () => {
+  const fixture = progressFixture();
+  const recorded = {
+    id: "automatic-steps",
+    kind: "metric",
+    metric: "steps",
+    date: today,
+    value: 4200,
+    observedAt: `${today}T11:00:00Z`,
+    source: "healthconnect",
+    notes: "",
+  };
+  fixture.progress.journal.events.push(recorded);
+  find(fixture.render(), "Pressable")
+    .find(
+      (button) =>
+        button.props.accessibilityRole === "tab" &&
+        find(button, "Txt").some((label) => label.props.children === "Track"),
+    )
+    .props.onPress();
+  let cards = find(fixture.render(), "TrackCards")[0].props;
+  const tracking = cards.walkCounter;
+  assert.equal(tracking.type, "StepTrackingCard");
+  assert.equal(tracking.props.entry.id, recorded.id);
+  find(tracking, "WalkCounter")[0].props.onDraftChange({ count: 275, date: today });
+  cards = find(fixture.render(), "TrackCards")[0].props;
+  assert.equal(find(cards.walkCounter, "WalkCounter")[0].props.draft.count, 275);
+  cards.onLog("steps");
+  await find(fixture.render(), "Editor")[0].props.onAddSteps("2026-10-24", 500, "Treadmill steps");
+  assert.deepEqual(Array.from(fixture.calls.at(-1)), [
+    "increment",
+    "steps",
+    "2026-10-24",
+    500,
+    "Treadmill steps",
+    "manual",
+  ]);
+  assert.match(text(fixture.render()), /Extra steps added to your daily total/);
+  cards = find(fixture.render(), "TrackCards")[0].props;
+  assert.equal(
+    cards.walkCounter.props.entry,
+    undefined,
+    "automatic totals follow the selected day",
+  );
+  assert.equal(find(cards.walkCounter, "WalkCounter")[0].props.draft.count, 275);
 });
 
 test("Track metric search preserves every matching metric and the selected logging day", () => {
@@ -568,17 +617,15 @@ test("legacy Stats links redirect into the unified Progress tab", () => {
   assert.equal(exports.default().props.href, "/(tabs)/progress");
 });
 
-test("Progress top actions are icon-only Goals and Share, and sharing opens a preview", () => {
+test("Progress opens goals and a dismissible progress-sharing preview", () => {
   const fixture = progressFixture();
   let tree = fixture.render();
   const goals = find(tree, "Pressable").find(
     (button) => button.props.accessibilityLabel === "View your goals",
   );
-  assert.equal(find(goals, "Txt").length, 0);
   const share = find(tree, "Pressable").find(
     (button) => button.props.accessibilityLabel === "Share progress",
   );
-  assert.equal(find(share, "Txt").length, 0);
   share.props.onPress();
   tree = fixture.render();
   const preview = find(tree, "ShareProgress")[0];

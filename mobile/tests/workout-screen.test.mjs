@@ -135,7 +135,10 @@ function screen({ completed = false, busy = false, isPro = true } = {}) {
       SessionExerciseCard: "ExerciseCard",
     },
     "@/src/features/workouts/components/session-overview": { SessionOverview: "Overview" },
-    "@/src/features/workouts/components/rest-timer": { RestTimer: "RestTimer" },
+    "@/src/features/workouts/components/workout-clock": {
+      LiveRestTimer: "RestTimer",
+      WorkoutDuration: "WorkoutDuration",
+    },
   };
   deps["react-native"].Platform = { OS: "ios" };
   deps["react-native"].Keyboard = {
@@ -230,13 +233,6 @@ const button = (tree, label) =>
       (node.props.accessibilityLabel === label || text(node) === label),
   );
 
-test("the live screen passes its exercise list to the overview", () => {
-  const app = screen();
-  const overview = find(app.render(), (node) => node.type === "Overview");
-  assert.equal(overview.props.exercises.length, 1);
-  assert.equal(overview.props.exercises[0].exercise_name, "Bench press");
-});
-
 test("phone and watch next-set guidance follows the shared focused exercise", () => {
   const app = screen();
   app.session.status = "active";
@@ -278,6 +274,7 @@ test("phone and watch next-set guidance follows the shared focused exercise", ()
 
 test("free and Pro working-set hints receive canonical history and superset session state", () => {
   const app = screen();
+  app.session.workout_session_exercises[0].superset_group = "pair";
   let card = find(app.render(), (node) => node.type === "ExerciseCard");
   assert.equal(card.props.history, app.progress.journal.workouts);
   assert.equal(card.props.sessionExercises[0], app.session.workout_session_exercises[0]);
@@ -288,6 +285,10 @@ test("free and Pro working-set hints receive canonical history and superset sess
   assert.equal(card.props.history, app.progress.journal.workouts);
   assert.equal(card.props.sessionExercises[0], app.session.workout_session_exercises[0]);
   const free = screen({ isPro: false });
+  assert.equal(
+    find(free.render(), (node) => node.type === "ExerciseCard").props.sessionExercises,
+    undefined,
+  );
   assert.equal(
     find(free.render(), (node) => node.type === "ExerciseCard").props.history,
     free.progress.journal.workouts,

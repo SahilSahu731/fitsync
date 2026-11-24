@@ -95,7 +95,7 @@ try {
     [id(21), id(20), publicExercise],
   );
   await db.query(
-    "INSERT INTO workout_logged_sets(session_exercise_id,position,set_type,weight_kg,reps,rest_seconds,tempo,completed_at) VALUES($1,0,'rest_pause',40,8,15,'3-1-X-0',now())",
+    "INSERT INTO workout_logged_sets(session_exercise_id,position,set_type,weight_kg,reps,rest_seconds,tempo,completed_at) VALUES($1,0,'rest_pause',40,8,0,'3-1-X-0',now())",
     [id(21)],
   );
   const history = async () =>
@@ -106,6 +106,11 @@ try {
       )
     ).rows;
   const originalHistory = await history();
+  // Reapplying advanced settings must preserve populated historical rows.
+  await db.exec(
+    await readFile(new URL("../sql/018_advanced_workouts.sql", import.meta.url), "utf8"),
+  );
+  assert.deepEqual(await history(), originalHistory);
   const migration = await readFile(
     new URL("../sql/020_routine_editing.sql", import.meta.url),
     "utf8",
@@ -275,8 +280,29 @@ try {
     ).rows[0].allowed,
     true,
   );
+  for (const [table, expression] of [
+    ["workout_template_sets", "rest_seconds=901"],
+    ["workout_logged_sets", "rest_seconds=-1"],
+    ["workout_logged_sets", "tempo='2-0-X'"],
+    ["workout_template_sets", "tempo='22-0-X-0'"],
+    ["workout_session_exercises", "superset_group='bad group'"],
+    ["workout_template_exercises", "superset_group=''"],
+    ["workout_logged_sets", "set_type='unsupported'"],
+  ])
+    await rejectsCode(db.exec(`UPDATE ${table} SET ${expression}`), "23514");
+  await db.exec(
+    "UPDATE workout_logged_sets SET tempo=NULL, rest_seconds=NULL; UPDATE workout_session_exercises SET superset_group=NULL;",
+  );
+  assert.deepEqual(
+    (
+      await db.query(
+        "SELECT s.tempo,s.rest_seconds,e.superset_group FROM workout_logged_sets s JOIN workout_session_exercises e ON e.id=s.session_exercise_id",
+      )
+    ).rows,
+    [{ tempo: null, rest_seconds: null, superset_group: null }],
+  );
   console.log(
-    "Routine editing migration: CAS/rename, owner/import guards, private/archive eligibility, exact advanced sets/order, atomic rollback, historical snapshots and RPC permissions passed.",
+    "Workout migrations: CAS/rename, owner/import guards, advanced settings/constraints/clears, atomic rollback, historical snapshots and RPC permissions passed.",
   );
 } finally {
   await db.close();

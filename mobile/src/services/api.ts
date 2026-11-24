@@ -4,6 +4,7 @@ import { loadSecureStore } from "./native-modules";
 const API_URL = process.env.EXPO_PUBLIC_API_URL?.replace(/\/$/, "");
 
 const REFRESH_KEY = "fitsync.refresh-token.v1";
+const SNAPSHOT_KEY = "fitsync.session-snapshot.v1";
 
 let accessToken: string | null = null;
 
@@ -13,6 +14,8 @@ export const apiSessionKey = () => sessionGeneration;
 let credentialWork: Promise<unknown> = Promise.resolve();
 let refreshInFlight: { generation: number; operation: Promise<boolean> } | null = null;
 let refreshFailure: { generation: number; until: number; error: unknown } | null = null;
+const reads = new Map<string, Promise<unknown>>();
+let readEpoch = 0;
 
 function withCredentials<T>(operation: () => Promise<T>): Promise<T> {
   // SecureStore has no compare-and-swap. Serialize reads/writes, and check the
@@ -28,7 +31,11 @@ function assertGeneration(generation: number) {
     throw new HttpError(409, "The signed-in account changed. Reopen this screen.");
 }
 
-async function persistTokens(tokens: SessionTokens, generation: number): Promise<boolean> {
+async function persistTokens(
+  tokens: SessionTokens,
+  generation: number,
+  replacing = false,
+): Promise<boolean> {
   if (
     typeof tokens.accessToken !== "string" ||
     !tokens.accessToken ||
@@ -40,6 +47,11 @@ async function persistTokens(tokens: SessionTokens, generation: number): Promise
     if (generation !== sessionGeneration) return false;
     const SecureStore = await loadSecureStore();
     if (generation !== sessionGeneration) return false;
+    if (replacing) {
+      // A new identity must never reopen the previous account's offline profile.
+      await SecureStore.deleteItemAsync(SNAPSHOT_KEY);
+      if (generation !== sessionGeneration) return false;
+    }
     await SecureStore.setItemAsync(REFRESH_KEY, tokens.refreshToken);
     // A newer credential operation is queued behind this write. Never expose
     // the old access token while that newer operation is waiting to commit.
@@ -149,7 +161,50 @@ export async function storeSessionTokens(tokens: SessionTokens) {
   const generation = ++sessionGeneration;
   refreshFailure = null;
   accessToken = null;
-  if (!(await persistTokens(tokens, generation))) assertGeneration(generation);
+  if (!(await persistTokens(tokens, generation, true))) assertGeneration(generation);
+}
+
+export function hasStoredSession(): Promise<boolean> {
+  const generation = sessionGeneration;
+  return withCredentials(async () => {
+    if (generation !== sessionGeneration) return false;
+    const storage = await loadSecureStore();
+    if (generation !== sessionGeneration) return false;
+    const token = await storage.getItemAsync(REFRESH_KEY);
+    return generation === sessionGeneration && Boolean(token);
+  });
+}
+
+export function readSessionSnapshot<T>(): Promise<T | null> {
+  const generation = sessionGeneration;
+  return withCredentials(async () => {
+    if (generation !== sessionGeneration) return null;
+    const storage = await loadSecureStore();
+    if (generation !== sessionGeneration) return null;
+    const token = await storage.getItemAsync(REFRESH_KEY);
+    if (!token || generation !== sessionGeneration) return null;
+    const raw = await storage.getItemAsync(SNAPSHOT_KEY);
+    if (!raw || generation !== sessionGeneration) return null;
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      // A damaged cache cannot prevent online recovery or replace credentials.
+      return null;
+    }
+  });
+}
+
+export function cacheSessionSnapshot(snapshot: unknown): Promise<void> {
+  const generation = sessionGeneration;
+  const serialized = JSON.stringify(snapshot);
+  return withCredentials(async () => {
+    if (generation !== sessionGeneration) return;
+    const storage = await loadSecureStore();
+    if (generation !== sessionGeneration) return;
+    const token = await storage.getItemAsync(REFRESH_KEY);
+    if (!token || generation !== sessionGeneration) return;
+    await storage.setItemAsync(SNAPSHOT_KEY, serialized);
+  });
 }
 
 export async function clearSessionTokens() {
@@ -160,7 +215,13 @@ export async function clearSessionTokens() {
     if (generation !== sessionGeneration) return;
     const SecureStore = await loadSecureStore();
     if (generation !== sessionGeneration) return;
-    await SecureStore.deleteItemAsync(REFRESH_KEY);
+    // Attempt both removals even if one native storage call fails.
+    const results = await Promise.allSettled([
+      SecureStore.deleteItemAsync(REFRESH_KEY),
+      SecureStore.deleteItemAsync(SNAPSHOT_KEY),
+    ]);
+    const failure = results.find((result) => result.status === "rejected");
+    if (failure?.status === "rejected") throw failure.reason;
   });
 }
 
@@ -211,7 +272,7 @@ async function performRefresh(generation: number): Promise<boolean> {
 
     if (generation !== sessionGeneration) return false;
 
-    if (response.status === 401) {
+    if (response.status === 401 || response.status === 403) {
       await clearSessionTokens();
       return false;
     }
@@ -240,7 +301,7 @@ async function performRefresh(generation: number): Promise<boolean> {
   } catch (error) {
     // Do not destroy a locally stored session on a
     // temporary network failure.
-    if (error instanceof HttpError && error.status === 401) {
+    if (error instanceof HttpError && (error.status === 401 || error.status === 403)) {
       if (generation === sessionGeneration) await clearSessionTokens();
       return false;
     }
@@ -279,7 +340,29 @@ type RequestOptions = {
   expectedOwnerId?: string;
 };
 
-export async function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+export function apiRequest<T>(path: string, options: RequestOptions = {}): Promise<T> {
+  const reading =
+    (!options.method || options.method === "GET") &&
+    options.json === undefined &&
+    options.form === undefined;
+  if (!reading) {
+    // Reads begun after a write must not join a response from before that write.
+    readEpoch++;
+    return performApiRequest<T>(path, options).finally(() => {
+      readEpoch++;
+    });
+  }
+  const key = JSON.stringify([sessionGeneration, readEpoch, path, options.expectedOwnerId ?? ""]);
+  const existing = reads.get(key);
+  if (existing) return existing as Promise<T>;
+  const request = performApiRequest<T>(path, options).finally(() => {
+    if (reads.get(key) === request) reads.delete(key);
+  });
+  reads.set(key, request);
+  return request;
+}
+
+async function performApiRequest<T>(path: string, options: RequestOptions): Promise<T> {
   const generation = sessionGeneration;
   const makeRequest = async () => {
     assertGeneration(generation);

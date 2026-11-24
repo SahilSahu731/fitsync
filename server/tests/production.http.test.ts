@@ -90,6 +90,28 @@ test("database errors and network timeouts return 503 without exposing failure d
   }
 });
 
+test("invalid JSON, oversized bodies and unsupported encodings fail as client input errors", async (t) => {
+  const reports = t.mock.method(console, "error", () => {});
+  for (const input of [
+    { body: '{"refreshToken":"private-token"', headers: {}, status: 400 },
+    {
+      body: JSON.stringify({ refreshToken: "private-token".repeat(6000) }),
+      headers: {},
+      status: 413,
+    },
+    { body: "{}", headers: { "Content-Encoding": "compress" }, status: 415 },
+  ]) {
+    const response = await fetch(`${base}/api/auth/refresh`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", ...input.headers },
+      body: input.body,
+    });
+    assert.equal(response.status, input.status);
+    assert.doesNotMatch(JSON.stringify(await response.json()), /private-token|stack|SyntaxError/);
+  }
+  assert.equal(reports.mock.callCount(), 0);
+});
+
 async function login(headers: Record<string, string>) {
   return fetch(`${base}/api/auth/google`, {
     method: "POST",

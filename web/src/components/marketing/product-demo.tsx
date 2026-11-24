@@ -55,7 +55,7 @@ const views = [
     points: [
       "Health metrics across four areas",
       "Personal targets and check-in notes",
-      "Optional Apple Health and Health Connect import",
+      "Optional Android Health Connect import",
     ],
   },
   {

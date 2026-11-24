@@ -14,9 +14,36 @@ export type WorkoutDraft = {
 const key = (ownerId: string) => `fitsync.workout.draft.v1.${ownerId}`;
 const locks = new Map<string, Promise<unknown>>();
 const flushes = new Map<string, Promise<WorkoutDraft | null>>();
+const decoded = new Map<string, { raw: string; draft: WorkoutDraft }>();
+const deletedOwners = new Set<string>();
+const restWrites = new Map<string, Promise<void>>();
+const restKey = (ownerId: string) => `fitsync.workout.rest.v2.${ownerId}`;
+export function saveWorkoutRest(ownerId: string, value: unknown | null): Promise<void> {
+  if (deletedOwners.has(ownerId)) return Promise.resolve();
+  const operation = (restWrites.get(ownerId) ?? Promise.resolve())
+    .catch(() => {})
+    .then(async () => {
+      if (deletedOwners.has(ownerId)) return;
+      if (value === null) await AsyncStorage.removeItem(restKey(ownerId));
+      else await AsyncStorage.setItem(restKey(ownerId), JSON.stringify(value));
+    });
+  restWrites.set(ownerId, operation);
+  const clean = () => {
+    if (restWrites.get(ownerId) === operation) restWrites.delete(ownerId);
+  };
+  void operation.then(clean, clean);
+  return operation;
+}
 export async function readWorkoutDraft(ownerId: string): Promise<WorkoutDraft | null> {
+  if (deletedOwners.has(ownerId)) return null;
   const raw = await AsyncStorage.getItem(key(ownerId));
-  if (!raw) return null;
+  if (deletedOwners.has(ownerId)) return null;
+  if (!raw) {
+    decoded.delete(ownerId);
+    return null;
+  }
+  const cached = decoded.get(ownerId);
+  if (cached?.raw === raw) return cached.draft;
   const value = JSON.parse(raw) as WorkoutDraft;
   if (
     value.version !== 1 ||
@@ -26,21 +53,59 @@ export async function readWorkoutDraft(ownerId: string): Promise<WorkoutDraft | 
     !Number.isFinite(value.revision)
   )
     throw new Error("Your saved workout could not be opened. It has been kept on this device.");
+  decoded.set(ownerId, { raw, draft: value });
   return value;
 }
 export function changeWorkoutDraft(
   ownerId: string,
   update: (draft: WorkoutDraft | null) => WorkoutDraft | null,
 ) {
+  if (deletedOwners.has(ownerId)) return Promise.reject(new Error("This account was deleted."));
   const operation = (locks.get(ownerId) ?? Promise.resolve())
     .catch(() => {})
     .then(async () => {
-      const result = update(await readWorkoutDraft(ownerId));
-      if (result) await AsyncStorage.setItem(key(ownerId), JSON.stringify(result));
-      else await AsyncStorage.removeItem(key(ownerId));
+      const previous = await readWorkoutDraft(ownerId);
+      if (deletedOwners.has(ownerId)) throw new Error("This account was deleted.");
+      const result = update(previous);
+      if (result === previous) return previous;
+      if (result) {
+        const raw = JSON.stringify(result);
+        await AsyncStorage.setItem(key(ownerId), raw);
+        if (deletedOwners.has(ownerId)) throw new Error("This account was deleted.");
+        decoded.set(ownerId, { raw, draft: result });
+      } else {
+        await AsyncStorage.removeItem(key(ownerId));
+        decoded.delete(ownerId);
+      }
       return result;
     });
   locks.set(ownerId, operation);
+  const clean = () => {
+    if (locks.get(ownerId) === operation) locks.delete(ownerId);
+  };
+  void operation.then(clean, clean);
+  return operation;
+}
+
+/** An in-flight upload may finish, but it can never recreate a deleted local draft. */
+export function deleteWorkoutDraft(ownerId: string): Promise<void> {
+  if (!ownerId.trim()) return Promise.reject(new Error("Sign in to delete local workout data."));
+  deletedOwners.add(ownerId);
+  decoded.delete(ownerId);
+  const operation = (locks.get(ownerId) ?? Promise.resolve())
+    .catch(() => {})
+    .then(async () => {
+      await (restWrites.get(ownerId) ?? Promise.resolve()).catch(() => {});
+      await Promise.all([
+        AsyncStorage.removeItem(key(ownerId)),
+        AsyncStorage.removeItem(restKey(ownerId)),
+      ]);
+    });
+  locks.set(ownerId, operation);
+  const clean = () => {
+    if (locks.get(ownerId) === operation) locks.delete(ownerId);
+  };
+  void operation.then(clean, clean);
   return operation;
 }
 export const draftPending = (value: WorkoutDraft | null) =>

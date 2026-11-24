@@ -2,10 +2,10 @@
 import Link from "next/link";
 import { badgeClasses } from "@/lib/ui";
 import { useCallback, useEffect, useRef, useState } from "react";
-import { api, pretty } from "@/lib/api";
+import { pretty } from "@/lib/api";
 import type { Exercise, ExercisePage, ExerciseTaxonomies } from "@/lib/types";
 import { Icon } from "./icon";
-import { useSession } from "./session";
+import { useAccountApi, useSession } from "./session";
 import { ConfirmDialog } from "./confirm-dialog";
 
 export function MediaPreview({ exercise }: { exercise: Exercise }) {
@@ -32,6 +32,7 @@ export function MediaPreview({ exercise }: { exercise: Exercise }) {
 }
 export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
   const { account } = useSession();
+  const api = useAccountApi();
   const [tax, setTax] = useState<ExerciseTaxonomies | null>(null);
   const [data, setData] = useState<ExercisePage | null>(null);
   const [error, setError] = useState("");
@@ -66,7 +67,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
     return () => {
       active = false;
     };
-  }, [account]);
+  }, [api, account]);
   useEffect(() => {
     let active = true;
     if (lastQuery.current !== queryKey) {
@@ -112,7 +113,7 @@ export function ExerciseLibrary({ admin = false }: { admin?: boolean }) {
     return () => {
       active = false;
     };
-  }, [admin, page, applied, refresh, queryKey]);
+  }, [api, admin, page, applied, refresh, queryKey]);
   const loadMore = useCallback(() => {
     if (
       pending.current ||

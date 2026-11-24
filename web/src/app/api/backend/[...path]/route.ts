@@ -1,6 +1,7 @@
 import { isPublicCatalogRead } from "@/lib/catalog-access";
 import { NextRequest, NextResponse } from "next/server";
 import { accessToken, unavailable, upstream, validOrigin } from "@/lib/server-api";
+import { readRequestBody, RequestBodyTooLarge } from "@/lib/request-body";
 
 async function handle(request: NextRequest, context: { params: Promise<{ path: string[] }> }) {
   if (request.method !== "GET" && !validOrigin(request))
@@ -23,9 +24,6 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
       /^[A-Za-z0-9_-]{43}$/.test(path[2]));
   if (!token && !publicCatalog)
     return NextResponse.json({ message: "Please sign in to continue." }, { status: 401 });
-  const size = Number(request.headers.get("content-length") || 0);
-  if (size > 26 * 1024 * 1024)
-    return NextResponse.json({ message: "Media exceeds the 25 MB limit." }, { status: 413 });
   try {
     const headers = new Headers();
     if (token) headers.set("Authorization", `Bearer ${token}`);
@@ -33,13 +31,12 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     if (expectedOwner) headers.set("X-FitSync-Owner", expectedOwner);
     const contentType = request.headers.get("content-type");
     if (contentType) headers.set("Content-Type", contentType);
-    const body = request.method === "GET" ? undefined : await request.arrayBuffer();
-    if (body && body.byteLength > 26 * 1024 * 1024)
-      return NextResponse.json({ message: "Media exceeds the 25 MB limit." }, { status: 413 });
+    const body =
+      request.method === "GET" ? undefined : await readRequestBody(request, 26 * 1024 * 1024);
     const result = await upstream(`/${path.join("/")}${request.nextUrl.search}`, {
       method: request.method,
       headers,
-      body,
+      body: body?.buffer,
     });
     return new NextResponse(result.status === 204 ? null : result.body, {
       status: result.status,
@@ -50,7 +47,9 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
         "X-Robots-Tag": "noindex, nofollow, noarchive",
       },
     });
-  } catch {
+  } catch (error) {
+    if (error instanceof RequestBodyTooLarge)
+      return NextResponse.json({ message: "Media exceeds the 25 MB limit." }, { status: 413 });
     return unavailable();
   }
 }

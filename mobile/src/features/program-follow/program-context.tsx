@@ -1,4 +1,12 @@
-import React, { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import React, {
+  createContext,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import { AppState, Platform } from "react-native";
 import * as Notifications from "expo-notifications";
 import { router } from "expo-router";
@@ -77,11 +85,11 @@ export function ProgramProvider({ children }: { children: React.ReactNode }) {
       token.remove();
     };
   }, [userId, ready]);
-  return (
-    <ProgramContext.Provider value={{ active, loading, error, refresh }}>
-      {children}
-    </ProgramContext.Provider>
+  const context = useMemo(
+    () => ({ active, loading, error, refresh }),
+    [active, loading, error, refresh],
   );
+  return <ProgramContext.Provider value={context}>{children}</ProgramContext.Provider>;
 }
 export function useProgram() {
   const context = useContext(ProgramContext);

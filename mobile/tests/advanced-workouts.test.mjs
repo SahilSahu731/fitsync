@@ -132,7 +132,7 @@ function setRowFixture({ weight = 20, reps = null, suppressRest = false } = {}) 
     "@/src/components/app-dialog": { useAppAlert: () => ({}) },
     "@/src/components/ui": { Txt: "Txt" },
     "../workout-context": {
-      useWorkout: () => ({
+      useWorkoutControls: () => ({
         updateSet: async (id, patch) => calls.push({ id, patch }),
         startRest: (seconds) => rests.push(seconds),
         busy: false,

@@ -1,4 +1,31 @@
-# Welcome to your Expo app 👋
+# FitSync Android
+
+FitSync uses Expo SDK 57 and React Native. Routes live in `src/app`; features,
+storage, and services live outside the route tree. Android is the supported
+shipping platform. Use the installed FitSync development client for native
+Google sign-in, Health Connect, billing, and widgets.
+
+## Setup and checks
+
+From `mobile/`, install the locked dependencies with `npm ci`, then copy
+`.env.example` to `.env` and configure the API and Google sign-in settings.
+The backend address must be reachable from the phone. See
+[the development and release guide](../docs/mobile-upgrade.md) for native builds,
+environment settings, and Play sandbox configuration.
+
+```sh
+npm run start:clean
+npm run typecheck
+npm run lint
+npm test
+npx expo export --platform android --max-workers 2 --output-dir /tmp/fitsync-android-export
+```
+
+An Android JavaScript export checks the production bundle; native permissions,
+Health Connect, billing, and widget behavior also need an installed Android build.
+The OTA runtime uses Expo's fingerprint policy so native changes receive a new
+runtime even when the marketing version stays the same. Changing runtime policy
+or native configuration requires a new binary before compatible updates can run.
 
 ## Development QR says host unreachable
 
@@ -65,61 +92,6 @@ Run commands from `mobile/`.
 - Launcher icons are static assets. The animation runs during app launch.
 - Native icon and splash configuration changes require a new Android build. To test the release splash, build an internal preview with `npx eas-cli@latest build --platform android --profile preview`, then install it. Expo Go and development builds do not reproduce the complete native splash experience.
 - Validate with `npm run typecheck` and `npm run lint`.
-
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
-
-## Get started
-
-1. Install dependencies
-
-   ```bash
-   npm install
-   ```
-
-2. Start the app
-
-   ```bash
-   npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
-
-```bash
-npm run reset-project
-```
-
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
-
-### Other setup steps
-
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
-
-## Learn more
-
-To learn more about developing your project with Expo, look at the following resources:
-
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
 
 ## Glass tabs, branding, calendar and billing upgrade
 

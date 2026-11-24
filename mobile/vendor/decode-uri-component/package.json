@@ -1,0 +1,15 @@
+{
+  "name": "decode-uri-component",
+  "version": "0.5.1+fitsync.cjs.1",
+  "main": "index.cjs",
+  "private": true,
+  "license": "MIT",
+  "types": "index.d.ts",
+  "description": "Vendored decode-uri-component 0.5.1 with a CommonJS export adapter",
+  "fitsyncVendor": {
+    "upstreamVersion": "0.5.1",
+    "source": "https://github.com/SamVerschueren/decode-uri-component/tree/v0.5.1",
+    "upstreamSourceSha256": "6a86ac891edf15c5efa0841ebb31935e3669d58b98318b57d7b08a4530317cb0",
+    "change": "Only the default function export is adapted to module.exports"
+  }
+}

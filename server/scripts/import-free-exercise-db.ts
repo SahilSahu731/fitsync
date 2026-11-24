@@ -7,6 +7,7 @@ import { addExerciseMedia } from "../src/modules/exercises/exercise.service.js";
 import { uploadExerciseAsset } from "../src/modules/exercises/exercise.media.js";
 import type { ExerciseInput } from "../src/modules/exercises/exercise.schema.js";
 import { SOURCE, imageUrls, normalize, type SourceExercise } from "./lib/free-exercise-source.js";
+import { publicExercises, resetPublicExerciseBaseline } from "./lib/exercise-reset.js";
 
 type Row = Record<string, any>;
 type Entry = {
@@ -130,7 +131,8 @@ async function main() {
     }
     const selected = entries.slice(0, limit);
     if (!selected.length) throw new Error("No valid exercises with images to import.");
-    const existing = await rows("exercises");
+    const allExisting = await rows("exercises");
+    const existing = reset ? publicExercises(allExisting) : allExisting;
     console.log(
       JSON.stringify(
         {
@@ -317,14 +319,14 @@ async function main() {
       }
     }
     if (state.reset) {
-      const current = await rows("exercises");
+      const current = publicExercises(await rows("exercises"));
       const allowed = new Set([
         ...state.backup.exercises.map((row) => row.id),
         ...state.entries.map((entry) => entry.id),
       ]);
       if (current.some((row) => !allowed.has(row.id)))
         throw new Error("Catalog changed during import; replacement stopped before deletion.");
-      for (const original of state.backup.exercises) {
+      for (const original of publicExercises(state.backup.exercises)) {
         const now = current.find((row) => row.id === original.id);
         if (!now || now.updated_at !== original.updated_at)
           throw new Error(
@@ -336,24 +338,38 @@ async function main() {
     }
   }
   if (state.reset && state.phase === "replacing") {
-    const ids = state.backup.exercises.map((row) => row.id as string);
-    for (let start = 0; start < ids.length; start += 100) {
-      const result = await db
-        .from("exercises")
-        .delete()
-        .in("id", ids.slice(start, start + 100));
-      check(result.error, "Remove backed-up old exercises");
-    }
+    const baseline = (items: Row[]) =>
+      items.map(({ id, updated_at, owner_user_id }) => ({ id, updated_at, owner_user_id }));
+    const removed = await resetPublicExerciseBaseline(
+      baseline(state.backup.exercises),
+      async () => baseline(await rows("exercises")),
+      async (batch) => {
+        const conditions = batch
+          .map((row) => `and(id.eq.${row.id},updated_at.eq.${row.updated_at})`)
+          .join(",");
+        const result = await db
+          .from("exercises")
+          .delete()
+          .is("owner_user_id", null)
+          .or(conditions)
+          .select("id");
+        check(result.error, "Remove unchanged public exercises");
+        return (result.data ?? []).map((row) => row.id as string);
+      },
+    );
     for (const entry of state.entries) {
       const result = await db
         .from("exercises")
         .update({ slug: entry.input.slug })
         .eq("id", entry.id!)
+        .is("owner_user_id", null)
         .select("id")
         .single();
       check(result.error, `Finalize ${entry.input.name}`);
     }
-    console.log(`Removed ${ids.length} old exercise records. Their snapshot is in backup.json.`);
+    console.log(
+      `Removed ${removed} unchanged public exercise records. Their snapshot is in backup.json. Private exercises were preserved.`,
+    );
   }
   state.phase = "complete";
   await checkpoint();

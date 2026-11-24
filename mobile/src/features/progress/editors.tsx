@@ -195,6 +195,7 @@ export function MetricEditor({
   unit,
   onClose,
   onSave,
+  onAddSteps,
 }: {
   initialMetric: Metric;
   startWithPicker?: boolean;
@@ -203,20 +204,23 @@ export function MetricEditor({
   unit: "kg" | "lb";
   onClose: () => void;
   onSave: (metric: Metric, date: string, value: number | null, notes: string) => Promise<void>;
+  onAddSteps?: (date: string, steps: number, notes: string) => Promise<void>;
 }) {
   const entries = useMemo(() => latestMetrics(events), [events]);
   const [metric, setMetric] = useState(initialMetric);
   const [date, setDate] = useState(initialDate);
+  const [addingSteps, setAddingSteps] = useState(true);
+  const addSteps = metric === "steps" && Boolean(onAddSteps) && addingSteps;
   const existing = entries.find((entry) => entry.metric === metric && entry.date === date);
   const existingDisplay = (entry: MetricEvent | undefined, m: Metric) =>
-    entry?.value == null
+    (m === "steps" && onAddSteps && addingSteps) || entry?.value == null
       ? ""
       : String(
           m === "weight" ? Math.round(weightValue(entry.value, unit) * 100) / 100 : entry.value,
         );
   const [value, setValue] = useState(() => existingDisplay(existing, metric));
-  const [notes, setNotes] = useState(existing?.notes ?? "");
-  const [notesOpen, setNotesOpen] = useState(Boolean(existing?.notes));
+  const [notes, setNotes] = useState(addSteps ? "" : (existing?.notes ?? ""));
+  const [notesOpen, setNotesOpen] = useState(!addSteps && Boolean(existing?.notes));
   const [choosingMetric, setChoosingMetric] = useState(startWithPicker);
   const [search, setSearch] = useState("");
   const [group, setGroup] = useState<MetricGroup>(() => metricGroup(initialMetric));
@@ -226,7 +230,7 @@ export function MetricEditor({
   const [busy, setBusy] = useState(false);
   const saving = useRef(false);
   const drafts = useRef(new Map<string, { value: string; notes: string }>());
-  const draftKey = `${date}:${metric}`;
+  const draftKey = `${date}:${metric}:${metric === "steps" && addingSteps ? "add" : "total"}`;
   const spec = METRICS[metric];
   const rating = RATING_LABELS[metric];
   const selectedGroup = metricGroup(metric);
@@ -264,15 +268,26 @@ export function MetricEditor({
     if (saving.current) return;
     if (!drafts.current.has(draftKey)) drafts.current.set(draftKey, { value, notes });
     const entry = entries.find((item) => item.metric === nextMetric && item.date === nextDate);
-    const draft = drafts.current.get(`${nextDate}:${nextMetric}`) ?? {
+    const draft = drafts.current.get(
+      `${nextDate}:${nextMetric}:${nextMetric === "steps" && addingSteps ? "add" : "total"}`,
+    ) ?? {
       value: existingDisplay(entry, nextMetric),
-      notes: entry?.notes ?? "",
+      notes: nextMetric === "steps" && onAddSteps && addingSteps ? "" : (entry?.notes ?? ""),
     };
     setMetric(nextMetric);
     setDate(nextDate);
     setValue(draft.value);
     setNotes(draft.notes);
     setNotesOpen(Boolean(draft.notes));
+    setError("");
+  }
+  function stepMode(add: boolean) {
+    if (saving.current || add === addingSteps) return;
+    drafts.current.set(draftKey, { value, notes });
+    const saved = drafts.current.get(`${date}:steps:${add ? "add" : "total"}`);
+    setAddingSteps(add);
+    setValue(saved?.value ?? (add ? "" : String(existing?.value ?? "")));
+    setNotes(saved?.notes ?? (add ? "" : (existing?.notes ?? "")));
     setError("");
   }
   function close() {
@@ -323,7 +338,8 @@ export function MetricEditor({
     setError("");
     Keyboard.dismiss();
     try {
-      await onSave(metric, date, amount, notes.trim());
+      if (addSteps && !clear) await onAddSteps!(date, amount!, notes.trim());
+      else await onSave(metric, date, amount, notes.trim());
       onClose();
     } catch (failure) {
       setError(failure instanceof Error ? failure.message : "Unable to save. Please try again.");
@@ -385,10 +401,10 @@ export function MetricEditor({
                   <MaterialCommunityIcons name="check" size={20} color={C.bg} />
                 )}
                 <Txt weight="semibold" className="text-sm text-bg">
-                  {busy ? "Saving…" : "Save check-in"}
+                  {busy ? "Saving…" : addSteps ? "Add steps" : "Save check-in"}
                 </Txt>
               </Pressable>
-              {existing?.value != null && (
+              {existing?.value != null && !addSteps && (
                 <Pressable
                   accessibilityRole="button"
                   accessibilityLabel="Clear this day’s value"
@@ -402,8 +418,8 @@ export function MetricEditor({
               )}
             </View>
             <Txt className="mt-2 text-center text-[10px] leading-5 text-muted">
-              {existing?.value != null ? "Updates" : "Saves"} {spec.label.toLowerCase()} ·{" "}
-              {dateTitle}
+              {addSteps ? "Adds extra" : existing?.value != null ? "Updates" : "Saves"}{" "}
+              {spec.label.toLowerCase()} · {dateTitle}
             </Txt>
           </>
         )
@@ -657,19 +673,50 @@ export function MetricEditor({
             </View>
           )}
 
+          {metric === "steps" && onAddSteps && (
+            <View className="mb-4">
+              <View className="flex-row gap-2">
+                {[
+                  { add: true, label: "Add extra steps" },
+                  { add: false, label: "Edit daily total" },
+                ].map((mode) => (
+                  <Pressable
+                    key={mode.label}
+                    accessibilityRole="button"
+                    accessibilityLabel={mode.label}
+                    accessibilityState={{ selected: addingSteps === mode.add }}
+                    disabled={busy}
+                    onPress={() => stepMode(mode.add)}
+                    className={`min-h-11 flex-1 items-center justify-center rounded-xl ${addingSteps === mode.add ? "bg-white/15" : "bg-elevated"}`}
+                  >
+                    <Txt className="text-xs">{mode.label}</Txt>
+                  </Pressable>
+                ))}
+              </View>
+              <Txt className="mt-3 text-xs leading-5 text-muted">
+                {existing?.value == null
+                  ? "No steps saved for this day yet."
+                  : `${existing.value.toLocaleString()} steps saved for this day.`}{" "}
+                Add only walking your phone or watch missed. Automatic steps keep updating
+                separately.
+              </Txt>
+            </View>
+          )}
           <View
             className="mb-4 rounded-[24px] border px-5 pb-5 pt-4"
             style={{ backgroundColor: `${accent}08`, borderColor: `${accent}25` }}
           >
             <View className="mb-2 flex-row items-center justify-between gap-2">
               <Txt weight="medium" className="text-[10px] tracking-[1.5px] text-muted">
-                {rating
-                  ? "HOW DID IT FEEL?"
-                  : isTotalMetric(metric)
-                    ? "DAILY TOTAL"
-                    : "MEASUREMENT"}
+                {addSteps
+                  ? "EXTRA STEPS"
+                  : rating
+                    ? "HOW DID IT FEEL?"
+                    : isTotalMetric(metric)
+                      ? "DAILY TOTAL"
+                      : "MEASUREMENT"}
               </Txt>
-              {existing?.value != null && (
+              {existing?.value != null && !addSteps && (
                 <Txt className="text-[9px]" style={{ color: accent }}>
                   EDITING SAVED ENTRY
                 </Txt>
@@ -742,7 +789,11 @@ export function MetricEditor({
                   />
                   <Txt className="text-lg text-muted">{displayUnit}</Txt>
                 </View>
-                <Txt className="text-[11px] leading-5 text-muted">{metricHint(metric)}</Txt>
+                <Txt className="text-[11px] leading-5 text-muted">
+                  {addSteps
+                    ? "This amount is added to your saved total. Do not enter your whole daily total here."
+                    : metricHint(metric)}
+                </Txt>
               </>
             )}
           </View>

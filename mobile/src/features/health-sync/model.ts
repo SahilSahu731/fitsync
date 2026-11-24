@@ -116,11 +116,27 @@ export function planHealthImport(
     const previous = latest.get(key);
     // Preserve manual corrections and explicit deletions, including pedometer
     // totals that may already contain some of the same device steps.
-    if (previous && previous.source !== "healthkit" && previous.source !== "healthconnect") {
+    if (
+      previous &&
+      !previous.stepBreakdown &&
+      previous.source !== "healthkit" &&
+      previous.source !== "healthconnect"
+    ) {
       protectedEntries++;
       continue;
     }
-    if (previous?.value === sample.value) {
+    // Automatic snapshots replace the device contribution. Manual extras remain
+    // a separate amount, so the next import neither erases nor repeats them.
+    const manual = sample.metric === "steps" ? (previous?.stepBreakdown?.manual ?? 0) : 0;
+    const total = sample.value + manual;
+    if (!validMetric(sample.metric, total)) {
+      protectedEntries++;
+      continue;
+    }
+    if (
+      previous?.value === total &&
+      (sample.metric !== "steps" || previous.stepBreakdown?.source === source)
+    ) {
       unchanged++;
       continue;
     }
@@ -128,19 +144,28 @@ export function planHealthImport(
       ...createEventBase(events),
       kind: "metric",
       ...sample,
+      value: total,
       source,
-      notes: `Imported from ${source === "healthkit" ? "Apple Health" : "Health Connect"}`,
+      ...(sample.metric === "steps"
+        ? { stepBreakdown: { automatic: sample.value, manual, source } }
+        : {}),
+      notes:
+        manual && previous?.notes
+          ? previous.notes
+          : `Imported from ${source === "healthkit" ? "Apple Health" : "Health Connect"}`,
     };
     added.push(event);
     events.push(event);
     latest.set(key, event);
   }
   return {
-    journal: {
-      ...journal,
-      events,
-      pending: [...new Set([...journal.pending, ...added.map((event) => event.id)])],
-    },
+    journal: !added.length
+      ? journal
+      : {
+          ...journal,
+          events,
+          pending: [...new Set([...journal.pending, ...added.map((event) => event.id)])],
+        },
     imported: added.length,
     unchanged,
     protectedEntries,

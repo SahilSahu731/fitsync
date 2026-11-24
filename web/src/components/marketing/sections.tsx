@@ -149,8 +149,8 @@ export function HealthSection({ detailed = false }: { detailed?: boolean }) {
               Your health data. With your permission.
             </h3>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-black/55">
-              Optionally import steps, sleep and body weight from Apple Health or Health Connect.
-              FitSync reads your records and never writes to them.
+              Optionally import steps, sleep and body weight from Health Connect on Android. FitSync
+              reads your records and never writes to them.
             </p>
           </div>
           {!detailed && (
@@ -159,6 +159,10 @@ export function HealthSection({ detailed = false }: { detailed?: boolean }) {
             </TextLink>
           )}
         </div>
+        <p className="mt-6 max-w-3xl text-sm leading-7 text-black/55">
+          Health tracking, meal plans and weight-management suggestions are for general wellness.
+          They are not medical advice, diagnosis or treatment.
+        </p>
       </div>
     </section>
   );

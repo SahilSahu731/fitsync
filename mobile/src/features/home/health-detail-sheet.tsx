@@ -17,6 +17,7 @@ import {
 
 import { HealthHistoryChart } from "./health-charts";
 import { macroBreakdown } from "./chart-model";
+import { StepTrackingCard } from "../health-sync/step-tracking-card";
 
 export function HealthDetailSheet({
   kind,
@@ -133,7 +134,9 @@ export function HealthDetailSheet({
                   ? "Open workout options"
                   : kind === "nutrition" && isPro
                     ? "Open food diary"
-                    : `Log ${meta.title.toLowerCase()}`
+                    : kind === "steps"
+                      ? "Add extra steps"
+                      : `Log ${meta.title.toLowerCase()}`
               }
               disabled={kind === "workouts" && workoutBlocked}
               accessibilityState={{ disabled: kind === "workouts" && workoutBlocked }}
@@ -158,7 +161,9 @@ export function HealthDetailSheet({
                     : "Start a workout"
                   : kind === "nutrition" && isPro
                     ? "Open food diary"
-                    : `Log ${kind === "nutrition" ? "nutrition" : meta.title.toLowerCase()}`}
+                    : kind === "steps"
+                      ? "Add extra steps"
+                      : `Log ${kind === "nutrition" ? "nutrition" : meta.title.toLowerCase()}`}
               </Txt>
             </Pressable>
           </View>
@@ -235,6 +240,13 @@ export function HealthDetailSheet({
           </Pressable>
         )}
       </View>
+      {kind === "steps" && (
+        <StepTrackingCard
+          entry={snapshot.metrics.find(
+            (entry) => entry.metric === "steps" && entry.date === active.date,
+          )}
+        />
+      )}
       <View className="rounded-[26px] border border-white/[0.06] bg-white/[0.025] p-4">
         <View className="mb-4 flex-row items-center justify-between">
           <Txt weight="medium" className="text-sm">

@@ -1,6 +1,7 @@
 import React, { useCallback, useState } from "react";
 import { View } from "react-native";
 import AsyncStorage from "@react-native-async-storage/async-storage";
+import { writeAccountPreference } from "@/src/services/account-preferences";
 import { useFocusEffect, useRouter } from "expo-router";
 import { Txt } from "@/src/components/ui";
 import { MotionPressable as Pressable } from "@/src/components/motion";
@@ -48,7 +49,7 @@ export function HomeGoals({
             if (!current || seen || seenThisSession.has(ownerId)) return;
             seenThisSession.add(ownerId);
             setWelcomeOwner(ownerId);
-            void AsyncStorage.setItem(goalWelcomeKey(ownerId), "seen").catch(() => {
+            void writeAccountPreference(ownerId, goalWelcomeKey(ownerId), "seen").catch(() => {
               /* Keep it dismissed for this session when storage is unavailable. */
             });
           })
