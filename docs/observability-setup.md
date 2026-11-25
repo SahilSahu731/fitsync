@@ -124,21 +124,23 @@ npm run lint
 npx eas-cli@latest build --platform android --profile preview
 ```
 
-Install the resulting APK on an Android test device. The store-review and other
-native dependency changes require a new binary; restarting Metro or publishing an
-OTA update cannot add native modules. App version 1.1.0 also establishes a new
-`appVersion` runtime so these changes are isolated from older binaries. The build should show successful Sentry
+Install the resulting APK on an Android test device. Build a new binary when native
+dependencies change. The app uses a fingerprint-based runtime for OTA compatibility.
+The build should show successful Sentry
 source-map upload. Treat upload errors as a release issue rather than disabling them.
 
-To test Google Play purchases and in-app reviews, use a Play internal-testing build:
+To test Google Play purchases and the review invitation, use a Play internal-testing build:
 
 ```sh
 npx eas-cli@latest build --platform android --profile store-test
 ```
 
 Upload/install through the Play testing track with a licensed tester and the configured
-RevenueCat sandbox backend. A sideloaded APK does not prove the Play review flow works.
-Google controls whether its review prompt appears; a successful request is not a rating.
+RevenueCat sandbox backend. Finish a saved workout with at least three distinct workouts
+and one completion at least seven days old. Tap Done, then verify that “Maybe later”
+returns to Train. Use **Settings → Rate on Google Play** to verify the listing opens for
+your tester account. FitSync records a successful link handoff. Only Google Play knows
+whether the tester submits feedback.
 
 ## 6. Verify telemetry and privacy on the device
 
@@ -185,6 +187,7 @@ Use **Product Analytics → New insight → Funnel**. Start with these:
 | Purchase verification | `purchase_result`, split by `active`, `pending`, `cancelled`                  | Plan                                 |
 | Finish reliability    | `workout_finish_started` → `workout_finished`                                 | App version                          |
 | Sharing               | `workout_summary_viewed` → `workout_share_opened` → `workout_share_completed` | App version                          |
+| Review invitation     | `review_invitation_shown` → `review_listing_opened`                           | Filter to `source=workout_summary`   |
 
 For entry-source attribution, anchor the source breakdown on `paywall_viewed`;
 purchase events include that same source. Do not require `paywall_plan_selected`

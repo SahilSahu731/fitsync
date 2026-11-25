@@ -1,3 +1,4 @@
+import * as permissionPrompts from "./helpers/permission-prompts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -51,6 +52,7 @@ function fixture({ enabled = false, state = "active" } = {}) {
     },
   };
   const dependencies = {
+    "@/src/services/permission-prompts": permissionPrompts,
     react: {
       useRef(initial) {
         return (slots[cursor++] ??= { current: initial });

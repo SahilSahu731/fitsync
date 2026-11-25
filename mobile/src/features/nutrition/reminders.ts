@@ -1,3 +1,4 @@
+import { requestPermissionWithExplanation } from "@/src/services/permission-prompts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { useSyncExternalStore } from "react";
 import { Platform } from "react-native";
@@ -92,7 +93,12 @@ export function requestFoodReminderPermission(): Promise<boolean> {
     if (!supported()) return false;
     await configure();
     const current = await Notifications.getPermissionsAsync();
-    return allowed(current) || allowed(await Notifications.requestPermissionsAsync());
+    return requestPermissionWithExplanation(
+      "meals",
+      current,
+      () => Notifications.requestPermissionsAsync(),
+      allowed,
+    );
   });
 }
 async function read(): Promise<Stored | null> {

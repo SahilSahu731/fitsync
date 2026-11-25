@@ -31,12 +31,19 @@ export function useProgress() {
   }, [ownerId]);
   const [cache, setCache] = useState({ ownerId: "", journal: emptyJournal() });
   const journal = cache.ownerId === ownerId ? cache.journal : emptyJournal();
+  const applyJournal = useCallback((ownerId: string, journal: Journal) => {
+    setCache((previous) =>
+      previous.ownerId === ownerId && previous.journal === journal
+        ? previous
+        : { ownerId, journal },
+    );
+  }, []);
   useEffect(
     () =>
       subscribeJournal((id, value) => {
-        if (id === ownerId && ownerRef.current === ownerId) setCache({ ownerId, journal: value });
+        if (id === ownerId && ownerRef.current === ownerId) applyJournal(ownerId, value);
       }),
-    [ownerId],
+    [ownerId, applyJournal],
   );
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
@@ -52,7 +59,7 @@ export function useProgress() {
     try {
       const saved = await readJournal(ownerId);
       if (!current()) return;
-      setCache({ ownerId, journal: saved });
+      applyJournal(ownerId, saved);
       setStorageError("");
     } catch (error) {
       if (current()) {
@@ -67,7 +74,7 @@ export function useProgress() {
       syncJournal(ownerId, current)
         .then((value) => {
           if (current()) {
-            setCache({ ownerId, journal: value });
+            applyJournal(ownerId, value);
             setSyncError("");
           }
         })
@@ -78,7 +85,7 @@ export function useProgress() {
       syncWorkouts(ownerId, current)
         .then((value) => {
           if (current()) {
-            setCache({ ownerId, journal: value });
+            applyJournal(ownerId, value);
             setWorkoutError("");
           }
         })
@@ -91,10 +98,10 @@ export function useProgress() {
     ]);
     if (current()) {
       const saved = await readJournal(ownerId);
-      setCache({ ownerId, journal: saved });
+      applyJournal(ownerId, saved);
       setRefreshing(false);
     }
-  }, [ownerId]);
+  }, [ownerId, applyJournal]);
   const refresh = useCallback(() => {
     if (syncing.current?.ownerId === ownerId) return syncing.current.operation;
     const request = load()
@@ -119,7 +126,7 @@ export function useProgress() {
     if (loading) throw new Error("Your journal is still opening. Try again in a moment.");
     if (!ownerId || storageError) throw new Error(storageError || "Sign in to log progress.");
     const saved = await write();
-    if (ownerRef.current === ownerId) setCache({ ownerId, journal: saved });
+    if (ownerRef.current === ownerId) applyJournal(ownerId, saved);
     // A metric changes the event journal, not workout history. Coalesce with other
     // screens and request a trailing upload if another sync was already running.
     void syncJournal(ownerId, () => ownerRef.current === ownerId, true)

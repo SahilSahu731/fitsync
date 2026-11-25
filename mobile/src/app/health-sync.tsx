@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 import { LegalLinks } from "@/src/components/legal-links";
-import { Alert, Platform, ScrollView, View } from "react-native";
+import { Platform, ScrollView, View } from "react-native";
+import { useAppAlert } from "@/src/components/app-dialog";
 import { router } from "expo-router";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
@@ -11,6 +12,7 @@ import { getHealthAdapter } from "@/src/features/health-sync/native";
 import { useHealthSync } from "@/src/features/health-sync/use-health-sync";
 
 export default function HealthSyncScreen() {
+  const Alert = useAppAlert();
   const health = useHealthSync();
   const provider = Platform.OS === "ios" ? "Apple Health" : "Health Connect";
   const [settingsError, setSettingsError] = useState("");

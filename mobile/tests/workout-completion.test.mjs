@@ -70,6 +70,7 @@ function render({ pending = false, pro = false, celebrate = "1" } = {}) {
     },
     "@expo/vector-icons": { MaterialCommunityIcons: () => null },
     "@/src/components/ui": { Txt },
+    "@/src/components/app-dialog": { useAppAlert: () => ({ inviteReview() {} }) },
     "@/src/constants/theme": { C: {} },
     "@/src/context/session": { useSession: () => ({ settings: { weightUnit: "lb" } }) },
     "@/src/lib/weight": weight,
@@ -97,6 +98,7 @@ function render({ pending = false, pro = false, celebrate = "1" } = {}) {
     "@/src/features/workouts/components/workout-sync-notice": { WorkoutSyncNotice: () => null },
     "@/src/features/workouts/achievements": achievements,
     "@/src/features/experience/review-prompt": {},
+    "@/src/features/experience/review-model": {},
     "@/src/services/telemetry": {},
     "@/src/features/workouts/api": {},
   };

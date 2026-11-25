@@ -1,3 +1,4 @@
+import * as permissionPrompts from "./helpers/permission-prompts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -41,6 +42,7 @@ function fixture() {
     },
   };
   const dependencies = {
+    "@/src/services/permission-prompts": permissionPrompts,
     "expo-notifications": notifications,
     "react-native": { Platform: { OS: "android" } },
     "@/src/features/workouts/notifications": { configureWorkoutNotifications: async () => {} },

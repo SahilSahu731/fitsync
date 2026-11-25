@@ -1,3 +1,4 @@
+import * as permissionPrompts from "./helpers/permission-prompts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -77,6 +78,7 @@ function notifications() {
     },
   };
   const mocks = {
+    "@/src/services/permission-prompts": permissionPrompts,
     "expo-notifications": mock,
     "react-native": { Platform: { OS: "android" } },
     "@/src/features/workouts/notifications": { configureWorkoutNotifications: async () => {} },

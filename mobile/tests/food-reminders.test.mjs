@@ -1,3 +1,4 @@
+import * as permissionPrompts from "./helpers/permission-prompts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -71,6 +72,7 @@ function setup(platform = "android") {
     },
   };
   const mocks = {
+    "@/src/services/permission-prompts": permissionPrompts,
     react: { useSyncExternalStore: (_subscribe, snapshot) => snapshot() },
     "react-native": { Platform: { OS: platform } },
     "expo-notifications": native,

@@ -4,6 +4,7 @@ import { AppState, View } from "react-native";
 import { useFocusEffect } from "expo-router";
 import { Txt } from "@/src/components/ui";
 import { localDate, dateLabel } from "./model";
+import { requestPermissionWithExplanation } from "@/src/services/permission-prompts";
 
 export type WalkDraft = { count: number; date: string };
 export function WalkCounter({
@@ -21,6 +22,7 @@ export function WalkCounter({
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const active = useRef(false);
+  const starting = useRef(false);
   const stop = useCallback(() => {
     subscription.current?.remove();
     subscription.current = null;
@@ -40,6 +42,8 @@ export function WalkCounter({
     }, [stop]),
   );
   async function start() {
+    if (starting.current) return;
+    starting.current = true;
     setBusy(true);
     setError("");
     try {
@@ -48,8 +52,13 @@ export function WalkCounter({
       const { Pedometer } = require("expo-sensors") as typeof import("expo-sensors");
       if (!(await Pedometer.isAvailableAsync()))
         throw new Error("This device has no step sensor. You can still log your daily total.");
-      const permission = await Pedometer.requestPermissionsAsync();
-      if (!permission.granted)
+      if (!active.current || AppState.currentState !== "active") return;
+      const permission = await Pedometer.getPermissionsAsync();
+      if (
+        !(await requestPermissionWithExplanation("motion", permission, () =>
+          Pedometer.requestPermissionsAsync(),
+        ))
+      )
         throw new Error(
           "Motion access was not granted. You can log steps manually or enable motion access in device settings.",
         );
@@ -71,6 +80,7 @@ export function WalkCounter({
           : "Step counter unavailable in this build. Use manual logging.",
       );
     } finally {
+      starting.current = false;
       setBusy(false);
     }
   }

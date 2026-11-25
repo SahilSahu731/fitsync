@@ -1,3 +1,4 @@
+import { requestPermissionWithExplanation } from "@/src/services/permission-prompts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
@@ -122,7 +123,9 @@ export async function requestCompanionReminderPermission() {
   if (Platform.OS === "web") return false;
   await configure();
   const current = await Notifications.getPermissionsAsync();
-  return current.granted || (await Notifications.requestPermissionsAsync()).granted;
+  return requestPermissionWithExplanation("notifications", current, () =>
+    Notifications.requestPermissionsAsync(),
+  );
 }
 export function reconcileCompanionReminders(input: {
   ownerId: string;

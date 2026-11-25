@@ -1,22 +1,42 @@
-export type ReviewHistory = { firstAt: number; workouts: string[]; lastAttemptAt: number | null };
-export function reviewHistory(value: string | null, now: number): ReviewHistory {
-  try {
-    const data = JSON.parse(value ?? "null");
-    if (data && Number.isFinite(data.firstAt) && Array.isArray(data.workouts))
-      return {
-        firstAt: Math.min(now, data.firstAt),
-        workouts: [
-          ...new Set<string>(data.workouts.filter((id: unknown) => typeof id === "string")),
-        ].slice(-100),
-        lastAttemptAt: Number.isFinite(data.lastAttemptAt) ? data.lastAttemptAt : null,
-      };
-  } catch {}
-  return { firstAt: now, workouts: [], lastAttemptAt: null };
+import type { ProgressWorkout } from "../progress/model";
+
+const DAY = 86_400_000;
+type Completion = Pick<ProgressWorkout, "id" | "status" | "started_at" | "finished_at">;
+
+export function reachedReviewMilestone(current: Completion, history: Completion[], now: number) {
+  const completedAt = Date.parse(current.finished_at ?? current.started_at);
+  if (current.status !== "completed" || !Number.isFinite(completedAt) || completedAt > now)
+    return false;
+  const ids = new Set([current.id]);
+  const weekAgo = now - 7 * DAY;
+  let hasWeekOfHistory = completedAt <= weekAgo;
+  for (const workout of history) {
+    const finished = Date.parse(workout.finished_at ?? workout.started_at);
+    if (workout.status !== "completed" || !Number.isFinite(finished) || finished > now) continue;
+    ids.add(workout.id);
+    if (finished <= weekAgo) hasWeekOfHistory = true;
+    if (ids.size >= 3 && hasWeekOfHistory) return true;
+  }
+  return false;
 }
-export function shouldRequestReview(value: ReviewHistory, now: number) {
+
+export type ReviewPreference = { lastAttemptAt: number | null; openedListing: boolean };
+
+export function reviewPreference(raw: string | null): ReviewPreference {
+  try {
+    const value = JSON.parse(raw ?? "null");
+    return {
+      lastAttemptAt: Number.isFinite(value?.lastAttemptAt) ? value.lastAttemptAt : null,
+      openedListing: value?.openedListing === true,
+    };
+  } catch {
+    return { lastAttemptAt: null, openedListing: false };
+  }
+}
+
+export function canInviteToReview(preference: ReviewPreference, now: number) {
   return (
-    value.workouts.length >= 3 &&
-    now - value.firstAt >= 7 * 86400_000 &&
-    (value.lastAttemptAt === null || now - value.lastAttemptAt >= 120 * 86400_000)
+    !preference.openedListing &&
+    (preference.lastAttemptAt === null || now - preference.lastAttemptAt >= 120 * DAY)
   );
 }

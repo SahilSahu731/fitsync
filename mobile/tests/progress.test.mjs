@@ -363,11 +363,13 @@ test("corrupt storage and failed disk writes never silently replace saved progre
 
 test("many progress consumers share one disk read and one history download per resource", async () => {
   const calls = [];
+  let steps = 500;
+  let reps = 10;
   const f = journalFixture(async (path) => {
     calls.push(path);
     return path.includes("/workouts")
-      ? { workouts: [workout("a", "2026-11-03")], next: null }
-      : { events: [event("e", "steps", "2026-11-04", 500)], next: null };
+      ? { workouts: [workout("a", "2026-11-03", [set({ reps })])], next: null }
+      : { events: [event("e", "steps", "2026-11-04", steps)], next: null };
   });
   const local = await Promise.all(Array.from({ length: 20 }, () => f.journal.readJournal("alice")));
   assert.equal(f.stats.reads, 1);
@@ -385,6 +387,26 @@ test("many progress consumers share one disk read and one history download per r
   const saved = await f.journal.readJournal("alice");
   assert.equal(saved.workouts.length, 1);
   assert.equal(saved.events.length, 1);
+  let notifications = 0;
+  const unsubscribe = f.journal.subscribeJournal(() => notifications++);
+  const writes = f.stats.writes;
+  assert.equal(await f.journal.syncJournal("alice", () => true), saved);
+  assert.equal(await f.journal.syncWorkouts("alice", () => true), saved);
+  assert.equal(f.stats.writes, writes, "unchanged history must not rewrite the entire journal");
+  assert.equal(notifications, 0, "unchanged history must not invalidate every subscriber");
+  steps = 700;
+  const updatedEvents = await f.journal.syncJournal("alice", () => true);
+  assert.equal(updatedEvents.events[0].value, 700);
+  assert.equal(updatedEvents.workouts, saved.workouts);
+  reps = 12;
+  const updatedWorkouts = await f.journal.syncWorkouts("alice", () => true);
+  assert.equal(
+    updatedWorkouts.workouts[0].workout_session_exercises[0].workout_logged_sets[0].reps,
+    12,
+  );
+  assert.equal(updatedWorkouts.events, updatedEvents.events);
+  assert.equal(notifications, 2, "real changes must still reach all subscribers");
+  unsubscribe();
   f.session();
   await f.journal.readJournal("alice");
   assert.equal(f.stats.reads, 2, "a new login must reread its own durable cache");

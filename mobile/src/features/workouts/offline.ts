@@ -15,6 +15,7 @@ const key = (ownerId: string) => `fitsync.workout.draft.v1.${ownerId}`;
 const locks = new Map<string, Promise<unknown>>();
 const flushes = new Map<string, Promise<WorkoutDraft | null>>();
 const decoded = new Map<string, { raw: string; draft: WorkoutDraft }>();
+const storageRevisions = new Map<string, number>();
 const deletedOwners = new Set<string>();
 const restWrites = new Map<string, Promise<void>>();
 const restKey = (ownerId: string) => `fitsync.workout.rest.v2.${ownerId}`;
@@ -36,14 +37,18 @@ export function saveWorkoutRest(ownerId: string, value: unknown | null): Promise
 }
 export async function readWorkoutDraft(ownerId: string): Promise<WorkoutDraft | null> {
   if (deletedOwners.has(ownerId)) return null;
+  const revision = storageRevisions.get(ownerId) ?? 0;
   const raw = await AsyncStorage.getItem(key(ownerId));
   if (deletedOwners.has(ownerId)) return null;
+  // A read that began before a durable write must not replace its newer cache.
+  if ((storageRevisions.get(ownerId) ?? 0) !== revision) return readWorkoutDraft(ownerId);
   if (!raw) {
     decoded.delete(ownerId);
     return null;
   }
   const cached = decoded.get(ownerId);
   if (cached?.raw === raw) return cached.draft;
+  decoded.delete(ownerId);
   const value = JSON.parse(raw) as WorkoutDraft;
   if (
     value.version !== 1 ||
@@ -56,6 +61,16 @@ export async function readWorkoutDraft(ownerId: string): Promise<WorkoutDraft | 
   decoded.set(ownerId, { raw, draft: value });
   return value;
 }
+
+function readCommittedDraft(ownerId: string): Promise<WorkoutDraft | null> {
+  if (deletedOwners.has(ownerId)) return Promise.resolve(null);
+  const cached = decoded.get(ownerId);
+  // This module is the sole writer of the draft key. Local edits and upload
+  // acknowledgements can reuse its last successful write instead of crossing
+  // into native storage again for every set. Public refreshes still reread disk.
+  return cached ? Promise.resolve(cached.draft) : readWorkoutDraft(ownerId);
+}
+
 export function changeWorkoutDraft(
   ownerId: string,
   update: (draft: WorkoutDraft | null) => WorkoutDraft | null,
@@ -64,7 +79,7 @@ export function changeWorkoutDraft(
   const operation = (locks.get(ownerId) ?? Promise.resolve())
     .catch(() => {})
     .then(async () => {
-      const previous = await readWorkoutDraft(ownerId);
+      const previous = await readCommittedDraft(ownerId);
       if (deletedOwners.has(ownerId)) throw new Error("This account was deleted.");
       const result = update(previous);
       if (result === previous) return previous;
@@ -72,9 +87,11 @@ export function changeWorkoutDraft(
         const raw = JSON.stringify(result);
         await AsyncStorage.setItem(key(ownerId), raw);
         if (deletedOwners.has(ownerId)) throw new Error("This account was deleted.");
+        storageRevisions.set(ownerId, (storageRevisions.get(ownerId) ?? 0) + 1);
         decoded.set(ownerId, { raw, draft: result });
       } else {
         await AsyncStorage.removeItem(key(ownerId));
+        storageRevisions.set(ownerId, (storageRevisions.get(ownerId) ?? 0) + 1);
         decoded.delete(ownerId);
       }
       return result;
@@ -266,7 +283,7 @@ async function drainWorkoutDraft(
   };
   for (let count = 0; count < 300; count++) {
     ensure();
-    const draft = await readWorkoutDraft(ownerId);
+    const draft = await readCommittedDraft(ownerId);
     if (!draft) return null;
     const entry = Object.entries(draft.sets)[0];
     if (entry) {

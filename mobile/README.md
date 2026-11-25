@@ -27,6 +27,20 @@ The OTA runtime uses Expo's fingerprint policy so native changes receive a new
 runtime even when the marketing version stays the same. Changing runtime policy
 or native configuration requires a new binary before compatible updates can run.
 
+## Google Play release
+
+See [the concrete release checklist and current blockers](../docs/play-store-release.md).
+Run `npm run release:check` to validate the locally loaded production configuration
+without contacting services or printing credential values. EAS build-server validation
+uses the same rules. Public production settings must exist in the EAS production
+environment; ignored local dotenv files do not provision it.
+
+`npm run build:android:production` starts a potentially billable EAS AAB build; run it
+only when ready to build. Submission profiles deliberately create an internal draft,
+so a later upload does not automatically publish a production rollout. Store graphics,
+real device screenshots, signing, Google/RevenueCat setup and native testing still need
+completion. A text listing draft is in `store/en-US/listing.json`.
+
 ## Development QR says host unreachable
 
 When your phone cannot open the computer's Metro address, use tunnel mode from

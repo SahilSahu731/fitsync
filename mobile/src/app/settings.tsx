@@ -1,13 +1,15 @@
 import { TelemetrySettings } from "@/src/features/experience/telemetry-settings";
+import { openPlayReviews } from "@/src/features/experience/review-prompt";
 import { trackEvent } from "@/src/services/telemetry";
 import { useProgram } from "@/src/features/program-follow/program-context";
 import { ProgramSetup } from "@/src/features/program-follow/program-setup";
+import { TestPushToken } from "@/src/features/program-follow/test-push-token";
 import { useAppAlert } from "@/src/components/app-dialog";
 import React, { useState } from "react";
 import { LegalLinks } from "@/src/components/legal-links";
 import { ExperienceSettings } from "@/src/features/experience/settings-section";
 
-import { Pressable, ScrollView, Share, Switch, View } from "react-native";
+import { Platform, Pressable, ScrollView, Share, Switch, View } from "react-native";
 
 import { Redirect, useRouter } from "expo-router";
 
@@ -253,6 +255,7 @@ export default function SettingsScreen() {
           onSaved={() => setRemindersOpen(false)}
         />
       )}
+      {__DEV__ && Platform.OS === "android" && <TestPushToken key={user.id} />}
 
       {/* Personal setup */}
 
@@ -335,6 +338,23 @@ export default function SettingsScreen() {
           Invite a training partner
         </Txt>
       </Pressable>
+      {Platform.OS === "android" && (
+        <Pressable
+          accessibilityRole="button"
+          className="mt-2 min-h-14 flex-row items-center rounded-2xl bg-panel p-5"
+          onPress={() =>
+            void openPlayReviews("settings").catch(() =>
+              Alert.alert("Couldn’t open Google Play", "Please try again in a moment."),
+            )
+          }
+        >
+          <MaterialCommunityIcons name="star-outline" color={C.ink} size={23} />
+          <Txt weight="semibold" className="ml-4 flex-1">
+            Rate on Google Play
+          </Txt>
+          <MaterialCommunityIcons name="open-in-new" color={C.muted} size={18} />
+        </Pressable>
+      )}
       <TelemetrySettings />
       <LegalLinks />
       <Txt className="mt-8 text-center text-muted">FitSync · Made for your next rep.</Txt>

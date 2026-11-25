@@ -1,3 +1,4 @@
+import * as permissionPrompts from "./helpers/permission-prompts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import fs from "node:fs";
@@ -29,6 +30,7 @@ function setup(granted = true) {
   vm.runInNewContext(output, {
     exports,
     require: (name) => {
+      if (name === "@/src/services/permission-prompts") return permissionPrompts;
       if (name === "expo-notifications") return notifications;
       if (name === "react-native") return { Platform: { OS: "android" } };
       if (name === "@react-native-async-storage/async-storage")

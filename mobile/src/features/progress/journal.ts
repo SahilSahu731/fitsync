@@ -37,6 +37,32 @@ export function subscribeJournal(listener: (ownerId: string, journal: Journal) =
   };
 }
 const key = (userId: string) => `fitsync.progress.v1.${userId}`;
+
+// Server responses contain fresh objects even when the saved data is unchanged.
+// Keep those snapshots stable so a background refresh does not invalidate every
+// chart, target and home summary that subscribes to the journal.
+function sameSnapshot(previous: unknown, next: unknown): boolean {
+  if (previous === next) return true;
+  if (!previous || !next || typeof previous !== "object" || typeof next !== "object") return false;
+  if (Array.isArray(previous) !== Array.isArray(next)) return false;
+  const before = previous as Record<string, unknown>;
+  const after = next as Record<string, unknown>;
+  const keys = Object.keys(before);
+  return (
+    keys.length === Object.keys(after).length &&
+    keys.every((key) => Object.hasOwn(after, key) && sameSnapshot(before[key], after[key]))
+  );
+}
+
+function mergeRemoteEvents(local: ProgressEvent[], remote: ProgressEvent[]) {
+  const saved = new Map(local.map((event) => [event.id, event]));
+  const received = new Map(remote.map((event) => [event.id, event]));
+  const changes = [...received.values()].filter(
+    (event) => !sameSnapshot(saved.get(event.id), event),
+  );
+  return changes.length ? mergeEvents(local, changes) : local;
+}
+
 export async function readJournal(userId: string): Promise<Journal> {
   const session = sessionScope();
   const revision = ownerRevisions.get(userId) ?? 0;
@@ -190,7 +216,8 @@ async function downloadJournal(userId: string, isCurrent: () => boolean) {
     if (!isCurrent()) throw new Error("Account changed.");
   };
   const saved = await readJournal(userId);
-  const pending = saved.events.filter((event) => saved.pending.includes(event.id));
+  const pendingIds = new Set(saved.pending);
+  const pending = saved.events.filter((event) => pendingIds.has(event.id));
   for (let index = 0; index < pending.length; index += 20) {
     ensureCurrent();
     const batch = pending.slice(index, index + 20);
@@ -202,7 +229,9 @@ async function downloadJournal(userId: string, isCurrent: () => boolean) {
     // Persist acknowledgements only; entries appended during upload remain queued.
     await updateJournal(userId, (value) => {
       ensureCurrent();
-      return { ...value, pending: value.pending.filter((id) => !response.accepted.includes(id)) };
+      const accepted = new Set(response.accepted);
+      const pending = value.pending.filter((id) => !accepted.has(id));
+      return pending.length === value.pending.length ? value : { ...value, pending };
     });
   }
   let after: string | null = null;
@@ -218,7 +247,8 @@ async function downloadJournal(userId: string, isCurrent: () => boolean) {
   ensureCurrent();
   return updateJournal(userId, (value) => {
     ensureCurrent();
-    return { ...value, events: mergeEvents(value.events, events) };
+    const merged = mergeRemoteEvents(value.events, events);
+    return merged === value.events ? value : { ...value, events: merged };
   });
 }
 export function syncWorkouts(userId: string, isCurrent: () => boolean, rerun = false) {
@@ -247,9 +277,22 @@ async function downloadWorkouts(userId: string, isCurrent: () => boolean) {
   if (!isCurrent()) throw new Error("Account changed.");
   return updateJournal(userId, (value) => {
     if (!isCurrent()) throw new Error("Account changed.");
+    const saved = new Map(value.workouts.map((workout) => [workout.id, workout]));
+    const received = [...new Map(workouts.map((workout) => [workout.id, workout])).values()].map(
+      (workout) => {
+        const previous = saved.get(workout.id);
+        return previous && sameSnapshot(previous, workout) ? previous : workout;
+      },
+    );
+    const unchanged =
+      received.length === value.workouts.length &&
+      received.every((workout, index) => workout === value.workouts[index]);
+    // This marker tells consumers that a successful history fetch has happened,
+    // including an empty history. Unchanged polls need no new durable snapshot.
+    if (unchanged && value.workoutsUpdatedAt) return value;
     return {
       ...value,
-      workouts: [...new Map(workouts.map((workout) => [workout.id, workout])).values()],
+      workouts: unchanged ? value.workouts : received,
       workoutsUpdatedAt: new Date().toISOString(),
     };
   });

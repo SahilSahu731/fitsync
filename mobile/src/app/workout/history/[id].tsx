@@ -9,9 +9,11 @@ import {
   workoutShareText,
 } from "@/src/features/workouts/achievements";
 import {
-  recordCompletedWorkout,
-  recordCompletedWorkoutAndMaybeRequestReview,
+  claimReviewInvitation,
+  prepareReviewPreference,
 } from "@/src/features/experience/review-prompt";
+import { reachedReviewMilestone } from "@/src/features/experience/review-model";
+import { useAppAlert } from "@/src/components/app-dialog";
 import { trackEvent } from "@/src/services/telemetry";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 
@@ -80,6 +82,7 @@ function StatTile({
 
 export default function WorkoutHistoryDetail() {
   const router = useRouter();
+  const { inviteReview } = useAppAlert();
   const { id, celebrate } = useLocalSearchParams<{ id: string; celebrate?: string }>();
   const { settings } = useSession();
   const unit = settings?.weightUnit ?? "kg";
@@ -110,13 +113,20 @@ export default function WorkoutHistoryDetail() {
     }
   }, [celebrate, displayedSession]);
   useEffect(() => {
-    if (celebrate === "1" && displayedSession && !pendingCompletion)
-      void recordCompletedWorkout(displayedSession.id);
-  }, [celebrate, displayedSession, pendingCompletion]);
+    if (celebrate === "1") void prepareReviewPreference();
+  }, [celebrate]);
   const done = () => {
     router.replace("/(tabs)/train");
-    if (celebrate === "1" && displayedSession && !pendingCompletion)
-      void recordCompletedWorkoutAndMaybeRequestReview(displayedSession.id);
+    if (
+      celebrate === "1" &&
+      displayedSession &&
+      !pendingCompletion &&
+      !progress.loading &&
+      !progress.storageError &&
+      reachedReviewMilestone(displayedSession, progress.journal.workouts, Date.now()) &&
+      claimReviewInvitation()
+    )
+      inviteReview();
   };
   const share = async () => {
     if (!displayedSession) return;

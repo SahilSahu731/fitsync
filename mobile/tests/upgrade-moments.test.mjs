@@ -1,3 +1,4 @@
+import * as permissionPrompts from "./helpers/permission-prompts.mjs";
 import test from "node:test";
 import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
@@ -286,6 +287,7 @@ function reminderFixture() {
     calls = [];
   const permission = { granted: true };
   const deps = {
+    "@/src/services/permission-prompts": permissionPrompts,
     "@react-native-async-storage/async-storage": {
       getItem: async (k) => storage.get(k) ?? null,
       setItem: async (k, v) => storage.set(k, v),

@@ -90,10 +90,10 @@ and external service configuration still determine their production behavior.
 
 Lower-priority follow-ups:
 
-- Rating-prompt history is a device-wide record of up to 100 workout UUIDs without
-  account ownership. Account deletion cannot selectively remove these IDs. Migrate
-  to owner-scoped history while preserving the device-wide prompt cooldown and
-  explicitly handling the unowned legacy list.
+- The review invitation now reads completed workouts from the signed-in account’s
+  journal. On upgraded devices, the first completion summary or visit to the Play
+  listing replaces the old device-wide workout IDs with an anonymous preference.
+  Devices that never open either flow can still retain the legacy IDs.
 - Public web pages lack a sitemap, canonical URLs and complete social metadata.
   Confirm the production public origin before generating those URLs. Browsers
   without Web Locks also retain same-tab rather than cross-tab refresh coordination.

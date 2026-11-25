@@ -2,29 +2,54 @@ import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import Constants from "expo-constants";
 import * as Notifications from "expo-notifications";
+import { apiSessionKey } from "@/src/services/api";
+import { requestPermissionWithExplanation } from "@/src/services/permission-prompts";
 import { configureWorkoutNotifications } from "@/src/features/workouts/notifications";
 import { programFollowApi } from "./api";
 
 const DEVICE_KEY = "fitsync.program-push-token.v1";
 let operations: Promise<void> = Promise.resolve();
-let registration: { permission: boolean; operation: Promise<void> } | null = null;
+let generation = 0;
+let closingSession: number | null = null;
+let registration: { session: number; permission: boolean; operation: Promise<void> } | null = null;
 function enqueue(operation: () => Promise<void>) {
   const result = operations.then(operation);
   operations = result.catch(() => {});
   return result;
 }
+function sessionGuard(session: number) {
+  const revision = generation;
+  return () => {
+    if (session === closingSession || session !== apiSessionKey() || revision !== generation)
+      throw new Error("Reminder registration stopped because your account changed.");
+  };
+}
 export function registerProgramNotifications(requestPermission = false) {
+  const session = apiSessionKey();
+  const ensureCurrent = sessionGuard(session);
+  if (session === closingSession)
+    return Promise.reject(new Error("Reminder registration stopped because your account changed."));
   // Fetching the native token can itself emit a token-change event. Reuse the
   // current registration instead of enqueueing another registration forever.
-  if (registration && (registration.permission || !requestPermission))
+  if (registration?.session === session && (registration.permission || !requestPermission))
     return registration.operation;
-  const operation = enqueue(() => register(requestPermission)).finally(() => {
-    if (registration?.operation === operation) registration = null;
-  });
-  registration = { permission: requestPermission, operation };
+  // Human consent must not occupy the queue needed to unregister during sign-out.
+  const operation = permissionForRegistration(requestPermission, ensureCurrent)
+    .then((granted) => {
+      ensureCurrent();
+      return enqueue(() => register(granted, requestPermission, ensureCurrent));
+    })
+    .finally(() => {
+      if (registration?.operation === operation) registration = null;
+    });
+  registration = { session, permission: requestPermission, operation };
   return operation;
 }
-async function register(requestPermission: boolean) {
+async function permissionForRegistration(
+  requestPermission: boolean,
+  ensureCurrent: () => void,
+  kind: "notifications" | "testPush" = "notifications",
+) {
   if (Platform.OS === "web") throw new Error("Daily reminders are available in the mobile app.");
   await configureWorkoutNotifications();
   if (Platform.OS === "android") {
@@ -41,10 +66,41 @@ async function register(requestPermission: boolean) {
       importance: Notifications.AndroidImportance.DEFAULT,
     });
   }
-  let permission = await Notifications.getPermissionsAsync();
-  if (!permission.granted && requestPermission)
-    permission = await Notifications.requestPermissionsAsync();
-  if (!permission.granted) {
+  ensureCurrent();
+  const permission = await Notifications.getPermissionsAsync();
+  ensureCurrent();
+  const granted =
+    permission.granted ||
+    (requestPermission &&
+      (await requestPermissionWithExplanation(kind, permission, () => {
+        ensureCurrent();
+        return Notifications.requestPermissionsAsync();
+      })));
+  ensureCurrent();
+  return granted;
+}
+function getInstallationToken() {
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
+  if (!projectId)
+    throw new Error("Push notifications need a FitSync build configured with an Expo project ID.");
+  return Notifications.getExpoPushTokenAsync({ projectId });
+}
+
+export async function getDevelopmentPushToken() {
+  if (!__DEV__ || Platform.OS !== "android")
+    throw new Error("Open the FitSync Android development build to get a test push token.");
+  const ensureCurrent = sessionGuard(apiSessionKey());
+  ensureCurrent();
+  if (!(await permissionForRegistration(true, ensureCurrent, "testPush")))
+    throw new Error("Allow FitSync notifications in Android settings, then try again.");
+  const { data: token } = await getInstallationToken();
+  ensureCurrent();
+  return token;
+}
+
+async function register(granted: boolean, requestPermission: boolean, ensureCurrent: () => void) {
+  ensureCurrent();
+  if (!granted) {
     await unregister();
     if (requestPermission)
       throw new Error(
@@ -52,18 +108,22 @@ async function register(requestPermission: boolean) {
       );
     return;
   }
-  const projectId = Constants.expoConfig?.extra?.eas?.projectId ?? Constants.easConfig?.projectId;
-  if (!projectId)
-    throw new Error(
-      "Reminders need a configured mobile build. You can follow without reminders for now.",
-    );
-  const { data: token } = await Notifications.getExpoPushTokenAsync({ projectId });
+  const { data: token } = await getInstallationToken();
+  ensureCurrent();
   const previous = await AsyncStorage.getItem(DEVICE_KEY);
+  ensureCurrent();
   if (previous && previous !== token) await programFollowApi.unregisterDevice(previous);
+  ensureCurrent();
   await AsyncStorage.setItem(DEVICE_KEY, token);
+  ensureCurrent();
   await programFollowApi.registerDevice(token);
+  ensureCurrent();
 }
 export function unregisterProgramNotifications() {
+  // Fence pending explanations and token callbacks before waiting for network
+  // cleanup. A later login receives a new API session and can register normally.
+  closingSession = apiSessionKey();
+  generation++;
   return enqueue(unregister);
 }
 async function unregister() {

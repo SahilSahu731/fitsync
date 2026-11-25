@@ -1,3 +1,4 @@
+import { requestPermissionWithExplanation } from "@/src/services/permission-prompts";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as Notifications from "expo-notifications";
 import { Platform } from "react-native";
@@ -52,7 +53,9 @@ async function channel() {
 export async function requestTrialReminderPermission() {
   await channel();
   const permission = await Notifications.getPermissionsAsync();
-  return permission.granted || (await Notifications.requestPermissionsAsync()).granted;
+  return requestPermissionWithExplanation("trial", permission, () =>
+    Notifications.requestPermissionsAsync(),
+  );
 }
 export function setTrialReminderOwner(id: string | null) {
   owner = id;

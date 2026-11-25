@@ -169,7 +169,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
       foreground.remove();
       clearInterval(interval);
     };
-  }, [ownerId, workout.dataRevision, companion.state]);
+  }, [ownerId, workout.dataRevision]);
   useEffect(() => {
     if (!ownerId || workout.loading) return;
     let active = true;

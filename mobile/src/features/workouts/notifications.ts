@@ -1,6 +1,7 @@
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
+import { requestPermissionWithExplanation } from "@/src/services/permission-prompts";
 
 // Android channel sound settings are immutable after creation.
 const CHANNEL_ID = "workout-rest-v2";
@@ -46,10 +47,9 @@ export async function requestWorkoutNotificationPermission() {
 
   const current = await Notifications.getPermissionsAsync();
 
-  if (current.granted) return true;
-
-  const result = await Notifications.requestPermissionsAsync();
-  return result.granted;
+  return requestPermissionWithExplanation("rest", current, () =>
+    Notifications.requestPermissionsAsync(),
+  );
 }
 
 export function scheduleRestNotification(seconds: number) {

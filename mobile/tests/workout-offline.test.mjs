@@ -222,7 +222,19 @@ test("corrupt persisted data is preserved and cannot be silently overwritten", a
 });
 
 test("editing one row preserves unchanged row objects so memoized controls can skip rendering", async () => {
-  const { api, storage } = setup();
+  const storage = new Map();
+  let reads = 0;
+  let nextRead;
+  const { api } = setup(storage, {
+    getItem: async (key) => {
+      reads++;
+      const value = storage.get(key) ?? null;
+      const gate = nextRead;
+      nextRead = null;
+      await gate;
+      return value;
+    },
+  });
   const initial = session();
   initial.workout_session_exercises.push({
     id: "other",
@@ -230,7 +242,9 @@ test("editing one row preserves unchanged row objects so memoized controls can s
   });
   await api.cacheWorkout("alice", initial);
   const before = await api.readWorkoutDraft("alice");
+  const readsBeforeEdit = reads;
   const after = await api.queueSet("alice", "set", { reps: 12 });
+  assert.equal(reads, readsBeforeEdit, "a durable cached draft needs no native reread per edit");
   assert.equal(
     after.session.workout_session_exercises[1],
     before.session.workout_session_exercises[1],
@@ -239,8 +253,24 @@ test("editing one row preserves unchanged row objects so memoized controls can s
     after.session.workout_session_exercises[0],
     before.session.workout_session_exercises[0],
   );
+  let release;
+  nextRead = new Promise((resolve) => {
+    release = resolve;
+  });
+  const staleRead = api.readWorkoutDraft("alice");
+  await api.queueSet("alice", "set", { reps: 13 });
+  release();
+  assert.equal(
+    (await staleRead).session.workout_session_exercises[0].workout_logged_sets[0].reps,
+    13,
+    "a late disk read must not replace the newer committed draft",
+  );
+  const latest = await api.queueSet("alice", "set", { weightKg: 24 });
+  assert.equal(latest.session.workout_session_exercises[0].workout_logged_sets[0].reps, 13);
   storage.set("fitsync.workout.draft.v1.alice", "broken");
   await assert.rejects(api.readWorkoutDraft("alice"));
+  await assert.rejects(api.queueSet("alice", "set", { reps: 20 }));
+  assert.equal(storage.get("fitsync.workout.draft.v1.alice"), "broken");
 });
 
 test("finishing advances the journal revision, survives a stale refresh and preserves the original finish on retry", async () => {

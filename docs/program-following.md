@@ -42,9 +42,23 @@ Program insights use completed program workouts only. Weekly charts follow sched
 
    For a production image, run `npm run programs:reminders:prod` after `npm run build`; the compiled CLI does not require `tsx`. The root `render.yaml` schedules that command every five minutes with the API credentials. See [deployment.md](deployment.md) to provision it. Do not expose this worker as a public HTTP endpoint. A five-minute cron gives approximate, not exact-to-the-minute delivery. Each invocation processes up to 500 jobs with at most six concurrent sends. Monitor pending job age and increase worker frequency/capacity as usage grows.
 
-4. Configure Android push credentials. This repository currently has no `google-services.json` or `expo.android.googleServicesFile`. Download the Firebase Android configuration for package `com.sahil.fitsync`, place it at `mobile/google-services.json`, and set `expo.android.googleServicesFile` to `./google-services.json`. Upload the matching FCM V1 service account key through `npx eas-cli@latest credentials` from `mobile/`. Keep the private service account key out of Git. Follow [Expo's FCM credentials guide](https://docs.expo.dev/push-notifications/fcm-credentials/).
-5. Build and install the native Android app using `npm run build:android:dev` from `mobile/`, or the intended EAS release profile. The existing notifications plugin already bundles `assets/sound/rest_complete.wav`. Program pushes use `program-reminders-v1`; rest timers retain `workout-rest-v2`. A JS refresh cannot add Firebase configuration to an already installed native build.
+4. Configure Android push credentials for `com.sahil.fitsync`. The app reads the Firebase client file from the EAS `GOOGLE_SERVICES_JSON` file variable or `mobile/google-services.json` locally. Upload the matching FCM V1 service account key through `npx eas-cli@latest credentials` from `mobile/`. Keep the service account key private. [Expo FCM credentials guide](https://docs.expo.dev/push-notifications/fcm-credentials/)
+5. Build and install the native Android app using `npm run build:android:dev` from `mobile/`, or the intended EAS release profile. Rebuild after changing native Firebase configuration. Program pushes use `program-reminders-v2` and the local rest timer uses `workout-rest-v2`.
 6. If enhanced push security is enabled on the EAS project, set `EXPO_ACCESS_TOKEN` only in the server/worker environment.
+
+## Send a test push to your own phone
+
+1. Start Metro with `npm --prefix mobile start -- --dev-client` from the repository root and open the project in the installed FitSync Android development build. If you need the development APK, run `npm --prefix mobile run build:android:dev`, then install the APK from the build page. Remote push on Android requires a native FitSync build. [Expo push setup](https://docs.expo.dev/push-notifications/push-notifications-setup/)
+2. Sign in and open **Settings → Notifications → Show test push token**. Allow Android notifications if prompted. Long-press the token and tap **Select all → Copy**. This test uses this phone's token and works without a Pro program.
+3. In the local, Git-ignored `server/.env`, set `FITSYNC_TEST_PUSH_TOKEN` to the complete value, including brackets. Use the existing server-only `EXPO_ACCESS_TOKEN` if enhanced push security is enabled for this project.
+4. Put the app in the background. If your terminal is already in `fitsync/server`, run `npm run push:test`. From the repository root (`fitsync`), use `npm --prefix server run push:test`. Run one of these commands once, then check the notification shade for **FitSync test**.
+5. The sender prints Expo's acceptance ticket. To check its receipt about 15 minutes later, run `npm run push:test -- --receipt TICKET_ID` from `fitsync/server`. This only looks up the existing notification. The phone's notification shade confirms whether Android displayed it. [Expo tickets and receipts](https://docs.expo.dev/push-notifications/sending-notifications/)
+
+To send through a browser instead, enter the same installation token, a test title and body, and Android channel ID `general-v1` in the Expo tool. Click **Send a notification** once. [Expo push notification tool](https://expo.dev/notifications)
+
+To test the scheduled program path as well, open **Settings → Notifications → Workout reminders** with an active Pro program. Enable **A friendly daily nudge**, choose a time a few minutes ahead and tap **Save reminders**. Use a day when you have yet to complete a program workout. The deployed worker checks every five minutes.
+
+For a quick local check, start a workout, tap **Timer → 30s** and allow notifications. Put the app in the background and look for **Rest complete 💪**. Android schedules this alert directly on the phone.
 
 ## Delivery and operational checks
 

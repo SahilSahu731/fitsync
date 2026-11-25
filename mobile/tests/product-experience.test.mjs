@@ -1,13 +1,20 @@
 import { workoutControlsSnapshot } from "../src/features/companion/native-model.ts";
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import vm from "node:vm";
+import ts from "typescript";
 import { inputWeightKg, toKg, fromKg, weightText, weightIncrementKg } from "../src/lib/weight.ts";
 import {
   workoutRecords,
   recordValue,
   workoutShareText,
 } from "../src/features/workouts/achievements.ts";
-import { reviewHistory, shouldRequestReview } from "../src/features/experience/review-model.ts";
+import {
+  canInviteToReview,
+  reachedReviewMilestone,
+  reviewPreference,
+} from "../src/features/experience/review-model.ts";
 import { safeProperties, safeScreen, scrubCrash } from "../src/services/telemetry-model.ts";
 
 const exercise = (kg, patch = {}) => ({
@@ -79,19 +86,88 @@ test("sharing omits workout names, measurements and private notes", () => {
   assert.match(message, /60 min · 1 set · 1 personal best/);
   assert.doesNotMatch(message, /private|65|Bench/);
 });
-test("review prompts require three unique completions, seven days and a 120-day cooldown", () => {
-  const day = 86400_000,
-    now = 200 * day;
-  const history = reviewHistory(
-    JSON.stringify({ firstAt: now - 7 * day, workouts: ["a", "a", "b", "c"], lastAttemptAt: null }),
-    now,
+test("a review invitation needs three distinct saved workouts and one at least a week old", () => {
+  const current = workout("new", "2026-11-25", []);
+  const now = Date.parse(current.finished_at);
+  const first = workout("one", "2026-11-18", []);
+  const second = workout("two", "2026-11-22", []);
+  assert.equal(reachedReviewMilestone(current, [current, first, second], now), true);
+  assert.equal(reachedReviewMilestone(current, [first, first, current], now), false);
+  assert.equal(
+    reachedReviewMilestone(current, [first, { ...second, status: "active" }], now),
+    false,
   );
-  assert.equal(history.workouts.length, 3);
-  assert.equal(shouldRequestReview(history, now), true);
-  assert.equal(shouldRequestReview({ ...history, firstAt: now - 7 * day + 1 }, now), false);
-  assert.equal(shouldRequestReview({ ...history, lastAttemptAt: now - 120 * day + 1 }, now), false);
-  assert.equal(shouldRequestReview({ ...history, lastAttemptAt: now - 120 * day }, now), true);
-  assert.equal(shouldRequestReview({ ...history, workouts: ["a", "b"] }, now), false);
+  assert.equal(
+    reachedReviewMilestone(current, [second, workout("three", "2026-11-19", [])], now),
+    false,
+  );
+});
+test("legacy review history keeps its 120-day cooldown and drops the stored workout IDs", () => {
+  const day = 86_400_000;
+  const old = reviewPreference(JSON.stringify({ workouts: ["workout-id"], lastAttemptAt: day }));
+  assert.deepEqual(old, { lastAttemptAt: day, openedListing: false });
+  assert.equal(canInviteToReview(old, 121 * day - 1), false);
+  assert.equal(canInviteToReview(old, 121 * day), true);
+  assert.equal(canInviteToReview({ ...old, openedListing: true }, 122 * day), false);
+});
+test("Play links fall back to the browser, allow retry, and silence future invitations after handoff", async () => {
+  const code = ts.transpileModule(
+    readFileSync(new URL("../src/features/experience/review-prompt.ts", import.meta.url), "utf8"),
+    {
+      compilerOptions: {
+        module: ts.ModuleKind.CommonJS,
+        target: ts.ScriptTarget.ES2022,
+        esModuleInterop: true,
+      },
+    },
+  ).outputText;
+  const app = JSON.parse(readFileSync(new URL("../app.json", import.meta.url), "utf8"));
+  const urls = [],
+    events = [];
+  let saved = JSON.stringify({ workouts: ["old-workout"], lastAttemptAt: null });
+  let browserAvailable = false;
+  const native = {
+    AppState: { currentState: "background" },
+    Platform: { OS: "android" },
+    Linking: {
+      openURL: async (url) => {
+        urls.push(url);
+        if (url.startsWith("market:") || !browserAvailable) throw new Error("No handler");
+      },
+    },
+  };
+  const dependencies = {
+    "react-native": native,
+    "@react-native-async-storage/async-storage": {
+      getItem: async () => saved,
+      setItem: async (_key, value) => {
+        saved = value;
+      },
+    },
+    "@/src/services/telemetry": { trackEvent: (event) => events.push(event) },
+    "../../../app.json": app,
+    "./review-model": { canInviteToReview, reviewPreference },
+  };
+  const service = {};
+  vm.runInNewContext(code, { exports: service, require: (name) => dependencies[name] });
+  await service.prepareReviewPreference();
+  assert.equal(saved.includes("old-workout"), false);
+  assert.equal(service.claimReviewInvitation(), false);
+  native.AppState.currentState = "active";
+  assert.equal(service.claimReviewInvitation(), true);
+  assert.equal(service.claimReviewInvitation(), false);
+  assert.deepEqual(urls, []);
+  await assert.rejects(service.openPlayReviews("workout_summary"), /Google Play/);
+  assert.equal(JSON.parse(saved).openedListing, false);
+  assert.deepEqual(events, []);
+  browserAvailable = true;
+  await Promise.all([service.openPlayReviews("settings"), service.openPlayReviews("settings")]);
+  assert.deepEqual(urls.slice(2), [
+    "market://details?id=com.sahil.fitsync&showAllReviews=true",
+    "https://play.google.com/store/apps/details?id=com.sahil.fitsync&showAllReviews=true",
+  ]);
+  assert.deepEqual(events, ["review_listing_opened"]);
+  assert.equal(JSON.parse(saved).openedListing, true);
 });
 test("telemetry excludes identifiers, dynamic routes and health fields from outgoing metadata", () => {
   assert.deepEqual(

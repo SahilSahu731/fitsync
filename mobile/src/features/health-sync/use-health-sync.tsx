@@ -1,6 +1,7 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { AppState } from "react-native";
 import { useSession } from "@/src/context/session";
+import { explainPermission } from "@/src/services/permission-prompts";
 import { getHealthAdapter } from "./native";
 import {
   disconnectHealthSync,
@@ -37,6 +38,7 @@ export function useHealthSync() {
   const busy = operation.ownerId === ownerId && operation.busy;
   const error = operation.ownerId === ownerId ? operation.error : "";
   const active = useRef(true);
+  const requestLock = useRef(false);
   useEffect(() => {
     active.current = true;
     return () => {
@@ -80,10 +82,19 @@ export function useHealthSync() {
     };
   }, [ownerId]);
   const importNow = async (requestAccess = false, metrics?: HealthMetric[]) => {
-    if (!ownerId || busy) return;
+    if (!ownerId || busy || requestLock.current) return;
+    requestLock.current = true;
     const current = () => active.current && currentOwner.current === ownerId;
     setOperation({ ownerId, busy: true, error: "" });
     try {
+      if (
+        requestAccess &&
+        !(await explainPermission(
+          metrics?.length === 1 && metrics[0] === "steps" ? "steps" : "health",
+        ))
+      )
+        return;
+      if (!current()) return;
       const result = await importHealthForUser(ownerId, current, requestAccess, metrics);
       const settings = await readHealthSyncSettings(ownerId);
       if (current())
@@ -96,11 +107,13 @@ export function useHealthSync() {
           error: cause instanceof Error ? cause.message : "Health import failed. Please retry.",
         });
     } finally {
+      requestLock.current = false;
       if (current()) setOperation((previous) => ({ ...previous, busy: false }));
     }
   };
   const disconnect = async () => {
-    if (!ownerId) return;
+    if (!ownerId || requestLock.current) return;
+    requestLock.current = true;
     setOperation({ ownerId, busy: true, error: "" });
     try {
       await disconnectHealthSync(ownerId);
@@ -114,6 +127,7 @@ export function useHealthSync() {
           error: cause instanceof Error ? cause.message : "Could not stop health import.",
         });
     } finally {
+      requestLock.current = false;
       if (currentOwner.current === ownerId)
         setOperation((previous) => ({ ...previous, busy: false }));
     }

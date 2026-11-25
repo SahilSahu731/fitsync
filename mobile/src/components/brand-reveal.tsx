@@ -27,9 +27,8 @@ const GLOW = 340;
 const K = END / START;
 const MOVE = Easing.bezier(0.65, 0, 0.15, 1); // soft start AND long soft landing
 const SETTLE = Easing.bezier(0.16, 1, 0.3, 1); // expo-out for the letters
-const MOVE_MS = 900;
-const STAGGER_MS = 45;
-const HOLD_MS = 650;
+const MOVE_MS = 260;
+const STAGGER_MS = 12;
 
 const WORD = ["F", "I", "T", "S", "Y", "N", "C"];
 
@@ -83,29 +82,24 @@ export function BrandReveal({
       ) => Animated.timing(v, { toValue: to, duration, easing, delay, useNativeDriver: true });
 
       animation = Animated.sequence([
-        Animated.delay(100),
         // 1) anticipation: glow blooms, logo swells a touch
         Animated.parallel([
-          t(glow, 1, 600, Easing.out(Easing.cubic)),
-          t(pulse, 1, 340, Easing.inOut(Easing.sin)),
+          t(glow, 1, 100, Easing.out(Easing.cubic)),
+          t(pulse, 1, 100, Easing.inOut(Easing.sin)),
         ]),
         // 2) one continuous gesture: logo settles left, letters follow in from the right
         Animated.parallel([
           t(lockup, 1, MOVE_MS, MOVE),
           t(pulse, 0, MOVE_MS, MOVE),
-          Animated.sequence([
-            Animated.delay(240),
-            Animated.stagger(
-              STAGGER_MS,
-              letters.map((v) => t(v, 1, 760, SETTLE)),
-            ),
-          ]),
+          Animated.stagger(
+            STAGGER_MS,
+            letters.map((v) => t(v, 1, 180, SETTLE)),
+          ),
         ]),
-        Animated.delay(HOLD_MS),
         // 3) exit: gentle push-through and dissolve into the app
         Animated.parallel([
-          t(overlay, 0, 380, Easing.inOut(Easing.quad)),
-          t(exit, 1, 380, Easing.inOut(Easing.quad)),
+          t(overlay, 0, 140, Easing.inOut(Easing.quad)),
+          t(exit, 1, 140, Easing.inOut(Easing.quad)),
         ]),
       ]);
       animation.start(({ finished }) => {
@@ -118,7 +112,20 @@ export function BrandReveal({
       cancelled = true;
       animation?.stop();
     };
-  }, [laidOut, imageReady, textW, onReady, onDone, prefersReduced, overlay, exit, glow, pulse, lockup, letters]);
+  }, [
+    laidOut,
+    imageReady,
+    textW,
+    onReady,
+    onDone,
+    prefersReduced,
+    overlay,
+    exit,
+    glow,
+    pulse,
+    lockup,
+    letters,
+  ]);
 
   const iconX = -(GAP + textW) / 2; // logo center, final
   const textX = (END + GAP) / 2; // wordmark center, final
@@ -200,10 +207,20 @@ export function BrandReveal({
               key={i}
               renderToHardwareTextureAndroid
               style={{
-                opacity: letters[i].interpolate({ inputRange: [0, 0.35, 1], outputRange: [0, 1, 1] }),
+                opacity: letters[i].interpolate({
+                  inputRange: [0, 0.35, 1],
+                  outputRange: [0, 1, 1],
+                }),
                 transform: [
-                  { translateX: letters[i].interpolate({ inputRange: [0, 1], outputRange: [44, 0] }) },
-                  { translateY: letters[i].interpolate({ inputRange: [0, 1], outputRange: [6, 0] }) },
+                  {
+                    translateX: letters[i].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [44, 0],
+                    }),
+                  },
+                  {
+                    translateY: letters[i].interpolate({ inputRange: [0, 1], outputRange: [6, 0] }),
+                  },
                   { scale: letters[i].interpolate({ inputRange: [0, 1], outputRange: [0.9, 1] }) },
                 ],
               }}
