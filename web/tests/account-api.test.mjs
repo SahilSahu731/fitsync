@@ -64,3 +64,17 @@ test("signed-out editors cannot send requests", async () => {
   );
   assert.equal(requests, 0);
 });
+
+test("an unreadable success response never reaches the catalog as a list of programs", async () => {
+  const { api } = loadTypeScript(
+    "../src/lib/api.ts",
+    {},
+    {
+      fetch: async () => new Response("<html>Service restarting</html>"),
+    },
+  );
+  await assert.rejects(
+    api("/catalog/admin/programs"),
+    (error) => error.status === 502 && /read the server response/.test(error.message),
+  );
+});

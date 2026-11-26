@@ -24,10 +24,10 @@ const views = [
     label: "Train",
     title: "A place for every rep.",
     description:
-      "Keep your attention on the next set. Log weight, reps and effort, take a timed rest, and keep the whole session in your history.",
+      "See your previous weight and reps when you open a routine on Android. Record the set you just finished, then start the rest timer.",
     icon: Dumbbell,
     points: [
-      "Custom routines and published programs",
+      "Reusable routines and previous-session hints",
       "Weight, reps, duration and distance",
       "Rest timers, notes and workout history",
     ],
@@ -37,11 +37,11 @@ const views = [
     label: "Plan",
     title: "Your week. With direction.",
     description:
-      "Start with a four-week plan built around your goal, experience, equipment and time. Or follow a published program on a schedule you choose.",
+      "With Pro, follow a published program or build a four-week plan around your goal and equipment. If a session no longer fits your day, review a shorter version.",
     icon: Activity,
     points: [
-      "A free starter plan built around you",
-      "Program calendar and reminders",
+      "Four-week personal training plans",
+      "Scheduled sessions and optional reminders",
       "Recovery days and missed sessions",
     ],
   },
@@ -50,7 +50,7 @@ const views = [
     label: "Track",
     title: "The bigger picture of you.",
     description:
-      "Your training is part of the story. Bring activity, nutrition, body measurements and recovery together with personal targets and daily check-ins.",
+      "Choose from 31 metrics on Android. Set a water or protein target, record a measurement and check in on how you slept.",
     icon: Heart,
     points: [
       "Health metrics across four areas",
@@ -63,7 +63,7 @@ const views = [
     label: "Progress",
     title: "See the work add up.",
     description:
-      "Look back at sessions, training volume and estimated strength. Follow your consistency over time, and take your raw data with you whenever you need it.",
+      "Compare training volume, estimated strength and weekly consistency. Free shows your latest 90 days of standard graphs. Pro lets you look further back.",
     icon: Flame,
     points: [
       "Workout trends and estimated one-rep max",
@@ -98,7 +98,7 @@ export function ProductDemo({ compact = false }: { compact?: boolean }) {
             <span className="text-white/50">All in one place.</span>
           </h2>
           <p className="mx-auto mt-6 max-w-lg text-base leading-8 text-white/55">
-            From the first rep to the days between. Make a little more sense of your fitness.
+            Try logging a set below, then explore a sample training week, health check-in or progress chart.
           </p>
         </Reveal>
       )}
@@ -243,9 +243,9 @@ export function ProductDemo({ compact = false }: { compact?: boolean }) {
                 )}
                 {view === 1 && (
                   <>
-                    <p className="text-[10px] text-white/55">YOUR STARTER PLAN</p>
+                    <p className="text-[10px] text-white/55">SAMPLE PRO PLAN</p>
                     <h4 className="mt-2 text-2xl font-semibold tracking-tight">Build your base.</h4>
-                    <p className="mt-2 text-xs text-white/55">4 weeks · gym · your pace</p>
+                    <p className="mt-2 text-xs text-white/55">4 weeks · gym · 3 days a week</p>
                     <div className="mt-7 flex justify-between">
                       {days.map((day, index) => (
                         <span

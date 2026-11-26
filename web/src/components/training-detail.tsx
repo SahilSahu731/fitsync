@@ -6,7 +6,7 @@ import { type Program, type Routine, trainingLabels } from "@/lib/training";
 import { useSession } from "./session";
 
 export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id: string }) {
-  const { account, loading: sessionLoading } = useSession();
+  const { account, admin, loading: sessionLoading } = useSession();
   const [record, setRecord] = useState<Program | Routine | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
@@ -197,8 +197,10 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
           <h2>{program ? "Save the whole program" : "Save this routine"}</h2>
           <p>
             {program
-              ? "Adds the program and a personal copy of each distinct routine to your mobile Train library."
-              : "Adds a reusable session to your mobile Train library."}
+              ? admin
+                ? "Your administrator role includes access to the whole program and its routines."
+                : "With Pro, save the whole program and a personal copy of its routines to your Android Train library."
+              : "Save this routine for free and use it again from Train on Android."}
           </p>
           <p>
             Saving does not start a workout. Open Train in the mobile app, choose a routine, and
@@ -243,6 +245,11 @@ export function TrainingDetail({ kind, id }: { kind: "programs" | "routines"; id
             >
               {saveError}
             </p>
+          )}
+          {admin && (
+            <Link className="mt-4 inline-block py-2 font-medium underline" href={`/admin/${kind}`}>
+              {program ? "Manage programs" : "Manage routines"}
+            </Link>
           )}
           <small>
             By {record.author || "FitSync"}. Saving creates a personal copy. Later catalog edits do

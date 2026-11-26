@@ -22,8 +22,8 @@ export default function Page() {
             <span className="text-white/50">Make it yours.</span>
           </h1>
           <p className="mt-7 max-w-xl text-base leading-8 text-white/55">
-            Find the exercise that fits your body, your equipment and your experience. Learn the
-            technique before your first rep.
+            Sign in to find exercises by muscle, equipment and experience. Read the cues here,
+            then log the exercise during your next workout on Android.
           </p>
         </Reveal>
         <div className="mt-14 mb-16 grid gap-8 sm:grid-cols-3">
@@ -31,7 +31,7 @@ export default function Page() {
             {
               icon: Activity,
               title: "Learn the technique",
-              text: "Clear instructions and visual demonstrations.",
+              text: "Movement cues, plus demonstrations where available.",
             },
             {
               icon: SlidersHorizontal,

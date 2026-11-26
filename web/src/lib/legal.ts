@@ -5,4 +5,4 @@ export const supportEmail =
   configuredEmail && /^[^\s@<>]+@[^\s@<>]+\.[^\s@<>]+$/.test(configuredEmail)
     ? configuredEmail
     : "sahillsahudev@gmail.com";
-export const legalUpdated = "November 20, 2026";
+export const legalUpdated = "November 26, 2026";

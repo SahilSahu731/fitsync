@@ -1,6 +1,7 @@
--- Read-only verification of every numbered FitSync migration through 021.
+-- Read-only verification of every numbered FitSync migration through 022.
 -- A successful deployment returns no rows. Run after applying missing migrations.
 WITH expected_tables(name) AS (VALUES
+  ('site_mobile_download'),
   ('app_users'),
   ('fitness_profiles'),
   ('user_settings'),
@@ -51,6 +52,7 @@ WITH expected_tables(name) AS (VALUES
   ('companion_photos'),
   ('companion_shares')),
 expected_private_tables(name) AS (VALUES
+  ('site_mobile_download'),
   ('app_users'),
   ('fitness_profiles'),
   ('user_settings'),
@@ -164,6 +166,8 @@ expected_signatures(signature) AS (VALUES
   ('bump_fitsync_template_revision()'),
   ('edit_fitsync_workout_template(uuid,uuid,integer,jsonb)')),
 expected_columns(table_name,column_name) AS (VALUES
+  ('site_mobile_download','url'),
+  ('site_mobile_download','revision'),
   ('fitness_profiles','body_type'),
   ('app_users','role'),
   ('workout_sessions','program_slot_id'),
@@ -183,41 +187,6 @@ expected_triggers(table_name,name) AS (VALUES
   ('workout_sessions','coaching_completed_log'),
   ('training_routine_exercises','guard_private_catalog_exercise'),
   ('workout_templates','fitsync_template_revision')),
-expected_slugs(slug) AS (VALUES
-  ('push-day-preparation'),
-  ('squat-day-preparation'),
-  ('hinge-day-preparation'),
-  ('standing-desk-reset'),
-  ('chair-movement-break'),
-  ('ankle-and-calf-flow'),
-  ('upper-back-movement'),
-  ('easy-recovery-walk'),
-  ('running-preparation'),
-  ('evening-downshift'),
-  ('choose-starting-weights'),
-  ('double-progression-guide'),
-  ('warmup-with-purpose'),
-  ('rest-time-decisions'),
-  ('two-day-strength-week'),
-  ('training-log-that-helps'),
-  ('soreness-and-recovery-basics'),
-  ('mobility-without-forcing'),
-  ('plate-loading-guide'),
-  ('cardio-talk-test'),
-  ('one-rep-max'),
-  ('plate-calculator'),
-  ('workout-volume'),
-  ('warmup-sets'),
-  ('percentage-load'),
-  ('rep-target'),
-  ('weight-converter'),
-  ('pace-calculator'),
-  ('session-time'),
-  ('progression'),
-  ('rest-planner'),
-  ('distance-converter'),
-  ('training-density'),
-  ('rep-tempo')),
 problems AS (
  SELECT 'missing_table' AS problem, name AS object FROM expected_tables WHERE to_regclass('public.'||name) IS NULL
  UNION ALL SELECT 'row_security_disabled', e.name FROM expected_tables e JOIN pg_class c ON c.oid=to_regclass('public.'||e.name) WHERE NOT c.relrowsecurity
@@ -227,7 +196,6 @@ problems AS (
  UNION ALL SELECT 'unexpected_function_access',p.proname FROM expected_functions e JOIN pg_proc p ON p.proname=e.name JOIN pg_namespace n ON n.oid=p.pronamespace WHERE n.nspname='public' AND (has_function_privilege('anon',p.oid,'EXECUTE') OR has_function_privilege('authenticated',p.oid,'EXECUTE'))
  UNION ALL SELECT 'missing_column',e.table_name||'.'||e.column_name FROM expected_columns e WHERE NOT EXISTS(SELECT 1 FROM information_schema.columns c WHERE c.table_schema='public' AND c.table_name=e.table_name AND c.column_name=e.column_name)
  UNION ALL SELECT 'missing_trigger',e.table_name||'.'||e.name FROM expected_triggers e WHERE NOT EXISTS(SELECT 1 FROM pg_trigger t WHERE t.tgrelid=to_regclass('public.'||e.table_name) AND t.tgname=e.name AND t.tgenabled IN ('O','A'))
- UNION ALL SELECT 'missing_curated_resource',e.slug FROM expected_slugs e WHERE NOT EXISTS(SELECT 1 FROM public.explore_resources r WHERE r.slug=e.slug)
 )
 SELECT problem,object FROM problems
 UNION ALL SELECT 'missing_function_signature',signature FROM expected_signatures WHERE to_regprocedure('public.'||signature) IS NULL

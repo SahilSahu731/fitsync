@@ -3,6 +3,7 @@
 import Image from "next/image";
 import { useEffect, useState } from "react";
 import { useAccountApi } from "./session";
+import { ConfirmDialog } from "./confirm-dialog";
 
 type Step = {
   title: string;
@@ -101,6 +102,7 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
   const [filter, setFilter] = useState("all");
   const [retry, setRetry] = useState(0);
   const [preview, setPreview] = useState(false);
+  const [deleting, setDeleting] = useState<RecordData | null>(null);
   const endpoint = `/explore/admin/${kind}`;
   useEffect(() => {
     let active = true;
@@ -157,6 +159,25 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
     setError("");
     setNotice("");
     setPreview(false);
+  }
+  async function deleteContent() {
+    if (!deleting || busy) return;
+    setBusy(true);
+    setError("");
+    setNotice("");
+    try {
+      await api(`${endpoint}/${deleting.id}`, {
+        method: "DELETE",
+        json: { slug: deleting.slug, updated_at: deleting.updated_at },
+      });
+      setRows((current) => current.filter((item) => item.id !== deleting.id));
+      setNotice(`Deleted “${deleting.title}”.`);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : "Could not delete this content.");
+    } finally {
+      setDeleting(null);
+      setBusy(false);
+    }
   }
   async function save(published: boolean) {
     if (!value) return;
@@ -322,6 +343,14 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
                         onClick={() => open(row)}
                       >
                         Edit content
+                      </button>
+                      <button
+                        type="button"
+                        aria-label={`Delete ${row.title}`}
+                        onClick={() => setDeleting(row)}
+                        className="ml-3 min-h-10 rounded-full px-4 text-sm font-medium text-muted hover:bg-surface hover:text-ink"
+                      >
+                        Delete
                       </button>
                     </div>
                   </article>
@@ -752,6 +781,16 @@ export function ExploreAdmin({ kind }: { kind: "mobility" | "learn" | "tools" })
             </form>
           )}
         </>
+      )}
+      {deleting && (
+        <ConfirmDialog
+          title={`Delete “${deleting.title}”?`}
+          description="This permanently removes the item from the Explore library."
+          confirm="Delete content"
+          busy={busy}
+          onCancel={() => setDeleting(null)}
+          onConfirm={() => void deleteContent()}
+        />
       )}
     </>
   );

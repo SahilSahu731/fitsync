@@ -90,8 +90,8 @@ export function TrainingLibrary() {
             <span className="text-white/50">A lot of possibility.</span>
           </h1>
           <p className="mt-7 max-w-lg text-base leading-8 text-white/55">
-            Find a program for your week or a routine for your next session. Preview the work, make
-            it yours, and take it to the mobile app.
+            See the exercises, set targets and equipment before you train. Save an individual routine
+            for free, or follow a full program with Pro on Android.
           </p>
           <a
             href="#browse-training"
@@ -297,8 +297,8 @@ export function TrainingLibrary() {
         <div>
           <h2 className="text-2xl font-medium tracking-tight">Make room for your real week.</h2>
           <p className="mt-3 max-w-xl text-sm leading-7 text-black/55">
-            Save a routine or program to your account. Open it in FitSync mobile when you’re ready
-            to train.
+            Open your saved routine in the Android app under Train. Log your weight and reps as
+            you go, and they’ll be there the next time you do the exercise.
           </p>
         </div>
         <Link

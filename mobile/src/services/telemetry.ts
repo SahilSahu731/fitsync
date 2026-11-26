@@ -113,7 +113,7 @@ export async function updateTelemetry(patch: Partial<TelemetryPreferences>) {
     initializeCrashReporting();
     analyticsClient();
   });
-  writes = operation.catch(() => {});
+  writes = operation.catch(() => { });
   await operation;
   return { ...preferences };
 }
@@ -135,7 +135,7 @@ export function recordError(error: unknown, context = "operation") {
 }
 export const flushTelemetry = () => {
   try {
-    void client?.flush().catch(() => {});
-  } catch {}
+    void client?.flush().catch(() => { });
+  } catch { }
 };
 export const withCrashReporting = Sentry.wrap;

@@ -41,8 +41,9 @@ function fixture({ token, result = Response.json({ ok: true }) } = {}) {
   };
 }
 
-test("the proxy exposes only published catalog and valid shared reads without authentication", async () => {
+test("the proxy exposes published catalog, download link and valid shared reads without authentication", async () => {
   for (const path of [
+    "site/mobile-download",
     "catalog/programs",
     "catalog/routines",
     "catalog/categories",
@@ -55,6 +56,7 @@ test("the proxy exposes only published catalog and valid shared reads without au
     assert.equal(f.calls.length, 1);
   }
   for (const path of [
+    "site/mobile-download/private",
     "me",
     "exercises",
     "workouts/templates",
@@ -72,6 +74,7 @@ test("the proxy exposes only published catalog and valid shared reads without au
   }
   for (const method of ["POST", "PATCH", "DELETE", "PUT"]) {
     const f = fixture();
+    assert.equal((await f.request("site/mobile-download", { method })).status, 401);
     assert.equal(
       (await f.request("catalog/routines/123e4567-e89b-12d3-a456-426614174000", { method })).status,
       401,

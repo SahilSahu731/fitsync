@@ -1,4 +1,5 @@
 import { env } from "../../config/env.js";
+import { isUserAdmin } from "../../middleware/admin.js";
 import { createBillingService } from "./billing.core.js";
 import { fetchRevenueCatSubscriber } from "./billing.provider.js";
 import { billingRepository } from "./billing.repository.js";
@@ -11,6 +12,7 @@ export const billingService = createBillingService({
     allowSandbox: env.REVENUECAT_ALLOW_SANDBOX,
   },
   repository: billingRepository,
+  isUserAdmin,
   fetchSubscriber: (userId) => fetchRevenueCatSubscriber(userId, env.REVENUECAT_SECRET_API_KEY!),
 });
 

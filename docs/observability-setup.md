@@ -93,9 +93,9 @@ by the build environment.
 ## 4. Apply the operational SQL before deploying the API
 
 1. Back up/check the target Supabase project and confirm you are in the intended environment.
-2. Apply `server/sql/021_operational_safety.sql` using its SQL editor as the database owner.
+2. Apply outstanding numbered migrations through `server/sql/022_mobile_download.sql` using its SQL editor as the database owner.
 3. Run `server/sql/verify-migrations.sql`. A fully configured schema should return no rows.
-4. Deploy the API only after migration 021 succeeds.
+4. Deploy the API after verification succeeds.
 
 Migration 021 creates shared rate-limit counters and an atomic refresh-token RPC.
 It is separate from the existing combined Pro bundle (`012`–`020`). Production always

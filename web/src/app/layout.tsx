@@ -10,7 +10,7 @@ import { SessionProvider } from "@/components/session";
 export const metadata: Metadata = {
   title: { default: "FitSync — Training, tracking & progress", template: "%s | FitSync" },
   description:
-    "Bring your workouts, training plans, everyday health and progress together. A little more in sync, with FitSync.",
+    "Log workouts, track daily health and follow your progress with FitSync for Android. Explore training programs, compare Free and Pro, and manage your FitSync account.",
 };
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (

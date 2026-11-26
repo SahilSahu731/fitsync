@@ -111,6 +111,7 @@ function database(
         return builder;
       },
       maybeSingle: async () => result(),
+      single: async () => ({ data: { role: "user" }, error: null }),
       then(onFulfilled: any, onRejected: any) {
         return Promise.resolve(result()).then(onFulfilled, onRejected);
       },
@@ -243,7 +244,8 @@ test("Pro meal generation and swap fail closed without configured billing despit
     assert.equal(response.status, 503);
     assert.match((await response.json()).message, /not configured/);
   }
-  assert.ok(queries.every((query) => query.table === "auth_sessions"));
+  assert.ok(queries.every((query) => ["auth_sessions", "app_users"].includes(query.table)));
+  assert.equal(writes(queries).length, 0);
   assert.equal(rpc.mock.callCount(), 0);
 });
 test("strict validation rejects account injection, invalid weeks, unknown meals and excessive targets before writes", async (t) => {

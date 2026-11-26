@@ -1,5 +1,6 @@
 import "dotenv/config";
 import assert from "node:assert/strict";
+import seed from "../src/modules/explore/explore.seed-data.json" with { type: "json" };
 import { db } from "../src/config/supabase.js";
 import { listSection, getResource } from "../src/modules/explore/explore.service.js";
 import { TOOL_TAG, readTool } from "../src/modules/explore/explore.tools.js";
@@ -30,6 +31,8 @@ for (const slug of [
   "progressive-overload",
   "hip-mobility-reset",
   "first-week-at-gym",
+  ...seed.resources.map((row) => row.slug),
+  ...seed.tools.map((row) => row.slug),
 ])
   assert.ok(
     rows.some((row) => row.slug === slug),

@@ -24,8 +24,10 @@ export default function PrivacyPage() {
           </li>
           <li>
             Fitness information you choose to save: workouts, exercises, training plans, goals, body
-            measurements, progress entries, sleep and activity records, nutrition and meal entries,
-            preferences, notes and check-ins.
+            measurements, progress entries, sleep and activity records, nutrition totals, meal
+            plans, preferences, notes and check-ins. Individual food diary entries and saved foods
+            stay on the Android device. Only the nutrition totals you choose to save to Progress
+            sync from that diary to your FitSync account.
           </li>
           <li>
             Images you choose to upload, including your avatar and private progress photos. Reports
@@ -56,8 +58,10 @@ export default function PrivacyPage() {
           You can grant only selected data types, decline access, stop imports in FitSync, or revoke
           permissions in your device’s Health Connect settings. Revoking access stops future reads.
           It does not remove records already imported into FitSync or delete the original records
-          held by your health provider. Edit or delete saved progress entries, or delete your
-          FitSync account, to remove imported information from FitSync.
+          held by your health provider. In Progress you can edit or clear a daily value. The journal
+          retains revisions until account deletion. You can also contact us to request removal of
+          specific data. See the{" "}
+          <Link href="/health-connect">Health Connect terms and permission controls</Link>.
         </p>
         <p>
           We do not sell health data or use Health Connect data for advertising, marketing profiles,
@@ -68,11 +72,11 @@ export default function PrivacyPage() {
       <section>
         <h2>Optional product analytics and error reports</h2>
         <p>
-          PostHog processes anonymous installation activity, such as onboarding steps, feature entry
-          points, paywall views and purchase outcomes, to help us understand where the app is useful
-          or difficult to use. We do not identify your FitSync account in these events or send
-          workout names, exercise details, measurements, nutrition values or notes. Session
-          recordings and automatic tap capture are disabled.
+          When configured, PostHog processes activity associated with an installation identifier,
+          such as onboarding steps, feature entry points, paywall views and purchase outcomes, to
+          help us understand where the app is useful or difficult to use. We do not identify your
+          FitSync account in these events or send workout names, exercise details, measurements,
+          nutrition values or notes. Session recordings and automatic tap capture are disabled.
         </p>
         <p>
           Sentry processes sanitized JavaScript crash and error reports containing code locations
@@ -86,8 +90,9 @@ export default function PrivacyPage() {
       <section>
         <h2>Other optional device access</h2>
         <p>
-          Photo access lets you select images to upload. Motion access supports walks you choose to
-          record. Calendar access lets you add training sessions you choose to your device calendar.
+          Android’s photo picker lets you select individual images to upload. Motion access supports
+          walks you choose to record. Calendar export opens your device’s event editor with the
+          session details for you to review. FitSync does not read your existing events.
           Notification access enables reminders. Program reminders register a push token,
           installation information, session association, timezone and reminder preferences so that
           notifications can reach the correct device. You can disable notifications in FitSync or
@@ -159,7 +164,7 @@ export default function PrivacyPage() {
       <section>
         <h2>Your choices and requests</h2>
         <p>
-          You can update your profile, edit or delete saved entries, revoke sharing links,
+          You can update your profile, edit or clear a progress check-in, revoke sharing links,
           disconnect health imports and disable reminders. You can request access, correction, a
           copy of your data or deletion by contacting us. We may verify account ownership before
           acting on a request. Rights available to you depend on your location.

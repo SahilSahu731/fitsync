@@ -1,6 +1,6 @@
 # FitSync web client
 
-Next.js web client with Poppins typography, a black-and-white marketing site, a shared training planner, and catalog administration. It uses the Express/Supabase API and the same Google identity as mobile.
+FitSync’s Next.js website introduces the Android app and provides account management, public policies and catalog administration. The member training workspace is in development. The website and mobile app share Google sign-in and the Express/Supabase API.
 
 ## Run locally
 
@@ -25,6 +25,8 @@ set role = 'admin'
 where email = 'your-admin-email@example.com';
 ```
 
+Under **Admin overview → Mobile app download**, enter a destination and select **Save download link**. Both the Google Play button and its QR code use the new URL the next time someone opens the dialog. Migration 022 initializes the setting with a labeled Health Connect example.
+
 Open `/admin` for totals, or `/admin/exercises` to search, filter, edit, and delete exercises. Only admins can create, update, publish, archive, upload, or remove exercise content; Express checks the database role on each mutation.
 
 - Save drafts without media.
@@ -46,14 +48,16 @@ Mobile exercise creation/editing screens, buttons, and upload/mutation helpers h
 | `/features`, `/programs` | Feature overview and training guide |
 | `/login`, `/register` | Google Identity Services sign-in/sign-up |
 | `/exercises`, `/exercises/[id-or-slug]` | Authenticated exercise library and demonstrations |
-| `/user/home`, `/user/profile`, `/user/settings` | Account overview, shared fitness profile, preferences |
-| `/admin` | Admin overview with live catalog totals |
+| `/user/home`, `/user/planner` | Workspace development notice for members |
+| `/user/profile`, `/user/settings` | Fitness profile, preferences and account deletion |
+| `/privacy`, `/terms`, `/delete-account`, `/health-connect` | Public policies and account deletion instructions |
+| `/admin` | Admin overview, mobile download link and live catalog totals |
 | `/admin/exercises` | Searchable, paginated admin catalog |
 | `/admin/exercises/new`, `/admin/exercises/[id]/edit` | Exercise and media editor |
 
 ## API and session behavior
 
-The browser talks to same-origin Next.js route handlers. Access and refresh tokens are stored in HttpOnly, SameSite=Lax cookies, with Secure enabled in production. Tokens are not exposed in browser JSON or localStorage. Refresh is coordinated between requests and, where Web Locks are supported, tabs. Mutations require a matching origin. Authenticated editors capture the account ID and send `X-FitSync-Owner`, so the API rejects saves, uploads and deletion if another tab changes accounts. The proxy allows the exercise, account, catalog, Explore, workout, coaching and companion route families; only published catalog reads and valid shared training links work without a session.
+The browser talks to same-origin Next.js route handlers. Access and refresh tokens are stored in HttpOnly, SameSite=Lax cookies, with Secure enabled in production. Tokens are not exposed in browser JSON or localStorage. Refresh is coordinated between requests and, where Web Locks are supported, tabs. Mutations require a matching origin. Authenticated editors capture the account ID and send `X-FitSync-Owner`, so the API rejects saves, uploads and deletion if another tab changes accounts. The proxy supports the exercise, account, catalog, Explore, workout, coaching, companion and site routes. Unauthenticated visitors can read the published catalog, valid shared training links and the public mobile download setting.
 
 Uploads are read with a streaming size limit before forwarding, including requests without `Content-Length`. Google credential requests have a separate 20 KB body limit. Logout attempts server session revocation with a refreshed access token when necessary and always clears the current browser cookies when the API is unreachable.
 

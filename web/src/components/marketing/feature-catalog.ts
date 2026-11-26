@@ -19,42 +19,43 @@ export const featureGroups = [
     icon: Dumbbell,
     title: "Workouts, remembered.",
     description:
-      "Build a routine or start from your program. Log sets, weight, reps, time, distance and effort. Add notes, use the rest timer and revisit your history.",
+      "Open a saved routine on Android and see your previous weight and reps as you log each set. Use the rest timer between sets and add a note for next time.",
     label: "Workout logging",
   },
   {
     icon: Sparkles,
     title: "A starting point that fits.",
     description:
-      "Create a free four-week starter plan from your goal, experience, equipment, session length and available training days.",
-    label: "Personal starter plans",
+      "Choose the equipment you have and the days you can train. Pro builds four weeks of exercises and sets around those choices, ready to follow on Android.",
+    label: "Personal training plans",
+    pro: true,
   },
   {
     icon: CalendarDays,
     title: "A week with a little structure.",
     description:
-      "Follow a published program, choose a start date and set reminders. See training and recovery days together, with missed sessions still available.",
+      "Browse programs by equipment, level and schedule. With Pro, follow one on Android, choose a start date and set reminders for training days.",
     label: "Programs & calendar",
   },
   {
     icon: ClipboardList,
     title: "Get to know the movement.",
     description:
-      "Find exercises by muscle, equipment and experience. Learn from instructions and visual demonstrations before you start.",
+      "Filter by muscle, equipment or experience. Read the cues for an unfamiliar lift and check its demonstration when one is available.",
     label: "Exercise library",
   },
   {
     icon: Heart,
     title: "Your whole day matters.",
     description:
-      "Track activity, nutrition, body measurements and recovery. Set personal targets, add notes and find the check-ins that matter to you.",
+      "Record water, protein, body measurements and sleep. Set a daily target for the numbers you care about. Pro also includes a food diary and weekly meal plans.",
     label: "Daily health tracking",
   },
   {
     icon: ChartNoAxesCombined,
     title: "Progress you can look back on.",
     description:
-      "Explore training volume, estimated one-rep max, workout history and weekly consistency alongside your health trends.",
+      "Look back at personal records and compare training volume and estimated strength. Free includes 90 days of standard graphs. Pro opens your full graph history and muscle workload trends.",
     label: "Progress & insights",
   },
   {
@@ -90,7 +91,7 @@ export const featureGroups = [
     icon: Timer,
     title: "Keep moving after a missed day.",
     description:
-      "With Pro, reschedule a missed session and the rest of your plan. Keep your training moving as your week changes.",
+      "Move a missed session to a day you can train. Preview the new dates for the sessions that follow before you accept the change.",
     label: "Flexible scheduling",
     pro: true,
   },
@@ -98,7 +99,7 @@ export const featureGroups = [
     icon: WandSparkles,
     title: "A clearer next step.",
     description:
-      "With Pro, review progression suggestions from completed logs and get a weekly review with practical actions and notes about missing data.",
+      "Review suggested targets from your completed sets. Your weekly review shows what you trained and where you could adjust the next session.",
     label: "Progression & weekly review",
     pro: true,
   },
@@ -107,7 +108,7 @@ export const featureGroups = [
 export const metricGroups = [
   {
     title: "Activity",
-    description: "The movement outside your workouts.",
+    description: "Count walks, active minutes and the flights of stairs in between.",
     metrics: [
       "Steps",
       "Active calories",
@@ -118,7 +119,7 @@ export const metricGroups = [
   },
   {
     title: "Nutrition",
-    description: "Know what goes into your day.",
+    description: "Follow your meals and water against your daily targets.",
     metrics: [
       "Food calories",
       "Protein",
@@ -133,7 +134,7 @@ export const metricGroups = [
   },
   {
     title: "Body",
-    description: "Changes that go beyond a scale.",
+    description: "Keep a record of your weight and tape measurements.",
     metrics: [
       "Body weight",
       "Waist",
@@ -148,7 +149,7 @@ export const metricGroups = [
   },
   {
     title: "Recovery",
-    description: "Make space for how you feel.",
+    description: "Log how you slept and how sore you feel before training.",
     metrics: [
       "Sleep duration",
       "Sleep quality",

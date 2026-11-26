@@ -20,7 +20,8 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-icons": "^5.7.0",
-    "three": "^0.187.0"
+    "three": "^0.187.0",
+    "toqr": "0.1.1"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4.3.5",

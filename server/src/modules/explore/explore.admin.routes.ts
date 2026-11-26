@@ -94,5 +94,51 @@ for (const method of ["post", "patch"] as const) {
     }),
   );
 }
-// Content is unpublished instead of deleted; no destructive content endpoint.
+router.delete(
+  "/:kind/:id",
+  asyncHandler(async (req, res) => {
+    const c = config(req.params.kind);
+    const id = z.uuid().parse(req.params.id);
+    const { slug, updated_at } = z
+      .object({
+        slug: z
+          .string()
+          .max(120)
+          .regex(/^[a-z0-9-]+$/),
+        updated_at: z.iso.datetime({ offset: true }),
+      })
+      .parse(req.body);
+
+    const links = await db
+      .from(c.table)
+      .select("id")
+      .eq("published", true)
+      .neq("id", id)
+      .contains("body", JSON.stringify([{ links: [{ url: `/explore/resources/${slug}` }] }]))
+      .limit(1);
+    checked(links.error);
+    if (links.data?.length)
+      throw new ApiError(
+        409,
+        "A published article links to this resource. Update its link before deleting.",
+      );
+
+    let query = db
+      .from(c.table)
+      .delete()
+      .eq("id", id)
+      .eq("slug", slug)
+      .eq("updated_at", updated_at)
+      .eq("kind", c.resourceKind);
+    query = c.tool ? query.contains("tags", [TOOL_TAG]) : query.not("tags", "cs", TOOL_TAG_FILTER);
+    const { data, error } = await query.select("id").maybeSingle();
+    checked(error);
+    if (!data)
+      throw new ApiError(
+        409,
+        "This record changed or was removed. Reload the list before deleting.",
+      );
+    res.status(204).end();
+  }),
+);
 export default router;

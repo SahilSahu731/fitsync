@@ -68,7 +68,11 @@ function customer(
   };
 }
 
-function harness(fetcher: (id: string) => Promise<unknown>, configured = true) {
+function harness(
+  fetcher: (id: string) => Promise<unknown>,
+  configured = true,
+  isUserAdmin: (id: string) => Promise<boolean> = async () => false,
+) {
   const stored = new Map<string, BillingSnapshot>();
   const completed = new Set<string>();
   const calls: string[] = [];
@@ -92,6 +96,7 @@ function harness(fetcher: (id: string) => Promise<unknown>, configured = true) {
       allowSandbox: false,
     },
     repository,
+    isUserAdmin,
     fetchSubscriber: async (id) => {
       calls.push(id);
       return fetcher(id);
@@ -191,7 +196,7 @@ test("refund decisions follow canonical entitlements instead of assuming a cance
   assert.equal(h.stored.get(A)?.entitlement.active, false);
 });
 
-test("missing configuration is explicit and never calls provider or storage", async () => {
+test("missing configuration is explicit and never calls the provider or subscription storage", async () => {
   const h = harness(async () => {
     throw new Error("must not fetch");
   }, false);
@@ -202,6 +207,26 @@ test("missing configuration is explicit and never calls provider or storage", as
   assert.equal(h.calls.length, 0);
   assert.equal(h.stored.size, 0);
   await assert.rejects(h.service.processWebhook(SECRET, event("test")), statusError(503));
+});
+
+test("current admins get role-based access without a purchase, even when billing is disabled", async () => {
+  let adminId: string | null = A;
+  const role = async (id: string) => id === adminId;
+  for (const configured of [false, true]) {
+    adminId = A;
+    const h = harness(async () => customer({ active: false }), configured, role);
+    const status = await h.service.getStatus(A);
+    assert.deepEqual(status, {
+      configured,
+      entitlement: { ...freeEntitlement(), active: true, tier: "pro", source: "admin" },
+    });
+    assert.equal((await guardResult(status.entitlement, configured)).result, undefined);
+    assert.deepEqual(h.calls, []);
+    assert.equal(h.stored.size, 0);
+    adminId = null;
+    assert.equal((await h.service.getEntitlement(A)).active, false);
+    assert.deepEqual(h.calls, configured ? [A] : []);
+  }
 });
 
 test("provider failures propagate as unavailable instead of silently changing an existing subscription", async () => {
@@ -369,6 +394,6 @@ test("server guard uses authenticated identity and fails closed for free, unconf
   assert.deepEqual(await guardResult(paid), { result: undefined, lookedUp: A });
   assert.ok(statusError(402)((await guardResult(freeEntitlement())).result));
   assert.ok(statusError(503)((await guardResult(paid, false)).result));
-  assert.equal((await guardResult(paid, false)).lookedUp, null);
+  assert.equal((await guardResult(paid, false)).lookedUp, A);
   assert.ok(statusError(503)((await guardResult(paid, true, new ApiError(503, "outage"))).result));
 });

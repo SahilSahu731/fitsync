@@ -8,21 +8,32 @@ async function handle(request: NextRequest, context: { params: Promise<{ path: s
     return NextResponse.json({ message: "Request origin not allowed." }, { status: 403 });
   const { path } = await context.params;
   if (
-    !["exercises", "me", "catalog", "explore", "workouts", "coaching", "companion"].includes(
-      path[0],
-    ) ||
+    ![
+      "exercises",
+      "me",
+      "catalog",
+      "explore",
+      "workouts",
+      "coaching",
+      "companion",
+      "site",
+    ].includes(path[0]) ||
     path.some((part) => !/^[a-zA-Z0-9_-]+$/.test(part))
   )
     return new NextResponse(null, { status: 404 });
   const token = await accessToken();
-  const publicCatalog =
+  const publicRead =
     isPublicCatalogRead(request.method, path) ||
+    (request.method === "GET" &&
+      path.length === 2 &&
+      path[0] === "site" &&
+      path[1] === "mobile-download") ||
     (request.method === "GET" &&
       path.length === 3 &&
       path[0] === "companion" &&
       path[1] === "shared" &&
       /^[A-Za-z0-9_-]{43}$/.test(path[2]));
-  if (!token && !publicCatalog)
+  if (!token && !publicRead)
     return NextResponse.json({ message: "Please sign in to continue." }, { status: 401 });
   try {
     const headers = new Headers();

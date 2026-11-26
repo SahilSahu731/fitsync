@@ -20,7 +20,7 @@ type Session = {
   loading: boolean;
   error: string;
   updateAccount: (account: Account) => void;
-  reload: () => Promise<void>;
+  reload: () => Promise<boolean | undefined>;
   logout: () => Promise<void>;
 };
 const Context = createContext<Session | null>(null);
@@ -45,6 +45,7 @@ export function SessionProvider({ children }: { children: React.ReactNode }) {
       if (!current()) return;
       setAccount(me);
       setAdmin(permissions.canManageExercises);
+      return permissions.canManageExercises;
     } catch (e) {
       if (!current()) return;
       setAccount(null);
@@ -128,7 +129,7 @@ export function AccessGate({
         role="status"
       >
         <span className="block size-7 animate-spin rounded-full border-3 border-line border-t-ink motion-reduce:animate-none" />
-        <h2>Loading your workspace</h2>
+        <h2>Checking your account</h2>
       </div>
     );
   if (error)
@@ -151,16 +152,14 @@ export function AccessGate({
         <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/8 text-white">
           <Icon name={adminOnly ? "shield" : "dumbbell"} size={28} />
         </span>
-        <h2>{adminOnly ? "Your admin workspace awaits" : "Your next movement starts here"}</h2>
+        <h2>{adminOnly ? "Sign in to administration" : "Sign in to FitSync"}</h2>
         <p>
           Sign in with Google to{" "}
-          {adminOnly
-            ? "manage the FitSync exercise library."
-            : "explore the exercise library and your fitness profile."}
+          {adminOnly ? "manage FitSync." : "continue with your FitSync account."}
         </p>
         <Link
           className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          href={`/login?next=${encodeURIComponent(adminOnly ? "/admin/exercises" : pathname || "/user/home")}`}
+          href={`/login?next=${encodeURIComponent(pathname || (adminOnly ? "/admin" : "/user/home"))}`}
         >
           Continue with Google <Icon name="arrow" size={16} />
         </Link>
@@ -171,12 +170,15 @@ export function AccessGate({
       <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5 px-5 py-20 text-center [&>p]:max-w-lg [&>p]:leading-7 [&>p]:text-muted [&>h2]:text-3xl">
         <Icon name="shield" size={36} />
         <h2>Admin access required</h2>
-        <p>Your account can browse exercises. Only an administrator can manage the library.</p>
+        <p>
+          Administration is available to FitSync administrators. You can manage your profile and
+          preferences in your account.
+        </p>
         <Link
           className="inline-flex min-h-12 items-center justify-center gap-3 rounded-full bg-white px-6 py-3 text-sm font-medium text-black transition-colors hover:bg-white/85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-50"
-          href="/exercises"
+          href="/user/home"
         >
-          Explore exercises
+          My account
         </Link>
       </div>
     );

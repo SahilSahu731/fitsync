@@ -67,7 +67,7 @@ to manual seed and push-test scripts.
 
 ## Verify the database before deployment
 
-Apply migrations `001` through `021` in order on a new staging Supabase project.
+Apply migrations `001` through `022` in order on a new staging Supabase project.
 For an existing project, check its schema and apply only the missing migrations.
 Run `server/sql/verify-migrations.sql` as the database owner and resolve any rows
 it returns, including missing grants. After deployment, check `GET /health`,

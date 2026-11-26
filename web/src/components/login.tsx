@@ -33,13 +33,24 @@ declare global {
     };
   }
 }
-export function Login({ register = false }: { register?: boolean }) {
+export function Login({
+  register = false,
+  returnTo,
+}: {
+  register?: boolean;
+  returnTo?: string | string[];
+}) {
   const container = useRef<HTMLDivElement>(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [ready, setReady] = useState(false);
   const { reload, account, admin } = useSession();
   const clientId = process.env.NEXT_PUBLIC_GOOGLE_CLIENT_ID;
+  const destination =
+    typeof returnTo === "string" &&
+    /^\/(admin|exercises|user|programs|routines)(\/|\?|$)/.test(returnTo)
+      ? returnTo
+      : undefined;
   const initialize = useCallback(() => {
     if (!clientId || !container.current || !window.google) return;
     window.google.accounts.id.initialize({
@@ -56,13 +67,8 @@ export function Login({ register = false }: { register?: boolean }) {
           });
           const data = await response.json();
           if (!response.ok) throw new Error(data.message || "Google sign-in failed.");
-          await reload();
-          const destination = new URLSearchParams(window.location.search).get("next");
-          window.location.assign(
-            destination && /^\/(admin|exercises|user|programs|routines)(\/|\?|$)/.test(destination)
-              ? destination
-              : "/user/home",
-          );
+          const isAdmin = await reload();
+          window.location.assign(destination ?? (isAdmin ? "/admin" : "/user/home"));
         } catch (e) {
           setError(e instanceof Error ? e.message : "Please try signing in again.");
           setBusy(false);
@@ -77,7 +83,7 @@ export function Login({ register = false }: { register?: boolean }) {
       shape: "pill",
     });
     setReady(true);
-  }, [clientId, register, reload]);
+  }, [clientId, destination, register, reload]);
   useEffect(() => {
     initialize();
   }, [initialize]);
@@ -111,8 +117,8 @@ export function Login({ register = false }: { register?: boolean }) {
               </h1>
               <p className="mt-3 max-w-85 text-base leading-7 text-muted sm:text-lg sm:leading-8">
                 {register
-                  ? "A little more movement. A lot more you. Create your free FitSync account."
-                  : "Your training. Your progress. Your own pace. Let’s get back to your good thing."}
+                  ? "Create a free account to use FitSync on Android and manage your profile here."
+                  : "Use the same Google account you use for FitSync on Android."}
               </p>
 
               <div className="mt-9">
@@ -129,10 +135,10 @@ export function Login({ register = false }: { register?: boolean }) {
                       Signed in as <span className="font-medium text-ink">{account.user.name}</span>
                     </p>
                     <Link
-                      href={admin ? "/admin/exercises" : "/user/home"}
+                      href={destination ?? (admin ? "/admin" : "/user/home")}
                       className="group flex min-h-13 items-center justify-between gap-4 rounded-full bg-white px-5 py-3 text-sm font-semibold text-background transition-colors hover:bg-white/85"
                     >
-                      Go to your workspace
+                      {destination ? "Continue" : admin ? "Open admin panel" : "Go to my account"}
                       <ArrowRight
                         size={20}
                         className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
@@ -214,12 +220,23 @@ export function Login({ register = false }: { register?: boolean }) {
               </div>
 
               <p className="mt-6 text-sm leading-7 text-muted">
-                By continuing, you agree to the <Link href="/terms" className="underline">Terms of Service</Link> and can review our <Link href="/privacy" className="underline">Privacy Policy</Link>.
+                By continuing, you agree to the{" "}
+                <Link href="/terms" className="underline">
+                  Terms of Service
+                </Link>{" "}
+                and can review our{" "}
+                <Link href="/privacy" className="underline">
+                  Privacy Policy
+                </Link>
+                .
               </p>
               <p className="mt-6 flex flex-wrap items-center gap-x-2 text-sm text-muted">
                 {register ? "Already have an account?" : "New to FitSync?"}
                 <Link
-                  href={register ? "/login" : "/register"}
+                  href={{
+                    pathname: register ? "/login" : "/register",
+                    query: destination ? { next: destination } : undefined,
+                  }}
                   className="group inline-flex min-h-11 items-center gap-1.5 rounded-sm font-semibold text-ink underline decoration-line underline-offset-4 transition-colors hover:text-brand hover:decoration-brand"
                 >
                   {register ? "Log in" : "Create a free account"}
@@ -239,7 +256,7 @@ export function Login({ register = false }: { register?: boolean }) {
                   },
                   {
                     icon: Waypoints,
-                    title: "One account. Every device.",
+                    title: "One FitSync account.",
                     description: "Your web and mobile profile, together.",
                   },
                 ].map(({ icon: FeatureIcon, title, description }) => (
@@ -283,7 +300,6 @@ export function Login({ register = false }: { register?: boolean }) {
             </span> */}
           </div>
           <div className="absolute inset-x-6 bottom-7 sm:inset-x-8 sm:bottom-9 xl:inset-x-11 xl:bottom-11">
-            
             <h2 className="text-[34px] leading-[1.02] font-medium tracking-[-0.055em] sm:text-5xl lg:text-[clamp(2.7rem,4.6vw,4.8rem)]">
               {register ? "Every story starts" : "A little time."}
               <br />

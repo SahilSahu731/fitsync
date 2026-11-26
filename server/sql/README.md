@@ -1,6 +1,6 @@
 # Database migrations
 
-Numbered files `001`–`021` are the source migrations. For a new Supabase project,
+Numbered files `001`–`022` are the source migrations. For a new Supabase project,
 apply them in numerical order as the database owner.
 
 For an existing project, inspect its schema first and apply only missing changes.
@@ -26,8 +26,9 @@ performance and content migrations. Generation does not connect to a database.
 
 Run [verify-migrations.sql](verify-migrations.sql) in the configured project's SQL
 Editor as the database owner. It performs read-only checks of tables, feature
-columns, indexes, functions, triggers, permissions, storage settings, and curated
-content. A successful check returns no rows.
+columns, indexes, functions, triggers, permissions and storage settings. A successful
+check returns no rows. After importing the example catalog, run `npm run explore:check`
+to verify the seed content separately.
 
 On 2026-11-18, the configured project was checked against all 20 numbered files.
 The missing migrations `010`, `018`, `019`, and `020` were applied in one
@@ -48,3 +49,10 @@ URLs, Supabase service credentials and PostgreSQL connection variables. The comp
 denylist is in `tests/sql/isolated-database.mjs`.
 Do not source your server `.env` before running them. See `docs/observability-setup.md`
 for the complete release and verification steps.
+
+## Mobile download link
+
+Apply `022_mobile_download.sql` before deploying the website download dialog and
+admin editor. The initial link opens the example Health Connect listing on Google
+Play. Change it under **Admin overview → Mobile app download**. Reapplying the
+migration preserves the saved link.

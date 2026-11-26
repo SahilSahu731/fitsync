@@ -15,7 +15,7 @@ export function PhilosophySection() {
           <br />A lot more in sync.
         </p>
         <ScrollText
-          text="Your workout. Your next meal. The sleep you needed. The days you showed up. Fitness is everything you do for yourself. Give it a place to come together."
+          text="At the gym, see which weight you used last time. Between sessions, keep track of your walks, meals and sleep. When you look back at your week, the workouts are only part of the picture."
           className="text-[clamp(1.8rem,3.5vw,3rem)] leading-[1.3] font-medium tracking-[-.04em]"
         />
       </div>
@@ -50,10 +50,10 @@ export function TrainingSection() {
                 <span className="text-white/50">Room for being human.</span>
               </>
             }
-            description="Start where you are. Choose your goal, your equipment and the time you have. FitSync turns that into a four-week starting plan."
+            description="Browse a program to see how its training and rest days fit your week. With Pro, follow its schedule on Android or build a four-week plan around your goal and equipment."
           />
           <TextLink href="/programs" className="mt-7">
-            Find your training rhythm
+            Browse training programs
           </TextLink>
         </Reveal>
         <Reveal delay={80}>
@@ -83,7 +83,7 @@ export function TrainingSection() {
               ))}
             </div>
             <p className="mt-6 text-[10px] leading-5 text-white/50">
-              Illustrative starter week. Your plan depends on your profile.
+              Sample Pro training week. Your schedule depends on your profile.
             </p>
           </div>
         </Reveal>
@@ -116,7 +116,7 @@ export function HealthSection({ detailed = false }: { detailed?: boolean }) {
                 <span className="text-black/40">more than one side.</span>
               </>
             }
-            description="Keep activity, nutrition, body measurements and recovery in the same picture. Track what matters to you, with personal targets and space for notes."
+            description="Choose from 31 metrics across activity, nutrition, body measurements and recovery. Log what matters to you on Android and set targets for the habits you want to follow."
           />
         </Reveal>
         <div className="mt-14 grid gap-10 sm:mt-20 sm:grid-cols-2 lg:grid-cols-4">
@@ -149,8 +149,8 @@ export function HealthSection({ detailed = false }: { detailed?: boolean }) {
               Your health data. With your permission.
             </h3>
             <p className="mt-2 max-w-2xl text-sm leading-7 text-black/55">
-              Optionally import steps, sleep and body weight from Health Connect on Android. FitSync
-              reads your records and never writes to them.
+              Connect Health Connect on Android to import up to seven days of steps, sleep and body weight.
+              You choose which records FitSync can read.
             </p>
           </div>
           {!detailed && (
@@ -251,7 +251,7 @@ export function FeatureDirectory() {
               <span className="text-white/50">than your gym hour.</span>
             </>
           }
-          description="A connected set of tools for training, everyday health and the space in between."
+          description="Use Android to record workouts and daily check-ins. Browse the training library here to see which routines fit your time and equipment."
         />
       </Reveal>
       <div className="mt-16 grid gap-x-16 gap-y-14 md:grid-cols-2 lg:grid-cols-3">
@@ -286,8 +286,8 @@ export function PlansSection() {
           <span className="text-white/50">Go further with Pro.</span>
         </h2>
         <p className="mx-auto mt-6 max-w-xl text-base leading-8 text-white/55">
-          The essentials to build your routine are free. Pro helps your plan keep up when life
-          changes.
+          Start with workout logging and daily health tracking. Add Pro for scheduled training,
+          weekly meal plans and a longer view of your progress.
         </p>
       </Reveal>
       <div className="mt-14 grid gap-5 md:grid-cols-2">
@@ -295,13 +295,13 @@ export function PlansSection() {
           {
             name: "FitSync",
             label: "Your everyday essentials",
-            description: "Build the habit. Keep the history.",
+            description: "Record your workouts and daily check-ins on Android.",
             items: planTiers.free,
           },
           {
             name: "FitSync Pro",
             label: "Optional upgrade in the mobile app",
-            description: "More flexibility for the way life happens.",
+            description: "Plan your training and meals around the week ahead.",
             items: planTiers.pro,
           },
         ].map((plan, index) => (
@@ -363,10 +363,10 @@ export function ClosingSection() {
             in <span className="text-brand">sync.</span>
           </h2>
           <p className="mx-auto mt-8 max-w-md text-base leading-8 text-white/50">
-            Bring your training, your habits and your progress together. Start wherever you are.
+            Save a routine to your account and open it on Android when you’re ready for your first set.
           </p>
           <Link href="/register" className={`${primaryButton} mt-9`}>
-            Find your starting point
+            Create a free account
             <ArrowRight size={18} />
           </Link>
         </Reveal>

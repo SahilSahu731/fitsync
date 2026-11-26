@@ -44,16 +44,21 @@ export async function api<T>(
       : await retry();
   }
   if (response.status === 204) return undefined as T;
-  const data = await response
-    .json()
-    .catch(() => ({ message: "Could not read the server response." }));
-  if (!response.ok) {
-    if (response.status === 401) window.dispatchEvent(new Event("fitsync-session-expired"));
-    const details = data.errors
-      ?.map((item: { field: string; message: string }) => `${item.field}: ${item.message}`)
-      .join(" · ");
+  if (response.status === 401) window.dispatchEvent(new Event("fitsync-session-expired"));
+  const data = await response.json().catch(() => {
     throw new ApiError(
-      details || data.message || "Something went wrong. Please try again.",
+      "Could not read the server response. Please try again.",
+      response.ok ? 502 : response.status,
+    );
+  });
+  if (!response.ok) {
+    const details = Array.isArray(data?.errors)
+      ? data.errors
+          .map((item: { field: string; message: string }) => `${item.field}: ${item.message}`)
+          .join(" · ")
+      : "";
+    throw new ApiError(
+      details || data?.message || "Something went wrong. Please try again.",
       response.status,
     );
   }

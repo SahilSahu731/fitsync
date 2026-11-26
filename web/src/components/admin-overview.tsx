@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { api } from "@/lib/api";
 import type { ExercisePage } from "@/lib/types";
 import { Icon } from "./icon";
+import { MobileDownloadAdmin } from "./mobile-download-admin";
 import { useSession } from "./session";
 export function AdminOverview() {
   const { account } = useSession();
@@ -79,6 +80,7 @@ export function AdminOverview() {
           </div>
         ))}
       </div>
+      <MobileDownloadAdmin key={account?.user.id} />
       <div className="mb-7 bg-background p-7 text-white sm:p-10 [&_h2]:text-3xl [&_p]:mt-4 [&_p]:max-w-xl [&_p]:text-white/65 [&_a]:mt-6">
         <span className="inline-flex size-12 shrink-0 items-center justify-center rounded-xl bg-white/8 text-white">
           <Icon name="dumbbell" size={32} />

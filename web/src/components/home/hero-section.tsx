@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import type { ReactNode } from "react";
 import {
   Activity,
@@ -10,7 +10,6 @@ import {
   ArrowRight,
   BicepsFlexed,
   CalendarDays,
-  Check,
   Droplets,
   Dumbbell,
   Flame,
@@ -25,10 +24,9 @@ import {
   TrendingUp,
   Trophy,
   UtensilsCrossed,
-  X,
   type LucideIcon,
 } from "lucide-react";
-import { publishedLinks } from "@/components/site/navigation";
+import { DownloadDialog } from "./download-dialog";
 import { heroContent } from "./content";
 
 function Marquee({
@@ -242,134 +240,8 @@ const phases = [
   "[animation-delay:-7s]",
 ];
 
-export function DownloadDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
-  const panel = useRef<HTMLDivElement>(null);
-  const closeButton = useRef<HTMLButtonElement>(null);
-  useEffect(() => {
-    if (!open) return;
-    const previousFocus = document.activeElement as HTMLElement | null;
-    const alreadyLocked = document.body.classList.contains("overflow-hidden");
-    document.body.classList.add("overflow-hidden");
-    closeButton.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") onClose();
-      if (event.key !== "Tab") return;
-      const controls = panel.current?.querySelectorAll<HTMLElement>("button, a[href]");
-      if (!controls?.length) return;
-      const first = controls[0],
-        last = controls[controls.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => {
-      document.removeEventListener("keydown", onKey);
-      if (!alreadyLocked) document.body.classList.remove("overflow-hidden");
-      previousFocus?.focus();
-    };
-  }, [open, onClose]);
-  const stores = [
-    { label: "App Store", href: publishedLinks.appStore },
-    { label: "Google Play", href: publishedLinks.googlePlay },
-  ].filter((store) => store.href);
-  return (
-    <div
-      aria-hidden={!open}
-      inert={!open}
-      className={`fixed inset-0 z-100 transition-[visibility] duration-500 ${open ? "visible" : "invisible pointer-events-none"}`}
-    >
-      <button
-        tabIndex={-1}
-        aria-label="Close app information"
-        onClick={onClose}
-        className={`absolute inset-0 bg-black/75 backdrop-blur-sm transition-opacity duration-500 ${open ? "opacity-100" : "opacity-0"}`}
-      />
-      <div
-        ref={panel}
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="download-title"
-        className={`absolute inset-x-0 bottom-0 max-h-[90dvh] overflow-auto rounded-t-3xl bg-panel p-8 text-white transition-transform duration-500 motion-reduce:transition-none sm:inset-y-0 sm:left-auto sm:w-110 sm:max-h-none sm:rounded-none sm:p-10 ${open ? "translate-y-0 sm:translate-x-0" : "translate-y-full sm:translate-x-full sm:translate-y-0"}`}
-      >
-        <button
-          ref={closeButton}
-          onClick={onClose}
-          aria-label="Close app information"
-          className="ml-auto flex size-11 items-center justify-center rounded-full bg-white/8 transition-colors hover:bg-white/15"
-        >
-          <X size={20} />
-        </button>
-        <Smartphone size={42} strokeWidth={1} className="mt-10 text-white/70" />
-        <p className="mt-8 text-xs tracking-widest text-white/55 uppercase">FitSync mobile</p>
-        <h2
-          id="download-title"
-          className="mt-4 text-4xl leading-tight font-medium tracking-tighter"
-        >
-          Your whole routine.
-          <br />
-          In your pocket.
-        </h2>
-        <p className="mt-6 text-sm leading-7 text-white/55">
-          Log your sets. Check in with yourself. Follow your plan wherever the day takes you.
-        </p>
-        <div className="my-10 space-y-5">
-          {[
-            "Workout logging and rest timers",
-            "Daily health metrics and personal goals",
-            "Programs, reminders and progress",
-          ].map((text) => (
-            <p key={text} className="flex gap-3 text-sm">
-              <Check size={17} className="text-brand" />
-              {text}
-            </p>
-          ))}
-        </div>
-        {stores.length ? (
-          stores.map((store) => (
-            <a
-              key={store.label}
-              href={store.href}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="mt-3 flex min-h-13 items-center justify-between rounded-full bg-white px-6 text-sm font-semibold text-black"
-            >
-              Get it on {store.label}
-              <ArrowRight size={18} />
-            </a>
-          ))
-        ) : (
-          <p className="rounded-2xl bg-white/5 p-5 text-sm leading-7 text-white/65">
-            Public download links aren’t available yet. Explore the app below and create your
-            account on the web.
-          </p>
-        )}
-        <Link
-          href="/#app-preview"
-          onClick={onClose}
-          className="mt-7 flex min-h-12 items-center justify-between text-sm font-medium"
-        >
-          Explore the app
-          <ArrowRight size={18} />
-        </Link>
-        <Link
-          href="/register"
-          onClick={onClose}
-          className="mt-3 flex min-h-13 items-center justify-center rounded-full bg-brand px-6 text-sm font-semibold text-black"
-        >
-          Create a free account
-        </Link>
-      </div>
-    </div>
-  );
-}
-
 export function HeroSection() {
-  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [downloadOpen, setDownloadOpen] = useState(false);
   const [paused, setPaused] = useState(false);
   return (
     <>
@@ -421,8 +293,7 @@ export function HeroSection() {
             </span>
           </h1>
           <p className="mx-auto mt-7 max-w-135 animate-hero-line text-base leading-7 text-white/55 [animation-delay:550ms] motion-reduce:animate-none sm:leading-8">
-            Plan your training. Understand your nutrition. Build healthier habits. See how far
-            you&apos;ve come. One place for everything that moves you forward.
+            {heroContent.description}
           </p>
           <div className="mt-9 flex w-full animate-hero-line flex-col items-center justify-center gap-3 [animation-delay:700ms] motion-reduce:animate-none sm:w-auto sm:flex-row">
             <Link
@@ -437,7 +308,7 @@ export function HeroSection() {
               />
             </Link>
             <button
-              onClick={() => setDrawerOpen(true)}
+              onClick={() => setDownloadOpen(true)}
               aria-haspopup="dialog"
               className="pointer-events-auto inline-flex min-h-13 w-full items-center justify-center gap-3 rounded-xl bg-white/8 px-7 text-sm font-medium text-white backdrop-blur-md transition-colors hover:bg-white hover:text-black sm:w-auto"
             >
@@ -512,7 +383,7 @@ export function HeroSection() {
           ))}
         </Marquee>
       </div>
-      <DownloadDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      {downloadOpen && <DownloadDialog onClose={() => setDownloadOpen(false)} />}
     </>
   );
 }

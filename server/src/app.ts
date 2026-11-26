@@ -17,6 +17,7 @@ import programFollowRoutes from "./modules/program-follow/program.routes.js";
 import catalogRoutes from "./modules/training-catalog/catalog.routes.js";
 import exploreAdminRoutes from "./modules/explore/explore.admin.routes.js";
 import exploreRoutes from "./modules/explore/explore.routes.js";
+import mobileDownloadRoutes from "./modules/site/mobile-download.routes.js";
 
 import { notFound, errorHandler } from "./middleware/error-handler.js";
 
@@ -66,6 +67,7 @@ app.use("/api/catalog", catalogRoutes);
 
 app.use("/api/explore/admin", exploreAdminRoutes);
 app.use("/api/explore", exploreRoutes);
+app.use("/api/site", mobileDownloadRoutes);
 
 app.use(notFound);
 app.use(errorHandler);

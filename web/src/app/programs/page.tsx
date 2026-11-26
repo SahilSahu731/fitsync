@@ -5,7 +5,7 @@ import { container } from "@/components/marketing/shared";
 export const metadata: Metadata = {
   title: "Training library",
   description:
-    "Find a FitSync training program or routine for your goals, equipment and schedule. Preview your plan and save it for the mobile app.",
+    "Browse training by goal, level and equipment. Save a routine for free, or follow a full program with FitSync Pro on Android.",
 };
 export default function Page() {
   return (

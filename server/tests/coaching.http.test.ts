@@ -67,6 +67,7 @@ function authDatabase(t: test.TestContext) {
       gt() {
         return builder;
       },
+      single: async () => ({ data: { role: "user" }, error: null }),
       maybeSingle: async () => result,
       then(resolve: any, reject: any) {
         return Promise.resolve(result).then(resolve, reject);

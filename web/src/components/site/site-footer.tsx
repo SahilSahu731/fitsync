@@ -15,7 +15,7 @@ export function SiteFooter() {
       title: "Your FitSync",
       links: account
         ? [
-            { href: admin ? "/admin" : "/user/home", label: "Your workspace" },
+            { href: admin ? "/admin" : "/user/home", label: admin ? "Admin panel" : "My account" },
             { href: "/user/profile", label: "Fitness profile" },
             { href: "/user/settings", label: "Account settings" },
           ]
@@ -28,6 +28,7 @@ export function SiteFooter() {
   ];
   const external = [
     { href: publishedLinks.privacy, label: "Privacy" },
+    { href: "/health-connect", label: "Health Connect" },
     { href: publishedLinks.terms, label: "Terms" },
     { href: "/delete-account", label: "Delete account" },
     { href: publishedLinks.instagram, label: "Instagram" },

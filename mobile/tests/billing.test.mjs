@@ -78,6 +78,14 @@ test("a completed store purchase remains pending when server sync is offline or 
   assert.equal(await model.confirmStorePurchase(async () => free), "pending");
   assert.equal(await model.confirmStorePurchase(async () => active), "active");
 });
+test("administrator access unlocks Pro without confirming a store purchase", async () => {
+  const administrator = {
+    configured: false,
+    entitlement: { ...active.entitlement, source: "admin" },
+  };
+  assert.equal(model.hasPro(administrator), true);
+  assert.equal(await model.confirmStorePurchase(async () => administrator), "pending");
+});
 test("SDK operations are account-bound and identity switches wait for a purchase to finish", async () => {
   const sdk = mockSdk();
   const session = createStoreSession(

@@ -20,6 +20,9 @@ const { billingService } = await import("../src/modules/billing/billing.service.
 const { freeEntitlement } = await import("../src/modules/billing/billing.policy.js");
 const { default: programs } = await import("../src/modules/program-follow/program.routes.js");
 const { default: catalog } = await import("../src/modules/training-catalog/catalog.routes.js");
+const { default: catalogAdmin } =
+  await import("../src/modules/training-catalog/catalog.admin.routes.js");
+const { default: billing } = await import("../src/modules/billing/billing.routes.js");
 const { default: coaching } = await import("../src/modules/coaching/coaching.routes.js");
 const { default: workouts } = await import("../src/modules/workouts/workout.routes.js");
 const { errorHandler } = await import("../src/middleware/error-handler.js");
@@ -52,6 +55,8 @@ before(async () => {
   const app = express();
   app.use(express.json());
   app.use("/program-follow", programs);
+  app.use("/catalog/admin", catalogAdmin);
+  app.use("/billing", billing);
   app.use("/catalog", catalog);
   app.use("/coaching", coaching);
   app.use("/workouts", workouts);
@@ -75,7 +80,7 @@ after(async () => {
   }
 });
 
-function database(t: test.TestContext) {
+function database(t: test.TestContext, role = "user") {
   const queries: { table: string; filters: Record<string, unknown>; inserted?: any }[] = [];
   let created = false;
   t.mock.method(db, "from", (table: string) => {
@@ -128,6 +133,10 @@ function database(t: test.TestContext) {
         return { ...result(), data: table === "training_programs" ? null : result().data };
       },
       async single() {
+        if (table === "app_users") {
+          assert.equal(query.filters.id, owner);
+          return { data: { role }, error: null };
+        }
         return result();
       },
       then(resolve: any, reject: any) {
@@ -138,6 +147,33 @@ function database(t: test.TestContext) {
   });
   return queries;
 }
+
+test("a database admin can open the program editor and use paid program actions without a purchase", async (t) => {
+  database(t, "admin");
+  const status = await request("/billing/status");
+  assert.equal(status.status, 200);
+  const { entitlement } = await status.json();
+  assert.equal(entitlement.source, "admin");
+  assert.equal(entitlement.active, true);
+  assert.equal((await request("/catalog/admin/programs")).status, 200);
+  const rpc = t.mock.method(db, "rpc", async (name: string, args: any) => {
+    assert.equal(name, "follow_fitsync_program");
+    assert.equal(args.p_user_id, owner);
+    assert.equal(args.p_program_id, id);
+    return { data: null, error: { code: "P0002", message: "Program not found." } };
+  });
+  // The program lookup deliberately returns no record. Admins still use the
+  // same published program and account ownership checks after access is granted.
+  assert.equal((await request(paidActions[0]!.path, paidActions[0]!)).status, 404);
+  assert.equal(rpc.mock.callCount(), 1);
+});
+
+test("a paid subscription alone cannot open the admin program editor", async (t) => {
+  database(t);
+  const pro = verified(t, true);
+  assert.equal((await request("/catalog/admin/programs")).status, 403);
+  assert.equal(pro.mock.callCount(), 0);
+});
 function verified(t: test.TestContext, pro: boolean, fails = false) {
   return t.mock.method(billingService, "getEntitlement", async (userId: string) => {
     assert.equal(userId, owner, "Entitlement identity must come from the verified session");

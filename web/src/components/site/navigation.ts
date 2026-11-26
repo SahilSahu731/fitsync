@@ -40,8 +40,6 @@ function websiteUrl(value: string | undefined) {
 export const publishedLinks = {
   privacy: "/privacy",
   terms: "/terms",
-  googlePlay: websiteUrl(process.env.NEXT_PUBLIC_GOOGLE_PLAY_URL),
-  appStore: websiteUrl(process.env.NEXT_PUBLIC_APP_STORE_URL),
   instagram: websiteUrl(process.env.NEXT_PUBLIC_INSTAGRAM_URL),
   youtube: websiteUrl(process.env.NEXT_PUBLIC_YOUTUBE_URL),
 };

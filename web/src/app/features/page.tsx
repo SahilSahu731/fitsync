@@ -16,7 +16,7 @@ import { FAQSection } from "@/components/home/faq-section";
 export const metadata: Metadata = {
   title: "Everything FitSync",
   description:
-    "Discover workout logging, personal starter plans, program schedules, daily health tracking, recovery and optional Pro adaptations in FitSync.",
+    "Explore Android workout logging, health tracking and progress charts. See what Free includes and how Pro adds scheduled training, meal plans and weekly reviews.",
 };
 
 export default function FeaturesPage() {
@@ -34,8 +34,8 @@ export default function FeaturesPage() {
               that moves <span className="text-white/50">you.</span>
             </h1>
             <p className="mt-8 max-w-xl text-base leading-8 text-white/55 sm:text-lg">
-              The work you do in the gym. The choices you make outside it. One place to give it all
-              a little more direction.
+              Log your workouts, spot a new personal record and see how you slept between sessions.
+              Explore the Android app and compare Free with Pro.
             </p>
             <div className="mt-9 flex flex-wrap items-center gap-6">
               <Link href="/register" className={primaryButton}>

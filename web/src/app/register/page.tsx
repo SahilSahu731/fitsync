@@ -3,8 +3,8 @@ import { Login } from "@/components/login";
 export const metadata: Metadata = {
   title: "Create an account",
   description:
-    "Make your first move with a free FitSync account. Your training, your profile, and your pace.",
+    "Create a free FitSync account for the Android app and manage your profile on the web.",
 };
-export default function Page() {
-  return <Login register />;
+export default async function Page({ searchParams }: PageProps<"/register">) {
+  return <Login register returnTo={(await searchParams).next} />;
 }

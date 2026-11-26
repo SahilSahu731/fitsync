@@ -9,4 +9,6 @@
 
 The mobile menu is closed and inert until opened. It closes on a route change, outside press or Escape. Escape returns focus to the menu button. Scroll and menu transitions honor reduced motion. Decorative menu numbering and outlines have been removed.
 
-App Store, Google Play, social and legal URLs use the existing `NEXT_PUBLIC_*` environment variables documented in `web/.env.example`. Unpublished destinations remain hidden. The mobile drawer explains availability when store links are missing. Rebuild after changing public environment variables.
+Member navigation leads to an account home with the web workspace launch notice. Members can access their fitness profile and account settings, including deletion. Administrators can open the admin panel from the same header and footer.
+
+The mobile download dialog uses the destination saved in the admin panel for both the Google Play button and the QR code. Social destinations use the environment settings in `web/.env.example`. The policy pages have permanent public routes.

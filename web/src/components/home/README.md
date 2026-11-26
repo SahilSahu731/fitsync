@@ -5,7 +5,7 @@ The homepage follows the existing hero's black and white direction: Poppins, ope
 ## Active components
 
 - `src/app/page.tsx` arranges the homepage.
-- `hero-section.tsx` keeps the outlined headline, scattered fitness items, moving type and app drawer. Pause/resume controls stop the decorative motion. Store links come from the existing environment settings; no placeholder QR or invented store destination is shown.
+- `hero-section.tsx` keeps the outlined headline, scattered fitness items, moving type and Android download dialog. Pause/resume controls stop the decorative motion. The download dialog reads the current admin setting on open. Its Google Play button and locally generated QR code use the same URL.
 - `../marketing/product-demo.tsx` provides keyboard-accessible Train, Plan, Track and Progress tabs. The set toggles change local illustrative data only.
 - `../marketing/sections.tsx` contains the product story, weekly-plan example, health groups, movement library, Free/Pro comparison and closing section.
 - `../marketing/feature-catalog.ts` records the capabilities and health metrics shown on the full features page.
@@ -18,7 +18,7 @@ The older artwork and section components remain available in this folder but are
 
 Copy was checked against `mobile/src/features/workouts`, `coaching`, `program-follow`, `calendar`, `progress`, `wellness`, `explore`, `health-sync` and `billing`. Web catalog and profile actions keep using the existing API and account gates.
 
-Workout tracking, a four-week starter plan, program following, manual health tracking, library content and raw export form the free core. Pro covers session adaptation, rescheduling, progression suggestions and weekly reviews. Actual subscription prices remain in the mobile purchase flow. Health import is optional and reads only steps, sleep and weight.
+Free includes saved routines, workout logging, 90 days of standard training graphs, manual health tracking and raw export. Pro includes following programs, personal four-week plans, plan changes, weekly reviews, all-time graphs and meal planning. The member web workspace is in development. Actual subscription prices remain in the mobile purchase flow. Health import is optional and reads only steps, sleep and weight.
 
 All preview values are illustrative. Marketing does not claim a food database, medical advice, invented user counts, testimonials or automatic health imports beyond the implemented metrics.
 

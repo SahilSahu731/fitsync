@@ -15,8 +15,9 @@ next actions; related mobile resources use `/explore/resources/<slug>` links.
 
 Preview shows the unsaved editorial content. Publish saves the entire record.
 Unpublish & save draft removes it from published lists without deleting it.
-There is no destructive content endpoint. If another tab saved a newer version,
-the API rejects the stale edit and asks you to reload. Unsaved navigation prompts
+Delete on a content card permanently removes that item after confirmation. If a published
+article links to the item, update the article first. The API rejects stale edits and
+deletions when another tab has saved a newer version. Unsaved navigation prompts
 protect drafts. Uploaded images use the existing server image-processing and
 Cloudinary pipeline. Referenced images are never automatically deleted.
 

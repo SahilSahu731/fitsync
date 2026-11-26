@@ -4,7 +4,7 @@ export type Entitlement = {
   expiresAt: string | null;
   willRenew: boolean;
   managementUrl: string | null;
-  source: "revenuecat" | "none";
+  source: "revenuecat" | "admin" | "none";
   sandbox: boolean;
 };
 export type BillingStatus = { entitlement: Entitlement; configured: boolean };
@@ -67,7 +67,8 @@ export async function confirmStorePurchase(
   sync: () => Promise<BillingStatus>,
 ): Promise<"active" | "pending"> {
   try {
-    return hasPro(await sync()) ? "active" : "pending";
+    const status = await sync();
+    return status.entitlement.source === "revenuecat" && hasPro(status) ? "active" : "pending";
   } catch {
     return "pending";
   }

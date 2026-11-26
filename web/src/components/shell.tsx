@@ -39,14 +39,46 @@ const adminLinks: NavItem[] = [
   { href: "/admin/tools", label: "Fitness tools", icon: "settings" },
 ];
 
-const userLinks: NavItem[] = [
-  { href: "/user/home", label: "Overview", icon: "grid", exact: true },
+const accountLinks: NavItem[] = [
+  { href: "/user/home", label: "Account home", icon: "grid", exact: true },
+  { href: "/user/profile", label: "Fitness profile", icon: "user" },
+  { href: "/user/settings", label: "Account settings", icon: "settings" },
+];
+
+const trainingLinks: NavItem[] = [
   { href: "/user/planner", label: "Training planner", icon: "dumbbell" },
   { href: "/programs", label: "Training library", icon: "dumbbell" },
   { href: "/exercises", label: "Exercise library", icon: "dumbbell" },
-  { href: "/user/profile", label: "Fitness profile", icon: "user" },
-  { href: "/user/settings", label: "Settings", icon: "settings" },
 ];
+
+function MemberWorkspaceNotice() {
+  return (
+    <section className="max-w-3xl rounded-3xl bg-panel p-7 sm:p-10">
+      <p className="text-xs tracking-[.12em] text-white/55 uppercase">Your FitSync account</p>
+      <h1 className="mt-5 text-[clamp(2.4rem,5vw,4rem)] leading-tight font-medium tracking-[-.06em]">
+        The web workspace is in development.
+      </h1>
+      <p className="mt-5 max-w-xl leading-7 text-white/65">
+        We’ll post an update here when the workspace is ready. In the meantime, you can manage your
+        fitness profile and account settings.
+      </p>
+      <div className="mt-8 flex flex-wrap gap-3">
+        <Link
+          href="/user/settings"
+          className={`inline-flex min-h-12 items-center rounded-full bg-white px-6 text-sm font-medium text-black hover:bg-white/85 ${focusRing}`}
+        >
+          Account settings
+        </Link>
+        <Link
+          href="/user/profile"
+          className={`inline-flex min-h-12 items-center rounded-full bg-white/8 px-6 text-sm font-medium hover:bg-white/15 ${focusRing}`}
+        >
+          Fitness profile
+        </Link>
+      </div>
+    </section>
+  );
+}
 
 export function Workspace({
   children,
@@ -56,8 +88,19 @@ export function Workspace({
   admin?: boolean;
 }) {
   const path = usePathname();
-  const { account, logout } = useSession();
-  const links = admin ? adminLinks : userLinks;
+  const { account, admin: isAdmin, loading, error, logout } = useSession();
+  if (loading || error || !account || (admin && !isAdmin)) {
+    return (
+      <PublicShell>
+        <main id="main">
+          <AccessGate adminOnly={admin}>{null}</AccessGate>
+        </main>
+      </PublicShell>
+    );
+  }
+  const links = admin ? adminLinks : isAdmin ? [...accountLinks, ...trainingLinks] : accountLinks;
+  const showDevelopmentNotice =
+    !admin && !isAdmin && path !== "/user/profile" && path !== "/user/settings";
 
   // The most specific matching link wins, so "/admin/exercises/new" doesn't
   // also light up "/admin/exercises", and edit pages keep "Exercises" active.
@@ -65,18 +108,18 @@ export function Workspace({
     .filter((l) => (l.exact ? path === l.href : isActive(path, l.href)))
     .sort((a, b) => b.href.length - a.href.length)[0]?.href;
 
-  const workspaceLabel = admin ? "Admin workspace" : "Your workspace";
+  const workspaceLabel = admin ? "Admin workspace" : "Your account";
   const name = account?.user.name;
 
   return (
     <div className="min-h-screen bg-background lg:flex">
-      <aside className="z-40 flex flex-wrap items-center gap-x-5 gap-y-4  bg-background px-5 py-5 text-ink lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col lg:items-stretch lg:gap-0 lg:p-6">
+      <aside className="z-40 flex flex-wrap items-center gap-x-5 gap-y-4 bg-background px-5 py-5 text-ink lg:fixed lg:inset-y-0 lg:left-0 lg:w-64 lg:flex-col lg:flex-nowrap lg:items-stretch lg:gap-0 lg:overflow-y-auto lg:p-6">
         <Brand />
         <p className="ml-auto text-xs font-medium text-white/50 lg:mt-12 lg:mb-3 lg:ml-3">
           {workspaceLabel}
         </p>
         <nav
-          aria-label="Workspace navigation"
+          aria-label={admin ? "Admin navigation" : "Account navigation"}
           className="flex w-full gap-1 overflow-x-auto [scrollbar-width:none] lg:flex-col lg:overflow-visible"
         >
           {links.map(({ href, label, icon }) => {
@@ -151,7 +194,7 @@ export function Workspace({
           </span>
         </header>
         <main className="mx-auto max-w-400 px-5 py-9 sm:px-8 lg:px-12 lg:py-12" id="main">
-          <AccessGate adminOnly={admin}>{children}</AccessGate>
+          {showDevelopmentNotice ? <MemberWorkspaceNotice /> : children}
         </main>
       </div>
     </div>

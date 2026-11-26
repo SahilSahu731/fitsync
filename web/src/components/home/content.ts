@@ -10,13 +10,13 @@ export const heroContent = {
   secondLine: "Show up",
   accent: "stronger.",
   description:
-    "Follow a program, log every set, and track 31 health metrics. Get a free four-week starter plan built around your goal, equipment and schedule.",
+    "See what you lifted last time, log today’s sets and time your rest on Android. Between workouts, track your steps, nutrition and sleep in the same app.",
   primary: { label: "Get started free", href: "/register" },
   secondary: { label: "Explore training", href: "/programs" },
 };
 
 export const stats = [
-  ["4 weeks", "free starter plan, built for you"],
+  ["90 days", "of training graphs on Free"],
   ["31", "health metrics you can track"],
   ["14", "built-in fitness calculators"],
   ["1 account", "across web and mobile"],
@@ -26,21 +26,21 @@ export const pillars = [
   {
     art: "log",
     title: "Log every set",
-    text: "Record weight, reps and effort as you train, with a rest timer and a full workout history to look back on.",
+    text: "See last session’s numbers on Android, record today’s weight and reps, then start the rest timer. Your workout history keeps the numbers for next time.",
     href: "/features",
     action: "See how logging works",
   },
   {
     art: "program",
     title: "Follow a program",
-    text: "Pick a published program and start on a date you choose. Reminders arrive at your time, and missed sessions stay available.",
+    text: "Browse the weekly schedule before you commit. With Pro, choose a start date, follow the program on Android and set session reminders.",
     href: "/programs",
     action: "Browse programs",
   },
   {
     art: "coach",
-    title: "Get a starter plan",
-    text: "A four-week plan from your goal, experience, equipment, session length and training days. No guesswork, no made-up exercises.",
+    title: "Train with a four-week plan",
+    text: "With Pro, build a plan around the days you can train and the equipment you have. Swap an exercise or shorten a session when your week changes.",
     href: "/features",
     action: "How plans are built",
   },
@@ -54,7 +54,7 @@ export const pillars = [
   {
     art: "explore",
     title: "Learn and recover",
-    text: "Guided mobility sessions, short articles and 14 calculators, so warm-ups and rest days count too.",
+    text: "Follow a guided mobility session on a recovery day, or use the strength and volume calculators to understand a recent workout.",
     href: "/exercises",
     action: "Explore the library",
   },
@@ -69,21 +69,21 @@ export const pillars = [
 
 export const planTiers = {
   free: [
-    "Workout logging and full history",
-    "Free four-week starter plan",
-    "Follow programs with reminders",
-    "All 31 health metrics and targets",
-    "Exercise library, mobility and tools",
-    "Raw data export",
+    "Android workout logging, rest timers and personal records",
+    "Saved routines with exercises from the library",
+    "Workout reminders and 90 days of standard graphs",
+    "31 health metrics, personal targets and Health Connect import",
+    "Exercise library, guided mobility and fitness calculators",
+    "Raw data export and monthly training reports",
   ],
   pro: [
-    "Shorten a session to the time you have",
-    "Switch to gym, dumbbells or bodyweight",
-    "Swap an exercise within the same movement pattern",
-    "Choose an easier day when you need one",
-    "Progression suggestions",
-    "Move a missed session and the rest of the schedule",
-    "A weekly review with clear next actions",
+    "Scheduled programs with session reminders",
+    "Personal plans with exercise swaps and flexible training days",
+    "Progression suggestions and weekly training reviews",
+    "All-time graphs and muscle workload insights",
+    "Custom exercises, warm-up sets and plate calculators",
+    "Weekly meal plans, meal swaps and shopping lists",
+    "Private progress photos and read-only training links",
   ],
 };
 
@@ -187,12 +187,12 @@ export const questions = [
   {
     question: "What is free and what is Pro?",
     answer:
-      "Free includes workout logging and history, a four-week starter plan, program following with reminders, all 31 health metrics and targets, the exercise library, and data export. Optional Pro adds plan adaptation: shorter sessions, equipment changes, easier days, exercise swaps, progression suggestions, rescheduling and a weekly review.",
+      "A free account lets you save routines, log workouts, track daily health and see 90 days of standard graphs. Pro adds scheduled programs, adjustable training plans, weekly reviews, all-time graphs and weekly meal planning.",
   },
   {
-    question: "How is my starter plan created?",
+    question: "How does Pro build my training plan?",
     answer:
-      "From your saved goal, experience, equipment, session length and training days. Beginners get up to three strength days a week and other levels up to four. Plans only use published exercises, never guess a starting weight, and week four reduces sets.",
+      "In the Android app, choose your goal, experience, equipment, training days and session length. Pro uses those choices to build a four-week plan. You can review each session and accept changes when you need a shorter or easier day.",
   },
   {
     question: "Do I need a gym or special equipment?",
@@ -202,16 +202,16 @@ export const questions = [
   {
     question: "Can I follow more than one program?",
     answer:
-      "One active program at a time. If you switch, your old enrollment, journal and workout logs are kept. Missed sessions stay available, and days with nothing scheduled are recovery days.",
+      "With Pro, you can follow one program at a time. Pick a start date and turn on session reminders if you want them. If you switch programs, your earlier workout logs stay in your history.",
   },
   {
     question: "Which health data can FitSync import?",
     answer:
-      "Steps, sleep and body weight from Health Connect on Android for the last seven days. It is optional and read-only: FitSync does not write to your health records. Detected steps and extra steps you add are tracked separately.",
+      "With your permission, FitSync reads steps, sleep and body weight for the past seven days from Health Connect on Android. You can also log measurements yourself. Extra steps you enter are counted separately from imported steps.",
   },
   {
     question: "How do the website and mobile app work together?",
     answer:
-      "Explore exercises and programs, learn technique and manage your profile on the website. Log workouts and daily check-ins in the mobile app with the same account.",
+      "Use the website to browse training programs, save a routine and manage your account. Open Train on Android with the same account to log your sets. The member web workspace is in development. We’ll post an update here when it’s ready.",
   },
 ];

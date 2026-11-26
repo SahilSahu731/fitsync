@@ -31,8 +31,8 @@ export default function TermsPage() {
           FitSync provides general fitness, training and nutrition information and tools for
           recording your activity. Plans, coaching suggestions, calculations and device imports may
           be incomplete or inaccurate. They are not medical advice, diagnosis, treatment or an
-          emergency service. Consider your abilities and health conditions, seek advice from a
-          qualified professional when appropriate, and stop activity if you experience pain or
+          emergency service. FitSync is not a medical device. Consult a healthcare professional for
+          medical advice, diagnosis or treatment, and stop activity if you experience pain or
           concerning symptoms.
         </p>
       </section>
@@ -41,9 +41,9 @@ export default function TermsPage() {
         <p>
           You retain ownership of the content you submit. You give FitSync permission to store,
           process and display it as needed to operate the features you request, including sync and
-          sharing you enable. Only upload material you have the right to use. Optional health,
-          photo, calendar, motion and notification permissions can be managed through the app and
-          device settings.
+          sharing you enable. Only upload material you have the right to use. You choose which
+          photos to upload and which calendar events to save. Optional health, motion and
+          notification permissions can be managed through the app and device settings.
         </p>
         <p>
           You are responsible for choosing recipients and the information included in shared links,
@@ -104,7 +104,8 @@ export default function TermsPage() {
         <p>
           Our <Link href="/privacy">Privacy Policy</Link> explains how FitSync handles account
           information, fitness and health records, optional permissions, service providers and
-          deletion requests.
+          deletion requests. The <Link href="/health-connect">Health Connect terms</Link> explain
+          Android import permissions and how to withdraw access.
         </p>
       </section>
       <section>

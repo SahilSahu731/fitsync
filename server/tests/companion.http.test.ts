@@ -92,6 +92,7 @@ function database(t: test.TestContext) {
       delete() {
         return builder;
       },
+      single: async () => ({ data: { role: "user" }, error: null }),
       maybeSingle: async () => result,
       then(resolve: any, reject: any) {
         return Promise.resolve(result).then(resolve, reject);

@@ -9,7 +9,7 @@ import {
   View,
   useWindowDimensions,
 } from "react-native";
-import { router, useLocalSearchParams } from "expo-router";
+import { Redirect, router, useLocalSearchParams } from "expo-router";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
@@ -74,6 +74,8 @@ function ComparisonValue({ value, pro = false }: { value: string | boolean; pro?
 
 export function ProScreen({ embedded = false }: { embedded?: boolean } = {}) {
   const { user } = useSession();
+  const { adminAccess } = useBilling();
+  if (adminAccess) return <Redirect href="/billing" />;
   return <ProMarketingPage key={user?.id ?? "guest"} embedded={embedded} />;
 }
 

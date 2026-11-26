@@ -4,7 +4,7 @@ export type Entitlement = {
   expiresAt: string | null;
   willRenew: boolean;
   managementUrl: string | null;
-  source: "revenuecat" | "none";
+  source: "revenuecat" | "admin" | "none";
   sandbox: boolean;
 };
 

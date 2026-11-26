@@ -44,6 +44,15 @@ function message(error: unknown) {
   return error instanceof Error ? error.message : "Something went wrong. Please try again.";
 }
 
+function catalogList<T extends Choice>(rows: T[], label: string): T[] {
+  if (
+    !Array.isArray(rows) ||
+    rows.some((row) => !row || typeof row.id !== "string" || typeof row.name !== "string")
+  )
+    throw new Error(`The server returned an invalid ${label} list. Please retry.`);
+  return rows;
+}
+
 export function CatalogAdmin({ kind }: { kind: Kind }) {
   const api = useAccountApi();
   const [records, setRecords] = useState<RecordData[]>([]);
@@ -72,9 +81,12 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
     ])
       .then(([rows, cats, options]) => {
         if (active) {
-          setRecords(rows);
-          setCategories(cats);
-          setChoices(options);
+          const records = catalogList(rows, kind);
+          const categoryOptions = catalogList(cats, "category");
+          const contentOptions = catalogList(options, kind === "programs" ? "routine" : "exercise");
+          setRecords(records);
+          setCategories(categoryOptions);
+          setChoices(contentOptions);
           setError("");
         }
       })
@@ -367,7 +379,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
               </article>
             ))}
           </div>
-          {!visible.length && (
+          {!visible.length && !error && (
             <div className="flex min-h-[50vh] flex-col items-center justify-center gap-5 px-5 py-20 text-center [&>p]:max-w-lg [&>p]:leading-7 [&>p]:text-muted [&>h2]:text-3xl">
               <h2>{query || filter !== "all" ? "No matches" : `No ${kind} yet`}</h2>
               <p>
@@ -382,6 +394,7 @@ export function CatalogAdmin({ kind }: { kind: Kind }) {
         <>
           <button
             className="mb-6 inline-flex items-center gap-2 text-sm text-muted hover:text-ink"
+            disabled={busy}
             onClick={() => {
               if (
                 (!dirty && !document.querySelector("[data-unsaved=true]")) ||
@@ -689,7 +702,7 @@ function ContentRow({
   onRemove?: () => void;
 }) {
   const [value, setValue] = useState(item);
-  const [dirty, setDirty] = useState(!item.id);
+  const [dirty, setDirty] = useState(routine && !item.id);
 
   useEffect(() => {
     const warn = (event: BeforeUnloadEvent) => {
@@ -750,7 +763,7 @@ function ContentRow({
                 ["Sets", "sets", 1, 20],
                 ["Minimum reps", "min_reps", 1, 10000],
                 ["Maximum reps", "max_reps", 1, 10000],
-                ["Rest (seconds)", "rest_seconds", 0, 3600],
+                ["Rest (seconds)", "rest_seconds", 0, 900],
               ].map(([label, key, min, max]) => (
                 <label
                   className="flex min-w-0 flex-col gap-2 text-base [&>span:first-child]:text-sm [&>span:first-child]:font-medium [&>small]:text-xs [&>small]:text-muted [&>label]:grid [&>label]:gap-2"
@@ -817,7 +830,7 @@ function ContentRow({
               Remove
             </button>
           )}
-          <small role="status">{dirty ? "Unsaved" : "Saved"}</small>
+          <small role="status">{dirty ? "Unsaved" : item.id ? "Saved" : "Not yet saved"}</small>
         </div>
       </fieldset>
     </form>

@@ -1,6 +1,8 @@
 import test, { before, after } from "node:test";
 import assert from "node:assert/strict";
 import type { Server } from "node:http";
+import jwt from "jsonwebtoken";
+import { createClient } from "@supabase/supabase-js";
 
 Object.assign(process.env, {
   NODE_ENV: "test",
@@ -60,6 +62,89 @@ test("health verifies database access without reading account data and is not ca
   assert.equal(response.status, 200);
   assert.equal(response.headers.get("cache-control"), "no-store");
   assert.deepEqual(await response.json(), { ok: true, service: "fitsync-api", database: "up" });
+});
+
+test("visitors read the download link and only an admin can publish a new revision", async (t) => {
+  let row = {
+    url: "https://play.google.com/store/apps/details?id=com.google.android.apps.healthdata",
+    revision: 1,
+  };
+  let role = "user";
+  t.mock.method(db, "from", (table: string) => {
+    const filters: Record<string, unknown> = {};
+    let update: typeof row | undefined;
+    const query = {
+      select() {
+        return query;
+      },
+      is() {
+        return query;
+      },
+      gt() {
+        return query;
+      },
+      eq(key: string, value: unknown) {
+        filters[key] = value;
+        return query;
+      },
+      update(value: typeof row) {
+        update = value;
+        return query;
+      },
+      maybeSingle() {
+        return query.single();
+      },
+      single() {
+        if (table === "auth_sessions") return { data: { id: "active" }, error: null };
+        if (table === "app_users") return { data: { role }, error: null };
+        assert.equal(table, "site_mobile_download");
+        assert.equal(filters.id, true);
+        if (update) {
+          if (filters.revision !== row.revision) return { data: null, error: null };
+          row = update;
+        }
+        return { data: row, error: null };
+      },
+    };
+    return query as any;
+  });
+  const endpoint = `${base}/api/site/mobile-download`;
+  const token = jwt.sign({ sid: "active" }, process.env.JWT_SECRET!, {
+    subject: "owner",
+    issuer: "fitsync-api",
+    audience: "fitsync-mobile",
+    expiresIn: "10m",
+  });
+  const put = (url: string, signedIn = true) =>
+    fetch(endpoint, {
+      method: "PUT",
+      headers: {
+        "Content-Type": "application/json",
+        ...(signedIn && { Authorization: `Bearer ${token}` }),
+      },
+      body: JSON.stringify({ url, revision: 1 }),
+    });
+  const initial = await fetch(endpoint);
+  assert.equal(initial.headers.get("cache-control"), "no-store");
+  assert.deepEqual(await initial.json(), { ...row, isPlaceholder: true });
+  const replacement = "https://downloads.example.com/android?release=beta";
+  assert.equal((await put(replacement, false)).status, 401);
+  assert.equal((await put(replacement)).status, 403);
+  role = "admin";
+  for (const invalid of [
+    "javascript:alert(1)",
+    "/local",
+    "https://user:password@example.com/app",
+    "https://example.com/" + "x".repeat(2000),
+  ])
+    assert.equal((await put(invalid)).status, 400);
+  assert.equal((await put(replacement)).status, 200);
+  assert.equal((await put("https://stale.example.com")).status, 409);
+  assert.deepEqual(await (await fetch(endpoint)).json(), {
+    url: replacement,
+    revision: 2,
+    isPlaceholder: false,
+  });
 });
 
 test("database errors and network timeouts return 503 without exposing failure details", async (t) => {
@@ -148,6 +233,67 @@ test("authenticated BFF requests have independent per-user auth limits", async (
   for (let i = 0; i < 30; i++) assert.equal((await login(headers)).status, 400);
   assert.equal((await login(headers)).status, 429);
   assert.equal((await login({ ...headers, "X-FitSync-Client-IP": "192.0.2.11" })).status, 400);
+});
+
+test("Explore deletion requires an admin, respects published links, kind and record revision", async (t) => {
+  const id = "53e71323-d3df-4af0-866f-c8adddd0d319";
+  const slug = "test-session";
+  const version = "2026-03-04T12:34:00Z";
+  let role = "user";
+  let referenced = true;
+  let deleted = 0;
+  const fixture = createClient("https://explore.test", "test-key", {
+    auth: { persistSession: false, autoRefreshToken: false },
+    global: {
+      fetch: async (input, init) => {
+        const url = new URL(input.toString());
+        const table = url.pathname.split("/").pop();
+        if (table === "auth_sessions") return Response.json([{ id: "active" }]);
+        if (table === "app_users") return Response.json({ role });
+        assert.equal(table, "explore_resources");
+        const params = url.searchParams;
+        if (init?.method === "GET") {
+          assert.equal(params.get("published"), "eq.true");
+          assert.equal(params.get("id"), `neq.${id}`);
+          assert.equal(
+            params.get("body"),
+            "cs." + JSON.stringify([{ links: [{ url: `/explore/resources/${slug}` }] }]),
+          );
+          return Response.json(referenced ? [{ id: "referrer" }] : []);
+        }
+        assert.equal(init?.method, "DELETE");
+        assert.equal(params.get("id"), `eq.${id}`);
+        assert.equal(params.get("slug"), `eq.${slug}`);
+        if (params.get("kind") !== "eq.mobility" || params.get("updated_at") !== `eq.${version}`)
+          return Response.json([]);
+        assert.equal(params.get("tags"), 'not.cs.{"fitsync:tool"}');
+        deleted++;
+        return Response.json([{ id }]);
+      },
+    },
+  });
+  t.mock.method(db, "from", fixture.from.bind(fixture));
+  const token = jwt.sign({ sid: "active" }, process.env.JWT_SECRET!, {
+    subject: "owner",
+    issuer: "fitsync-api",
+    audience: "fitsync-mobile",
+    expiresIn: "10m",
+  });
+  const remove = (kind = "mobility", updated_at = version) =>
+    fetch(`${base}/api/explore/admin/${kind}/${id}`, {
+      method: "DELETE",
+      headers: { "content-type": "application/json", Authorization: `Bearer ${token}` },
+      body: JSON.stringify({ slug, updated_at }),
+    });
+  assert.equal((await remove()).status, 403);
+  role = "admin";
+  assert.equal((await remove()).status, 409);
+  referenced = false;
+  assert.equal((await remove("tools")).status, 409);
+  assert.equal((await remove("mobility", "2026-03-03T12:34:00Z")).status, 409);
+  assert.equal(deleted, 0);
+  assert.equal((await remove()).status, 204);
+  assert.equal(deleted, 1);
 });
 
 test("draining fails readiness and rejects new API work with a retryable response", async () => {

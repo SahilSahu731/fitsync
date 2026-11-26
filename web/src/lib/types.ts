@@ -1,3 +1,9 @@
+export type MobileDownloadSetting = {
+  url: string;
+  isPlaceholder: boolean;
+  revision: number;
+};
+
 export type TaxonomyItem = {
   code: string;
   label: string;

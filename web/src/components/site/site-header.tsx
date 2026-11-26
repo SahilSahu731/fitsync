@@ -17,7 +17,8 @@ export function SiteHeader() {
   const wrapper = useRef<HTMLDivElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const close = () => setMenuPath(null);
-  const workspace = admin ? "/admin" : "/user/home";
+  const accountHref = admin ? "/admin" : "/user/home";
+  const accountLabel = admin ? "Admin panel" : "My account";
   useEffect(() => {
     let frame = 0;
     const schedule = () => {
@@ -84,11 +85,12 @@ export function SiteHeader() {
               {account ? (
                 <>
                   <Link
-                    href={workspace}
+                    href={accountHref}
+                    aria-label={accountLabel}
                     className="flex items-center border pr-4 hover:bg-[#303130] transition-all hover:border-none duration-500 py-1 border-white/20 gap-2 rounded-full font-medium"
                   >
                     <AccountAvatar name={account.user.name} avatarUrl={account.user.avatarUrl} />
-                    <span className="hidden sm:block">My workspace</span>
+                    <span className="hidden sm:block">{accountLabel}</span>
                   </Link>
                   <button
                     onClick={() => void logout()}
@@ -151,11 +153,11 @@ export function SiteHeader() {
             ))}
             <div className="mt-5 flex gap-3 px-4 pb-2">
               <Link
-                href={account ? workspace : "/register"}
+                href={account ? accountHref : "/register"}
                 onClick={close}
                 className="inline-flex min-h-12 flex-1 items-center justify-center rounded-full bg-white px-5 text-xs font-semibold text-black"
               >
-                {account ? "Open workspace" : "Get started free"}
+                {account ? accountLabel : "Get started free"}
               </Link>
               {!account && (
                 <Link

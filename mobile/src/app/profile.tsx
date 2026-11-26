@@ -215,13 +215,15 @@ export default function ProfileScreen() {
       : null;
   const memberLabel = billing.loading
     ? "CHECKING MEMBERSHIP"
-    : billing.isPro
-      ? "PRO MEMBER"
-      : billing.pendingActivation
-        ? "ACTIVATION PENDING"
-        : billing.error
-          ? "CHECK MEMBERSHIP"
-          : "FITSYNC ATHLETE";
+    : billing.adminAccess
+      ? "ADMINISTRATOR"
+      : billing.isPro
+        ? "PRO MEMBER"
+        : billing.pendingActivation
+          ? "ACTIVATION PENDING"
+          : billing.error
+            ? "CHECK MEMBERSHIP"
+            : "FITSYNC ATHLETE";
   function logout() {
     Alert.alert("Sign out?", "Your account and saved progress will be here when you return.", [
       { text: "Cancel", style: "cancel" },
@@ -465,7 +467,11 @@ export default function ProfileScreen() {
           </Txt>
           <View className="mt-4 flex-row items-center gap-2">
             <Txt weight="semibold" className="text-xs text-bg">
-              {billing.isPro ? "Manage membership" : "View membership"}
+              {billing.adminAccess
+                ? "View administrator access"
+                : billing.isPro
+                  ? "Manage membership"
+                  : "View membership"}
             </Txt>
             <Icon name="arrow-right" size={17} color={C.bg} />
           </View>

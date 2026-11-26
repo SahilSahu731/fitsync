@@ -27,6 +27,7 @@ import { setTrialReminderOwner, syncTrialReminder } from "./trial-reminders";
 export type { BillingOffer } from "./offers";
 type BillingContextValue = {
   isPro: boolean;
+  adminAccess: boolean;
   entitlement: Entitlement;
   loading: boolean;
   busy: boolean;
@@ -91,6 +92,7 @@ function BillingAccountProvider({
     [offersState, userId],
   );
   const isPro = hasPro(status);
+  const adminAccess = isPro && status?.entitlement.source === "admin";
   const alive = (id: string) => identity.current === id;
 
   const getStatus = useCallback(async (id: string, sync = false) => {
@@ -217,6 +219,7 @@ function BillingAccountProvider({
   const purchase = useCallback(
     async (id: string, options?: { trialReminder: boolean }) => {
       if (!userId || !alive(userId)) throw new Error("Sign in to subscribe.");
+      if (adminAccess) throw new Error("Your administrator role already includes Pro.");
       if (locked.current) throw new Error("A store request is already in progress.");
       const offer = offers.find((item) => item.id === id);
       if (!offer) throw new Error("Choose an available subscription plan.");
@@ -243,7 +246,7 @@ function BillingAccountProvider({
         setBusy(false);
       }
     },
-    [offers, userId, verifyPurchase],
+    [adminAccess, offers, userId, verifyPurchase],
   );
 
   const restore = useCallback(async () => {
@@ -278,8 +281,9 @@ function BillingAccountProvider({
   const value = useMemo<BillingContextValue>(
     () => ({
       isPro,
+      adminAccess,
       entitlement: status?.entitlement ?? FREE_ENTITLEMENT,
-      loading,
+      loading: loading && !adminAccess,
       busy,
       configured: status?.configured ?? false,
       storeReady: !!revenueCatKey() && !storeError && offers.length > 0,
@@ -294,6 +298,7 @@ function BillingAccountProvider({
     }),
     [
       isPro,
+      adminAccess,
       status,
       loading,
       busy,

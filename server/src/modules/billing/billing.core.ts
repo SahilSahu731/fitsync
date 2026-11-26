@@ -12,6 +12,7 @@ import type { BillingConfig, BillingRepository, BillingStatus } from "./billing.
 export function createBillingService(options: {
   config: BillingConfig;
   repository: BillingRepository;
+  isUserAdmin: (userId: string) => Promise<boolean>;
   fetchSubscriber: (userId: string) => Promise<unknown>;
   now?: () => number;
 }) {
@@ -34,6 +35,13 @@ export function createBillingService(options: {
   }
 
   async function getStatus(userId: string): Promise<BillingStatus> {
+    // Read the current account role for feature access. Only verified store
+    // purchases are written to billing snapshots by reconcile().
+    if (await options.isUserAdmin(userId))
+      return {
+        entitlement: { ...freeEntitlement(), tier: "pro", active: true, source: "admin" },
+        configured,
+      };
     if (!configured) return { entitlement: freeEntitlement(), configured: false };
     return { entitlement: await reconcile(userId), configured: true };
   }

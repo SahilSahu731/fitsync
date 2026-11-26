@@ -10,8 +10,9 @@ export function createProGuard(options: {
   return async (req, _res, next) => {
     try {
       const userId = options.userId(req);
-      if (!options.configured) throw new ApiError(503, "FitSync Pro is not configured yet.");
       const entitlement = await options.getEntitlement(userId);
+      if (!options.configured && entitlement.source !== "admin")
+        throw new ApiError(503, "FitSync Pro is not configured yet.");
       if (!entitlement.active || entitlement.tier !== "pro")
         throw new ApiError(402, "FitSync Pro is required for this feature.");
       next();

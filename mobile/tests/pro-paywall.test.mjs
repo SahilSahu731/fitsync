@@ -174,6 +174,7 @@ function fixture(options = {}) {
       useWindowDimensions: () => dimensions,
     },
     "expo-router": {
+      Redirect: "Redirect",
       useLocalSearchParams: () => ({ source: options.source ?? "pro_tab" }),
       router: {
         canGoBack: () => true,
@@ -263,6 +264,15 @@ function text(node) {
 }
 const button = (tree, label) => find(tree, "Pressable").find((node) => text(node).includes(label));
 const tick = () => new Promise(setImmediate);
+
+test("verified administrators opening membership see account access instead of checkout", () => {
+  const f = fixture();
+  Object.assign(f.billing, { adminAccess: true, isPro: true, configured: false });
+  const tree = f.render();
+  assert.equal(tree.type, "Redirect");
+  assert.equal(tree.props.href, "/billing");
+  assert.deepEqual(f.calls, []);
+});
 
 test("Lifetime selection buys its store package with no automatic renewal wording", async () => {
   const f = fixture();

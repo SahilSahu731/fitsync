@@ -26,6 +26,7 @@ export function LegalDocument({
         >
           <Link href="/privacy">Privacy Policy</Link>
           <Link href="/terms">Terms of Service</Link>
+          <Link href="/health-connect">Health Connect</Link>
           <Link href="/delete-account">Delete your account</Link>
         </nav>
         <article className="space-y-10 text-base leading-8 text-white/75 [&_h2]:mb-3 [&_h2]:text-2xl [&_h2]:font-medium [&_h2]:text-white [&_p+p]:mt-4 [&_a]:underline [&_a]:underline-offset-4 [&_ul]:list-disc [&_ul]:space-y-2 [&_ul]:pl-6">

@@ -80,9 +80,18 @@ export default function BillingScreen() {
       ? "Status needs verification"
       : billing.pendingActivation && !billing.isPro
         ? "Activating your membership"
-        : billing.isPro
-          ? "FitSync Pro"
-          : "FitSync Free";
+        : billing.adminAccess
+          ? "Administrator access"
+          : billing.isPro
+            ? "FitSync Pro"
+            : "FitSync Free";
+  const primaryAction = billing.adminAccess
+    ? { title: "Open Pro workspace", onPress: () => router.navigate("/(tabs)/pro") }
+    : billing.isPro
+      ? { title: "Manage or cancel membership", onPress: () => void run(billing.manage) }
+      : billing.pendingActivation || billing.error || billing.loading
+        ? { title: "Refresh membership status", onPress: () => void billing.refresh() }
+        : { title: "Explore FitSync Pro", onPress: () => router.push("/pro") };
   const date = billing.entitlement.expiresAt
     ? new Date(billing.entitlement.expiresAt).toLocaleDateString(undefined, {
         day: "numeric",
@@ -145,7 +154,13 @@ export default function BillingScreen() {
               billing.isPro && <ShieldCheck color={C.ink} size={26} />
             )}
           </View>
-          {billing.isPro && (
+          {billing.adminAccess && (
+            <Txt className="mt-4 text-sm leading-6 text-muted">
+              Your administrator role includes all Pro features. If you also have a store
+              subscription, you can manage it below.
+            </Txt>
+          )}
+          {billing.isPro && !billing.adminAccess && (
             <View className="mt-5 pt-4">
               <View className="flex-row items-center justify-between gap-4">
                 <Txt className="text-sm text-muted">
@@ -178,23 +193,7 @@ export default function BillingScreen() {
             </Txt>
           )}
           <View className="mt-5">
-            <PrimaryButton
-              title={
-                billing.isPro
-                  ? "Manage or cancel membership"
-                  : billing.pendingActivation || billing.error || billing.loading
-                    ? "Refresh membership status"
-                    : "Explore FitSync Pro"
-              }
-              disabled={busy}
-              onPress={() =>
-                billing.isPro
-                  ? void run(billing.manage)
-                  : billing.pendingActivation || billing.error || billing.loading
-                    ? void billing.refresh()
-                    : router.push("/pro")
-              }
-            />
+            <PrimaryButton {...primaryAction} disabled={busy} />
           </View>
         </View>
         {!!billing.error && (
@@ -210,12 +209,16 @@ export default function BillingScreen() {
         </Txt>
         <View className="overflow-hidden rounded-[24px] bg-panel">
           {[
-            {
-              title: "Restore purchases",
-              detail: "Reconnect a purchase from your store account",
-              Icon: RefreshCw,
-              action: restore,
-            },
+            ...(!billing.adminAccess
+              ? [
+                  {
+                    title: "Restore purchases",
+                    detail: "Reconnect a purchase from your store account",
+                    Icon: RefreshCw,
+                    action: restore,
+                  },
+                ]
+              : []),
             {
               title: "Receipts & order history",
               detail: `Open your ${store} purchase history`,
@@ -269,7 +272,7 @@ export default function BillingScreen() {
             <Txt className="flex-1 text-sm leading-6">{notice}</Txt>
           </View>
         )}
-        {!billing.storeReady && !!billing.storeError && (
+        {!billing.adminAccess && !billing.storeReady && !!billing.storeError && (
           <Txt className="mt-5 text-sm leading-6 text-muted">{billing.storeError}</Txt>
         )}
         <View className="mt-7 flex-row items-start gap-3">
