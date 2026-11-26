@@ -24,6 +24,7 @@
     "toqr": "0.1.1"
   },
   "devDependencies": {
+    "@netlify/plugin-nextjs": "^5.16.9",
     "@tailwindcss/postcss": "^4.3.5",
     "@tailwindcss/turbopack": "^4",
     "@types/node": "^20",
