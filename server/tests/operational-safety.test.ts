@@ -77,14 +77,15 @@ test("shared rate limits use stable private keys and return database reset times
   assert.ok(!keys[0].includes("192.0.2.1"));
 });
 
-test("request logs correlate IDs without raw URLs, health values or credentials", (t) => {
+test("requests receive a correlation ID without a routine console log", (t) => {
   const logs: string[] = [];
   t.mock.method(console, "log", (message: string) => logs.push(message));
+  const headers = new Map<string, string>();
   const res = Object.assign(new EventEmitter(), {
     locals: {} as any,
     statusCode: 200,
     writableFinished: true,
-    setHeader: (_key: string, _value: string) => {},
+    setHeader: (key: string, value: string) => headers.set(key, value),
   });
   requestLog(
     {
@@ -97,11 +98,9 @@ test("request logs correlate IDs without raw URLs, health values or credentials"
   );
   res.emit("finish");
   res.emit("close");
-  assert.equal(logs.length, 1);
-  const row = JSON.parse(logs[0]);
-  assert.equal(row.requestId, res.locals.requestId);
-  assert.equal(row.route, "/shared/:token");
-  assert.doesNotMatch(logs[0], /private-token|weight|\?/);
+  assert.match(res.locals.requestId, /^[a-f0-9-]{36}$/);
+  assert.equal(headers.get("X-Request-ID"), res.locals.requestId);
+  assert.equal(logs.length, 0);
 });
 test("shared rate limits fail closed on unavailable or malformed counter responses", async (t) => {
   let response: any;

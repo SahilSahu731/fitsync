@@ -1,6 +1,36 @@
-# Production deployment
+# Deployment
 
-## Render
+## Free Render staging for the API
+
+1. Prepare a staging Supabase project. On a fresh database, apply the numbered migrations
+   in order. On an existing database, apply only missing changes. Run the repository's
+   verifier and resolve any rows it reports, including missing service-role grants.
+   [Database setup](../server/sql/README.md) · [Grant instructions](../config.md#data)
+2. Push the branch containing `render.staging.yaml` to the Git provider connected to Render.
+   In **Render Dashboard → New → Blueprint**, select the repository and branch, then set
+   **Blueprint Path** to `render.staging.yaml`. The preview should show one Docker web
+   service named **fitsync-api-staging** on **Free**. The default `render.yaml` provisions
+   paid services. [Staging Blueprint](../render.staging.yaml) · [Render setup](https://render.com/docs/infrastructure-as-code)
+3. Enter the staging Supabase URL and service-role key, Google Web client ID, and Cloudinary
+   cloud name, API key and secret. Generate the staging JWT signing secret with
+   `openssl rand -hex 32`. Render generates the web proxy secret. Choose **Deploy Blueprint**.
+   [Backend environment variables](backend-environment.md)
+4. To see API timings in PostHog, open **fitsync-api-staging → Environment** and add
+   `POSTHOG_PROJECT_TOKEN` and the project's ingestion origin in `POSTHOG_HOST`
+   (`https://us.i.posthog.com` or `https://eu.i.posthog.com`). The Blueprint sets
+   `POSTHOG_ENVIRONMENT=staging`. With the token configured, the default
+   `POSTHOG_TRACE_SAMPLE_RATE=0.01` samples about one in 100 requests. For a short
+   smoke test, set the rate to `1`, save and deploy the settings, then restore `0.01`
+   after verification. [PostHog tracing](https://posthog.com/docs/distributed-tracing)
+5. Open the service's HTTPS URL with `/health` appended and confirm a 200 response.
+   Point your test app's `EXPO_PUBLIC_API_URL` at that HTTPS origin, sign in with a
+   staging account and open workout history. With tracing configured, check
+   **PostHog → Tracing** for the API request. A free instance can take about a minute
+   to wake up after 15 minutes of inactivity. Scheduled reminders require a separate
+   worker. Monitor free instance hours, outbound bandwidth and build minutes under
+   **Render Dashboard → Billing**. [Free instance limits](https://render.com/docs/free)
+
+## Paid Render deployment
 
 Import the repository's [`render.yaml`](../render.yaml) as a Render Blueprint. It
 defines a Docker API service, a Docker Next.js service and a five-minute cron job
@@ -67,8 +97,8 @@ Only a matching server secret lets that header affect authentication rate limits
 Keep that secret identical on web and API, and never expose it as `NEXT_PUBLIC_*`.
 Production API/job configuration rejects a missing secret, and web API forwarding
 fails closed if it is absent. The cron inherits it alongside the shared API configuration.
-The auth limiter uses an in-memory store: keep one API instance until you configure
-a shared store and verify limits across replicas.
+The production API uses the shared PostgreSQL rate limiter installed by migration
+`021`. Verify a normal API request after deployment to exercise it.
 
 If using Railway, Fly or another scheduler, run the compiled reminder command
 every five minutes with the API environment and one active invocation. Do not
@@ -92,7 +122,7 @@ text, breadcrumbs and health values, caps delivery at ten events per minute per
 process, and uses a two-second delivery timeout. Delivery failures never replace
 the API response. Generic JSON errors also go to stderr; fatal exceptions exit
 after draining requests and flushing monitoring. Normal SIGTERM drains for up to
-ten seconds. This is API/job error reporting; it does not collect mobile or browser
+25 seconds. This is API/job error reporting; it does not collect mobile or browser
 session replay or performance traces.
 
 Configure Sentry issue alerts, a platform uptime alert for `/health`, and failed

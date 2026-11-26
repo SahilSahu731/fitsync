@@ -11,7 +11,10 @@ const seeds = JSON.parse(
 );
 test("curated catalog entries have valid content and unique slugs", () => {
   for (const kind of ["guide", "mobility"])
-    assert.ok(seeds.resources.some((r: { kind: string }) => r.kind === kind), kind);
+    assert.ok(
+      seeds.resources.some((r: { kind: string }) => r.kind === kind),
+      kind,
+    );
   assert.ok(seeds.tools.length);
   assert.equal(
     new Set([...seeds.resources, ...seeds.tools].map((r) => r.slug)).size,

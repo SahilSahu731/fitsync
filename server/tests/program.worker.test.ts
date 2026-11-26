@@ -205,9 +205,7 @@ test("worker records Expo acceptance and uses the program channel and deep link"
   // Expo accepted the notification, but delivery is not yet confirmed.
   assert.ok(
     state.updates.some(
-      (update) =>
-        update.filters.id === "job" &&
-        update.values.status === "accepted",
+      (update) => update.filters.id === "job" && update.values.status === "accepted",
     ),
   );
 

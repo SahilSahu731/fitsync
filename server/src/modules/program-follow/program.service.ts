@@ -110,18 +110,16 @@ export async function updateReminders(
   return programDetail(userId, id);
 }
 export async function registerDevice(userId: string, token: string, sessionId: string) {
-  const result = await db
-    .from("program_push_devices")
-    .upsert(
-      {
-        user_id: userId,
-        session_id: sessionId,
-        token,
-        enabled: true,
-        updated_at: new Date().toISOString(),
-      },
-      { onConflict: "token" },
-    );
+  const result = await db.from("program_push_devices").upsert(
+    {
+      user_id: userId,
+      session_id: sessionId,
+      token,
+      enabled: true,
+      updated_at: new Date().toISOString(),
+    },
+    { onConflict: "token" },
+  );
   programError(result.error, "register workout reminders");
 }
 export async function unregisterDevice(userId: string, token: string) {

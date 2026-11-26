@@ -3,6 +3,19 @@ import { z } from "zod";
 
 const schema = z.object({
   NODE_ENV: z.enum(["development", "test", "production"]).default("development"),
+  POSTHOG_PROJECT_TOKEN: z.preprocess(
+    (value) => (value === "" ? undefined : value),
+    z
+      .string()
+      .trim()
+      .regex(/^phc_[A-Za-z0-9_-]+$/, "Use the PostHog project token.")
+      .optional(),
+  ),
+  POSTHOG_HOST: z
+    .enum(["https://us.i.posthog.com", "https://eu.i.posthog.com"])
+    .default("https://us.i.posthog.com"),
+  POSTHOG_TRACE_SAMPLE_RATE: z.coerce.number().min(0).max(1).default(0.01),
+  POSTHOG_ENVIRONMENT: z.enum(["development", "test", "staging", "production"]).optional(),
   WEB_PROXY_SECRET: z.preprocess(
     (value) => (value === "" ? undefined : value),
     z.string().min(32).optional(),

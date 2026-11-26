@@ -108,9 +108,9 @@ replay. A guessed secret cannot revoke a session merely by knowing its UUID. Exi
 sessions continue working; replay history begins with rotations made after migration.
 The mobile client already serializes simultaneous refresh requests.
 
-Request logs are structured JSON. Use `requestId` and the response's `X-Request-ID`
-to correlate a request and an error. Logs contain route templates, method, status
-and duration, excluding credentials, queries, share tokens and health records.
+Each response includes an `X-Request-ID` that can be matched to a reported HTTP error.
+The per-request console line is commented out in `server/src/middleware/request-log.ts`.
+To view sampled API timings in PostHog, follow the [backend setup and localhost test](backend-environment.md).
 Allow at least 30 seconds for process termination; the API drains for up to 25 seconds.
 
 ## 5. Build and install a fresh Android preview
@@ -212,7 +212,7 @@ to an operational channel you monitor; choosing recipients remains your configur
 
 1. Configure production keys and `EXPO_PUBLIC_TELEMETRY_DEBUG=false`.
 2. Publish the updated privacy-policy text alongside this release.
-3. Confirm migration 021, API request logs, health checks and source-map upload.
+3. Confirm migration 021, API request IDs, health checks and source-map upload.
 4. Build with `npx eas-cli@latest build --platform android --profile production`.
 5. Roll out through your usual Play testing/release process and check dashboard
    ingestion, finish failures and pending purchases before expanding the rollout.

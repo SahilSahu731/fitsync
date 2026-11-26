@@ -121,6 +121,8 @@ export default function PrivacyPage() {
             to deliver and protect the service. When enabled, Sentry receives fixed error
             categories, code file names, line numbers and release information. Our error reporter
             excludes account identifiers, request content, health records and error message text.
+            When API performance monitoring is enabled, PostHog receives timings for a sample of
+            requests, with the route template, HTTP method, response status and server environment.
           </li>
         </ul>
         <p>
