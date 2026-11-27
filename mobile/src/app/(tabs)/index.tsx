@@ -1,6 +1,7 @@
+import { useVisibleEffect } from "@/src/hooks/use-visible-effect";
 import React, { useCallback, useMemo, useRef, useState } from "react";
 import { ActivityIndicator, RefreshControl, View } from "react-native";
-import { useFocusEffect, useRouter } from "expo-router";
+import { useRouter } from "expo-router";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { TabScrollView } from "@/src/components/tab-bar-motion";
 import { MotionPressable as Pressable, ScreenEntrance } from "@/src/components/motion";
@@ -56,7 +57,7 @@ export default function HomeScreen() {
   const [waterOwners, setWaterOwners] = useState<string[]>([]);
   const waterLock = useRef(new Set<string>());
   const todayCard = useRef<HomeWorkoutCardHandle>(null);
-  useFocusEffect(
+  useVisibleEffect(
     useCallback(() => {
       // Return from background and midnight rollover both refresh the logging date.
       setClock(new Date());

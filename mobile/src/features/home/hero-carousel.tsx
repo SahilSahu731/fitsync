@@ -1,5 +1,5 @@
+import { useVisibleEffect } from "@/src/hooks/use-visible-effect";
 import React, { ReactNode, useCallback, useEffect, useState } from "react";
-import { useFocusEffect } from "expo-router";
 import { Animated, Easing, PanResponder, PanResponderInstance, View } from "react-native";
 
 const SIDE = 32; // visible sliver of the neighbour cards
@@ -126,7 +126,7 @@ class DeckController {
     ]).start();
   }
 
-  /** Deal the cards out, then wiggle both ways as a hint until the user touches. */
+  /** Deal the cards out, then wiggle both ways as a hint once as a gesture hint. */
   start() {
     this.touched = false;
     this.intro.setValue(0);
@@ -138,10 +138,8 @@ class DeckController {
     }).start();
     if (this.n < 2) return () => {};
     const first = setTimeout(() => this.nudge(), 1500);
-    const loop = setInterval(() => this.nudge(), 7000);
     return () => {
       clearTimeout(first);
-      clearInterval(loop);
       this.intro.stopAnimation();
       this.pos.stopAnimation();
     };
@@ -165,7 +163,7 @@ export function HomeHeroCarousel({ slides, initialIndex = 0 }: Props) {
   useEffect(() => {
     ctl.setStep(stepX);
   }, [ctl, stepX]);
-  useFocusEffect(
+  useVisibleEffect(
     useCallback(() => {
       if (!ready) return;
       return ctl.start();

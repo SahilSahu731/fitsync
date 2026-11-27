@@ -1,5 +1,6 @@
 /* eslint-disable react-hooks/refs */
-import React, { useEffect, useRef } from "react";
+import { useVisibleEffect } from "@/src/hooks/use-visible-effect";
+import React, { useCallback, useRef } from "react";
 import { Animated, Easing, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable } from "@/src/components/motion";
@@ -26,26 +27,28 @@ export function PromoSlide({
 }: Props) {
   const float = useRef(new Animated.Value(0)).current;
 
-  useEffect(() => {
-    const loop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(float, {
-          toValue: 1,
-          duration: 2200,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-        Animated.timing(float, {
-          toValue: 0,
-          duration: 2200,
-          easing: Easing.inOut(Easing.quad),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    loop.start();
-    return () => loop.stop();
-  }, [float]);
+  useVisibleEffect(
+    useCallback(() => {
+      const loop = Animated.loop(
+        Animated.sequence([
+          Animated.timing(float, {
+            toValue: 1,
+            duration: 2200,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(float, {
+            toValue: 0,
+            duration: 2200,
+            easing: Easing.inOut(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      loop.start();
+      return () => loop.stop();
+    }, [float]),
+  );
 
   const translateY = float.interpolate({ inputRange: [0, 1], outputRange: [0, -8] });
   const rotate = float.interpolate({ inputRange: [0, 1], outputRange: ["-8deg", "-2deg"] });

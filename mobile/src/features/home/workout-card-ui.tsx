@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useVisibleEffect } from "@/src/hooks/use-visible-effect";
+import React, { useCallback, useState } from "react";
 import { ActivityIndicator, Animated, Easing, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable } from "@/src/components/motion";
@@ -33,39 +34,42 @@ export function WorkoutShell({
   const [pulse] = useState(() => new Animated.Value(0));
   const [ripple] = useState(() => new Animated.Value(0));
 
-  useEffect(() => {
-    const a = Animated.loop(
-      Animated.sequence([
-        Animated.timing(pulse, {
+  useVisibleEffect(
+    useCallback(() => {
+      if (!live) return;
+      const a = Animated.loop(
+        Animated.sequence([
+          Animated.timing(pulse, {
+            toValue: 1,
+            duration: 1600,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+          Animated.timing(pulse, {
+            toValue: 0,
+            duration: 1600,
+            easing: Easing.inOut(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ]),
+      );
+      const b = Animated.loop(
+        Animated.timing(ripple, {
           toValue: 1,
-          duration: 1600,
-          easing: Easing.inOut(Easing.sin),
+          duration: 1800,
+          easing: Easing.out(Easing.quad),
           useNativeDriver: true,
         }),
-        Animated.timing(pulse, {
-          toValue: 0,
-          duration: 1600,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ]),
-    );
-    const b = Animated.loop(
-      Animated.timing(ripple, {
-        toValue: 1,
-        duration: 1800,
-        easing: Easing.out(Easing.quad),
-        useNativeDriver: true,
-      }),
-    );
-    a.start();
-    if (live) b.start();
-    return () => {
-      a.stop();
-      b.stop();
-      ripple.setValue(0);
-    };
-  }, [pulse, ripple, live]);
+      );
+      a.start();
+      b.start();
+      return () => {
+        a.stop();
+        b.stop();
+        ripple.setValue(0);
+      };
+    }, [pulse, ripple, live]),
+  );
 
   const glow = pulse.interpolate({ inputRange: [0, 1], outputRange: [0.12, 0.24] });
   const float = pulse.interpolate({ inputRange: [0, 1], outputRange: [0, -3] });

@@ -166,6 +166,7 @@ test("the bridge never requests access or imports data before account opt-in", a
   const ui = fixture();
   ui.render();
   await flush();
+  assert.equal(ui.intervalCount, 0);
   ui.advance(60_000);
   ui.tick();
   ui.appState("background");
@@ -201,6 +202,7 @@ test("launch, foreground and active minute polls respect the sixty-second import
   await flush();
   assert.equal(ui.imports.length, 2);
   ui.appState("background");
+  assert.equal(ui.intervalCount, 0);
   ui.advance(60_000);
   const reads = ui.reads.length;
   ui.tick();

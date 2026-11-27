@@ -63,6 +63,7 @@ function topbarFixture({ isPro = false, user = { id: "alice", name: "Alex Rivera
       },
       useEffect() {},
     },
+    "@/src/hooks/use-visible-effect": { useVisibleEffect() {} },
     "expo-router": { useFocusEffect() {} },
     "react/jsx-runtime": { jsx, jsxs: jsx },
     "react-native": { Image: "Image", View: "View" },

@@ -306,14 +306,16 @@ function WorkoutAccountProvider({
           .then(() => sync())
           .catch(() => {});
     });
+    return () => subscription.remove();
+  }, [refresh, sync]);
+  const hasPendingWorkout = draftPending(draft) > 0;
+  useEffect(() => {
+    if (!hasPendingWorkout) return;
     const retry = setInterval(() => {
       if (AppState.currentState === "active") void sync().catch(() => {});
     }, 15000);
-    return () => {
-      subscription.remove();
-      clearInterval(retry);
-    };
-  }, [refresh, sync]);
+    return () => clearInterval(retry);
+  }, [hasPendingWorkout, sync]);
   useEffect(() => {
     if (session?.id) void loadExercisePicker().catch(() => {});
   }, [session?.id]);

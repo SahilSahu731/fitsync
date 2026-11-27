@@ -100,19 +100,16 @@ function AccountCompanion({ ownerId, children }: { ownerId: string; children: Re
     }
   }, [api, ownerId]);
   useEffect(() => {
-    void Promise.resolve().then(refresh);
+    if (!ownerId) return;
+    if (AppState.currentState === "active") void Promise.resolve().then(refresh);
     // Foreground reconciliation also picks up changes from the desktop workspace.
     const subscription = AppState.addEventListener("change", (status) => {
       if (status === "active") void refresh();
     });
-    const interval = setInterval(() => {
-      if (AppState.currentState === "active" && !locked.current) void refresh();
-    }, 60_000);
     return () => {
       subscription.remove();
-      clearInterval(interval);
     };
-  }, [refresh]);
+  }, [ownerId, refresh]);
   async function run<T>(action: () => Promise<T>): Promise<T> {
     if (!ownerId || current.current !== ownerId) throw new Error("Sign in to use your companion.");
     if (locked.current) throw new Error("Your previous change is still syncing.");

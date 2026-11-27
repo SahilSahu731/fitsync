@@ -144,7 +144,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
         }
       })
       .catch(() => {});
-    void refresh();
+    if (AppState.currentState === "active") void refresh();
     const journalSubscription = subscribeJournal((account, saved) => {
       if (account === ownerId && valid()) {
         newerJournalPublished = true;
@@ -158,16 +158,12 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
     const foreground = AppState.addEventListener("change", (state) => {
       if (state === "active") void refresh();
     });
-    const interval = setInterval(() => {
-      if (AppState.currentState === "active") void refresh();
-    }, 60_000);
     return () => {
       active = false;
       sequence++;
       journalSubscription();
       coachingSubscription();
       foreground.remove();
-      clearInterval(interval);
     };
   }, [ownerId, workout.dataRevision]);
   useEffect(() => {
@@ -237,7 +233,7 @@ function AccountNativeBridge({ ownerId }: { ownerId: string }) {
           error: error instanceof Error ? error.message : "Workout controls could not update.",
         });
     });
-  }, [ownerId, billing.isPro, controlsKey, tick]);
+  }, [ownerId, billing.isPro, controlsKey]);
   const completed = useMemo(() => {
     const all = [
       ...journal.workouts,

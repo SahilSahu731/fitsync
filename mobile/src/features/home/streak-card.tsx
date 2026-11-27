@@ -1,4 +1,5 @@
-import React, { useEffect, useState } from "react";
+import { useVisibleEffect } from "@/src/hooks/use-visible-effect";
+import React, { useCallback, useState } from "react";
 import { AccessibilityInfo, Animated, Easing, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable } from "@/src/components/motion";
@@ -57,64 +58,66 @@ export function StreakCard({ streak, onPress }: { streak: StreakInfo; onPress: (
   const alive = count > 0;
   const doneThisWeek = week.filter((d) => d.done).length;
 
-  useEffect(() => {
-    const loops: Animated.CompositeAnimation[] = [];
-    let cancelled = false;
+  useVisibleEffect(
+    useCallback(() => {
+      const loops: Animated.CompositeAnimation[] = [];
+      let cancelled = false;
 
-    const intro = Animated.stagger(
-      60,
-      pills.map((v) =>
-        Animated.spring(v, { toValue: 1, friction: 6, tension: 140, useNativeDriver: true }),
-      ),
-    );
-    intro.start();
-
-    AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
-      if (cancelled || reduce) return;
-      const breathe = (v: Animated.Value, ms: number) =>
-        Animated.loop(
-          Animated.sequence([
-            Animated.timing(v, {
-              toValue: 1,
-              duration: ms,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-            Animated.timing(v, {
-              toValue: 0,
-              duration: ms,
-              easing: Easing.inOut(Easing.sin),
-              useNativeDriver: true,
-            }),
-          ]),
-        );
-      if (alive) loops.push(breathe(flame, 900));
-      if (!doneToday) loops.push(breathe(pulse, 900));
-      // Shine: a light band glides across the card, then rests
-      loops.push(
-        Animated.loop(
-          Animated.sequence([
-            Animated.delay(1200),
-            Animated.timing(sweep, {
-              toValue: 1,
-              duration: 1300,
-              easing: Easing.inOut(Easing.quad),
-              useNativeDriver: true,
-            }),
-            Animated.delay(2800),
-            Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
-          ]),
+      const intro = Animated.stagger(
+        60,
+        pills.map((v) =>
+          Animated.spring(v, { toValue: 1, friction: 6, tension: 140, useNativeDriver: true }),
         ),
       );
-      loops.forEach((l) => l.start());
-    });
+      intro.start();
 
-    return () => {
-      cancelled = true;
-      intro.stop();
-      loops.forEach((l) => l.stop());
-    };
-  }, [flame, pulse, sweep, pills, alive, doneToday]);
+      AccessibilityInfo.isReduceMotionEnabled().then((reduce) => {
+        if (cancelled || reduce) return;
+        const breathe = (v: Animated.Value, ms: number) =>
+          Animated.loop(
+            Animated.sequence([
+              Animated.timing(v, {
+                toValue: 1,
+                duration: ms,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+              Animated.timing(v, {
+                toValue: 0,
+                duration: ms,
+                easing: Easing.inOut(Easing.sin),
+                useNativeDriver: true,
+              }),
+            ]),
+          );
+        if (alive) loops.push(breathe(flame, 900));
+        if (!doneToday) loops.push(breathe(pulse, 900));
+        // Shine: a light band glides across the card, then rests
+        loops.push(
+          Animated.loop(
+            Animated.sequence([
+              Animated.delay(1200),
+              Animated.timing(sweep, {
+                toValue: 1,
+                duration: 1300,
+                easing: Easing.inOut(Easing.quad),
+                useNativeDriver: true,
+              }),
+              Animated.delay(2800),
+              Animated.timing(sweep, { toValue: 0, duration: 0, useNativeDriver: true }),
+            ]),
+          ),
+        );
+        loops.forEach((l) => l.start());
+      });
+
+      return () => {
+        cancelled = true;
+        intro.stop();
+        loops.forEach((l) => l.stop());
+      };
+    }, [flame, pulse, sweep, pills, alive, doneToday]),
+  );
 
   // Animated values are the only inline props left; Tailwind can't express them
   const flameScale = flame.interpolate({ inputRange: [0, 1], outputRange: [1, 1.14] });

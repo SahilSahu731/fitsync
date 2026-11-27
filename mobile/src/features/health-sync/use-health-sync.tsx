@@ -159,17 +159,24 @@ export function HealthSyncBridge() {
   useEffect(() => {
     if (!ownerId) return;
     let mounted = true;
+    let timer: ReturnType<typeof setInterval> | undefined;
+    const stopTimer = () => {
+      clearInterval(timer);
+      timer = undefined;
+    };
     const current = () =>
       mounted && owner.current === ownerId && AppState.currentState === "active";
     const run = async () => {
       if (!current()) return;
       try {
         const settings = await readHealthSyncSettings(ownerId);
-        if (
-          !current() ||
-          !settings.enabled ||
-          (settings.lastImportedAt && Date.now() - Date.parse(settings.lastImportedAt) < 60_000)
-        )
+        if (!current()) return;
+        if (!settings.enabled) {
+          stopTimer();
+          return;
+        }
+        timer ??= setInterval(() => void run(), 60_000);
+        if (settings.lastImportedAt && Date.now() - Date.parse(settings.lastImportedAt) < 60_000)
           return;
         await importHealthForUser(ownerId, current);
       } catch {
@@ -179,17 +186,15 @@ export function HealthSyncBridge() {
     void run();
     const listener = AppState.addEventListener("change", (state) => {
       if (state === "active") void run();
+      else stopTimer();
     });
-    const timer = setInterval(() => {
-      if (AppState.currentState === "active") void run();
-    }, 60_000);
     const unsubscribe = subscribeHealthSync((id) => {
       if (id === ownerId) void run();
     });
     return () => {
       mounted = false;
       listener.remove();
-      clearInterval(timer);
+      stopTimer();
       unsubscribe();
     };
   }, [ownerId]);

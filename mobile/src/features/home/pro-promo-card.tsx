@@ -1,6 +1,6 @@
+import { useVisibleEffect } from "@/src/hooks/use-visible-effect";
 import { trackEvent } from "@/src/services/telemetry";
 import React, { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
 import { AccessibilityInfo, Animated, Easing, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable } from "@/src/components/motion";
@@ -124,7 +124,7 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
   // -1 = waiting below, 0 = visible, 1 = gone above
   const [swap] = useState(() => new Animated.Value(0));
 
-  useFocusEffect(
+  useVisibleEffect(
     useCallback(() => {
       const loops: Animated.CompositeAnimation[] = [];
       let cancelled = false;
@@ -172,7 +172,7 @@ export function ProPromoCard({ isPro, onPress }: { isPro: boolean; onPress: () =
     }, [sweep, pulse]),
   );
 
-  useFocusEffect(
+  useVisibleEffect(
     useCallback(() => {
       const timer = setInterval(() => {
         Animated.timing(swap, {

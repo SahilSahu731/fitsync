@@ -1,5 +1,5 @@
+import { useVisibleEffect } from "@/src/hooks/use-visible-effect";
 import React, { useCallback, useState } from "react";
-import { useFocusEffect } from "expo-router";
 import { Image, View } from "react-native";
 import { MaterialCommunityIcons } from "@expo/vector-icons";
 import { MotionPressable as Pressable } from "@/src/components/motion";
@@ -46,7 +46,7 @@ export function HomeTopBar({
 
   const shine = useSharedValue(-30);
 
-  useFocusEffect(
+  useVisibleEffect(
     useCallback(() => {
       shine.set(
         withRepeat(

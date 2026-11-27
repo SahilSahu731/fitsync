@@ -208,6 +208,7 @@ function homeFixture({ isPro = false, loading = false, storageError = "", increm
       View: "View", Image: "Image",
       RefreshControl: "RefreshControl", ActivityIndicator: "Loading",
     },
+    "@/src/hooks/use-visible-effect": { useVisibleEffect() {} },
     "expo-router": {
       useRouter: () => ({ push: (route) => calls.routes.push(route) }),
       useFocusEffect() {},
@@ -679,3 +680,34 @@ for (const change of ["account", "membership", "pending completion"]) {
     assert.equal(ui.calls.routes.length, 0);
   });
 }
+
+test("home effects stop on background or blur and restart once on foreground", () => {
+  let focus, change, blur;
+  const transitions = [];
+  const app = {
+    currentState: "background",
+    addEventListener(_, listener) {
+      change = listener;
+      return { remove() { change = undefined; } };
+    },
+  };
+  const { useVisibleEffect } = loadSource("../src/hooks/use-visible-effect.ts", {
+    react: { useCallback: (callback) => callback },
+    "react-native": { AppState: app },
+    "expo-router": { useFocusEffect(callback) { focus = callback; } },
+  });
+  useVisibleEffect(() => {
+    transitions.push("start");
+    return () => transitions.push("stop");
+  });
+  blur = focus();
+  assert.deepEqual(transitions, []);
+  change("active");
+  change("active");
+  change("background");
+  change("inactive");
+  change("active");
+  blur();
+  assert.equal(change, undefined);
+  assert.deepEqual(transitions, ["start", "stop", "start", "stop"]);
+});
