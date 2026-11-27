@@ -72,7 +72,7 @@ export default function RoutineCategoryScreen() {
         <View className="rounded-2xl bg-panel p-6">
           <View className="mb-4 items-center justify-center rounded-3xl">
             <Image
-              source={require("../../../../assets/images/not-found.png")}
+              source={require("../../../../assets/images/not-found.jpg")}
               contentFit="contain"
               style={{ width: 200, height: 150, borderRadius: 30 }}
             />

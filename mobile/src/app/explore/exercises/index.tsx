@@ -680,7 +680,7 @@ function OwnedLibraryScreen({ ownerId }: { ownerId: string }) {
     !loading && !error ? (
       <View className="items-center px-10 py-14">
         <Image
-          source={require("../../../../assets/images/not-found.png")}
+          source={require("../../../../assets/images/not-found.jpg")}
           style={{
             width: 280,
             height: 190,
